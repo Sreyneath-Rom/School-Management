@@ -41,9 +41,16 @@ export const ClipboardList: LucideIcon = Icon
 export const UserRound: LucideIcon = Icon
 export const Users: LucideIcon = Icon
 export const BookOpen: LucideIcon = Icon
+export const Layers: LucideIcon = Icon
 export const UserCheck: LucideIcon = Icon
 export const Flag: LucideIcon = Icon
 export const Sparkles: LucideIcon = Icon
+export const Download: LucideIcon = Icon
+export const Plus: LucideIcon = Icon
+export const SlidersHorizontal: LucideIcon = Icon
+export const Pencil: LucideIcon = Icon
+export const Eye: LucideIcon = Icon
+export const Trash2: LucideIcon = Icon
 export const ArrowUp: LucideIcon = Icon
 export const ArrowDown: LucideIcon = Icon
 
