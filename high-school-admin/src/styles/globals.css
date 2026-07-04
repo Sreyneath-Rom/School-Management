@@ -1,0 +1,6 @@
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+:root { --app-bg: #eef2f7 }
+
+body { background: var(--app-bg) }
