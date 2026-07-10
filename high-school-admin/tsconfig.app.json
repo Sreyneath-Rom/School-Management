@@ -16,9 +16,6 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "paths": {
-      "lucide-react": ["src/shims/lucide-react"]
-    },
     "ignoreDeprecations": "6.0",
 
     /* Linting */

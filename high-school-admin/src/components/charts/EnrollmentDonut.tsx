@@ -5,7 +5,7 @@ export default function EnrollmentDonut() {
   const total = enrollmentData.reduce((sum, item) => sum + item.count, 0)
 
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm min-h-90">
+    <section className="rounded-[28px] glass-sm p-6 min-h-90">
       <div className="mb-6">
         <h2 className="text-base font-semibold text-slate-900">Student Enrollment</h2>
       </div>
@@ -32,9 +32,9 @@ export default function EnrollmentDonut() {
           </ResponsiveContainer>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto flex w-fit -translate-y-1/2 flex-col items-center rounded-3xl bg-white/90 px-6 py-4 text-center shadow-sm">
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto flex w-fit -translate-y-1/2 flex-col items-center  px-6 py-4 text-center">
           <div className="text-3xl font-semibold text-slate-900">{total.toLocaleString()}</div>
-          <div className="text-sm text-slate-500">Total</div>
+          <div className="text-sm text-slate-600">Total</div>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ export default function EnrollmentDonut() {
         {enrollmentData.map((slice) => (
           <li key={slice.grade} className="flex items-center gap-3 text-sm text-slate-700">
             <span className="inline-flex h-3.5 w-3.5 rounded-full" style={{ background: slice.color }} />
-            <span className="flex-1 text-slate-500">{slice.grade}</span>
+            <span className="flex-1 text-slate-600">{slice.grade}</span>
             <span className="font-semibold text-slate-900">{slice.count}</span>
           </li>
         ))}

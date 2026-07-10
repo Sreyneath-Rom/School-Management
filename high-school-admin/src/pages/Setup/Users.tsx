@@ -1,233 +1,185 @@
-import { Plus, Search, Users2, ShieldCheck, ClipboardCheck, User, Bell, CalendarDays, Pencil, Trash2, Eye } from '../../shims/lucide-react'
+import { useState } from 'react'
+import { UserPlus, Search, SlidersHorizontal, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react'
 import PageHeading from '../../components/common/PageHeading'
 
-const userStats = [
-  {
-    title: 'Total users',
-    value: '248',
-    icon: Users2,
-    accent: 'bg-sky-50 text-sky-700',
-  },
-  {
-    title: 'Active staff',
-    value: '112',
-    icon: ShieldCheck,
-    accent: 'bg-violet-50 text-violet-700',
-  },
-  {
-    title: 'Pending invites',
-    value: '9',
-    icon: ClipboardCheck,
-    accent: 'bg-emerald-50 text-emerald-700',
-  },
-  {
-    title: 'Recently active',
-    value: '68',
-    icon: Bell,
-    accent: 'bg-amber-50 text-amber-700',
-  },
-]
+const tabs = ['All Users', 'Teachers', 'Students', 'Mazers', 'Admins']
+
+const roleStyles: Record<string, string> = {
+  Teacher: 'bg-brand-100 text-brand-700',
+  Student: 'bg-emerald-100 text-emerald-700',
+  Mazer: 'bg-amber-100 text-amber-700',
+  Admin: 'bg-stone-200 text-stone-700',
+}
 
 const users = [
   {
     id: 'u1',
-    name: 'Arianna Wells',
-    email: 'arianna.wells@riverwood.edu',
-    role: 'Administrator',
-    department: 'Leadership',
+    name: 'Dr. Julian Vane',
+    email: 'julian.vane@edumanage.com',
+    role: 'Teacher',
+    regId: 'TCH-8821',
+    classroom: '12B',
     status: 'Active',
-    lastSeen: '5m ago',
+    lastLogin: '2 mins ago',
   },
   {
     id: 'u2',
-    name: 'Noah Grant',
-    email: 'noah.grant@riverwood.edu',
-    role: 'Teacher',
-    department: 'Science',
+    name: 'Sarah Jenkins',
+    email: 's.jenkins@stu.edumanage.com',
+    role: 'Student',
+    regId: 'STU-4509',
+    classroom: '12B',
     status: 'Active',
-    lastSeen: '23m ago',
+    lastLogin: 'Today, 08:45 AM',
   },
   {
     id: 'u3',
-    name: 'Sophia Blake',
-    email: 'sophia.blake@riverwood.edu',
-    role: 'Counselor',
-    department: 'Student Services',
-    status: 'Invited',
-    lastSeen: '—',
+    name: 'Markus Thoren',
+    email: 'markus.t@mazer.edu',
+    role: 'Mazer',
+    regId: 'MAZ-1102',
+    classroom: '12B',
+    status: 'Inactive',
+    lastLogin: '3 days ago',
   },
   {
     id: 'u4',
-    name: 'Julian Price',
-    email: 'julian.price@riverwood.edu',
-    role: 'Academic Head',
-    department: 'Mathematics',
+    name: 'Alex Rivers',
+    email: 'admin.rivers@edumanage.com',
+    role: 'Admin',
+    regId: 'ADM-0001',
+    classroom: '—',
     status: 'Active',
-    lastSeen: '1h ago',
+    lastLogin: 'Just now',
   },
 ]
 
 export default function Users() {
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <PageHeading
-            title="Users"
-            subtitle="Manage account access, roles, and activity for staff and administrators."
-          />
-        </div>
+  const [activeTab, setActiveTab] = useState(tabs[0])
 
-        <button className="inline-flex items-center gap-2 rounded-3xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800">
-          <Plus size={18} />
-          Invite User
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <PageHeading title="User Management" subtitle="View, filter, and manage all academic system participants." />
+        <button className="inline-flex items-center gap-2 rounded-2xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-700/20 transition hover:bg-brand-800">
+          <UserPlus size={17} />
+          Create New User
         </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {userStats.map((item) => {
-          const Icon = item.icon
-          return (
-            <div key={item.title} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className={`inline-flex h-12 w-12 items-center justify-center rounded-3xl ${item.accent}`}>
-                <Icon size={20} />
-              </div>
-              <div className="mt-5 text-sm font-medium text-slate-500">{item.title}</div>
-              <div className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">{item.value}</div>
-            </div>
-          )
-        })}
-      </div>
+      <div className="flex flex-col gap-4 rounded-[28px] glass-sm p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-1 rounded-2xl bg-stone-50 p-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                activeTab === tab ? 'bg-white text-brand-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative flex-1">
-            <Search size={18} className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="flex flex-1 items-center gap-3 lg:justify-end">
+          <div className="relative w-full max-w-xs">
+            <Search size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
             <input
               type="text"
-              placeholder="Search users by name, email, or role"
-              className="w-full rounded-full border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-700 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              placeholder="Search by name, email, or registration ID..."
+              className="w-full rounded-full border border-stone-200 bg-stone-50 py-2.5 pl-11 pr-4 text-sm text-stone-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
             />
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <select className="rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100">
-              <option>All roles</option>
-              <option>Administrator</option>
-              <option>Teacher</option>
-              <option>Counselor</option>
-              <option>Academic Head</option>
-            </select>
-            <select className="rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100">
-              <option>All status</option>
-              <option>Active</option>
-              <option>Invited</option>
-              <option>Disabled</option>
-            </select>
-          </div>
+          <button className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-100">
+            <SlidersHorizontal size={16} />
+            Advanced Filters
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.8fr_1fr]">
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-4 text-left font-semibold uppercase tracking-[0.16em] text-slate-500">Name</th>
-                <th className="px-6 py-4 text-left font-semibold uppercase tracking-[0.16em] text-slate-500">Role</th>
-                <th className="px-6 py-4 text-left font-semibold uppercase tracking-[0.16em] text-slate-500">Department</th>
-                <th className="px-6 py-4 text-left font-semibold uppercase tracking-[0.16em] text-slate-500">Status</th>
-                <th className="px-6 py-4 text-right font-semibold uppercase tracking-[0.16em] text-slate-500">Actions</th>
+      <div className="overflow-x-auto rounded-[28px] glass-sm">
+        <table className="min-w-[780px] w-full divide-y divide-stone-100 text-sm">
+          <thead className="bg-stone-50">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">User</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Role</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">ID</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Classroom</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Status</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Last Login</th>
+              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-stone-100">
+            {users.map((user) => (
+              <tr key={user.id} className="transition hover:bg-stone-50">
+                <td className="px-6 py-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-sm font-semibold text-stone-500">
+                      {user.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join('')}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-stone-900">{user.name}</div>
+                      <div className="text-sm text-stone-500">{user.email}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-5">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${roleStyles[user.role]}`}>
+                    {user.role}
+                  </span>
+                </td>
+                <td className="px-6 py-5 text-stone-600">{user.regId}</td>
+                <td className="px-6 py-5 text-stone-600">{user.classroom}</td>
+                <td className="px-6 py-5">
+                  <span className="inline-flex items-center gap-2 text-sm font-medium text-stone-700">
+                    <span
+                      className={`h-2 w-2 rounded-full ${user.status === 'Active' ? 'bg-emerald-500' : 'bg-stone-400'}`}
+                    />
+                    {user.status}
+                  </span>
+                </td>
+                <td className="px-6 py-5 text-stone-500">{user.lastLogin}</td>
+                <td className="px-6 py-5 text-right">
+                  <button className="rounded-full p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700">
+                    <MoreVertical size={18} />
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-3xl bg-slate-100 text-slate-700">
-                        <User size={18} />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-900">{user.name}</div>
-                        <div className="text-sm text-slate-500">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-slate-700">{user.role}</td>
-                  <td className="px-6 py-5 text-slate-700">{user.department}</td>
-                  <td className="px-6 py-5">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${
-                      user.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-600 transition hover:bg-slate-100">
-                        <Eye size={16} />
-                      </button>
-                      <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-600 transition hover:bg-slate-100">
-                        <Pencil size={16} />
-                      </button>
-                      <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition hover:bg-rose-100">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="flex items-center justify-between border-t border-stone-100 px-6 py-4">
+          <div className="text-sm text-stone-500">Showing 1 to 10 of 156 users</div>
+          <div className="flex items-center gap-2">
+            <button className="flex h-8 w-8 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100">
+              <ChevronLeft size={16} />
+            </button>
+            {[1, 2, 3].map((p) => (
+              <button
+                key={p}
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition ${
+                  p === 1 ? 'bg-brand-700 text-white' : 'text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <span className="px-1 text-stone-400">...</span>
+            <button className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-stone-600 transition hover:bg-stone-100">
+              16
+            </button>
+            <button className="flex h-8 w-8 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100">
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
-
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">User details</div>
-              <div className="mt-2 text-lg font-semibold text-slate-900">Quick insights</div>
-            </div>
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-3xl bg-slate-100 text-slate-700">
-              <CalendarDays size={22} />
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            <div className="rounded-3xl bg-slate-50 p-4">
-              <div className="text-sm font-semibold text-slate-900">Most recent login</div>
-              <div className="mt-2 text-sm text-slate-600">Arianna Wells signed in 5 minutes ago.</div>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-4">
-              <div className="text-sm font-semibold text-slate-900">Teams with highest activity</div>
-              <div className="mt-2 text-sm text-slate-600">Leadership and Science have the most active users today.</div>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-4">
-              <div className="text-sm font-semibold text-slate-900">Pending approvals</div>
-              <div className="mt-2 text-sm text-slate-600">9 invites are pending acceptance by invited staff members.</div>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <div className="flex items-center gap-3 text-slate-700">
-              <Users2 size={18} />
-              <span className="text-sm font-semibold">Role distribution</span>
-            </div>
-            <div className="mt-4 grid gap-3 text-sm text-slate-600">
-              <div className="flex items-center justify-between">
-                <span>Administrator</span>
-                <span className="font-semibold text-slate-900">7</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Teacher</span>
-                <span className="font-semibold text-slate-900">112</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Counselor</span>
-                <span className="font-semibold text-slate-900">3</span>
-              </div>
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
   )

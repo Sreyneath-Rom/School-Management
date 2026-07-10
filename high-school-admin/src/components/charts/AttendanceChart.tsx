@@ -11,13 +11,13 @@ import { attendanceData } from '../../services/mockData'
 
 export default function AttendanceChart() {
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm min-h-90">
+    <section className="rounded-[28px] glass-sm p-6 min-h-90">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-base font-semibold text-slate-900">Attendance Overview</h2>
-          <p className="text-sm text-slate-500">This Week</p>
+          <p className="text-sm text-slate-600">This Week</p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+        <button className="inline-flex items-center gap-2 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
           This Week
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -30,27 +30,29 @@ export default function AttendanceChart() {
           <AreaChart data={attendanceData} margin={{ top: 24, right: 12, left: -8, bottom: 0 }}>
             <defs>
               <linearGradient id="attendanceFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563eb" stopOpacity={0.22} />
+                <stop offset="0%" stopColor="#2563eb" stopOpacity={0.28} />
                 <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke="#e2e8f0" />
-            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={8} />
+            <CartesianGrid vertical={false} stroke="rgba(148, 163, 184, 0.35)" />
+            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 12 }} dy={8} />
             <YAxis
               domain={[0, 100]}
               ticks={[0, 25, 50, 75, 100]}
               tickFormatter={(v) => `${v}%`}
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#64748b', fontSize: 12 }}
+              tick={{ fill: '#475569', fontSize: 12 }}
               width={44}
             />
             <Tooltip
               formatter={(value: any) => [`${value}%`, 'Attendance']}
               contentStyle={{
                 borderRadius: 16,
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 20px 60px rgba(15, 23, 42, 0.12)',
+                border: '1px solid rgba(255,255,255,0.4)',
+                background: 'rgba(255,255,255,0.65)',
+                backdropFilter: 'blur(12px)',
+                boxShadow: '0 20px 60px rgba(15, 23, 42, 0.15)',
                 fontSize: 13,
               }}
             />

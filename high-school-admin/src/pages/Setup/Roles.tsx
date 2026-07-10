@@ -1,205 +1,163 @@
-import { Plus, Search, ShieldCheck, UserCog, Users2, ClipboardCheck, FileClock, Pencil, Trash2 } from '../../shims/lucide-react'
+import { useState } from 'react'
+// Icons removed to avoid type/export mismatches; using simple placeholders instead
 import PageHeading from '../../components/common/PageHeading'
 
-const roles = [
-  {
-    id: 'r1',
-    name: 'Administrator',
-    description: 'Full access to school settings, users, and reports.',
-    users: 7,
-    permissions: ['Manage users', 'Edit settings', 'View reports'],
-    badge: 'Primary',
-  },
-  {
-    id: 'r2',
-    name: 'Academic Head',
-    description: 'Oversees curriculum, classes, and teacher assignments.',
-    users: 4,
-    permissions: ['Manage classes', 'Approve lessons', 'Grade review'],
-    badge: 'Core',
-  },
-  {
-    id: 'r3',
-    name: 'Teacher',
-    description: 'Access to lesson plans, grades, and student engagement tools.',
-    users: 32,
-    permissions: ['Manage lessons', 'Submit grades', 'View attendance'],
-    badge: 'Standard',
-  },
-  {
-    id: 'r4',
-    name: 'Counselor',
-    description: 'Supports student wellbeing and academic advising.',
-    users: 3,
-    permissions: ['View student profiles', 'Manage referrals'],
-    badge: 'Support',
-  },
+const globalRoles = [
+  { id: 'super-admin', label: 'Super Admin', initial: 'SA' },
+  { id: 'teacher', label: 'Teacher', initial: 'T' },
+  { id: 'student', label: 'Student', initial: 'S' },
+  { id: 'mazer', label: 'Mazer', initial: 'M' },
 ]
 
-const summaryCards = [
-  {
-    title: 'Total roles',
-    value: '4',
-    icon: ShieldCheck,
-    accent: 'bg-slate-100 text-slate-700',
-  },
-  {
-    title: 'Active users',
-    value: '46',
-    icon: Users2,
-    accent: 'bg-sky-50 text-sky-700',
-  },
-  {
-    title: 'Core roles',
-    value: '2',
-    icon: UserCog,
-    accent: 'bg-violet-50 text-violet-700',
-  },
-  {
-    title: 'Permission sets',
-    value: '18',
-    icon: ClipboardCheck,
-    accent: 'bg-emerald-50 text-emerald-700',
-  },
+const modules = [
+  { id: 'dashboard', label: 'Dashboard', initial: 'DB' },
+  { id: 'users', label: 'Users', initial: 'U' },
+  { id: 'classes', label: 'Classes', initial: 'C' },
+  { id: 'subjects', label: 'Subjects', initial: 'SB' },
+  { id: 'schedules', label: 'Schedules', initial: 'SC' },
+  { id: 'attendance', label: 'Attendance', initial: 'A' },
+  { id: 'grades', label: 'Grades', initial: 'G' },
+  { id: 'reports', label: 'Reports', initial: 'R' },
 ]
+
+const columns = ['View', 'Create', 'Edit', 'Delete']
 
 export default function Roles() {
+  const [activeRole, setActiveRole] = useState('super-admin')
+  const [permissions, setPermissions] = useState<Record<string, boolean[]>>(() => {
+    const initial: Record<string, boolean[]> = {}
+    modules.forEach((m) => {
+      initial[m.id] = [true, true, true, true]
+    })
+    return initial
+  })
+  const [dirtyCount, setDirtyCount] = useState(4)
+
+  const togglePermission = (moduleId: string, colIndex: number) => {
+    setPermissions((prev) => {
+      const next = { ...prev, [moduleId]: [...prev[moduleId]] }
+      next[moduleId][colIndex] = !next[moduleId][colIndex]
+      return next
+    })
+    setDirtyCount((c) => c + 1)
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <PageHeading
-            title="Roles & Permissions"
-            subtitle="Define user roles, assign access levels, and manage who can do what across the school system."
-          />
-        </div>
-
-        <button className="inline-flex items-center gap-2 rounded-3xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800">
-          <Plus size={18} />
-          Add New Role
+        <PageHeading
+          title="Permissions & Access Control"
+          subtitle="Manage granular permissions for system roles and access levels."
+        />
+        <button className="inline-flex items-center gap-2 rounded-2xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-700/20 transition hover:bg-brand-800">
+          <span className="text-lg">💾</span>
+          Save Changes
         </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((item) => {
-          const Icon = item.icon
-          return (
-            <div key={item.title} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className={`inline-flex h-12 w-12 items-center justify-center rounded-3xl ${item.accent}`}>
-                <Icon size={20} />
-              </div>
-              <div className="mt-5 text-sm font-medium text-slate-500">{item.title}</div>
-              <div className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">{item.value}</div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative flex-1">
-            <Search size={18} className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search roles or permissions..."
-              className="w-full rounded-full border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-700 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <select className="rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100">
-              <option>All roles</option>
-              <option>Primary</option>
-              <option>Core</option>
-              <option>Standard</option>
-              <option>Support</option>
-            </select>
-            <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-              <FileClock size={16} />
-              Audit Log
+      <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
+        <div className="rounded-[28px] p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">Global Roles</div>
+          <div className="mt-4 space-y-2">
+            {globalRoles.map((role) => {
+              const initial = (role as any).initial
+              const isActive = activeRole === role.id
+              return (
+                <button
+                  key={role.id}
+                  onClick={() => setActiveRole(role.id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                    isActive ? 'bg-brand-700 text-white shadow' : 'text-stone-600 hover:bg-stone-50'
+                  }`}
+                >
+                  <span className="text-xs font-semibold">{initial}</span>
+                  {role.label}
+                </button>
+              )
+            })}
+            <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-stone-300 px-4 py-3 text-sm font-semibold text-stone-500 transition hover:border-brand-400 hover:text-brand-600">
+              <span className="text-lg">+</span>
+              Create New Role
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-4 text-left font-semibold uppercase tracking-[0.16em] text-slate-500">Role</th>
-                <th className="px-6 py-4 text-left font-semibold uppercase tracking-[0.16em] text-slate-500">Users</th>
-                <th className="px-6 py-4 text-left font-semibold uppercase tracking-[0.16em] text-slate-500">Permissions</th>
-                <th className="px-6 py-4 text-right font-semibold uppercase tracking-[0.16em] text-slate-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {roles.map((role) => (
-                <tr key={role.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-5">
-                    <div className="font-semibold text-slate-900">{role.name}</div>
-                    <div className="mt-1 text-sm text-slate-500">{role.description}</div>
-                  </td>
-                  <td className="px-6 py-5 text-slate-700">{role.users}</td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-wrap gap-2">
-                      {role.permissions.map((permission) => (
-                        <span key={permission} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-                          {permission}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-600 transition hover:bg-slate-100">
-                        <Pencil size={16} />
-                      </button>
-                      <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition hover:bg-rose-100">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+        <div className="space-y-6">
+          <div className="overflow-x-auto rounded-[28px] glass-sm">
+            <table className="min-w-[640px] w-full text-sm">
+              <thead>
+                <tr className="border-b border-stone-200">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                    Module / Category
+                  </th>
+                  {columns.map((col) => (
+                    <th key={col} className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                      {col}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {modules.map((module) => {
+                  const initial = (module as any).initial
+                  return (
+                    <tr key={module.id}>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                            <span className="text-xs font-semibold">{initial}</span>
+                          </div>
+                          <span className="font-semibold text-stone-800">{module.label}</span>
+                        </div>
+                      </td>
+                      {columns.map((_, colIndex) => (
+                        <td key={colIndex} className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => togglePermission(module.id, colIndex)}
+                            className={`mx-auto flex h-6 w-6 items-center justify-center rounded-md border transition ${
+                              permissions[module.id][colIndex]
+                                ? 'border-brand-600 bg-brand-600 text-white'
+                                : 'border-stone-300 bg-white text-transparent'
+                            }`}
+                          >
+                            {permissions[module.id][colIndex] ? (
+                              <span className="text-xs font-bold">✓</span>
+                            ) : (
+                              <span className="text-xs text-transparent">✓</span>
+                            )}
+                          </button>
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {dirtyCount > 0 && (
+            <div className="flex flex-col gap-4 rounded-[28px] glass-sm p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 text-sm text-stone-600">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-stone-100 text-stone-700">i</span>
+                Unsaved changes detected in {dirtyCount} permissions.
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setDirtyCount(0)}
+                  className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                >
+                  Reset to Default
+                </button>
+                <button
+                  onClick={() => setDirtyCount(0)}
+                  className="rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800"
+                >
+                  Apply Configuration
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Role insights</div>
-              <div className="mt-2 text-lg font-semibold text-slate-900">Permission health</div>
-            </div>
-            <ShieldCheck size={22} className="text-slate-500" />
-          </div>
-
-          <div className="mt-6 space-y-5">
-            <div className="rounded-3xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-600">Most common role</div>
-              <div className="mt-2 text-xl font-semibold text-slate-900">Teacher</div>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-600">Pending review</div>
-              <div className="mt-2 text-xl font-semibold text-slate-900">2 roles</div>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-600">Role changes this month</div>
-              <div className="mt-2 text-xl font-semibold text-slate-900">5 updates</div>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <div className="flex items-center gap-3 text-slate-700">
-              <UserCog size={18} />
-              <span className="text-sm font-semibold">Role ownership</span>
-            </div>
-            <div className="mt-4 text-sm text-slate-600">
-              Assign a trusted administrator to keep role permissions aligned with school policy and simplify future audits.
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
   )
