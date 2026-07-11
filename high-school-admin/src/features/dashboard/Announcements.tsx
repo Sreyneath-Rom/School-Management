@@ -1,4 +1,4 @@
-import { announcements } from '../../services/mockData'
+import { announcements } from '@/services/mockData'
 
 export default function Announcements() {
   return (

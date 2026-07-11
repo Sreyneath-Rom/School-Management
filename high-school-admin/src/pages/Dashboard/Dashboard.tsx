@@ -1,11 +1,11 @@
-import PageHeading from '../../components/common/PageHeading'
-import StatsGrid from '../../components/cards/StatsGrid'
-import AttendanceChart from '../../components/charts/AttendanceChart'
-import EnrollmentDonut from '../../components/charts/EnrollmentDonut'
-import UpcomingEvents from '../../features/dashboard/UpcomingEvents'
-import RecentActivities from '../../features/dashboard/RecentActivities'
-import RecentLeaveRequests from '../../features/dashboard/RecentLeaveRequests'
-import Announcements from '../../features/dashboard/Announcements'
+import PageHeading from '@/components/common/PageHeading'
+import StatsGrid from '@/components/cards/StatsGrid'
+import AttendanceChart from '@/components/charts/AttendanceChart'
+import EnrollmentDonut from '@/components/charts/EnrollmentDonut'
+import UpcomingEvents from '@/features/dashboard/UpcomingEvents'
+import RecentActivities from '@/features/dashboard/RecentActivities'
+import RecentLeaveRequests from '@/features/dashboard/RecentLeaveRequests'
+import Announcements from '@/features/dashboard/Announcements'
 
 export default function Dashboard() {
   return (

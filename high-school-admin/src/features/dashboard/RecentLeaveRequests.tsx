@@ -1,4 +1,4 @@
-import { leaveRequests } from '../../services/mockData'
+import { leaveRequests } from '@/services/mockData'
 
 function statusClass(status: string) {
   switch (status) {

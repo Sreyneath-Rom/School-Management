@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import { enrollmentData } from '../../services/mockData'
+import { enrollmentData } from '@/services/mockData'
 
 export default function EnrollmentDonut() {
   const total = enrollmentData.reduce((sum, item) => sum + item.count, 0)

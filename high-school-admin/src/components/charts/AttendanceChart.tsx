@@ -7,7 +7,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts'
-import { attendanceData } from '../../services/mockData'
+import { attendanceData } from '@/services/mockData'
 
 export default function AttendanceChart() {
   return (

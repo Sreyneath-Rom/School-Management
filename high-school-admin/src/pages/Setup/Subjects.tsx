@@ -1,5 +1,5 @@
 import { Download, Plus, Search, SlidersHorizontal, BookOpen, Sparkles, Layers, Building2, Pencil, Eye, Trash2 } from 'lucide-react'
-import PageHeading from '../../components/common/PageHeading'
+import PageHeading from '@/components/common/PageHeading'
 
 const summaryCards = [
   { title: 'Total Subjects', value: '42', subtitle: '+4 this year', icon: BookOpen, accent: 'bg-brand-100 text-brand-700' },

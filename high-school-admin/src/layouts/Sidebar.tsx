@@ -23,7 +23,6 @@ import {
   Megaphone,
   BarChart3,
   FileBarChart,
-  X,
 } from "lucide-react";
 
 type Section =
@@ -108,9 +107,9 @@ function sectionForPath(pathname: string): Section | null {
 }
 
 const activeItemClass =
-  "border border-cyan-600/40 bg-cyan-50 font-semibold text-cyan-700";
+  "border-l-6 border-sky-700 glass p-4 font-semibold text-sky-700 hover:text-sky-900 hover:border-sky-900";
 const inactiveItemClass =
-  "border border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-800";
+  "border border-transparent text-slate-600  hover:text-slate-800";
 
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
   const location = useLocation();
@@ -134,9 +133,9 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
   const menuContent = (
     <>
       {/* Logo */}
-      <div className="px-6 py-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-700 text-white">
+      <div className="sticky top-0 z-10 rounded-[28px] glass-sm px-4 py-4 m-4 flex items-center justify-between">
+        <div className="flex items-center gap-3  ">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full glass-sm text-slate-600">
             <GraduationCap size={22} />
           </div>
 
@@ -144,8 +143,8 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
             <h2 className="text-[15px] font-bold leading-tight text-slate-900">
               Varin High School
             </h2>
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
-              School Management System
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-600">
+              School Management 
             </p>
           </div>
         </div>
@@ -176,7 +175,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
             <div key={section.key} className="mb-1 pt-1">
               <button
                 onClick={() => toggle(section.key)}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-slate-500 transition hover:text-slate-700"
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-slate-600 transition hover:text-slate-700"
               >
                 <span className="flex items-center gap-3">
                   <SectionIcon size={18} />
@@ -213,9 +212,9 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
       </nav>
 
       {/* Footer */}
-      <div className="p-4">
-        <div className="rounded-2xl glass-strong p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <div className="p-4 sticky bottom-0">
+        <div className="rounded-[28px] glass-sm p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
             Academic Year
           </p>
           <p className="mt-1 text-lg font-bold text-slate-900">2025 – 2026</p>
@@ -234,30 +233,17 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
 
       {/* Mobile drawer */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-72 transform bg-white text-slate-900 transition-transform duration-200 lg:hidden ${
+        className={`fixed left-0 top-0 z-50 h-full w-72 transform glass-sm text-slate-900 transition-transform duration-200 lg:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-700 text-white">
-              <GraduationCap size={20} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Varin High School</h3>
-              <p className="text-xs text-slate-500">School Management</p>
-            </div>
-          </div>
-          <button onClick={() => onClose && onClose()} aria-label="Close menu" className="p-2">
-            <X size={18} />
-          </button>
-        </div>
+        
 
         <div className="h-full overflow-y-auto">{menuContent}</div>
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden sticky top-0 h-screen w-72 flex-col lg:flex">{menuContent}</aside>
+      <aside className="hidden sticky top-0 h-screen w-74 flex-col lg:flex">{menuContent}</aside>
     </>
   );
 }

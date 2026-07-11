@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Info, Globe, Camera, CheckCircle2, Phone, CalendarDays } from 'lucide-react'
-import PageHeading from '../../components/common/PageHeading'
+import PageHeading from '@/components/common/PageHeading'
 
 export default function SchoolSetup() {
   const [progress] = useState(85)

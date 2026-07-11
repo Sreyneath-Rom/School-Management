@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Download, Plus, AlertTriangle, GripVertical } from 'lucide-react'
-import PageHeading from '../../components/common/PageHeading'
+import PageHeading from '@/components/common/PageHeading'
 
 const tabs = ['Class Schedules', 'Teacher Timetables', 'Exam Schedules']
 const days = [

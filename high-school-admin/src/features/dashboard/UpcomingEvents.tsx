@@ -1,4 +1,4 @@
-import { upcomingEvents } from '../../services/mockData'
+import { upcomingEvents } from '@/services/mockData'
 
 export default function UpcomingEvents() {
   return (

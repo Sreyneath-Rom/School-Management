@@ -1,4 +1,4 @@
-import { recentActivities } from '../../services/mockData'
+import { recentActivities } from '@/services/mockData'
 import { CheckCircle2, ClipboardCheck, Flag, Megaphone, Sparkles } from 'lucide-react'
 
 const iconMap = {

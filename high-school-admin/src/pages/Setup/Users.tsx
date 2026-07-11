@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { UserPlus, Search, SlidersHorizontal, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react'
-import PageHeading from '../../components/common/PageHeading'
+import PageHeading from '@/components/common/PageHeading'
 
 const tabs = ['All Users', 'Teachers', 'Students', 'Mazers', 'Admins']
 
@@ -99,7 +99,7 @@ export default function Users() {
       </div>
 
       <div className="overflow-x-auto rounded-[28px] glass-sm">
-        <table className="min-w-[780px] w-full divide-y divide-stone-100 text-sm">
+        <table className="min-w-195 w-full divide-y divide-stone-100 text-sm">
           <thead className="bg-stone-50">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">User</th>

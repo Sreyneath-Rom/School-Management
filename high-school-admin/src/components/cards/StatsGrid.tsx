@@ -7,8 +7,8 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { statCards } from '../../services/mockData'
-import type { StatCard } from '../../types'
+import { statCards } from '@/services/mockData'
+import type { StatCard } from '@/types'
 
 const iconMap: Record<string, LucideIcon> = {
   GraduationCap,
