@@ -45,17 +45,7 @@ export default function AttendanceChart() {
               tick={{ fill: '#475569', fontSize: 12 }}
               width={44}
             />
-            <Tooltip
-              formatter={(value: any) => [`${value}%`, 'Attendance']}
-              contentStyle={{
-                borderRadius: 16,
-                border: '1px solid rgba(255,255,255,0.4)',
-                background: 'rgba(255,255,255,0.65)',
-                backdropFilter: 'blur(12px)',
-                boxShadow: '0 20px 60px rgba(15, 23, 42, 0.15)',
-                fontSize: 13,
-              }}
-            />
+            <Tooltip content={<CustomTooltip />} />
             <Area
               type="monotone"
               dataKey="value"
@@ -70,6 +60,43 @@ export default function AttendanceChart() {
         </ResponsiveContainer>
       </div>
     </section>
+  )
+}
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: Array<{ value?: number; payload?: { day: string; value: number } }>
+  label?: string
+}) {
+  if (!active || !payload || !payload.length) return null
+
+  const value = payload[0].value
+
+  return (
+    <div
+      style={{
+        borderRadius: 16,
+        border: '1px solid rgba(255,255,255,0.4)',
+        background: 'rgba(255,255,255,0.10)',
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        boxShadow:
+          '0 20px 60px rgba(15, 23, 42, 0.15), 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+        outline: '1px solid rgba(0, 0, 0, 0.05)',
+        padding: '8px 12px',
+        fontSize: 13,
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ background: '#2563eb' }} />
+        <span className="font-semibold text-slate-900">{label}</span>
+      </div>
+      <div className="mt-1 text-slate-600">Attendance: {value}%</div>
+    </div>
   )
 }
 

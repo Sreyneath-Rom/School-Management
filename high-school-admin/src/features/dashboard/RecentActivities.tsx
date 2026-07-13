@@ -1,5 +1,6 @@
 import { recentActivities } from '@/services/mockData'
 import { CheckCircle2, ClipboardCheck, Flag, Megaphone, Sparkles } from 'lucide-react'
+import Button from '@/components/common/Button'
 
 const iconMap = {
   enrolled: CheckCircle2,
@@ -10,11 +11,11 @@ const iconMap = {
 }
 
 const tintMap: Record<keyof typeof iconMap, string> = {
-  enrolled: 'bg-emerald-400/20 backdrop-blur-md text-emerald-700',
-  grade: 'bg-sky-400/20 backdrop-blur-md text-sky-700',
-  homework: 'bg-violet-400/20 backdrop-blur-md text-violet-700',
-  leave: 'bg-amber-400/20 backdrop-blur-md text-amber-700',
-  announcement: 'bg-rose-400/20 backdrop-blur-md text-rose-700',
+  enrolled: 'bg-emerald-700/15 text-emerald-700 ring-1 ring-emerald-700/15',
+  grade: 'bg-sky-700/15 text-sky-700 ring-1 ring-sky-700/15',
+  homework: 'bg-violet-700/15 text-violet-700 ring-1 ring-violet-700/15',
+  leave: 'bg-amber-700/15 text-amber-700 ring-1 ring-amber-700/15',
+  announcement: 'bg-rose-700/15 text-rose-700 ring-1 ring-rose-700/15',
 }
 
 export default function RecentActivities() {
@@ -25,9 +26,9 @@ export default function RecentActivities() {
           <h2 className="text-base font-semibold text-slate-900">Recent Activities</h2>
           <p className="text-sm text-slate-600">Live updates from the admin portal</p>
         </div>
-        <button className="rounded-full glass-sm px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+        <Button variant="solid" className="text-slate-300 hover:bg-slate-700">
           View Logs
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-4">
@@ -37,9 +38,9 @@ export default function RecentActivities() {
           return (
             <div
               key={item.id}
-              className="flex items-start gap-3 rounded-3xl bg-white/25 p-4 transition hover:bg-white/40"
+              className="group flex items-start gap-3 rounded-3xl glass-sm p-4 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-white/50 hover:shadow-[0_16px_35px_-15px_rgba(15,23,42,0.2)]"
             >
-              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${tintMap[key]}`}>
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 ease-out group-hover:scale-105 ${tintMap[key]}`}>
                 <Icon size={18} />
               </div>
               <div className="min-w-0 flex-1">

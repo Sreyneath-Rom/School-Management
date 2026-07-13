@@ -3,11 +3,11 @@ import { leaveRequests } from '@/services/mockData'
 function statusClass(status: string) {
   switch (status) {
     case 'Approved':
-      return 'bg-emerald-100 text-emerald-700'
+      return 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-700/10'
     case 'Rejected':
-      return 'bg-rose-100 text-rose-700'
+      return 'bg-rose-50 text-rose-700 ring-1 ring-rose-700/10'
     default:
-      return 'bg-amber-100 text-amber-700'
+      return 'bg-amber-50 text-amber-700 ring-1 ring-amber-700/10'
   }
 }
 
@@ -23,10 +23,10 @@ export default function RecentLeaveRequests() {
         {leaveRequests.map((request) => (
           <div
             key={request.id}
-            className="flex items-center justify-between rounded-3xl glass-sm p-6 transition hover:bg-slate-100"
+            className="group flex items-center justify-between rounded-3xl glass-sm p-6 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-slate-50/60 hover:shadow-[0_16px_35px_-15px_rgba(15,23,42,0.2)]"
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-400/20 backdrop-blur-md text-sky-700 font-semibold">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-700/15 text-sky-700 ring-1 ring-sky-700/15 font-semibold transition-transform duration-300 ease-out group-hover:scale-105">
                 {request.avatar}
               </div>
               <div>
