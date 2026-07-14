@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface FetchState<T> {
   data: T | null;
@@ -28,9 +28,12 @@ export const useFetch = <T,>(
     }
   }, [fetcher]);
 
-  if (immediate) {
-    execute();
-  }
+  useEffect(() => {
+    if (immediate) {
+      execute();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [immediate]);
 
   return { ...state, refetch: execute };
 };

@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Search, Bell, Calendar, User, Menu, X, LogOut, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import Button from '@/components/common/Button'
 
 export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
@@ -44,7 +45,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
           <button
             aria-label="Open menu"
             onClick={() => onOpenSidebar && onOpenSidebar()}
-            className="inline-flex items-center justify-center h-10 w-10 rounded-md text-slate-600 transition hover:text-slate-900 lg:hidden"
+            className="inline-flex items-center justify-center  h-10 w-12 rounded-full glass-sm text-slate-600 transition hover:text-slate-900 lg:hidden"
           >
             <Menu size={18} />
           </button>
@@ -53,7 +54,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
             type="button"
             aria-label="Open search"
             onClick={() => setMobileSearchOpen((open) => !open)}
-            className="inline-flex items-center justify-center h-10 w-10 rounded-md text-slate-600 transition hover:text-slate-900 sm:hidden"
+            className="inline-flex items-center justify-center h-10 w-12 rounded-full glass-sm text-slate-600 transition hover:text-slate-900 sm:hidden"
           >
             <Search size={18} />
           </button>
@@ -72,7 +73,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
         <div className="flex shrink-0 items-center gap-3">
           <button
             aria-label="Notifications, unread"
-            className="relative inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-600 transition hover:text-slate-900"
+            className="relative glass-sm inline-flex  h-10 w-12 items-center justify-center rounded-full text-slate-600 transition hover:text-slate-900"
           >
             <Bell size={19} />
             <span className="absolute right-2 top-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-600" />
@@ -93,7 +94,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
               onClick={() => setMenuOpen((open) => !open)}
               className="inline-flex items-center gap-3 rounded-full px-2 py-2 transition hover:border-slate-300"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full glass-sm text-slate-600">
+              <div className="flex  h-10 w-10 items-center justify-center rounded-full glass-sm text-slate-600">
                 <User size={18} />
               </div>
 
@@ -135,21 +136,16 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
       {mobileSearchOpen ? (
         <div className="mt-3 sm:hidden">
           <div className="flex items-center gap-2 rounded-4xl glass-sm px-3 py-2 shadow-sm">
-            <Search size={17} className="text-slate-600 shrink-0" />
+            <Search size={17} className=" text-slate-600 shrink-0" />
             <input
               type="text"
               aria-label="Search students, staff, or records"
               placeholder="Search students, staff, or records..."
               className="w-full border-0 bg-transparent px-2 text-sm text-slate-900 placeholder:text-slate-600 focus:outline-none"
             />
-            <button
-              type="button"
-              aria-label="Close search"
-              onClick={() => setMobileSearchOpen(false)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:text-slate-900"
-            >
-              <X size={18} />
-            </button>
+            <Button onClick={() => setMobileSearchOpen(false)} className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900">
+              <X size={16} />
+            </Button>
           </div>
         </div>
       ) : null}

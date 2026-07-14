@@ -68,7 +68,7 @@ function StatCardView({ card }: { card: StatCard }) {
 
 export default function StatsGrid() {
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 md:grid-cols-6">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
       {statCards.map((card) => (
         <StatCardView card={card} key={card.id} />
       ))}
