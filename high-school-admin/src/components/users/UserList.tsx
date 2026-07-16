@@ -22,6 +22,7 @@ import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useNotification } from '@/hooks/useNotification'
 import Button from '@/components/common/Button'
+import UserDetail from '@/components/users/UserDetail'
 import { mockUserDirectory } from '@/data/mockUserDirectory'
 import {
   type SystemUser,
@@ -72,25 +73,38 @@ export default function UserList() {
   // ---- Selection (bulk actions) --------------------------------------------
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
+  // ---- Detail drawer --------------------------------------------------------
+  const [viewingUser, setViewingUser] = useState<SystemUser | null>(null)
+
   const { success, info, notifications, removeNotification } = useNotification()
 
   // ---- Derived filter option lists ------------------------------------------
-  const grades = useMemo(
-    () => uniqueSorted(users.map(getDisplayGrade).filter(isString)),
-    [users]
-  )
-  const classes = useMemo(
-    () => uniqueSorted(users.map(getDisplayClass).filter(isString)),
-    [users]
-  )
-  const departments = useMemo(
-    () => uniqueSorted(users.map(getDisplayDepartment).filter(isString)),
-    [users]
-  )
+  const grades = useMemo(() => uniqueSorted(users.map(getDisplayGrade).filter(isString)), [users])
+  const classes = useMemo(() => uniqueSorted(users.map(getDisplayClass).filter(isString)), [users])
+  const departments = useMemo(() => uniqueSorted(users.map(getDisplayDepartment).filter(isString)), [users])
   const academicYears = useMemo(
     () => uniqueSorted(users.map(getDisplayAcademicYear).filter(isString)),
     [users]
   )
+
+  const hasActiveFilters =
+    searchInput.trim() !== '' ||
+    roleFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    gradeFilter !== 'all' ||
+    classFilter !== 'all' ||
+    departmentFilter !== 'all' ||
+    academicYearFilter !== 'all'
+
+  const clearFilters = () => {
+    setSearchInput('')
+    setRoleFilter('all')
+    setStatusFilter('all')
+    setGradeFilter('all')
+    setClassFilter('all')
+    setDepartmentFilter('all')
+    setAcademicYearFilter('all')
+  }
 
   // ---- Filter + search + sort pipeline --------------------------------------
   const processedUsers = useMemo(() => {
@@ -224,6 +238,13 @@ export default function UserList() {
     success(`Password reset for ${selectedIds.size} user(s)`)
     clearSelection()
   }
+  const handleView = (user: SystemUser) => {
+    setViewingUser(user)
+  }
+  const handleEdit = (user: SystemUser) => {
+    // TODO: open an edit form/modal once one exists
+    info(`Edit form for ${getFullName(user)} isn't built yet`)
+  }
   const handleResetPassword = (user: SystemUser) => {
     success(`Password reset for ${getFullName(user)}`)
   }
@@ -231,8 +252,7 @@ export default function UserList() {
     info(`${getFullName(user)} deleted`)
   }
 
-  const pageAllSelected =
-    currentItems.length > 0 && currentItems.every((u) => selectedIds.has(u.id))
+  const pageAllSelected = currentItems.length > 0 && currentItems.every((u) => selectedIds.has(u.id))
 
   return (
     <div className="w-full">
@@ -251,7 +271,11 @@ export default function UserList() {
               }`}
             >
               <span>{n.message}</span>
-              <button onClick={() => removeNotification(n.id)} className="opacity-80 hover:opacity-100">
+              <button
+                onClick={() => removeNotification(n.id)}
+                aria-label="Dismiss notification"
+                className="opacity-80 hover:opacity-100"
+              >
                 <X size={14} />
               </button>
             </div>
@@ -286,6 +310,7 @@ export default function UserList() {
           <select
             value={searchField}
             onChange={(e) => setSearchField(e.target.value as SearchField)}
+            aria-label="Search field"
             className="rounded-full bg-white/70 border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
           >
             {Object.entries(SEARCH_FIELD_LABELS).map(([value, label]) => (
@@ -301,17 +326,50 @@ export default function UserList() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search users..."
+              aria-label="Search users"
               className="w-full pl-9 pr-3 py-2 rounded-full bg-white/70 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
         </div>
 
-        <FilterSelect label="Role" value={roleFilter} onChange={setRoleFilter} options={Object.entries(ROLE_LABELS).map(([v, l]) => ({ value: v, label: l }))} />
-        <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+        <FilterSelect
+          label="Role"
+          value={roleFilter}
+          onChange={setRoleFilter}
+          options={Object.entries(ROLE_LABELS).map(([v, l]) => ({ value: v as UserRole, label: l }))}
+        />
+        <FilterSelect
+          label="Status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: 'active' as UserStatus, label: 'Active' },
+            { value: 'inactive' as UserStatus, label: 'Inactive' },
+          ]}
+        />
         <FilterSelect label="Grade" value={gradeFilter} onChange={setGradeFilter} options={grades.map((g) => ({ value: g, label: g }))} />
         <FilterSelect label="Class" value={classFilter} onChange={setClassFilter} options={classes.map((c) => ({ value: c, label: c }))} />
-        <FilterSelect label="Department" value={departmentFilter} onChange={setDepartmentFilter} options={departments.map((d) => ({ value: d, label: d }))} />
-        <FilterSelect label="Academic Year" value={academicYearFilter} onChange={setAcademicYearFilter} options={academicYears.map((y) => ({ value: y, label: y }))} />
+        <FilterSelect
+          label="Department"
+          value={departmentFilter}
+          onChange={setDepartmentFilter}
+          options={departments.map((d) => ({ value: d, label: d }))}
+        />
+        <FilterSelect
+          label="Academic Year"
+          value={academicYearFilter}
+          onChange={setAcademicYearFilter}
+          options={academicYears.map((y) => ({ value: y, label: y }))}
+        />
+
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="text-sm font-semibold text-slate-500 hover:text-slate-700 underline underline-offset-2 transition"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {/* Bulk action bar */}
@@ -349,6 +407,7 @@ export default function UserList() {
                     type="checkbox"
                     checked={pageAllSelected}
                     onChange={toggleSelectAllOnPage}
+                    aria-label="Select all users on this page"
                     className="w-4 h-4 accent-teal-500 rounded"
                   />
                 </th>
@@ -372,6 +431,8 @@ export default function UserList() {
                   user={user}
                   selected={selectedIds.has(user.id)}
                   onToggleSelect={() => toggleSelect(user.id)}
+                  onView={() => handleView(user)}
+                  onEdit={() => handleEdit(user)}
                   onResetPassword={() => handleResetPassword(user)}
                   onDelete={() => handleDelete(user)}
                 />
@@ -398,6 +459,7 @@ export default function UserList() {
               <button
                 onClick={prevPage}
                 disabled={currentPage === 1}
+                aria-label="Previous page"
                 className="p-1.5 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <ChevronLeft size={16} />
@@ -406,10 +468,9 @@ export default function UserList() {
                 <button
                   key={page}
                   onClick={() => goToPage(page)}
+                  aria-current={page === currentPage ? 'page' : undefined}
                   className={`w-7 h-7 rounded-full text-xs font-medium transition ${
-                    page === currentPage
-                      ? 'bg-teal-600 text-white'
-                      : 'text-slate-600 hover:bg-slate-100'
+                    page === currentPage ? 'bg-teal-600 text-white' : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   {page}
@@ -418,6 +479,7 @@ export default function UserList() {
               <button
                 onClick={nextPage}
                 disabled={currentPage === totalPages}
+                aria-label="Next page"
                 className="p-1.5 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <ChevronRight size={16} />
@@ -426,6 +488,15 @@ export default function UserList() {
           </div>
         )}
       </div>
+
+      <UserDetail
+        user={viewingUser}
+        onClose={() => setViewingUser(null)}
+        onEdit={(user) => {
+          setViewingUser(null)
+          handleEdit(user)
+        }}
+      />
     </div>
   )
 }
@@ -462,21 +533,22 @@ function SortableHeader({
   )
 }
 
-function FilterSelect({
+function FilterSelect<T extends string>({
   label,
   value,
   onChange,
   options,
 }: {
   label: string
-  value: string
-  onChange: (value: any) => void
-  options: { value: string; label: string }[]
+  value: T | 'all'
+  onChange: (value: T | 'all') => void
+  options: { value: T; label: string }[]
 }) {
   return (
     <select
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value as T | 'all')}
+      aria-label={label}
       className="rounded-full bg-white/70 border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
     >
       <option value="all">{label}: All</option>
@@ -493,22 +565,33 @@ function UserRow({
   user,
   selected,
   onToggleSelect,
+  onView,
+  onEdit,
   onResetPassword,
   onDelete,
 }: {
   user: SystemUser
   selected: boolean
   onToggleSelect: () => void
+  onView: () => void
+  onEdit: () => void
   onResetPassword: () => void
   onDelete: () => void
 }) {
   const roleColor = ROLE_COLORS[user.role]
   const displayClass = getDisplayClass(user)
+  const fullName = getFullName(user)
 
   return (
     <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition">
       <td className="px-4 py-3">
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} className="w-4 h-4 accent-teal-500 rounded" />
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={`Select ${fullName}`}
+          className="w-4 h-4 accent-teal-500 rounded"
+        />
       </td>
       <td className="px-2 py-3">
         {user.profilePhoto ? (
@@ -521,7 +604,7 @@ function UserRow({
         )}
       </td>
       <td className="px-2 py-3 font-mono text-xs text-slate-500">{user.id}</td>
-      <td className="px-4 py-3 font-medium text-slate-800">{getFullName(user)}</td>
+      <td className="px-4 py-3 font-medium text-slate-800">{fullName}</td>
       <td className="px-4 py-3 text-slate-600">{user.username}</td>
       <td className="px-4 py-3 text-slate-600">{user.email}</td>
       <td className="px-4 py-3 text-slate-600">{user.phone}</td>
@@ -545,10 +628,10 @@ function UserRow({
       <td className="px-4 py-3 text-slate-500 text-xs">{user.createdDate}</td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1">
-          <IconButton title="View profile">
+          <IconButton title="View profile" onClick={onView}>
             <Eye size={16} />
           </IconButton>
-          <IconButton title="Edit user">
+          <IconButton title="Edit user" onClick={onEdit}>
             <Pencil size={16} />
           </IconButton>
           <IconButton title="Reset password" onClick={onResetPassword}>
@@ -578,6 +661,7 @@ function IconButton({
     <button
       type="button"
       title={title}
+      aria-label={title}
       onClick={onClick}
       className={`p-1.5 rounded-full transition ${
         danger ? 'text-slate-400 hover:bg-red-50 hover:text-red-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'

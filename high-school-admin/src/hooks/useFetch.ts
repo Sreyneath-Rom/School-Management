@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 interface FetchState<T> {
   data: T | null;
@@ -16,15 +16,29 @@ export const useFetch = <T,>(
     error: null,
   });
 
+  // Avoids "Can't perform a state update on an unmounted component"
+  // warnings when a request resolves after the consumer has navigated away.
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const execute = useCallback(async () => {
     setState({ data: null, loading: true, error: null });
     try {
       const result = await fetcher();
-      setState({ data: result, loading: false, error: null });
+      if (isMountedRef.current) {
+        setState({ data: result, loading: false, error: null });
+      }
       return result;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      setState({ data: null, loading: false, error });
+      if (isMountedRef.current) {
+        setState({ data: null, loading: false, error });
+      }
     }
   }, [fetcher]);
 
