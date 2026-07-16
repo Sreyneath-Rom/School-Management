@@ -6,13 +6,18 @@ import UpcomingEvents from '@/features/dashboard/UpcomingEvents'
 import RecentActivities from '@/features/dashboard/RecentActivities'
 import RecentLeaveRequests from '@/features/dashboard/RecentLeaveRequests'
 import Announcements from '@/features/dashboard/Announcements'
+import { useAuth } from '@/hooks/useAuth'
+import { getGreetingForUser } from '@/data/mockUsers'
 
 export default function Dashboard() {
+  const { user } = useAuth()
+  const displayName = user ? getGreetingForUser(user) : null
+
   return (
     <>
       <PageHeading
         title="Dashboard Overview"
-        subtitle="Welcome back, Principal Sarah. Here's what's happening today."
+        subtitle={`Welcome Back${displayName ? `, ${displayName}` : ''}. Here's what's happening today.`}
       />
 
       <div className="mt-6 space-y-6">

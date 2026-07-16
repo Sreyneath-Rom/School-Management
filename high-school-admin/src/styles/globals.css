@@ -2,8 +2,8 @@
 
 :root {
   --app-bg: linear-gradient(135deg,
-      rgba(5, 136, 151, 1) 0%,
-      rgba(255, 159, 0,1) 100%);
+      rgba(5, 136, 151, 0.2) 0%,
+      rgba(255, 159, 0, 0.2) 100%);
 }
 
 /* Glass UI utilities */
@@ -14,6 +14,24 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   ;
+}
+
+.glass-teal {
+  background: rgba(5, 136, 151, 0.5);
+  border: none;
+  outline: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.glass-org {
+  background: rgba(255, 159, 0, 0.5);
+  border: none;
+  outline: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 .glass-sm {

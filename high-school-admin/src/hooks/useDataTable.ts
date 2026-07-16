@@ -6,28 +6,34 @@ export const useDataTable = <T extends Record<string, any>>(data: T[]) => {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(Object.keys(data[0] || {}))
+
+  // Track hidden columns rather than a fixed "visible" set computed once
+  // from data[0]. If `data` starts empty (e.g. loading from useFetch) and
+  // populates later, columns now stay in sync instead of locking to {}.
+  const columns = useMemo(() => Object.keys(data[0] ?? {}), [data]);
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+  const visibleColumns = useMemo(
+    () => new Set(columns.filter((c) => !hiddenColumns.has(c))),
+    [columns, hiddenColumns]
   );
 
   const handleSort = useCallback((field: string) => {
-    setSortField((prev) => {
-      if (prev === field) {
-        setSortOrder((prevOrder) => {
-          if (prevOrder === 'asc') return 'desc';
-          if (prevOrder === 'desc') return null;
-          return 'asc';
-        });
-      } else {
-        setSortField(field);
+    setSortField((prevField) => {
+      if (prevField !== field) {
         setSortOrder('asc');
+        return field;
       }
-      return prev === field ? prev : field;
+      setSortOrder((prevOrder) => {
+        if (prevOrder === 'asc') return 'desc';
+        if (prevOrder === 'desc') return null;
+        return 'asc';
+      });
+      return prevField;
     });
   }, []);
 
   const toggleColumn = useCallback((column: string) => {
-    setVisibleColumns((prev) => {
+    setHiddenColumns((prev) => {
       const next = new Set(prev);
       if (next.has(column)) {
         next.delete(column);
@@ -43,11 +49,10 @@ export const useDataTable = <T extends Record<string, any>>(data: T[]) => {
 
     // Filter
     if (searchQuery) {
+      const q = searchQuery.toLowerCase();
       result = result.filter((item) =>
         Object.values(item).some(
-          (val) =>
-            val &&
-            val.toString().toLowerCase().includes(searchQuery.toLowerCase())
+          (val) => val !== null && val !== undefined && val.toString().toLowerCase().includes(q)
         )
       );
     }
