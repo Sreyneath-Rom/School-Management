@@ -1,6 +1,6 @@
 // Suggested path: @/components/users/UserList.tsx
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   Search,
   ChevronUp,
@@ -17,6 +17,7 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
 } from 'lucide-react'
 import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -266,8 +267,8 @@ export default function UserList() {
                 n.type === 'success'
                   ? 'bg-emerald-600 text-white'
                   : n.type === 'error'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-slate-800 text-white'
+                  ? 'bg-rose-600 text-white'
+                  : 'bg-stone-800 text-white'
               }`}
             >
               <span>{n.message}</span>
@@ -286,19 +287,19 @@ export default function UserList() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Users</h1>
-          <p className="text-sm text-slate-600 mt-0.5">
+          <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">Users</h1>
+          <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5">
             {totalItems} user{totalItems === 1 ? '' : 's'} across all roles
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition">
+          <button className="flex items-center gap-1.5 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 transition">
             <Upload size={16} /> Import
           </button>
-          <button className="flex items-center gap-1.5 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition">
+          <button className="flex items-center gap-1.5 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 transition">
             <Download size={16} /> Export
           </button>
-          <button className="flex items-center gap-1.5 rounded-full bg-teal-600 hover:bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition">
+          <button className="flex items-center gap-1.5 rounded-full bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition">
             <UserPlus size={16} /> Add User
           </button>
         </div>
@@ -311,7 +312,7 @@ export default function UserList() {
             value={searchField}
             onChange={(e) => setSearchField(e.target.value as SearchField)}
             aria-label="Search field"
-            className="rounded-full bg-white/70 border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="rounded-full bg-white/70 border border-stone-200 px-3 py-2 text-sm text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             {Object.entries(SEARCH_FIELD_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -320,14 +321,14 @@ export default function UserList() {
             ))}
           </select>
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-2.5 text-slate-400" />
+            <Search size={16} className="absolute left-3 top-2.5 text-stone-400 dark:text-stone-500" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search users..."
               aria-label="Search users"
-              className="w-full pl-9 pr-3 py-2 rounded-full bg-white/70 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full pl-9 pr-3 py-2 rounded-full bg-white/70 border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -365,7 +366,7 @@ export default function UserList() {
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="text-sm font-semibold text-slate-500 hover:text-slate-700 underline underline-offset-2 transition"
+            className="text-sm font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 underline underline-offset-2 transition"
           >
             Clear filters
           </button>
@@ -375,21 +376,21 @@ export default function UserList() {
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
         <div className="glass-strong rounded-2xl px-4 py-3 mb-4 flex flex-wrap items-center justify-between gap-3">
-          <span className="text-sm font-medium text-slate-800">{selectedIds.size} selected</span>
+          <span className="text-sm font-medium text-stone-800 dark:text-stone-200">{selectedIds.size} selected</span>
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={handleBulkActivate} className="rounded-full glass-sm px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+            <Button onClick={handleBulkActivate} className="rounded-full glass-sm px-3 py-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100">
               Activate
             </Button>
-            <Button onClick={handleBulkDeactivate} className="rounded-full glass-sm px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+            <Button onClick={handleBulkDeactivate} className="rounded-full glass-sm px-3 py-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100">
               Deactivate
             </Button>
-            <Button onClick={handleBulkResetPassword} className="rounded-full glass-sm px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+            <Button onClick={handleBulkResetPassword} className="rounded-full glass-sm px-3 py-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100">
               Reset Password
             </Button>
-            <Button onClick={handleBulkDelete} className="rounded-full bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-semibold text-white">
+            <Button onClick={handleBulkDelete} className="rounded-full bg-rose-600 hover:bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white">
               Delete
             </Button>
-            <Button onClick={clearSelection} className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700">
+            <Button onClick={clearSelection} className="rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200">
               Clear
             </Button>
           </div>
@@ -401,26 +402,24 @@ export default function UserList() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200/70 text-left text-slate-500">
+              <tr className="border-b border-stone-200/70 text-left text-stone-500 dark:text-stone-400">
                 <th className="px-4 py-3 w-10">
                   <input
                     type="checkbox"
                     checked={pageAllSelected}
                     onChange={toggleSelectAllOnPage}
                     aria-label="Select all users on this page"
-                    className="w-4 h-4 accent-teal-500 rounded"
+                    className="w-4 h-4 accent-brand-600 rounded"
                   />
                 </th>
                 <th className="px-2 py-3 w-12"></th>
                 <th className="px-2 py-3 font-medium">User ID</th>
                 <SortableHeader label="Full Name" field="name" sortField={sortField} sortOrder={sortOrder} onSort={toggleSort} />
-                <th className="px-4 py-3 font-medium">Username</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Phone</th>
                 <SortableHeader label="Role" field="role" sortField={sortField} sortOrder={sortOrder} onSort={toggleSort} />
                 <th className="px-4 py-3 font-medium">Class</th>
                 <SortableHeader label="Status" field="status" sortField={sortField} sortOrder={sortOrder} onSort={toggleSort} />
-                <SortableHeader label="Created" field="createdDate" sortField={sortField} sortOrder={sortOrder} onSort={toggleSort} />
                 <th className="px-4 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
@@ -439,8 +438,8 @@ export default function UserList() {
               ))}
               {currentItems.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-4 py-16 text-center text-slate-500">
-                    <p className="font-medium text-slate-700">No users match these filters</p>
+                  <td colSpan={10} className="px-4 py-16 text-center text-stone-500 dark:text-stone-400">
+                    <p className="font-medium text-stone-700 dark:text-stone-300">No users match these filters</p>
                     <p className="text-sm mt-1">Try a different search term or clear a filter to see more.</p>
                   </td>
                 </tr>
@@ -451,8 +450,8 @@ export default function UserList() {
 
         {/* Pagination */}
         {totalItems > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-slate-200/70">
-            <p className="text-xs text-slate-500">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-stone-200/70">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               Showing {startIndex}–{endIndex} of {totalItems}
             </p>
             <div className="flex items-center gap-1">
@@ -460,7 +459,7 @@ export default function UserList() {
                 onClick={prevPage}
                 disabled={currentPage === 1}
                 aria-label="Previous page"
-                className="p-1.5 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                className="p-1.5 rounded-full hover:bg-stone-100 disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -470,7 +469,7 @@ export default function UserList() {
                   onClick={() => goToPage(page)}
                   aria-current={page === currentPage ? 'page' : undefined}
                   className={`w-7 h-7 rounded-full text-xs font-medium transition ${
-                    page === currentPage ? 'bg-teal-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                    page === currentPage ? 'bg-brand-700 text-white' : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100'
                   }`}
                 >
                   {page}
@@ -480,7 +479,7 @@ export default function UserList() {
                 onClick={nextPage}
                 disabled={currentPage === totalPages}
                 aria-label="Next page"
-                className="p-1.5 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                className="p-1.5 rounded-full hover:bg-stone-100 disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <ChevronRight size={16} />
               </button>
@@ -521,7 +520,7 @@ function SortableHeader({
   const active = sortField === field
   return (
     <th className="px-4 py-3 font-medium">
-      <button onClick={() => onSort(field)} className="flex items-center gap-1 hover:text-slate-800 transition">
+      <button onClick={() => onSort(field)} className="flex items-center gap-1 hover:text-stone-800 dark:hover:text-stone-200 transition">
         {label}
         {active ? (
           sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
@@ -549,7 +548,7 @@ function FilterSelect<T extends string>({
       value={value}
       onChange={(e) => onChange(e.target.value as T | 'all')}
       aria-label={label}
-      className="rounded-full bg-white/70 border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+      className="rounded-full bg-white/70 border border-stone-200 px-3 py-2 text-sm text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-brand-500"
     >
       <option value="all">{label}: All</option>
       {options.map((opt) => (
@@ -583,14 +582,14 @@ function UserRow({
   const fullName = getFullName(user)
 
   return (
-    <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition">
+    <tr className="border-b border-stone-100 last:border-0 hover:bg-stone-50/60 transition">
       <td className="px-4 py-3">
         <input
           type="checkbox"
           checked={selected}
           onChange={onToggleSelect}
           aria-label={`Select ${fullName}`}
-          className="w-4 h-4 accent-teal-500 rounded"
+          className="w-4 h-4 accent-brand-600 rounded"
         />
       </td>
       <td className="px-2 py-3">
@@ -603,72 +602,123 @@ function UserRow({
           </div>
         )}
       </td>
-      <td className="px-2 py-3 font-mono text-xs text-slate-500">{user.id}</td>
-      <td className="px-4 py-3 font-medium text-slate-800">{fullName}</td>
-      <td className="px-4 py-3 text-slate-600">{user.username}</td>
-      <td className="px-4 py-3 text-slate-600">{user.email}</td>
-      <td className="px-4 py-3 text-slate-600">{user.phone}</td>
+      <td className="px-2 py-3 font-mono text-xs text-stone-500 dark:text-stone-400">{user.id}</td>
+      <td className="px-4 py-3 font-medium text-stone-800 dark:text-stone-200">{fullName}</td>
+      <td className="px-4 py-3 text-stone-600 dark:text-stone-400">{user.email}</td>
+      <td className="px-4 py-3 text-stone-600 dark:text-stone-400">{user.phone}</td>
       <td className="px-4 py-3">
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${roleColor.bg} ${roleColor.text} ${roleColor.ring}`}>
           {ROLE_LABELS[user.role]}
         </span>
       </td>
-      <td className="px-4 py-3 text-slate-600">{displayClass ?? '—'}</td>
+      <td className="px-4 py-3 text-stone-600 dark:text-stone-400">{displayClass ?? '—'}</td>
       <td className="px-4 py-3">
         {user.status === 'active' ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-1 text-xs font-medium">
             <Check size={12} /> Active
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 text-slate-600 px-2.5 py-1 text-xs font-medium">
+          <span className="inline-flex items-center gap-1 rounded-full bg-stone-200 text-stone-600 px-2.5 py-1 text-xs font-medium">
             <X size={12} /> Inactive
           </span>
         )}
       </td>
-      <td className="px-4 py-3 text-slate-500 text-xs">{user.createdDate}</td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1">
-          <IconButton title="View profile" onClick={onView}>
-            <Eye size={16} />
-          </IconButton>
-          <IconButton title="Edit user" onClick={onEdit}>
-            <Pencil size={16} />
-          </IconButton>
-          <IconButton title="Reset password" onClick={onResetPassword}>
-            <KeyRound size={16} />
-          </IconButton>
-          <IconButton title="Delete user" onClick={onDelete} danger>
-            <Trash2 size={16} />
-          </IconButton>
-        </div>
+      <td className="px-4 py-3 text-right">
+        <ActionsMenu
+          onView={onView}
+          onEdit={onEdit}
+          onResetPassword={onResetPassword}
+          onDelete={onDelete}
+        />
       </td>
     </tr>
   )
 }
 
-function IconButton({
-  children,
-  title,
-  onClick,
-  danger = false,
+function ActionsMenu({
+  onView,
+  onEdit,
+  onResetPassword,
+  onDelete,
 }: {
-  children: ReactNode
-  title: string
-  onClick?: () => void
-  danger?: boolean
+  onView: () => void
+  onEdit: () => void
+  onResetPassword: () => void
+  onDelete: () => void
 }) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [open])
+
+  const runAndClose = (fn: () => void) => {
+    setOpen(false)
+    fn()
+  }
+
+  const items: {
+    label: string
+    icon: ReactNode
+    onClick: () => void
+    danger?: boolean
+  }[] = [
+    { label: 'View profile', icon: <Eye size={15} />, onClick: onView },
+    { label: 'Edit user', icon: <Pencil size={15} />, onClick: onEdit },
+    { label: 'Reset password', icon: <KeyRound size={15} />, onClick: onResetPassword },
+    { label: 'Delete user', icon: <Trash2 size={15} />, onClick: onDelete, danger: true },
+  ]
+
   return (
-    <button
-      type="button"
-      title={title}
-      aria-label={title}
-      onClick={onClick}
-      className={`p-1.5 rounded-full transition ${
-        danger ? 'text-slate-400 hover:bg-red-50 hover:text-red-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
-      }`}
-    >
-      {children}
-    </button>
+    <div className="relative inline-block text-left" ref={containerRef}>
+      <button
+        type="button"
+        title="Actions"
+        aria-label="Actions"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+        className="p-1.5 rounded-full text-stone-400 dark:text-stone-500 hover:bg-stone-100 hover:text-stone-700 dark:hover:text-stone-200 transition"
+      >
+        <MoreVertical size={16} />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-10 mt-1 w-44 origin-top-right rounded-2xl glass-strong shadow-lg py-1"
+        >
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              role="menuitem"
+              onClick={() => runAndClose(item.onClick)}
+              className={`flex w-full items-center gap-2 px-3.5 py-2 text-sm transition ${
+                item.danger ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-50' : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100'
+              }`}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 

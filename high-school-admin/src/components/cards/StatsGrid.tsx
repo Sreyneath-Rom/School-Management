@@ -23,7 +23,7 @@ const iconMap: Record<string, LucideIcon> = {
 }
 
 const tintClasses: Record<StatCard['tint'], string> = {
-  blue: 'bg-sky-700/15 text-sky-700 ring-1 ring-sky-700/15',
+  blue: 'bg-brand-700/15 text-brand-700 ring-1 ring-brand-700/15',
   green: 'bg-emerald-700/15 text-emerald-700 ring-1 ring-emerald-700/15',
   amber: 'bg-amber-700/15 text-amber-700 ring-1 ring-amber-700/15',
   violet: 'bg-violet-700/15 text-violet-700 ring-1 ring-violet-700/15',
@@ -60,8 +60,8 @@ function StatCardView({ card }: { card: StatCard }) {
           {card.delta}
         </div>
       </div>
-      <div className="mt-6 text-sm font-medium text-slate-600">{card.label}</div>
-      <div className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{card.value}</div>
+      <div className="mt-6 text-sm font-medium text-stone-600 dark:text-stone-400">{card.label}</div>
+      <div className="mt-2 text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">{card.value}</div>
     </div>
   )
 }

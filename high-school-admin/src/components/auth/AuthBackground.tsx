@@ -30,14 +30,13 @@ export default function AuthBackground({ variant }: { variant: AuthBackgroundVar
   return (
     <>
       {/* Background Circles */}
-      {/* Background Circles */}
       <div className="absolute -left-40 bottom-55 w-162 h-162 rounded-full glass-teal"></div>
 
       <div className="absolute -right-40 -bottom-40 w-155 h-155 rounded-full glass-org"></div>
 
       <div className="absolute right-80 top-55 w-65 h-65 rounded-full glass-teal"></div>
 
-      <div className="absolute left-82 top-55 w-65 h-65 rounded-full  glass-org"></div>
+      <div className="absolute left-82 top-55 w-65 h-65 rounded-full glass-org"></div>
 
       {/* Gradient blobs */}
       <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-[rgba(255,159,0,0.5)] rounded-full blur-3xl" />

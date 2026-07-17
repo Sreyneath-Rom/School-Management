@@ -1,65 +1,97 @@
 @import "tailwindcss";
 
+/* Enables `dark:` utilities driven by a .dark class (toggled by ThemeProvider)
+   instead of only following the OS color-scheme preference. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-50: #ecfcfd;
+  --color-brand-100: #d5f8fc;
+  --color-brand-200: #aaf0f8;
+  --color-brand-300: #71e7f4;
+  --color-brand-400: #39ddef;
+  --color-brand-500: #12c5d9;
+  --color-brand-600: #0fa3b3;
+  --color-brand-700: #0c8592;
+  --color-brand-800: #096771;
+  --color-brand-900: #074d55;
+  --color-brand-950: #042f34;
+}
+
 :root {
   --app-bg: linear-gradient(135deg,
-      rgba(5, 136, 151, 0.2) 0%,
-      rgba(255, 159, 0, 0.2) 100%);
+      rgba(5, 136, 151, 1) 0%,
+      rgba(255, 159, 0, 1) 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.50);
+  --glass-outline: rgba(0, 0, 0, 0.05);
+  --glass-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  --glass-strong-bg: rgba(255, 255, 255, 0.12);
+  --glass-strong-border: rgba(255, 255, 255, 0.14);
+  --glass-strong-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.dark {
+  --app-bg: linear-gradient(135deg,
+      rgba(3, 51, 57, 1) 0%,
+      rgba(46, 27, 0, 1) 100%);
+
+  --glass-bg: rgba(28, 25, 23, 0.55);
+  --glass-outline: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.35);
+
+  --glass-strong-bg: rgba(28, 25, 23, 0.35);
+  --glass-strong-border: rgba(255, 255, 255, 0.1);
+  --glass-strong-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 /* Glass UI utilities */
 .glass {
-  background: rgba(255, 255, 255, 0.50);
-  outline: 1px solid rgba(0, 0, 0, 0.05);
+  background: var(--glass-bg);
+  outline: 1px solid var(--glass-outline);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  ;
+  box-shadow: var(--glass-shadow);
 }
 
 .glass-teal {
   background: rgba(5, 136, 151, 0.5);
   border: none;
-  outline: 1px solid rgba(0, 0, 0, 0.05);
+  outline: 1px solid var(--glass-outline);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--glass-shadow);
 }
 
 .glass-org {
   background: rgba(255, 159, 0, 0.5);
   border: none;
-  outline: 1px solid rgba(0, 0, 0, 0.05);
+  outline: 1px solid var(--glass-outline);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--glass-shadow);
 }
 
 .glass-sm {
-  background: rgba(255, 255, 255, 0.50);
+  background: var(--glass-bg);
   border: none;
-  outline: 1px solid rgba(0, 0, 0, 0.05);
+  outline: 1px solid var(--glass-outline);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--glass-shadow);
 }
 
-@media (prefers-color-scheme: dark) {
-  .glass-sm {
-    background: rgb(30, 41, 59);
-    box-shadow: none;
-    outline: 1px solid rgba(255, 255, 255, 0.1);
-    outline-offset: -1px;
-  }
-}
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--glass-strong-bg);
+  border: 1px solid var(--glass-strong-border);
   backdrop-filter: blur(14px) saturate(130%);
   -webkit-backdrop-filter: blur(14px) saturate(130%);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--glass-strong-shadow);
 }
 
 body {
   background: var(--app-bg);
+  color-scheme: light dark;
 }

@@ -107,9 +107,9 @@ function sectionForPath(pathname: string): Section | null {
 }
 
 const activeItemClass =
-  "border-l-6 border-sky-700 glass p-4 font-semibold text-sky-700 hover:text-sky-900 hover:border-sky-900";
+  "border-l-6 border-brand-700 glass p-4 font-semibold text-brand-700 hover:text-brand-800 hover:border-brand-800 dark:text-brand-300 dark:hover:text-brand-200";
 const inactiveItemClass =
-  "border border-transparent text-slate-600  hover:text-slate-800";
+  "border border-transparent text-stone-600 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200";
 
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
   const location = useLocation();
@@ -134,17 +134,17 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
     <>
       {/* Logo */}
       <div className="sticky top-0 z-10 rounded-[28px] glass-sm px-4 py-4 m-4 flex items-center justify-between">
-        <div className="flex items-center gap-3  ">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full glass-sm text-slate-600">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full glass-sm text-stone-600 dark:text-stone-300">
             <GraduationCap size={22} />
           </div>
 
           <div>
-            <h2 className="text-[15px] font-bold leading-tight text-slate-900">
+            <h2 className="text-[15px] font-bold leading-tight text-stone-900 dark:text-stone-100">
               Varin High School
             </h2>
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-600">
-              School Management 
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-stone-600 dark:text-stone-400">
+              School Management
             </p>
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
             <div key={section.key} className="mb-1 pt-1">
               <button
                 onClick={() => toggle(section.key)}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-slate-600 transition hover:text-slate-700"
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-stone-600 transition hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
               >
                 <span className="flex items-center gap-3">
                   <SectionIcon size={18} />
@@ -214,10 +214,10 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
       {/* Footer */}
       <div className="p-4 sticky bottom-0">
         <div className="rounded-[28px] glass-sm p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-600 dark:text-stone-400">
             Academic Year
           </p>
-          <p className="mt-1 text-lg font-bold text-slate-900">2025 – 2026</p>
+          <p className="mt-1 text-lg font-bold text-stone-900 dark:text-stone-100">2025 – 2026</p>
         </div>
       </div>
     </>
@@ -233,12 +233,10 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
 
       {/* Mobile drawer */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-72 transform glass-sm text-slate-900 transition-transform duration-200 lg:hidden ${
+        className={`fixed left-0 top-0 z-50 h-full w-72 transform glass-sm text-stone-900 transition-transform duration-200 lg:hidden dark:text-stone-100 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        
-
         <div className="h-full overflow-y-auto">{menuContent}</div>
       </div>
 
