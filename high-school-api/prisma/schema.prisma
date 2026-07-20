@@ -1,0 +1,488 @@
+// ============================================================
+// High School Management System — Prisma Schema
+// Single-tenant deployment (one school per instance)
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ------------------------------------------------------------
+// SCHOOL / SETTINGS
+// Singleton table — single-tenant, so only one row will exist.
+// ------------------------------------------------------------
+model School {
+  id           String   @id @default(cuid())
+  name         String
+  logoUrl      String?
+  address      String?
+  phone        String?
+  email        String?
+  academicYear String // e.g. "2026-2027"
+  settings     Json? // flexible bag for misc config (grading scale, timezone, etc.)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ------------------------------------------------------------
+// AUTH / RBAC
+// Roles + granular Permissions rather than a fixed role enum,
+// so "teacher can grade only their own class" is enforceable
+// via permission + ownership checks in the service layer.
+// ------------------------------------------------------------
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  avatarUrl    String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  // Optional 1:1 links depending on what kind of user this is
+  student Student?
+  teacher Teacher?
+  parent  Parent?
+
+  refreshTokens  RefreshToken[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+  announcements  Announcement[]  @relation("AnnouncementAuthor")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft delete — never hard-delete user/audit-linked records
+
+  @@index([roleId])
+  @@index([deletedAt])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique // e.g. "admin", "teacher", "student", "parent"
+  description String?
+  users       User[]
+  permissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique // e.g. "grades:write:own_class"
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+// Refresh tokens stored server-side (hashed) so logout / revoke-all
+// actually invalidates sessions, instead of relying on JWT expiry alone.
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  userAgent String?
+  ipAddress String?
+
+  @@index([userId])
+}
+
+// ------------------------------------------------------------
+// PEOPLE
+// ------------------------------------------------------------
+model Student {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  studentCode  String   @unique
+  dateOfBirth  DateTime?
+  gender       String?
+  enrolledAt   DateTime @default(now())
+
+  classId String?
+  class   Class?  @relation(fields: [classId], references: [id])
+
+  parents        StudentParent[]
+  attendance     Attendance[]
+  grades         Grade[]
+  leaveRequests  LeaveRequest[]
+  homeworkSubs   HomeworkSubmission[]
+  quizSubs       QuizSubmission[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([classId])
+  @@index([deletedAt])
+}
+
+model Teacher {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  teacherCode  String   @unique
+  hiredAt      DateTime @default(now())
+
+  subjects       TeacherSubject[]
+  classesLed     Class[]           @relation("ClassHomeroomTeacher")
+  schedules      Schedule[]
+  lessons        Lesson[]
+  homeworkGiven  Homework[]
+  quizzesGiven   Quiz[]
+  gradesGiven    Grade[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([deletedAt])
+}
+
+// Parents are a separate user type, linked to one or more students,
+// so families with multiple kids share one login.
+model Parent {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  students StudentParent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StudentParent {
+  studentId    String
+  parentId     String
+  relationship String? // "mother", "father", "guardian"
+  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent       Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, parentId])
+}
+
+// ------------------------------------------------------------
+// ACADEMIC STRUCTURE
+// ------------------------------------------------------------
+model Class {
+  id                  String    @id @default(cuid())
+  name                String // e.g. "Grade 10 - A"
+  gradeLevel          Int
+  homeroomTeacherId   String?
+  homeroomTeacher     Teacher?  @relation("ClassHomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+
+  students  Student[]
+  schedules Schedule[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([homeroomTeacherId])
+}
+
+model Subject {
+  id          String @id @default(cuid())
+  name        String @unique
+  code        String @unique
+  description String?
+
+  teachers  TeacherSubject[]
+  schedules Schedule[]
+  lessons   Lesson[]
+  homework  Homework[]
+  quizzes   Quiz[]
+  grades    Grade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TeacherSubject {
+  teacherId String
+  subjectId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([teacherId, subjectId])
+}
+
+// Timetable slot: which subject, which teacher, which class, when.
+// Overlap validation (no double-booked teacher/room) happens in the
+// service layer against this table.
+model Schedule {
+  id        String   @id @default(cuid())
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id])
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  dayOfWeek Int // 0=Sunday .. 6=Saturday
+  startTime String // "08:00"
+  endTime   String // "09:00"
+  room      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId])
+  @@index([teacherId])
+}
+
+// ------------------------------------------------------------
+// LESSONS / HOMEWORK / QUIZZES
+// ------------------------------------------------------------
+model Lesson {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  fileUrl     String?
+  fileType    String?
+  fileSizeKb  Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subjectId])
+}
+
+model Homework {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  dueDate     DateTime
+  maxScore    Float    @default(100)
+
+  submissions HomeworkSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subjectId])
+}
+
+model HomeworkSubmission {
+  id          String    @id @default(cuid())
+  homeworkId  String
+  homework    Homework  @relation(fields: [homeworkId], references: [id])
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id])
+  fileUrl     String?
+  submittedAt DateTime  @default(now())
+  score       Float?
+  feedback    String?
+  gradedAt    DateTime?
+
+  @@unique([homeworkId, studentId])
+  @@index([studentId])
+}
+
+model Quiz {
+  id          String   @id @default(cuid())
+  title       String
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  isAutoGrade Boolean  @default(true)
+  timeLimitMin Int?
+
+  questions   QuizQuestion[]
+  submissions QuizSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subjectId])
+}
+
+model QuizQuestion {
+  id            String  @id @default(cuid())
+  quizId        String
+  quiz          Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  questionText  String
+  options       Json // ["A) ...", "B) ...", ...] for MCQ; null for free text
+  correctAnswer String
+  points        Float   @default(1)
+
+  @@index([quizId])
+}
+
+model QuizSubmission {
+  id          String   @id @default(cuid())
+  quizId      String
+  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id])
+  answers     Json // { questionId: answer }
+  score       Float?
+  submittedAt DateTime @default(now())
+
+  @@unique([quizId, studentId])
+  @@index([studentId])
+}
+
+// ------------------------------------------------------------
+// GRADES / ATTENDANCE / LEAVE
+// ------------------------------------------------------------
+enum GradePeriod {
+  MONTHLY
+  SEMESTER
+  ANNUAL
+}
+
+model Grade {
+  id        String      @id @default(cuid())
+  studentId String
+  student   Student     @relation(fields: [studentId], references: [id])
+  subjectId String
+  subject   Subject     @relation(fields: [subjectId], references: [id])
+  teacherId String
+  teacher   Teacher     @relation(fields: [teacherId], references: [id])
+  period    GradePeriod
+  periodLabel String // e.g. "2026-Sep", "Semester 1", "2026-2027"
+  score     Float
+  maxScore  Float       @default(100)
+  comment   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, subjectId, period, periodLabel])
+  @@index([studentId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model Attendance {
+  id        String            @id @default(cuid())
+  studentId String
+  student   Student           @relation(fields: [studentId], references: [id])
+  date      DateTime          @db.Date
+  status    AttendanceStatus
+  checkIn   DateTime?
+  checkOut  DateTime?
+  note      String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@index([date])
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model LeaveRequest {
+  id         String      @id @default(cuid())
+  studentId  String
+  student    Student     @relation(fields: [studentId], references: [id])
+  startDate  DateTime    @db.Date
+  endDate    DateTime    @db.Date
+  reason     String
+  status     LeaveStatus @default(PENDING)
+  reviewedBy String? // userId of admin/teacher who approved/rejected
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+}
+
+// ------------------------------------------------------------
+// COMMUNICATION
+// ------------------------------------------------------------
+model Announcement {
+  id       String @id @default(cuid())
+  title    String
+  content  String
+  authorId String
+  author   User   @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+  audience String @default("all") // "all", "teachers", "students", "parents", classId, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum NotificationChannel {
+  PUSH
+  EMAIL
+  IN_APP
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  channel   NotificationChannel @default(IN_APP)
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([userId])
+}
+
+// ------------------------------------------------------------
+// AUDIT LOG
+// Records who did what, for accountability on grade/attendance
+// changes and admin actions.
+// ------------------------------------------------------------
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String // e.g. "grade.update", "user.delete"
+  entityType String // e.g. "Grade"
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+}
