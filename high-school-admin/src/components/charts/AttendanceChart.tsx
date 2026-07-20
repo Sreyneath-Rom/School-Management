@@ -93,9 +93,9 @@ function CustomTooltip({
     >
       <div className="flex items-center gap-2">
         <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ background: '#0fa3b3' }} />
-        <span className="font-semibold text-stone-900">{label}</span>
+        <span className="font-semibold text-stone-900 dark:text-stone-100">{label}</span>
       </div>
-      <div className="mt-1 text-stone-600">Attendance: {value}%</div>
+      <div className="mt-1 text-stone-600 dark:text-stone-400">Attendance: {value}%</div>
     </div>
   )
 }

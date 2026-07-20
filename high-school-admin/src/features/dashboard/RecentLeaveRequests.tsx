@@ -15,8 +15,8 @@ export default function RecentLeaveRequests() {
   return (
     <section className="rounded-[28px] glass-sm p-6">
       <div className="mb-6">
-        <h2 className="text-base font-semibold text-slate-900">Pending Leave Requests</h2>
-        <p className="text-sm text-slate-600">Review student leave requests quickly</p>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pending Leave Requests</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400">Review student leave requests quickly</p>
       </div>
 
       <div className="space-y-4">
@@ -30,8 +30,8 @@ export default function RecentLeaveRequests() {
                 {request.avatar}
               </div>
               <div>
-                <p className="font-semibold text-slate-900">{request.name}</p>
-                <p className="text-sm text-slate-600">{request.grade} · {request.dateRange}</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">{request.name}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{request.grade} · {request.dateRange}</p>
               </div>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(request.status)}`}>

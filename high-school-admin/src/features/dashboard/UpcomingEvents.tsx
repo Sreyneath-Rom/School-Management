@@ -6,8 +6,8 @@ export default function UpcomingEvents() {
     <section className="rounded-[28px] glass-sm p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Daily Schedule</h2>
-          <p className="text-sm text-slate-500">Wednesday, July 1</p>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Daily Schedule</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Wednesday, July 1</p>
         </div>
         <Button>View Full Schedule</Button>
       </div>
@@ -21,8 +21,8 @@ export default function UpcomingEvents() {
                 <span className="text-[10px] uppercase tracking-[0.24em] text-slate-200">{event.month}</span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900">{event.title}</p>
-                <p className="text-sm text-slate-500">{event.time}</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">{event.title}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{event.time}</p>
               </div>
             </div>
           </div>

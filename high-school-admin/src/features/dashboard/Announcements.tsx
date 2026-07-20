@@ -30,8 +30,8 @@ export default function Announcements() {
     <section className="rounded-[28px] glass-sm p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Announcements</h2>
-          <p className="text-sm text-slate-500">Latest campus updates and alerts</p>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Announcements</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Latest campus updates and alerts</p>
         </div>
         <Button variant="solid" className="text-slate-300 hover:bg-slate-700" onClick={() => setIsOpen(true)}>
           Create New
@@ -45,10 +45,10 @@ export default function Announcements() {
             className="group rounded-3xl glass-sm p-6 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-slate-50/60 hover:shadow-[0_16px_35px_-15px_rgba(15,23,42,0.2)]"
           >
             <div className="flex items-center justify-between gap-4">
-              <p className="font-semibold text-slate-900">{item.title}</p>
-              <span className="shrink-0 rounded-full bg-slate-900/5 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">{item.time}</span>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
+              <span className="shrink-0 rounded-full bg-slate-900/5 dark:bg-white/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">{item.time}</span>
             </div>
-            <p className="mt-2 text-sm text-slate-600">{item.body}</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{item.body}</p>
           </div>
         ))}
       </div>
@@ -59,18 +59,18 @@ export default function Announcements() {
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-md rounded-[28px] glass-sm bg-white/90 p-6 shadow-[0_30px_70px_-20px_rgba(15,23,42,0.35)] animate-[popIn_0.18s_ease-out]"
+            className="w-full max-w-md rounded-[28px] glass-sm bg-white/90 dark:bg-stone-900/90 p-6 shadow-[0_30px_70px_-20px_rgba(15,23,42,0.35)] animate-[popIn_0.18s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">New Announcement</h3>
-                <p className="text-sm text-slate-500">Share an update with the campus</p>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">New Announcement</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Share an update with the campus</p>
               </div>
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-full p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-full p-1.5 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:text-slate-200"
                 aria-label="Close"
               >
                 <X size={18} />
@@ -79,7 +79,7 @@ export default function Announcements() {
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label htmlFor="announcement-title" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                <label htmlFor="announcement-title" className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Title
                 </label>
                 <input
@@ -88,13 +88,13 @@ export default function Announcements() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Early Dismissal Friday"
-                  className="w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  className="w-full rounded-2xl border border-slate-200 dark:border-stone-700 bg-white/70 dark:bg-stone-800/60 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="announcement-body" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                <label htmlFor="announcement-body" className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Message
                 </label>
                 <textarea
@@ -103,7 +103,7 @@ export default function Announcements() {
                   onChange={(e) => setBody(e.target.value)}
                   placeholder="Write the announcement details..."
                   rows={4}
-                  className="w-full resize-none rounded-2xl border border-slate-200 bg-white/70 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  className="w-full resize-none rounded-2xl border border-slate-200 dark:border-stone-700 bg-white/70 dark:bg-stone-800/60 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                   required
                 />
               </div>

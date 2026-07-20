@@ -23,8 +23,8 @@ export default function RecentActivities() {
     <section className="rounded-[28px] glass-sm p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Recent Activities</h2>
-          <p className="text-sm text-slate-600">Live updates from the admin portal</p>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Recent Activities</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Live updates from the admin portal</p>
         </div>
         <Button variant="solid" className="text-slate-300 hover:bg-slate-700">
           View Logs
@@ -44,10 +44,10 @@ export default function RecentActivities() {
                 <Icon size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                <p className="text-sm text-slate-500">{item.subtitle}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{item.subtitle}</p>
               </div>
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{item.time}</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{item.time}</span>
             </div>
           )
         })}
