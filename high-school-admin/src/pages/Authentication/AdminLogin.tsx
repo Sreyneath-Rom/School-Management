@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from '@/hooks';
 import { isValidEmail } from '@/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { mockLogin } from '@/data/mockUsers';
+import { authService } from '@/services/authService';
 import AuthBackground from '@/components/auth/AuthBackground';
 import { Eye, LockKeyhole, Mail, Sliders, EyeClosed } from 'lucide-react';
 import Button from '@/components/common/Button';
@@ -41,17 +41,13 @@ export default function AdminLogin() {
             return;
           }
 
-          const user = mockLogin(values.email, values.password);
-          if (!user) {
-            setError('Invalid email or password');
-            return;
-          }
-          if (user.role !== 'admin') {
+          const result = await authService.login(values.email.trim(), values.password);
+          if (result.user.role !== 'admin') {
             setError('This account is not an admin account');
             return;
           }
 
-          login(user);
+          login(result);
           navigate('/dashboard', { replace: true });
         } catch (err) {
           setError('Login failed. Please try again.');

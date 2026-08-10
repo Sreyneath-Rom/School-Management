@@ -23,6 +23,7 @@ import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useNotification } from '@/hooks/useNotification'
 import Button from '@/components/common/Button'
+import PageHeading from '@/components/common/PageHeading'
 import UserDetail from '@/components/users/UserDetail'
 import { mockUserDirectory } from '@/data/mockUserDirectory'
 import {
@@ -51,7 +52,7 @@ const SEARCH_FIELD_LABELS: Record<SearchField, string> = {
   phone: 'Phone',
 }
 
-export default function UserList() {
+export default function UserList({ showHeading = true }: { showHeading?: boolean }) {
   const [users] = useState<SystemUser[]>(mockUserDirectory)
 
   // ---- Search -------------------------------------------------------------
@@ -284,26 +285,24 @@ export default function UserList() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">Users</h1>
-          <p className="text-sm text-stone-600 dark:text-stone-400 mt-0.5">
-            {totalItems} user{totalItems === 1 ? '' : 's'} across all roles
-          </p>
+      {showHeading && (
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <PageHeading title="User Management" subtitle={`${totalItems} user${totalItems === 1 ? '' : 's'} across all roles`} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="flex items-center gap-1.5 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 transition">
+              <Upload size={16} /> Import
+            </button>
+            <button className="flex items-center gap-1.5 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 transition">
+              <Download size={16} /> Export
+            </button>
+            <button className="flex items-center gap-1.5 rounded-full bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition">
+              <UserPlus size={16} /> Add User
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 transition">
-            <Upload size={16} /> Import
-          </button>
-          <button className="flex items-center gap-1.5 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 transition">
-            <Download size={16} /> Export
-          </button>
-          <button className="flex items-center gap-1.5 rounded-full bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition">
-            <UserPlus size={16} /> Add User
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Search + Filters */}
       <div className="glass-strong rounded-3xl p-4 mb-4 flex flex-wrap items-center gap-3">

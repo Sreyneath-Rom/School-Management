@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from '@/hooks';
 import { isValidEmail } from '@/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { mockLogin, getUserGreeting } from '@/data/mockUsers';
+import { authService } from '@/services/authService';
+import { getUserGreeting } from '@/data/mockUsers';
 import AuthBackground from '@/components/auth/AuthBackground';
 import Button from '@/components/common/Button';
 import { Eye, EyeClosed, Lock, School, User } from 'lucide-react';
@@ -42,17 +43,18 @@ export default function TeacherLogin() {
             return;
           }
 
-          const user = mockLogin(values.teacherId, values.password);
-          if (!user) {
-            setError('Invalid credentials');
+          if (!values.teacherId.includes('@')) {
+            setFieldError('teacherId', 'Please sign in with your school email address');
             return;
           }
-          if (user.role !== 'teacher') {
+
+          const result = await authService.login(values.teacherId.trim(), values.password);
+          if (result.user.role !== 'teacher') {
             setError('This account is not a teacher account');
             return;
           }
 
-          login(user);
+          login(result);
           navigate('/teacher/dashboard', { replace: true });
         } catch (err) {
           setError('Login failed. Please try again.');

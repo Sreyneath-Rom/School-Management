@@ -12,27 +12,21 @@ const variantClasses: Record<ButtonVariant, string> = {
     'rounded-full border border-brand-700 px-4 py-2 text-sm font-semibold text-brand-700 dark:text-brand-300 transition hover:bg-brand-50',
 }
 
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant
+  className?: string
+}
+
 export default function Button({
   children,
-  onClick,
   variant = 'none',
-  type = 'button',
   className = '',
-  disabled = false,
-}: {
-  children: React.ReactNode
-  onClick?: () => void
-  variant?: ButtonVariant
-  type?: 'button' | 'submit' | 'reset'
-  className?: string
-  disabled?: boolean
-}) {
+  ...props
+}: ButtonProps) {
   return (
     <button
-      type={type}
-      onClick={onClick}
+      {...props}
       className={`${variantClasses[variant]} ${className}`.trim()}
-      disabled={disabled}
     >
       {children}
     </button>

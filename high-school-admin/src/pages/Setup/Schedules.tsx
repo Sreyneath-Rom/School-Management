@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Download, Plus, AlertTriangle, GripVertical } from 'lucide-react'
+import Button from '@/components/common/Button'
 import PageHeading from '@/components/common/PageHeading'
 
 const tabs = ['Class Schedules', 'Teacher Timetables', 'Exam Schedules']
@@ -132,29 +133,30 @@ export default function Schedules() {
           subtitle="Organize class timetables, faculty assignments, and exam periods."
         />
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-3 text-sm font-semibold text-stone-700 dark:text-stone-300 transition hover:bg-stone-50 dark:hover:bg-stone-700">
+          <Button variant="glass" className="inline-flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300" onClick={() => {}}>
             <Download size={16} />
             Export Schedule
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-2xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-700/20 transition hover:bg-brand-800">
+          </Button>
+          <Button variant="solid" className="inline-flex items-center gap-2" onClick={() => {}}>
             <Plus size={17} />
             Create New Schedule
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] glass-sm p-3">
         <div className="flex items-center gap-1 rounded-2xl bg-stone-50 dark:bg-stone-800 p-1">
           {tabs.map((tab) => (
-            <button
+            <Button
               key={tab}
+              variant="none"
               onClick={() => setActiveTab(tab)}
               className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
                 activeTab === tab ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm' : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
               }`}
             >
               {tab}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -171,15 +173,16 @@ export default function Schedules() {
           <div className="h-6 w-px bg-stone-200 dark:bg-stone-700" />
           <div className="flex items-center gap-1 rounded-xl bg-stone-50 dark:bg-stone-800 p-1">
             {(['D', 'W', 'M'] as const).map((v) => (
-              <button
+              <Button
                 key={v}
+                variant="none"
                 onClick={() => setView(v)}
                 className={`h-8 w-8 rounded-lg text-sm font-semibold transition ${
                   view === v ? 'bg-brand-600 text-white' : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
                 }`}
               >
                 {v}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -248,7 +251,8 @@ export default function Schedules() {
                     const isDragTarget = dragOverCell?.day === dayIndex && dragOverCell?.row === rowIndex
                     return (
                       <td key={dayIndex} className="align-top">
-                        <button
+                        <Button
+                          variant="none"
                           onDragOver={(e) => handleCellDragOver(e, dayIndex, rowIndex)}
                           onDragLeave={handleCellDragLeave}
                           onDrop={(e) => handleCellDrop(e, dayIndex, rowIndex)}
@@ -261,7 +265,7 @@ export default function Schedules() {
                           }`}
                         >
                           {isDragTarget ? (dragOverValid ? 'Drop here' : 'Unavailable') : '+ Add Lesson'}
-                        </button>
+                        </Button>
                       </td>
                     )
                   })}
@@ -303,9 +307,9 @@ export default function Schedules() {
                 </div>
               ))}
             </div>
-            <button className="mt-4 w-full rounded-xl border border-stone-200 dark:border-stone-700 py-2.5 text-sm font-semibold text-stone-600 dark:text-stone-400 transition hover:bg-stone-50 dark:hover:bg-stone-800">
+            <Button variant="glass" className="mt-4 w-full rounded-xl py-2.5 text-sm font-semibold text-stone-600 dark:text-stone-400" onClick={() => {}}>
               View All (8)
-            </button>
+            </Button>
           </div>
         </div>
       </div>

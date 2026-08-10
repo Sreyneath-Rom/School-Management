@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
+import Button from '@/components/common/Button'
 import { MODULES, roleService } from '@/services/roleService'
-import { PERMISSION_ACTIONS } from '@/types/roles'
 import type { PermissionAction, PermissionDef, RoleDef } from '@/types/roles'
 import { ApiError } from '@/lib/apiClient'
 
@@ -208,14 +208,15 @@ export default function Roles() {
           title="Permissions & Access Control"
           subtitle="Manage granular permissions for system roles and access levels."
         />
-        <button
+        <Button
+          variant="solid"
           onClick={handleSave}
           disabled={dirtyCount === 0 || isSaving || !activeRole}
-          className="inline-flex items-center gap-2 rounded-2xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-700/20 transition hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2"
         >
           <span className="text-lg">💾</span>
           {isSaving ? 'Saving…' : 'Save Changes'}
-        </button>
+        </Button>
       </div>
 
       {savedMessage && (
@@ -231,7 +232,7 @@ export default function Roles() {
       )}
 
       <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
-        <div className="rounded-[28px] p-5 shadow-sm">
+        <div className="rounded-[28px] glass-sm p-5">
           <div className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
             Global Roles
           </div>
@@ -239,8 +240,9 @@ export default function Roles() {
             {roles.map((role) => {
               const isActive = activeRoleId === role.id
               return (
-                <button
+                <Button
                   key={role.id}
+                  variant="none"
                   onClick={() => handleSelectRole(role.id)}
                   className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                     isActive
@@ -250,7 +252,7 @@ export default function Roles() {
                 >
                   <span className="text-xs font-semibold">{role.initial}</span>
                   {role.label}
-                </button>
+                </Button>
               )
             })}
 
@@ -265,32 +267,35 @@ export default function Roles() {
                   className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-sm outline-none focus:border-brand-400"
                 />
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="solid"
                     onClick={handleCreateRole}
                     disabled={!newRoleName.trim() || isSaving}
-                    className="flex-1 rounded-xl bg-brand-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
+                    className="flex-1 text-xs"
                   >
                     Create
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="glass"
                     onClick={() => {
                       setIsCreatingRole(false)
                       setNewRoleName('')
                     }}
-                    className="flex-1 rounded-xl border border-stone-200 dark:border-stone-700 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-400 transition hover:bg-stone-50 dark:hover:bg-stone-800"
+                    className="flex-1 text-xs"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <button
+              <Button
+                variant="glass"
                 onClick={() => setIsCreatingRole(true)}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-stone-300 dark:border-stone-600 px-4 py-3 text-sm font-semibold text-stone-500 dark:text-stone-400 transition hover:border-brand-400 hover:text-brand-600 dark:hover:border-brand-500 dark:hover:text-brand-400"
+                className="mt-2 w-full justify-center gap-2 text-sm font-semibold text-stone-500 dark:text-stone-400"
               >
                 <span className="text-lg">+</span>
                 Create New Role
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -328,7 +333,8 @@ export default function Roles() {
                     </td>
                     {columns.map((_, colIndex) => (
                       <td key={colIndex} className="px-6 py-4 text-center">
-                        <button
+                        <Button
+                          variant="none"
                           onClick={() => togglePermission(module.id, colIndex)}
                           disabled={!activeRole}
                           className={`mx-auto flex h-6 w-6 items-center justify-center rounded-md border transition disabled:opacity-40 ${
@@ -342,7 +348,7 @@ export default function Roles() {
                           ) : (
                             <span className="text-xs text-transparent">✓</span>
                           )}
-                        </button>
+                        </Button>
                       </td>
                     ))}
                   </tr>
@@ -360,20 +366,22 @@ export default function Roles() {
                 Unsaved changes detected in {dirtyCount} permission{dirtyCount === 1 ? '' : 's'}.
               </div>
               <div className="flex items-center gap-3">
-                <button
+                <Button
+                  variant="glass"
                   onClick={handleReset}
                   disabled={isSaving}
-                  className="rounded-xl border border-rose-200 dark:border-rose-800 px-4 py-2.5 text-sm font-semibold text-rose-600 dark:text-rose-400 transition hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-50"
+                  className="rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 dark:text-rose-400"
                 >
                   Reset to Default
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="solid"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
+                  className="rounded-xl px-4 py-2.5 text-sm"
                 >
                   {isSaving ? 'Applying…' : 'Apply Configuration'}
-                </button>
+                </Button>
               </div>
             </div>
           )}

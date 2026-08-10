@@ -12,6 +12,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { statCards } from '@/services/mockData'
 import type { StatCard } from '@/types'
+import type { DashboardStats } from '@/services/dashboardService'
 
 const iconMap: Record<string, LucideIcon> = {
   GraduationCap,
@@ -20,6 +21,17 @@ const iconMap: Record<string, LucideIcon> = {
   BookOpen,
   UserCheck,
   ClipboardList,
+}
+
+const overrides: Partial<Record<string, (stats: DashboardStats) => string>> = {
+  students: (stats) => stats.studentCount.toLocaleString(),
+  teachers: (stats) => stats.teacherCount.toLocaleString(),
+  classes: (stats) => stats.classCount.toLocaleString(),
+  leaves: (stats) => stats.pendingLeaveRequests.toString(),
+}
+
+interface StatsGridProps {
+  stats?: DashboardStats | null
 }
 
 const tintClasses: Record<StatCard['tint'], string> = {
@@ -66,12 +78,13 @@ function StatCardView({ card }: { card: StatCard }) {
   )
 }
 
-export default function StatsGrid() {
+export default function StatsGrid({ stats }: StatsGridProps) {
   return (
     <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
-      {statCards.map((card) => (
-        <StatCardView card={card} key={card.id} />
-      ))}
+      {statCards.map((card) => {
+        const value = stats && overrides[card.id] ? overrides[card.id]!(stats) : card.value
+        return <StatCardView card={{ ...card, value }} key={card.id} />
+      })}
     </div>
   )
 }

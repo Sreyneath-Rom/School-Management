@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from '@/hooks';
 import { isValidEmail } from '@/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { mockLogin, getUserGreeting } from '@/data/mockUsers';
+import { authService } from '@/services/authService';
+import { getUserGreeting } from '@/data/mockUsers';
 import AuthBackground from '@/components/auth/AuthBackground';
 import Button from '@/components/common/Button';
 import { Eye, EyeClosed, Lock, School, User } from 'lucide-react';
@@ -42,17 +43,18 @@ export default function StudentLogin() {
             return;
           }
 
-          const user = mockLogin(values.studentId, values.password);
-          if (!user) {
-            setError('Invalid credentials');
+          if (!values.studentId.includes('@')) {
+            setFieldError('studentId', 'Please sign in with your school email address');
             return;
           }
-          if (user.role !== 'student') {
+
+          const result = await authService.login(values.studentId.trim(), values.password);
+          if (result.user.role !== 'student') {
             setError('This account is not a student account');
             return;
           }
 
-          login(user);
+          login(result);
           navigate('/student/dashboard', { replace: true });
         } catch (err) {
           setError('Login failed. Please try again.');
