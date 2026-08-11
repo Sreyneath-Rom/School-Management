@@ -3,10 +3,10 @@ import Button from '@/components/common/Button'
 import PageHeading from '@/components/common/PageHeading'
 
 const summaryCards = [
-  { title: 'Total Subjects', value: '42', subtitle: '+4 this year', icon: BookOpen, accent: 'bg-brand-100 text-brand-700' },
-  { title: 'Core Subjects', value: '32', subtitle: '82% of units', icon: Sparkles, accent: 'bg-violet-100 text-violet-700' },
-  { title: 'Elective Subjects', value: '10', subtitle: '18% of units', icon: Layers, accent: 'bg-emerald-100 text-emerald-700' },
-  { title: 'Department Count', value: '8', subtitle: 'All Active', icon: Building2, accent: 'bg-amber-100 text-amber-700' },
+  { title: 'Total Subjects', value: '42', subtitle: '+4 this year', icon: BookOpen, accent: 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' },
+  { title: 'Core Subjects', value: '32', subtitle: '82% of units', icon: Sparkles, accent: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' },
+  { title: 'Elective Subjects', value: '10', subtitle: '18% of units', icon: Layers, accent: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  { title: 'Department Count', value: '8', subtitle: 'All Active', icon: Building2, accent: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
 ]
 
 const subjects = [
@@ -16,9 +16,9 @@ const subjects = [
     subtitle: 'Molecular Focus',
     code: 'SCI-301',
     department: 'Science',
-    deptColor: 'bg-sky-100 text-sky-700',
+    deptColor: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
     category: 'Core',
-    iconColor: 'bg-sky-100 text-sky-700',
+    iconColor: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
     icon: BookOpen,
     teachers: [
       { label: 'JD', color: 'bg-emerald-500' },
@@ -32,9 +32,9 @@ const subjects = [
     subtitle: 'College Level',
     code: 'MTH-402',
     department: 'Mathematics',
-    deptColor: 'bg-amber-100 text-amber-700',
+    deptColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
     category: 'Core',
-    iconColor: 'bg-amber-100 text-amber-700',
+    iconColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
     icon: Layers,
     teachers: [
       { label: 'MK', color: 'bg-violet-500' },
@@ -48,9 +48,9 @@ const subjects = [
     subtitle: 'Visual Design',
     code: 'ART-105',
     department: 'Fine Arts',
-    deptColor: 'bg-emerald-100 text-emerald-700',
+    deptColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
     category: 'Elective',
-    iconColor: 'bg-emerald-100 text-emerald-700',
+    iconColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
     icon: Sparkles,
     teachers: [{ label: 'LW', color: 'bg-amber-500' }],
     indicator: null,
@@ -61,9 +61,9 @@ const subjects = [
     subtitle: '19th-21st Century',
     code: 'HUM-201',
     department: 'Humanities',
-    deptColor: 'bg-violet-100 text-violet-700',
+    deptColor: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
     category: 'Core',
-    iconColor: 'bg-violet-100 text-violet-700',
+    iconColor: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
     icon: Building2,
     teachers: [
       { label: 'SP', color: 'bg-amber-500' },
@@ -174,13 +174,13 @@ export default function Subjects() {
                       {subject.teachers.map((teacher) => (
                         <span
                           key={teacher.label}
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white ${teacher.color}`}
+                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white dark:border-stone-900 text-xs font-semibold text-white ${teacher.color}`}
                         >
                           {teacher.label}
                         </span>
                       ))}
                       {subject.indicator && (
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-stone-200 text-xs font-semibold text-stone-600 dark:bg-stone-700 dark:text-stone-300">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white dark:border-stone-900 bg-stone-200 text-xs font-semibold text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                           {subject.indicator}
                         </span>
                       )}
@@ -189,7 +189,9 @@ export default function Subjects() {
                   <td className="px-6 py-5">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
-                        subject.category === 'Core' ? 'bg-brand-100 text-brand-700' : 'bg-emerald-100 text-emerald-700'
+                        subject.category === 'Core'
+                          ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
                       }`}
                     >
                       {subject.category}

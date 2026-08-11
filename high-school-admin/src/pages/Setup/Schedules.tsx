@@ -25,16 +25,23 @@ type Block = {
   conflict?: boolean
 }
 
+const BLOCK_COLORS = {
+  sky: 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800',
+  emerald: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+  amber: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
+  violet: 'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800',
+} as const
+
 const initialBlocks: Block[] = [
-  { id: 'b1', day: 0, row: 0, title: 'Advanced Biology', meta: '10-A • Room 302', color: 'bg-sky-100 text-sky-800 border-sky-200' },
-  { id: 'b2', day: 2, row: 0, title: 'Chemistry', meta: '10-A • Lab 04', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  { id: 'b3', day: 5, row: 0, title: 'Advanced Biology', meta: '10-A • Room 302', color: 'bg-sky-100 text-sky-800 border-sky-200' },
-  { id: 'b4', day: 1, row: 1, title: 'Calculus BC', meta: '10-A • Lab 12', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  { id: 'b5', day: 2, row: 1, title: 'World History', meta: '10-A • Room 101', color: 'bg-sky-100 text-sky-800 border-sky-200', span: 2 },
-  { id: 'b6', day: 1, row: 2, title: 'Literature II', meta: '10-A • Room 405', color: 'bg-violet-100 text-violet-800 border-violet-200', conflict: true },
-  { id: 'b7', day: 0, row: 3, title: 'Physical Ed', meta: '10-A • Gym B', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  { id: 'b8', day: 3, row: 3, title: 'Calculus BC', meta: '10-A • Lab 12', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  { id: 'b9', day: 4, row: 3, title: 'Calculus BC', meta: '10-A • Lab 12', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  { id: 'b1', day: 0, row: 0, title: 'Advanced Biology', meta: '10-A • Room 302', color: BLOCK_COLORS.sky },
+  { id: 'b2', day: 2, row: 0, title: 'Chemistry', meta: '10-A • Lab 04', color: BLOCK_COLORS.emerald },
+  { id: 'b3', day: 5, row: 0, title: 'Advanced Biology', meta: '10-A • Room 302', color: BLOCK_COLORS.sky },
+  { id: 'b4', day: 1, row: 1, title: 'Calculus BC', meta: '10-A • Lab 12', color: BLOCK_COLORS.amber },
+  { id: 'b5', day: 2, row: 1, title: 'World History', meta: '10-A • Room 101', color: BLOCK_COLORS.sky, span: 2 },
+  { id: 'b6', day: 1, row: 2, title: 'Literature II', meta: '10-A • Room 405', color: BLOCK_COLORS.violet, conflict: true },
+  { id: 'b7', day: 0, row: 3, title: 'Physical Ed', meta: '10-A • Gym B', color: BLOCK_COLORS.emerald },
+  { id: 'b8', day: 3, row: 3, title: 'Calculus BC', meta: '10-A • Lab 12', color: BLOCK_COLORS.amber },
+  { id: 'b9', day: 4, row: 3, title: 'Calculus BC', meta: '10-A • Lab 12', color: BLOCK_COLORS.amber },
 ]
 
 const isMaintenanceCell = (dayIndex: number, rowIndex: number) => rowIndex === 2 && dayIndex >= 3

@@ -6,7 +6,7 @@ import { schoolService, type SchoolModel, type SchoolPayload } from '@/services/
 import { useFetch } from '@/hooks/useFetch'
 
 const inputClasses =
-  'w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
+  'w-full rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-3 text-sm text-stone-800 dark:text-stone-100 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100 dark:focus:ring-brand-900'
 
 const defaultForm = {
   name: '',
@@ -130,11 +130,11 @@ export default function SchoolSetup() {
       </div>
 
       {loading && (
-        <div className="rounded-[28px] glass-sm p-6 text-sm text-stone-600">Loading school configuration...</div>
+        <div className="rounded-[28px] glass-sm p-6 text-sm text-stone-600 dark:text-stone-400">Loading school configuration...</div>
       )}
 
       {error && (
-        <div className="rounded-[28px] glass-sm p-6 text-sm text-rose-700 bg-rose-50 border border-rose-200">
+        <div className="rounded-[28px] glass-sm p-6 text-sm text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800">
           Unable to load school configuration.
         </div>
       )}
@@ -143,48 +143,48 @@ export default function SchoolSetup() {
         <div className="space-y-6">
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-[28px] glass-sm p-6">
-              <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-stone-500">
-                <Info size={18} className="text-brand-600" />
+              <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
+                <Info size={18} className="text-brand-600 dark:text-brand-400" />
                 School Identity
               </div>
-              <div className="mt-4 space-y-4 text-sm text-stone-600">
-                <div className="rounded-3xl bg-stone-50 p-4">
-                  <div className="text-xs uppercase tracking-[0.16em] text-stone-500">Name</div>
-                  <div className="mt-2 text-base font-semibold text-stone-900">{form.name || 'Not set yet'}</div>
+              <div className="mt-4 space-y-4 text-sm text-stone-600 dark:text-stone-400">
+                <div className="rounded-3xl bg-stone-50 dark:bg-stone-800/60 p-4">
+                  <div className="text-xs uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">Name</div>
+                  <div className="mt-2 text-base font-semibold text-stone-900 dark:text-stone-100">{form.name || 'Not set yet'}</div>
                 </div>
-                <div className="rounded-3xl bg-stone-50 p-4">
-                  <div className="text-xs uppercase tracking-[0.16em] text-stone-500">Academic Year</div>
-                  <div className="mt-2 text-base font-semibold text-stone-900">{form.academicYear || 'Not set yet'}</div>
+                <div className="rounded-3xl bg-stone-50 dark:bg-stone-800/60 p-4">
+                  <div className="text-xs uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">Academic Year</div>
+                  <div className="mt-2 text-base font-semibold text-stone-900 dark:text-stone-100">{form.academicYear || 'Not set yet'}</div>
                 </div>
               </div>
             </div>
 
             <div className="rounded-[28px] glass-sm p-6">
-              <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-stone-500">
-                <CalendarDays size={18} className="text-brand-600" />
+              <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
+                <CalendarDays size={18} className="text-brand-600 dark:text-brand-400" />
                 Academic Status
               </div>
-              <div className="mt-4 space-y-4 text-sm text-stone-600">
-                <div className="rounded-3xl bg-stone-50 p-4">
-                  <div className="text-xs uppercase tracking-[0.16em] text-stone-500">Term</div>
-                  <div className="mt-2 text-base font-semibold text-stone-900">{form.academicTerm || 'Not set yet'}</div>
+              <div className="mt-4 space-y-4 text-sm text-stone-600 dark:text-stone-400">
+                <div className="rounded-3xl bg-stone-50 dark:bg-stone-800/60 p-4">
+                  <div className="text-xs uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">Term</div>
+                  <div className="mt-2 text-base font-semibold text-stone-900 dark:text-stone-100">{form.academicTerm || 'Not set yet'}</div>
                 </div>
-                <div className="rounded-3xl bg-stone-50 p-4">
-                  <div className="text-xs uppercase tracking-[0.16em] text-stone-500">Language</div>
-                  <div className="mt-2 text-base font-semibold text-stone-900">{form.language}</div>
+                <div className="rounded-3xl bg-stone-50 dark:bg-stone-800/60 p-4">
+                  <div className="text-xs uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">Language</div>
+                  <div className="mt-2 text-base font-semibold text-stone-900 dark:text-stone-100">{form.language}</div>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="rounded-[28px] glass-sm p-6">
-            <div className="flex items-center gap-2 text-lg font-bold text-stone-900">
-              <Info size={20} className="text-brand-600" />
+            <div className="flex items-center gap-2 text-lg font-bold text-stone-900 dark:text-stone-100">
+              <Info size={20} className="text-brand-600 dark:text-brand-400" />
               School Information
             </div>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                   School Name
                 </label>
                 <input
@@ -194,7 +194,7 @@ export default function SchoolSetup() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                   School Code
                 </label>
                 <input
@@ -207,7 +207,7 @@ export default function SchoolSetup() {
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                   Motto
                 </label>
                 <input
@@ -217,7 +217,7 @@ export default function SchoolSetup() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                   Website
                 </label>
                 <input
@@ -229,7 +229,7 @@ export default function SchoolSetup() {
             </div>
 
             <div className="mt-5">
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                 Description
               </label>
               <textarea
@@ -243,13 +243,13 @@ export default function SchoolSetup() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-[28px] glass-sm p-6">
-              <div className="flex items-center gap-2 text-lg font-bold text-stone-900">
-                <Phone size={20} className="text-brand-600" />
+              <div className="flex items-center gap-2 text-lg font-bold text-stone-900 dark:text-stone-100">
+                <Phone size={20} className="text-brand-600 dark:text-brand-400" />
                 Contact Information
               </div>
-              <div className="mt-6 space-y-4 text-sm text-stone-600">
+              <div className="mt-6 space-y-4 text-sm text-stone-600 dark:text-stone-400">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                     Address
                   </label>
                   <input
@@ -259,7 +259,7 @@ export default function SchoolSetup() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                     Phone
                   </label>
                   <input
@@ -269,7 +269,7 @@ export default function SchoolSetup() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                     Email
                   </label>
                   <input
@@ -282,13 +282,13 @@ export default function SchoolSetup() {
             </div>
 
             <div className="rounded-[28px] glass-sm p-6">
-              <div className="flex items-center gap-2 text-lg font-bold text-stone-900">
-                <CalendarDays size={20} className="text-brand-600" />
+              <div className="flex items-center gap-2 text-lg font-bold text-stone-900 dark:text-stone-100">
+                <CalendarDays size={20} className="text-brand-600 dark:text-brand-400" />
                 Academic Information
               </div>
               <div className="mt-6 grid gap-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                     Academic Year
                   </label>
                   <input
@@ -298,7 +298,7 @@ export default function SchoolSetup() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
                     Academic Term
                   </label>
                   <input
@@ -314,16 +314,16 @@ export default function SchoolSetup() {
 
         <aside className="space-y-6">
           <div className="rounded-[28px] glass-sm p-6">
-            <div className="flex items-center gap-2 text-lg font-bold text-stone-900">
-              <Camera size={20} className="text-brand-600" />
+            <div className="flex items-center gap-2 text-lg font-bold text-stone-900 dark:text-stone-100">
+              <Camera size={20} className="text-brand-600 dark:text-brand-400" />
               Brand Assets
             </div>
-            <div className="mt-5 rounded-3xl border border-dashed border-stone-200 bg-stone-50 p-6 text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-stone-400 shadow-sm">
+            <div className="mt-5 rounded-3xl border border-dashed border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 p-6 text-center">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white dark:bg-stone-900 text-stone-400 dark:text-stone-500 shadow-sm">
                 <Camera size={24} />
               </div>
-              <div className="mt-4 text-sm font-semibold text-stone-900">School Logo</div>
-              <p className="mt-2 text-sm text-stone-500">Upload a clear logo for the school profile and admin portal.</p>
+              <div className="mt-4 text-sm font-semibold text-stone-900 dark:text-stone-100">School Logo</div>
+              <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Upload a clear logo for the school profile and admin portal.</p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <Button variant="solid" className="rounded-2xl px-4 py-2.5 text-sm" onClick={() => {}}>
                   Upload Logo
@@ -336,35 +336,35 @@ export default function SchoolSetup() {
           </div>
 
           <div className="rounded-[28px] glass-sm p-6">
-            <div className="flex items-center gap-2 text-lg font-bold text-stone-900">
-              <CheckCircle2 size={20} className="text-brand-600" />
+            <div className="flex items-center gap-2 text-lg font-bold text-stone-900 dark:text-stone-100">
+              <CheckCircle2 size={20} className="text-brand-600 dark:text-brand-400" />
               Setup Progress
             </div>
-            <p className="mt-2 text-sm text-stone-500">
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
               Keep the school profile complete for a smooth launch.
             </p>
-            <div className="mt-5 h-3 overflow-hidden rounded-full bg-stone-100">
+            <div className="mt-5 h-3 overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
               <div className="h-full rounded-full bg-brand-600" style={{ width: `${progress}%` }} />
             </div>
-            <div className="mt-4 flex items-center justify-between text-sm font-medium text-stone-700">
+            <div className="mt-4 flex items-center justify-between text-sm font-medium text-stone-700 dark:text-stone-300">
               <span>{progress}% complete</span>
-              <span className="rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">On track</span>
+              <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 text-emerald-700 dark:text-emerald-300">On track</span>
             </div>
           </div>
 
           <div className="rounded-[28px] glass-sm p-6">
-            <div className="flex items-center gap-2 text-lg font-bold text-stone-900">
-              <Globe size={20} className="text-brand-600" />
+            <div className="flex items-center gap-2 text-lg font-bold text-stone-900 dark:text-stone-100">
+              <Globe size={20} className="text-brand-600 dark:text-brand-400" />
               Regional Settings
             </div>
-            <div className="mt-5 space-y-3 text-sm text-stone-600">
-              <div className="rounded-3xl bg-stone-50 p-4">
-                <div className="text-xs uppercase tracking-[0.14em] text-stone-500">Time Zone</div>
-                <div className="mt-2 font-semibold text-stone-900">{form.timeZone}</div>
+            <div className="mt-5 space-y-3 text-sm text-stone-600 dark:text-stone-400">
+              <div className="rounded-3xl bg-stone-50 dark:bg-stone-800/60 p-4">
+                <div className="text-xs uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">Time Zone</div>
+                <div className="mt-2 font-semibold text-stone-900 dark:text-stone-100">{form.timeZone}</div>
               </div>
-              <div className="rounded-3xl bg-stone-50 p-4">
-                <div className="text-xs uppercase tracking-[0.14em] text-stone-500">Date Format</div>
-                <div className="mt-2 font-semibold text-stone-900">{form.dateFormat}</div>
+              <div className="rounded-3xl bg-stone-50 dark:bg-stone-800/60 p-4">
+                <div className="text-xs uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">Date Format</div>
+                <div className="mt-2 font-semibold text-stone-900 dark:text-stone-100">{form.dateFormat}</div>
               </div>
             </div>
           </div>
@@ -374,8 +374,8 @@ export default function SchoolSetup() {
       <div className="rounded-[28px] glass-sm p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="text-lg font-bold text-stone-900">Save Configuration</div>
-            <p className="mt-2 text-sm text-stone-500">Persist the current school settings to the backend.</p>
+            <div className="text-lg font-bold text-stone-900 dark:text-stone-100">Save Configuration</div>
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Persist the current school settings to the backend.</p>
           </div>
           <Button variant="solid" onClick={handleSave} disabled={isSaving || loading} className="w-full sm:w-auto">
             {isSaving ? 'Saving...' : 'Save Changes'}
@@ -383,10 +383,10 @@ export default function SchoolSetup() {
         </div>
 
         {formError && (
-          <div className="mt-4 rounded-2xl bg-rose-50 p-4 text-sm text-rose-700 border border-rose-100">{formError}</div>
+          <div className="mt-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 p-4 text-sm text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800">{formError}</div>
         )}
         {successMessage && (
-          <div className="mt-4 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-700 border border-emerald-100">{successMessage}</div>
+          <div className="mt-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4 text-sm text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">{successMessage}</div>
         )}
       </div>
     </div>
