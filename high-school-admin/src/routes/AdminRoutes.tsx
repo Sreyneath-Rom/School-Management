@@ -12,6 +12,8 @@ import Roles from '@/pages/Setup/Roles';
 import Subjects from '@/pages/Setup/Subjects';
 import Schedules from '@/pages/Setup/Schedules';
 import Users from '@/pages/Setup/Users';
+import TranslationManager from '@/pages/Setup/TranslationManager';
+
 
 import Classes from '@/pages/Academic/Classes';
 import Lessons from '@/pages/Academic/Lessons';
@@ -44,6 +46,7 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/setup/subjects" element={<Subjects />} />
     <Route path="/setup/schedules" element={<Schedules />} />
     <Route path="/setup/users" element={<Users />} />
+    <Route path="/setup/translations" element={<TranslationManager />} />
 
     {/* Academic Management */}
     <Route path="/academic/classes" element={<Classes />} />

@@ -28,6 +28,11 @@ export function createApp() {
     })
   )
 
+  // Serve uploaded files (logos, lesson attachments, etc.) written by
+  // upload.middleware.ts. Must come before the API routes so /uploads/*
+  // isn't swallowed by notFoundHandler.
+  app.use('/uploads', express.static(env.UPLOAD_PATH))
+
   app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }))
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
   app.use('/api/v1', apiRoutes)

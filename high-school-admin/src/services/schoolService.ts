@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/apiClient'
+import { apiClient, apiUpload } from '@/lib/apiClient'
 
 export interface SchoolSettings {
   schoolCode?: string
@@ -30,4 +30,11 @@ export interface SchoolModel extends SchoolPayload {
 export const schoolService = {
   getSchool: () => apiClient.get<SchoolModel>('/schools'),
   updateSchool: (payload: Partial<SchoolPayload>) => apiClient.patch<SchoolModel>('/schools', payload),
+  // Uploads the logo as multipart form data (not JSON/base64), so large
+  // images never risk hitting express.json()'s body-size limit.
+  uploadLogo: (file: File) => {
+    const formData = new FormData()
+    formData.append('logo', file)
+    return apiUpload<SchoolModel>('/schools/logo', formData)
+  },
 }

@@ -40,25 +40,7 @@ async function refreshAccessToken(): Promise<string | null> {
   return data.accessToken
 }
 
-async function request<T>(path: string, options: RequestInit = {}, retry = true): Promise<T> {
-  const token = window.localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
-
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  })
-
-  if (res.status === 401 && retry) {
-    const refreshedToken = await refreshAccessToken()
-    if (refreshedToken) {
-      return request<T>(path, options, false)
-    }
-  }
-
+async function handleResponse<T>(res: Response, path: string): Promise<T> {
   if (!res.ok) {
     let body: unknown
     try {
@@ -84,6 +66,55 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
   return body as T
 }
 
+async function request<T>(path: string, options: RequestInit = {}, retry = true): Promise<T> {
+  const token = window.localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  })
+
+  if (res.status === 401 && retry) {
+    const refreshedToken = await refreshAccessToken()
+    if (refreshedToken) {
+      return request<T>(path, options, false)
+    }
+  }
+
+  return handleResponse<T>(res, path)
+}
+
+/**
+ * For multipart/form-data uploads (files). Deliberately does NOT set a
+ * Content-Type header — the browser must set it itself so it can include
+ * the multipart boundary string. Setting 'multipart/form-data' manually
+ * here would omit the boundary and the server would fail to parse the body.
+ */
+async function requestUpload<T>(path: string, formData: FormData, retry = true): Promise<T> {
+  const token = window.localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  })
+
+  if (res.status === 401 && retry) {
+    const refreshedToken = await refreshAccessToken()
+    if (refreshedToken) {
+      return requestUpload<T>(path, formData, false)
+    }
+  }
+
+  return handleResponse<T>(res, path)
+}
+
 export const apiClient = {
   get: <T>(path: string) => request<T>(path, { method: 'GET' }),
   post: <T>(path: string, body?: unknown) =>
@@ -92,3 +123,5 @@ export const apiClient = {
     request<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 }
+
+export const apiUpload = <T>(path: string, formData: FormData) => requestUpload<T>(path, formData)

@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronRight,
   Settings,
+  Languages,
   ShieldCheck,
   BookMarked,
   CalendarDays,
@@ -24,6 +25,8 @@ import {
   BarChart3,
   FileBarChart,
 } from "lucide-react";
+import { useSchool } from "@/context/SchoolContext";
+import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
 
 type Section =
   | "SETUP"
@@ -44,6 +47,7 @@ const menu = [
       { name: "Subjects", icon: BookMarked, path: "/setup/subjects" },
       { name: "Schedules", icon: CalendarDays, path: "/setup/schedules" },
       { name: "Users", icon: User, path: "/setup/users" },
+      { name: "Translations", icon: Languages, path: "/setup/translations" },
     ],
   },
   {
@@ -113,6 +117,10 @@ const inactiveItemClass =
 
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
   const location = useLocation();
+  const { school } = useSchool();
+
+  const schoolName = school?.name || "Your School";
+  const logoUrl = school?.logoUrl ? resolveAssetUrl(school.logoUrl) : null;
 
   // Accordion: only one section key (or null) is ever "open" at a time.
   const [openSection, setOpenSection] = useState<Section | null>(() =>
@@ -135,13 +143,17 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
       {/* Logo */}
       <div className="sticky top-0 z-10 rounded-[28px] glass-sm px-4 py-4 m-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full glass-sm text-stone-600 dark:text-stone-300">
-            <GraduationCap size={22} />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full glass-sm text-stone-600 dark:text-stone-300">
+            {logoUrl ? (
+              <img src={logoUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <GraduationCap size={22} />
+            )}
           </div>
 
-          <div>
-            <h2 className="text-[15px] font-bold leading-tight text-stone-900 dark:text-stone-100">
-              Varin High School
+          <div className="min-w-0">
+            <h2 className="truncate text-[15px] font-bold leading-tight text-stone-900 dark:text-stone-100">
+              {schoolName}
             </h2>
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-stone-600 dark:text-stone-400">
               School Management
@@ -211,15 +223,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 sticky bottom-0">
-        <div className="rounded-[28px] glass-sm p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-600 dark:text-stone-400">
-            Academic Year
-          </p>
-          <p className="mt-1 text-lg font-bold text-stone-900 dark:text-stone-100">2025 – 2026</p>
-        </div>
-      </div>
+    
     </>
   );
 
