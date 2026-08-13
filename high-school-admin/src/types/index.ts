@@ -63,3 +63,4 @@ export type NavSection = {
   heading: string
   links: NavLink[]
 }
+export type Status = 'Draft' | 'Upcoming' | 'Active' | 'Completed' | 'Archived' | 'Inactive';
