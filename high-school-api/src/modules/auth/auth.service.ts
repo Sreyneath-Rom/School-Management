@@ -147,4 +147,23 @@ export const authService = {
     // See note in forgotPassword — implement once the reset-token columns exist.
     throw ApiError.badRequest('Password reset is not yet configured on this server')
   },
+
+  async getCurrentUser(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    })
+
+    if (!user || user.deletedAt || !user.isActive) {
+      throw ApiError.unauthorized('Account is inactive or no longer exists')
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role.name,
+    }
+  },
 }

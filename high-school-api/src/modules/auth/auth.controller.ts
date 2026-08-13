@@ -25,7 +25,8 @@ export const authController = {
 
   async me(req: Request, res: Response) {
     if (!req.user) throw ApiError.unauthorized()
-    sendSuccess(res, req.user)
+    const result = await authService.getCurrentUser(req.user.sub)
+    sendSuccess(res, result)
   },
 
   async changePassword(req: Request, res: Response) {

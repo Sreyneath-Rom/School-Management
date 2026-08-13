@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useSchool } from "@/context/SchoolContext";
 import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
+import { useTranslations } from "@/i18n";
 
 type Section =
   | "SETUP"
@@ -36,69 +37,82 @@ type Section =
   | "COMMUNICATION"
   | "REPORTS";
 
-const menu = [
+interface MenuItem {
+  translationKey: string;
+  icon: any;
+  path: string;
+}
+
+interface MenuSection {
+  key: Section;
+  titleKey: string;
+  icon: any;
+  items: MenuItem[];
+}
+
+const menu: MenuSection[] = [
   {
     key: "SETUP" as Section,
-    title: "SETUP",
+    titleKey: "sidebar.setup",
     icon: Settings,
     items: [
-      { name: "School Setup", icon: Settings, path: "/setup/school" },
-      { name: "Roles & Permissions", icon: ShieldCheck, path: "/setup/roles" },
-      { name: "Subjects", icon: BookMarked, path: "/setup/subjects" },
-      { name: "Schedules", icon: CalendarDays, path: "/setup/schedules" },
-      { name: "Users", icon: User, path: "/setup/users" },
-      { name: "Translations", icon: Languages, path: "/setup/translations" },
+      { translationKey: "sidebar.schoolSetup", icon: Settings, path: "/setup/school" },
+      { translationKey: "sidebar.rolesPermissions", icon: ShieldCheck, path: "/setup/roles" },
+      { translationKey: "sidebar.subjects", icon: BookMarked, path: "/setup/subjects" },
+      { translationKey: "sidebar.schedules", icon: CalendarDays, path: "/setup/schedules" },
+      { translationKey: "sidebar.users", icon: User, path: "/setup/users" },
+      { translationKey: "header.changeLanguage", icon: Languages, path: "/setup/translations" },
     ],
   },
   {
     key: "ACADEMIC" as Section,
-    title: "ACADEMIC",
+    titleKey: "sidebar.academic",
     icon: BookOpenCheck,
     items: [
-      { name: "Classes", icon: BookOpenCheck, path: "/academic/classes" },
-      { name: "Lessons", icon: NotebookText, path: "/academic/lessons" },
-      { name: "Homework", icon: PenLine, path: "/academic/homework" },
-      { name: "Quiz & Tests", icon: FileQuestion, path: "/academic/quizzes" },
-      { name: "Grades", icon: Award, path: "/academic/grades" },
+      { translationKey: "sidebar.classes", icon: BookOpenCheck, path: "/academic/classes" },
+      { translationKey: "sidebar.lessons", icon: NotebookText, path: "/academic/lessons" },
+      { translationKey: "sidebar.homework", icon: PenLine, path: "/academic/homework" },
+      { translationKey: "sidebar.quizTests", icon: FileQuestion, path: "/academic/quizzes" },
+      { translationKey: "sidebar.grades", icon: Award, path: "/academic/grades" },
     ],
   },
   {
     key: "STUDENTS" as Section,
-    title: "STUDENTS",
+    titleKey: "sidebar.students",
     icon: Users2,
     items: [
-      { name: "Student List", icon: Users2, path: "/students" },
-      { name: "Attendance", icon: ClipboardCheck, path: "/students/attendance" },
-      { name: "Leave Requests", icon: FileClock, path: "/students/leave-requests" },
+      { translationKey: "sidebar.studentList", icon: Users2, path: "/students" },
+      { translationKey: "sidebar.attendance", icon: ClipboardCheck, path: "/students/attendance" },
+      { translationKey: "sidebar.leaveRequests", icon: FileClock, path: "/students/leave-requests" },
     ],
   },
   {
     key: "TEACHERS" as Section,
-    title: "TEACHERS",
+    titleKey: "sidebar.teachers",
     icon: UserCog,
     items: [
-      { name: "Teacher List", icon: UserCog, path: "/teachers" },
-      { name: "Teacher Assignments", icon: UserSquare2, path: "/teachers/assignments" },
+      { translationKey: "sidebar.teacherList", icon: UserCog, path: "/teachers" },
+      { translationKey: "sidebar.teacherAssignments", icon: UserSquare2, path: "/teachers/assignments" },
     ],
   },
   {
     key: "COMMUNICATION" as Section,
-    title: "COMMUNICATION",
+    titleKey: "sidebar.communication",
     icon: Megaphone,
     items: [
-      { name: "Announcements", icon: Megaphone, path: "/communication/announcements" },
-      { name: "Notifications", icon: Megaphone, path: "/communication/notifications" },
+      { translationKey: "sidebar.announcements", icon: Megaphone, path: "/communication/announcements" },
+      { translationKey: "sidebar.notifications", icon: Megaphone, path: "/communication/notifications" },
     ],
   },
   {
     key: "REPORTS" as Section,
-    title: "REPORTS",
+    titleKey: "sidebar.reports",
     icon: BarChart3,
     items: [
-      { name: "Attendance Report", icon: ClipboardCheck, path: "/reports/attendance" },
-      { name: "Grade Report", icon: FileBarChart, path: "/reports/grades" },
-      { name: "Student Report", icon: Users2, path: "/reports/students" },
-      { name: "Teacher Report", icon: UserSquare2, path: "/reports/teachers" },
+      { translationKey: "sidebar.attendanceReport", icon: ClipboardCheck, path: "/reports/attendance" },
+      { translationKey: "sidebar.gradeReport", icon: FileBarChart, path: "/reports/grades" },
+      { translationKey: "sidebar.studentReport", icon: Users2, path: "/reports/students" },
+      { translationKey: "sidebar.teacherReport", icon: UserSquare2, path: "/reports/teachers" },
     ],
   },
 ];
@@ -118,6 +132,7 @@ const inactiveItemClass =
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
   const location = useLocation();
   const { school } = useSchool();
+  const { t } = useTranslations();
 
   const schoolName = school?.name || "Your School";
   const logoUrl = school?.logoUrl ? resolveAssetUrl(school.logoUrl) : null;
@@ -156,7 +171,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
               {schoolName}
             </h2>
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-stone-600 dark:text-stone-400">
-              School Management
+              {t('footer.systemName')}
             </p>
           </div>
         </div>
@@ -173,7 +188,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
           }
         >
           <LayoutDashboard size={16} />
-          <span>Dashboard</span>
+          <span>{t('sidebar.dashboard')}</span>
         </NavLink>
       </div>
 
@@ -191,7 +206,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
               >
                 <span className="flex items-center gap-3">
                   <SectionIcon size={18} />
-                  {section.title}
+                  {t(section.titleKey)}
                 </span>
                 {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
               </button>
@@ -203,7 +218,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
 
                     return (
                       <NavLink
-                        key={item.name}
+                        key={item.path}
                         to={item.path}
                         className={({ isActive }) =>
                           `flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition ${
@@ -212,7 +227,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean;
                         }
                       >
                         <Icon size={16} />
-                        <span>{item.name}</span>
+                        <span>{t(item.translationKey)}</span>
                       </NavLink>
                     );
                   })}

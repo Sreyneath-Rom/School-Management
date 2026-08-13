@@ -17,564 +17,24 @@ import {
 
 import PageHeading from '@/components/common/PageHeading'
 import Button from '@/components/common/Button'
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface StringEntry {
-  key: string
-  category: string
-  en: string
-}
-
-interface LanguageDef {
-  code: string
-  name: string
-  flag: string
-}
-
-type TranslationMap = Record<
-  string,
-  Record<string, string>
->
-
-// ============================================================================
-// STORAGE KEYS
-// ============================================================================
-
-const LANGUAGES_STORAGE_KEY =
-  'translations.languages'
-
-const DATA_STORAGE_KEY =
-  'translations.data'
-
-const LANGUAGE_STORAGE_KEY =
-  'app.language'
-
-// ============================================================================
-// DEFAULT LANGUAGE
-// ============================================================================
-
-const DEFAULT_LANG: LanguageDef = {
-  code: 'en',
-  name: 'English',
-  flag: '🇬🇧',
-}
-
-// ============================================================================
-// TRANSLATION STRINGS
-// ============================================================================
-
-const STRINGS: StringEntry[] = [
-  // --------------------------------------------------------------------------
-  // Header
-  // --------------------------------------------------------------------------
-
-  {
-    key: 'header.searchPlaceholder',
-    category: 'Header',
-    en: 'Search students, staff, or records...',
-  },
-  {
-    key: 'header.searching',
-    category: 'Header',
-    en: 'Searching...',
-  },
-  {
-    key: 'header.noResults',
-    category: 'Header',
-    en: 'No results found',
-  },
-  {
-    key: 'header.notifications',
-    category: 'Header',
-    en: 'Notifications',
-  },
-  {
-    key: 'header.markAllRead',
-    category: 'Header',
-    en: 'Mark all read',
-  },
-  {
-    key: 'header.allCaughtUp',
-    category: 'Header',
-    en: "You're all caught up.",
-  },
-  {
-    key: 'header.myProfile',
-    category: 'Header',
-    en: 'My Profile',
-  },
-  {
-    key: 'header.settings',
-    category: 'Header',
-    en: 'Settings',
-  },
-  {
-    key: 'header.logOut',
-    category: 'Header',
-    en: 'Log out',
-  },
-  {
-    key: 'header.account',
-    category: 'Header',
-    en: 'Account',
-  },
-  {
-    key: 'header.changeLanguage',
-    category: 'Header',
-    en: 'Change language',
-  },
-
-  // --------------------------------------------------------------------------
-  // Search
-  // --------------------------------------------------------------------------
-
-  {
-    key: 'search.student',
-    category: 'Search',
-    en: 'Student',
-  },
-  {
-    key: 'search.staff',
-    category: 'Search',
-    en: 'Staff',
-  },
-  {
-    key: 'search.record',
-    category: 'Search',
-    en: 'Record',
-  },
-
-  // --------------------------------------------------------------------------
-  // Sidebar
-  // --------------------------------------------------------------------------
-
-  {
-    key: 'sidebar.dashboard',
-    category: 'Sidebar',
-    en: 'Dashboard',
-  },
-  {
-    key: 'sidebar.setup',
-    category: 'Sidebar',
-    en: 'Setup',
-  },
-  {
-    key: 'sidebar.schoolSetup',
-    category: 'Sidebar',
-    en: 'School Setup',
-  },
-  {
-    key: 'sidebar.rolesPermissions',
-    category: 'Sidebar',
-    en: 'Roles & Permissions',
-  },
-  {
-    key: 'sidebar.subjects',
-    category: 'Sidebar',
-    en: 'Subjects',
-  },
-  {
-    key: 'sidebar.schedules',
-    category: 'Sidebar',
-    en: 'Schedules',
-  },
-  {
-    key: 'sidebar.users',
-    category: 'Sidebar',
-    en: 'Users',
-  },
-  {
-    key: 'sidebar.academic',
-    category: 'Sidebar',
-    en: 'Academic',
-  },
-  {
-    key: 'sidebar.classes',
-    category: 'Sidebar',
-    en: 'Classes',
-  },
-  {
-    key: 'sidebar.lessons',
-    category: 'Sidebar',
-    en: 'Lessons',
-  },
-  {
-    key: 'sidebar.homework',
-    category: 'Sidebar',
-    en: 'Homework',
-  },
-  {
-    key: 'sidebar.quizTests',
-    category: 'Sidebar',
-    en: 'Quiz & Tests',
-  },
-  {
-    key: 'sidebar.grades',
-    category: 'Sidebar',
-    en: 'Grades',
-  },
-  {
-    key: 'sidebar.students',
-    category: 'Sidebar',
-    en: 'Students',
-  },
-  {
-    key: 'sidebar.studentList',
-    category: 'Sidebar',
-    en: 'Student List',
-  },
-  {
-    key: 'sidebar.attendance',
-    category: 'Sidebar',
-    en: 'Attendance',
-  },
-  {
-    key: 'sidebar.leaveRequests',
-    category: 'Sidebar',
-    en: 'Leave Requests',
-  },
-  {
-    key: 'sidebar.teachers',
-    category: 'Sidebar',
-    en: 'Teachers',
-  },
-  {
-    key: 'sidebar.teacherList',
-    category: 'Sidebar',
-    en: 'Teacher List',
-  },
-  {
-    key: 'sidebar.teacherAssignments',
-    category: 'Sidebar',
-    en: 'Teacher Assignments',
-  },
-  {
-    key: 'sidebar.communication',
-    category: 'Sidebar',
-    en: 'Communication',
-  },
-  {
-    key: 'sidebar.announcements',
-    category: 'Sidebar',
-    en: 'Announcements',
-  },
-  {
-    key: 'sidebar.notifications',
-    category: 'Sidebar',
-    en: 'Notifications',
-  },
-  {
-    key: 'sidebar.reports',
-    category: 'Sidebar',
-    en: 'Reports',
-  },
-  {
-    key: 'sidebar.attendanceReport',
-    category: 'Sidebar',
-    en: 'Attendance Report',
-  },
-  {
-    key: 'sidebar.gradeReport',
-    category: 'Sidebar',
-    en: 'Grade Report',
-  },
-  {
-    key: 'sidebar.studentReport',
-    category: 'Sidebar',
-    en: 'Student Report',
-  },
-  {
-    key: 'sidebar.teacherReport',
-    category: 'Sidebar',
-    en: 'Teacher Report',
-  },
-
-  // --------------------------------------------------------------------------
-  // Common
-  // --------------------------------------------------------------------------
-
-  {
-    key: 'common.save',
-    category: 'Common',
-    en: 'Save',
-  },
-  {
-    key: 'common.cancel',
-    category: 'Common',
-    en: 'Cancel',
-  },
-  {
-    key: 'common.delete',
-    category: 'Common',
-    en: 'Delete',
-  },
-  {
-    key: 'common.edit',
-    category: 'Common',
-    en: 'Edit',
-  },
-  {
-    key: 'common.discard',
-    category: 'Common',
-    en: 'Discard',
-  },
-  {
-    key: 'common.saving',
-    category: 'Common',
-    en: 'Saving...',
-  },
-  {
-    key: 'common.loading',
-    category: 'Common',
-    en: 'Loading...',
-  },
-  {
-    key: 'common.yes',
-    category: 'Common',
-    en: 'Yes',
-  },
-  {
-    key: 'common.no',
-    category: 'Common',
-    en: 'No',
-  },
-  {
-    key: 'common.close',
-    category: 'Common',
-    en: 'Close',
-  },
-  {
-    key: 'common.confirm',
-    category: 'Common',
-    en: 'Confirm',
-  },
-
-  // --------------------------------------------------------------------------
-  // Footer
-  // --------------------------------------------------------------------------
-
-  {
-    key: 'footer.rights',
-    category: 'Footer',
-    en: 'All rights reserved.',
-  },
-  {
-    key: 'footer.systemName',
-    category: 'Footer',
-    en: 'School Management System',
-  },
-]
-
-// ============================================================================
-// CATEGORIES
-// ============================================================================
-
-const CATEGORIES = Array.from(
-  new Set(
-    STRINGS.map(
-      (item) => item.category,
-    ),
-  ),
-)
-
-// ============================================================================
-// AUTOMATIC FLAG DETECTION
-// ============================================================================
-
-function getFlagFromLanguageCode(
-  code: string,
-): string {
-  const flags: Record<string, string> = {
-    // Europe
-    en: '🇬🇧',
-    fr: '🇫🇷',
-    de: '🇩🇪',
-    es: '🇪🇸',
-    it: '🇮🇹',
-    pt: '🇵🇹',
-    nl: '🇳🇱',
-    ru: '🇷🇺',
-    uk: '🇺🇦',
-    pl: '🇵🇱',
-    ro: '🇷🇴',
-    hu: '🇭🇺',
-    cs: '🇨🇿',
-    sk: '🇸🇰',
-    bg: '🇧🇬',
-    el: '🇬🇷',
-    sv: '🇸🇪',
-    no: '🇳🇴',
-    da: '🇩🇰',
-    fi: '🇫🇮',
-    is: '🇮🇸',
-    ga: '🇮🇪',
-
-    // Asia
-    km: '🇰🇭',
-    zh: '🇨🇳',
-    ja: '🇯🇵',
-    ko: '🇰🇷',
-    th: '🇹🇭',
-    vi: '🇻🇳',
-    my: '🇲🇲',
-    id: '🇮🇩',
-    ms: '🇲🇾',
-    tl: '🇵🇭',
-    ph: '🇵🇭',
-    hi: '🇮🇳',
-    bn: '🇧🇩',
-    ur: '🇵🇰',
-    ne: '🇳🇵',
-    si: '🇱🇰',
-    lo: '🇱🇦',
-    mn: '🇲🇳',
-
-    // Middle East
-    ar: '🇸🇦',
-    he: '🇮🇱',
-    fa: '🇮🇷',
-    tr: '🇹🇷',
-
-    // Americas
-    ca: '🇨🇦',
-    mx: '🇲🇽',
-    br: '🇧🇷',
-
-    // Oceania
-    mi: '🇳🇿',
-  }
-
-  return (
-    flags[code.toLowerCase()] ??
-    '🌐'
-  )
-}
-
-// ============================================================================
-// LANGUAGE CODE GENERATOR
-// ============================================================================
-
-function slugifyCode(
-  input: string,
-): string {
-  return (
-    input
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z]/g, '')
-      .slice(0, 5) || 'xx'
-  )
-}
-
-// ============================================================================
-// LANGUAGE CODE VALIDATION
-// ============================================================================
-
-function isValidLanguageCode(
-  code: string,
-): boolean {
-  return /^[a-z]{2,5}$/i.test(code)
-}
-
-// ============================================================================
-// LOAD LANGUAGES
-// ============================================================================
-
-function loadLanguages(): LanguageDef[] {
-  if (
-    typeof window ===
-    'undefined'
-  ) {
-    return []
-  }
-
-  try {
-    const raw =
-      window.localStorage.getItem(
-        LANGUAGES_STORAGE_KEY,
-      )
-
-    if (!raw) {
-      return []
-    }
-
-    const parsed =
-      JSON.parse(raw)
-
-    if (!Array.isArray(parsed)) {
-      return []
-    }
-
-    return parsed
-      .filter(
-        (
-          language,
-        ): language is LanguageDef =>
-          language &&
-          typeof language.code ===
-            'string' &&
-          typeof language.name ===
-            'string',
-      )
-      .map((language) => ({
-        code:
-          language.code
-            .toLowerCase(),
-        name: language.name,
-
-        // Always calculate flag again.
-        // This fixes old languages that
-        // were saved without a flag.
-        flag:
-          getFlagFromLanguageCode(
-            language.code,
-          ),
-      }))
-  } catch {
-    return []
-  }
-}
-
-// ============================================================================
-// LOAD TRANSLATIONS
-// ============================================================================
-
-function loadData(): TranslationMap {
-  if (
-    typeof window ===
-    'undefined'
-  ) {
-    return {}
-  }
-
-  try {
-    const raw =
-      window.localStorage.getItem(
-        DATA_STORAGE_KEY,
-      )
-
-    if (!raw) {
-      return {}
-    }
-
-    const parsed =
-      JSON.parse(raw)
-
-    if (
-      !parsed ||
-      typeof parsed !== 'object'
-    ) {
-      return {}
-    }
-
-    return parsed as TranslationMap
-  } catch {
-    return {}
-  }
-}
+import {
+  STRINGS,
+  CATEGORIES,
+  getFlagFromLanguageCode,
+  slugifyCode,
+  isValidLanguageCode,
+  loadLanguages,
+  loadTranslationData as loadData,
+  saveLanguages,
+  saveTranslationData,
+  saveActiveLanguageCode,
+  subscribeToTranslationChanges,
+  DEFAULT_LANGUAGE as DEFAULT_LANG,
+  LANGUAGE_STORAGE_KEY,
+  type LanguageDef,
+  type TranslationMap,
+  type StringEntry,
+} from '@/i18n'
 
 // ============================================================================
 // COMPONENT
@@ -655,25 +115,9 @@ export default function TranslationManager() {
   // --------------------------------------------------------------------------
 
   useEffect(() => {
-    if (
-      typeof window ===
-      'undefined'
-    ) {
-      return
-    }
-
-    window.localStorage.setItem(
-      LANGUAGES_STORAGE_KEY,
-      JSON.stringify(languages),
-    )
-
-    // IMPORTANT:
-    // Header listens for this event.
-    window.dispatchEvent(
-      new Event(
-        'translations-updated',
-      ),
-    )
+    // saveLanguages() persists to localStorage and dispatches
+    // TRANSLATIONS_UPDATED_EVENT, which Header listens for.
+    saveLanguages(languages)
   }, [languages])
 
   // --------------------------------------------------------------------------
@@ -681,25 +125,9 @@ export default function TranslationManager() {
   // --------------------------------------------------------------------------
 
   useEffect(() => {
-    if (
-      typeof window ===
-      'undefined'
-    ) {
-      return
-    }
-
-    window.localStorage.setItem(
-      DATA_STORAGE_KEY,
-      JSON.stringify(data),
-    )
-
-    // IMPORTANT:
-    // Header listens for this event.
-    window.dispatchEvent(
-      new Event(
-        'translations-updated',
-      ),
-    )
+    // saveTranslationData() persists to localStorage and dispatches
+    // TRANSLATIONS_UPDATED_EVENT, which Header listens for.
+    saveTranslationData(data)
 
     if (isFirstDataEffect.current) {
       isFirstDataEffect.current =
@@ -754,20 +182,13 @@ export default function TranslationManager() {
   // --------------------------------------------------------------------------
 
   useEffect(() => {
-    if (
-      typeof window ===
-      'undefined'
-    ) {
-      return
-    }
-
     const sync = () => {
       const nextLanguages = loadLanguages()
       const nextData = loadData()
 
       // Only update state when content actually changed.
       // Prevents the infinite loop caused by new object references
-      // from JSON.parse on every 'translations-updated' event.
+      // from JSON.parse on every TRANSLATIONS_UPDATED_EVENT.
       setLanguages((prev) => {
         if (JSON.stringify(prev) === JSON.stringify(nextLanguages)) {
           return prev
@@ -783,45 +204,7 @@ export default function TranslationManager() {
       })
     }
 
-    const handleStorage = (
-      event: StorageEvent,
-    ) => {
-      if (
-        event.key ===
-          LANGUAGES_STORAGE_KEY ||
-        event.key ===
-          DATA_STORAGE_KEY
-      ) {
-        sync()
-      }
-    }
-
-    const handleCustomUpdate =
-      () => {
-        sync()
-      }
-
-    window.addEventListener(
-      'storage',
-      handleStorage,
-    )
-
-    window.addEventListener(
-      'translations-updated',
-      handleCustomUpdate,
-    )
-
-    return () => {
-      window.removeEventListener(
-        'storage',
-        handleStorage,
-      )
-
-      window.removeEventListener(
-        'translations-updated',
-        handleCustomUpdate,
-      )
-    }
+    return subscribeToTranslationChanges(sync)
   }, [])
 
   // --------------------------------------------------------------------------
@@ -1116,23 +499,14 @@ export default function TranslationManager() {
 
       // ----------------------------------------------------------------------
       // SAVE SELECTED LANGUAGE
+      //
+      // The setLanguages() call above already triggers the "save languages"
+      // effect, which persists to localStorage and dispatches
+      // TRANSLATIONS_UPDATED_EVENT for Header to pick up — no need to
+      // duplicate that here.
       // ----------------------------------------------------------------------
 
-      if (
-        typeof window !==
-        'undefined'
-      ) {
-        window.localStorage.setItem(
-          LANGUAGE_STORAGE_KEY,
-          code,
-        )
-
-        window.dispatchEvent(
-          new Event(
-            'language-changed',
-          ),
-        )
-      }
+      saveActiveLanguageCode(code)
 
       // ----------------------------------------------------------------------
       // CLEAR FORM
@@ -1142,21 +516,6 @@ export default function TranslationManager() {
       setNewCode('')
       setFormError(null)
       setShowAddForm(false)
-
-      // ----------------------------------------------------------------------
-      // IMMEDIATELY UPDATE HEADER
-      // ----------------------------------------------------------------------
-
-      if (
-        typeof window !==
-        'undefined'
-      ) {
-        window.dispatchEvent(
-          new Event(
-            'translations-updated',
-          ),
-        )
-      }
     }
 
   // --------------------------------------------------------------------------
@@ -1224,43 +583,16 @@ export default function TranslationManager() {
     }
 
     // ------------------------------------------------------------------------
-    // Reset Header language if needed
+    // Reset Header's active language if it was the one being removed.
+    // setLanguages() above already dispatches TRANSLATIONS_UPDATED_EVENT,
+    // so Header picks up the removal without any extra event here.
     // ------------------------------------------------------------------------
 
     if (
-      typeof window !==
-      'undefined'
+      typeof window !== 'undefined' &&
+      window.localStorage.getItem(LANGUAGE_STORAGE_KEY) === code
     ) {
-      const currentLanguage =
-        window.localStorage.getItem(
-          LANGUAGE_STORAGE_KEY,
-        )
-
-      if (
-        currentLanguage ===
-        code
-      ) {
-        window.localStorage.setItem(
-          LANGUAGE_STORAGE_KEY,
-          'en',
-        )
-
-        window.dispatchEvent(
-          new Event(
-            'language-changed',
-          ),
-        )
-      }
-
-      // ----------------------------------------------------------------------
-      // IMMEDIATELY UPDATE HEADER
-      // ----------------------------------------------------------------------
-
-      window.dispatchEvent(
-        new Event(
-          'translations-updated',
-        ),
-      )
+      saveActiveLanguageCode('en')
     }
   }
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from '@/hooks';
 import { isValidEmail } from '@/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslations } from '@/i18n';
 import { authService } from '@/services/authService';
 import AuthBackground from '@/components/auth/AuthBackground';
 import { Eye, LockKeyhole, Mail, Sliders, EyeClosed } from 'lucide-react';
@@ -19,6 +20,7 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const { t } = useTranslations();
   const navigate = useNavigate();
 
   const { values, errors, handleChange, handleBlur, handleSubmit, setFieldError } =
@@ -29,28 +31,28 @@ export default function AdminLogin() {
         setError('');
         try {
           if (!values.email.trim()) {
-            setFieldError('email', 'Email is required');
+            setFieldError('email', t('auth.emailRequired'));
             return;
           }
           if (!isValidEmail(values.email)) {
-            setFieldError('email', 'Invalid email address');
+            setFieldError('email', t('auth.invalidEmail'));
             return;
           }
           if (!values.password) {
-            setFieldError('password', 'Password is required');
+            setFieldError('password', t('auth.passwordRequired'));
             return;
           }
 
           const result = await authService.login(values.email.trim(), values.password);
           if (result.user.role !== 'admin') {
-            setError('This account is not an admin account');
+            setError(t('auth.notAdminAccount'));
             return;
           }
 
           login(result);
           navigate('/dashboard', { replace: true });
         } catch (err) {
-          setError('Login failed. Please try again.');
+          setError(t('auth.loginFailed'));
         } finally {
           setIsLoading(false);
         }
@@ -75,8 +77,8 @@ export default function AdminLogin() {
 
         {/* Login Card */}
         <div className="glass-strong rounded-3xl p-8 shadow-xl backdrop-blur-md">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2 text-center">Login to your account</h2>
-          <p className="text-slate-700 text-center text-sm mb-6">Welcome back! Please enter your details.</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2 text-center">{t('auth.loginToAccount')}</h2>
+          <p className="text-slate-700 text-center text-sm mb-6">{t('auth.welcomeBack')}</p>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -86,7 +88,7 @@ export default function AdminLogin() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">Email Address</label>
+              <label className="block text-sm font-medium text-slate-900 mb-2">{t('auth.emailAddress')}</label>
               <div className="relative">
                 <span className="absolute left-3 top-3.5 text-slate-700">
                   <Mail size={18} />
@@ -105,7 +107,7 @@ export default function AdminLogin() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">Password</label>
+              <label className="block text-sm font-medium text-slate-900 mb-2">{t('auth.password')}</label>
               <div className="relative">
                 <span className="absolute left-3 top-3.5 text-slate-700">
                   <LockKeyhole size={18} />
@@ -139,10 +141,10 @@ export default function AdminLogin() {
                   onChange={handleChange}
                   className="w-4 h-4 accent-teal-500 rounded"
                 />
-                <span className="text-sm text-gray-600">Remember Me</span>
+                <span className="text-sm text-gray-600">{t('auth.rememberMe')}</span>
               </label>
               <a href="#" className="text-sm text-teal-600 hover:text-teal-700 font-medium">
-                Forgot Password?
+                {t('auth.forgotPassword')}
               </a>
             </div>
 
@@ -151,7 +153,7 @@ export default function AdminLogin() {
               disabled={isLoading}
               className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoading ? t('common.loading') : t('auth.login')}
               {!isLoading && (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
