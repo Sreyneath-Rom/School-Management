@@ -1,30 +1,34 @@
 import { Router } from 'express'
-import { prisma } from '@/config/database'
+import { permissionsController } from './permissions.controller'
 import { authenticate } from '@/middleware/auth.middleware'
 import { requirePermission } from '@/middleware/role.middleware'
+import { validateBody } from '@/middleware/validation.middleware'
 import { asyncHandler } from '@/utils/asyncHandler'
-import { sendSuccess } from '@/utils/apiResponse'
+import { createPermissionSchema, updatePermissionSchema } from './permissions.validation'
 
 const router = Router()
+router.use(authenticate)
 
-/**
- * GET /api/v1/permissions
- * Returns the full permission catalog: { id, key, moduleId, action }.
- * `key` is stored as "<module>.<action>" (e.g. "grades.edit") — moduleId/action
- * here are derived from that key so the frontend doesn't have to parse it.
- */
-router.get(
+// There's no dedicated "permissions" module in the permission catalog itself
+// (chicken-and-egg), so — same as the original GET route — these are gated
+// on the "roles" module: viewing/managing permissions is part of managing roles.
+
+router.get('/', requirePermission('roles', 'view'), asyncHandler(permissionsController.list))
+
+router.post(
   '/',
-  authenticate,
-  requirePermission('roles', 'view'),
-  asyncHandler(async (_req, res) => {
-    const permissions = await prisma.permission.findMany({ orderBy: { key: 'asc' } })
-    const catalog = permissions.map((p: { id: string; key: string }) => {
-      const [moduleId, action] = p.key.split('.')
-      return { id: p.id, key: p.key, moduleId, action }
-    })
-    sendSuccess(res, catalog)
-  })
+  requirePermission('roles', 'edit'),
+  validateBody(createPermissionSchema),
+  asyncHandler(permissionsController.create)
 )
+
+router.patch(
+  '/:permissionId',
+  requirePermission('roles', 'edit'),
+  validateBody(updatePermissionSchema),
+  asyncHandler(permissionsController.update)
+)
+
+router.delete('/:permissionId', requirePermission('roles', 'edit'), asyncHandler(permissionsController.remove))
 
 export default router

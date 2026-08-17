@@ -8,4 +8,9 @@ export const createStudentSchema = z.object({
   classId: z.string().cuid().optional(),
 })
 
-export const updateStudentSchema = createStudentSchema.partial().omit({ userId: true })
+export const updateStudentSchema = createStudentSchema
+  .partial()
+  .omit({ userId: true })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  })

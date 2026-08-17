@@ -19,7 +19,27 @@ export class ApiError extends Error {
   }
 }
 
-async function refreshAccessToken(): Promise<string | null> {
+// Multiple requests can 401 at the same moment (e.g. several components
+// fetching on mount with an expired access token). Without de-duplication,
+// each one independently calls the refresh endpoint with the SAME refresh
+// token. If the backend rotates/invalidates refresh tokens on use, only the
+// first of these calls succeeds — every other concurrent call sends an
+// already-used refresh token and gets 401'd itself, even though the "real"
+// refresh succeeded. Sharing one in-flight promise fixes that: every 401
+// that happens while a refresh is already underway just awaits that same
+// promise instead of firing its own request.
+let inFlightRefresh: Promise<string | null> | null = null
+
+function clearStoredTokens() {
+  window.localStorage.removeItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
+  window.localStorage.removeItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN)
+  // Let AuthContext (or anything else listening) know the session is
+  // truly dead, so it can log the user out instead of "keeping the
+  // session" with tokens that will never work again.
+  window.dispatchEvent(new Event('auth:session-expired'))
+}
+
+async function performRefresh(): Promise<string | null> {
   const refreshToken = window.localStorage.getItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN)
   if (!refreshToken) return null
 
@@ -29,15 +49,30 @@ async function refreshAccessToken(): Promise<string | null> {
     body: JSON.stringify({ refreshToken }),
   })
 
-  if (!res.ok) return null
+  if (!res.ok) {
+    clearStoredTokens()
+    return null
+  }
 
   const body = (await res.json().catch(() => null)) as any
-  if (!body || typeof body !== 'object' || body.success !== true) return null
+  if (!body || typeof body !== 'object' || body.success !== true) {
+    clearStoredTokens()
+    return null
+  }
 
   const data = body.data as { accessToken: string; refreshToken: string }
   window.localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN, data.accessToken)
   window.localStorage.setItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
   return data.accessToken
+}
+
+function refreshAccessToken(): Promise<string | null> {
+  if (!inFlightRefresh) {
+    inFlightRefresh = performRefresh().finally(() => {
+      inFlightRefresh = null
+    })
+  }
+  return inFlightRefresh
 }
 
 async function handleResponse<T>(res: Response, path: string): Promise<T> {

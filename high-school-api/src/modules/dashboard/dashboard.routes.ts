@@ -1,59 +1,23 @@
 import { Router } from 'express'
-import { prisma } from '@/config/database'
+import { dashboardController } from './dashboard.controller'
 import { authenticate } from '@/middleware/auth.middleware'
 import { asyncHandler } from '@/utils/asyncHandler'
-import { sendSuccess } from '@/utils/apiResponse'
 
 const router = Router()
 router.use(authenticate)
 
-router.get(
-  '/stats',
-  asyncHandler(async (_req, res) => {
-    const [studentCount, teacherCount, classCount, pendingLeaveRequests] = await Promise.all([
-      prisma.student.count({ where: { deletedAt: null } }),
-      prisma.teacher.count({ where: { deletedAt: null } }),
-      prisma.class.count({ where: { deletedAt: null } }),
-      prisma.leaveRequest.count({ where: { status: 'PENDING' } }),
-    ])
-    sendSuccess(res, { studentCount, teacherCount, classCount, pendingLeaveRequests })
-  })
-)
+// NOTE: unlike every other module in this codebase, these routes have no
+// requirePermission gate — only authenticate. Kept that way since the
+// original file didn't have one either; if dashboard data should be
+// restricted (e.g. to staff), add requirePermission('dashboard', 'view')
+// per route the same way the other modules do.
 
-router.get(
-  '/attendance-summary',
-  asyncHandler(async (req, res) => {
-    const { from, to } = req.query as { from?: string; to?: string }
-    const counts = await prisma.attendance.groupBy({
-      by: ['status'],
-      where: {
-        date: from || to ? { gte: from ? new Date(from) : undefined, lte: to ? new Date(to) : undefined } : undefined,
-      },
-      _count: true,
-    })
-    sendSuccess(res, counts)
-  })
-)
+router.get('/stats', asyncHandler(dashboardController.stats))
 
-router.get(
-  '/grade-summary',
-  asyncHandler(async (_req, res) => {
-    const bySubject = await prisma.grade.groupBy({ by: ['subjectId'], _avg: { score: true }, _count: true })
-    sendSuccess(res, bySubject)
-  })
-)
+router.get('/attendance-summary', asyncHandler(dashboardController.attendanceSummary))
 
-router.get(
-  '/notifications',
-  asyncHandler(async (req, res) => {
-    if (!req.user) return
-    const notifications = await prisma.notification.findMany({
-      where: { userId: req.user.sub, readAt: null },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    })
-    sendSuccess(res, notifications)
-  })
-)
+router.get('/grade-summary', asyncHandler(dashboardController.gradeSummary))
+
+router.get('/notifications', asyncHandler(dashboardController.recentNotifications))
 
 export default router

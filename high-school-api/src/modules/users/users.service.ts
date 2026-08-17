@@ -42,6 +42,12 @@ export const usersService = {
     const existing = await prisma.user.findUnique({ where: { email: input.email } })
     if (existing) throw ApiError.conflict('A user with this email already exists')
 
+    // Without this check, an invalid roleId reaches Prisma as a raw FK
+    // constraint violation (P2003) — an unhandled 500 instead of a clean
+    // 400. Same reasoning as the permissionIds check in roles.service.
+    const role = await prisma.role.findUnique({ where: { id: input.roleId } })
+    if (!role) throw ApiError.badRequest('roleId does not refer to an existing role')
+
     const passwordHash = await hashPassword(input.password)
     const user = await prisma.user.create({
       data: {
@@ -59,6 +65,12 @@ export const usersService = {
 
   async update(id: string, input: Partial<{ firstName: string; lastName: string; phone: string; roleId: string; isActive: boolean }>) {
     await usersService.getById(id) // 404s if missing/soft-deleted
+
+    if (input.roleId) {
+      const role = await prisma.role.findUnique({ where: { id: input.roleId } })
+      if (!role) throw ApiError.badRequest('roleId does not refer to an existing role')
+    }
+
     return prisma.user.update({ where: { id }, data: input, select: publicUserSelect })
   },
 
