@@ -14,13 +14,11 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
   const [school, setSchool] = useState<SchoolModel | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  const isMountedRef = useRef(true)
+  const isMounted = useRef(true)
 
   useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-    }
+    isMounted.current = true
+    return () => { isMounted.current = false }
   }, [])
 
   const refetch = useCallback(async () => {
@@ -28,15 +26,14 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
     setError(null)
     try {
       const result = await schoolService.getSchool()
-      if (isMountedRef.current) {
+      if (isMounted.current) {
         setSchool(result)
         setLoading(false)
       }
       return result
     } catch (err) {
-      const normalized = err instanceof Error ? err : new Error(String(err))
-      if (isMountedRef.current) {
-        setError(normalized)
+      if (isMounted.current) {
+        setError(err instanceof Error ? err : new Error(String(err)))
         setLoading(false)
       }
       return undefined
@@ -54,11 +51,8 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
   )
 }
 
-/** Read the single shared school profile. Must be used within <SchoolProvider>. */
 export function useSchool(): SchoolContextValue {
   const ctx = useContext(SchoolContext)
-  if (!ctx) {
-    throw new Error('useSchool must be used within a <SchoolProvider>')
-  }
+  if (!ctx) throw new Error('useSchool must be used within <SchoolProvider>')
   return ctx
 }

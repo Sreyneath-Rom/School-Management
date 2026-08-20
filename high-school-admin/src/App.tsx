@@ -1,6 +1,7 @@
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider, useAuthInitialization } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { ToastProvider } from '@/components/common/ToastProvider' 
 import AppRoutes from './routes/AppRoutes'
 
 function AppWithAuth() {
@@ -25,7 +26,9 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <AuthProvider>
-          <AppWithAuth />
+           <ToastProvider>          
+            <AppWithAuth />
+          </ToastProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
