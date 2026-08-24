@@ -22,7 +22,13 @@ export interface StringEntry {
   [key: string]: string | undefined
 }
 
-export const STRINGS: StringEntry[] = [
+// `as const satisfies readonly StringEntry[]` instead of `: StringEntry[]`
+// on purpose: a plain type annotation here widens every `key: '...'`
+// literal to `string`, which silently turns `TranslationKey` below into
+// just `string` — losing all compile-time checking that a translation key
+// actually exists. `satisfies` checks the array against StringEntry
+// without widening it.
+export const STRINGS = [
   // --------------------------------------------------------------------------
   // Authentication
   // --------------------------------------------------------------------------
@@ -148,7 +154,7 @@ export const STRINGS: StringEntry[] = [
   // --------------------------------------------------------------------------
   { key: 'footer.rights', category: 'Footer', en: 'All rights reserved.', es: 'Todos los derechos reservados.', fr: 'Tous droits réservés.', de: 'Alle Rechte vorbehalten.', pt: 'Todos os direitos reservados.', it: 'Tutti i diritti riservati.', ja: '著作権所有。', zh: '版权所有。', ar: 'جميع الحقوق محفوظة.', hi: 'सर्वाधिकार सुरक्षित।' },
   { key: 'footer.systemName', category: 'Footer', en: 'School Management System', es: 'Sistema de Gestión Escolar', fr: 'Système de Gestion Scolaire', de: 'Schulverwaltungssystem', pt: 'Sistema de Gestão Escolar', it: 'Sistema di Gestione Scolastica', ja: '学校管理システム', zh: '学校管理系统', ar: 'نظام إدارة المدرسة', hi: 'स्कूल प्रबंधन प्रणाली' },
-]
+] as const satisfies readonly StringEntry[]
 
 export const CATEGORIES = Array.from(new Set(STRINGS.map((item) => item.category)))
 

@@ -28,7 +28,26 @@ model School {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+model Language {
+  id           String        @id @default(cuid())
+  code         String        @unique
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  translations Translation[]
+}
 
+model Translation {
+  id           String   @id @default(cuid())
+  languageCode String
+  language     Language @relation(fields: [languageCode], references: [code], onDelete: Cascade)
+  key          String
+  value        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([languageCode, key])
+}
 // ------------------------------------------------------------
 // AUTH / RBAC
 // Roles + granular Permissions rather than a fixed role enum,

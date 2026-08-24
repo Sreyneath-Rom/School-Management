@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { getLocaleFromCode } from './languageMeta'
+import { getFlagFromLanguageCode, getLocaleFromCode } from './languageMeta'
 import { EN_TRANSLATIONS, STRINGS, type TranslationKey } from './strings'
 import {
   DEFAULT_LANGUAGE,
@@ -10,11 +10,19 @@ import {
   loadLanguages,
   loadTranslationData,
   saveActiveLanguageCode,
+  saveLanguages,
+  saveTranslationData,
   subscribeToTranslationChanges,
 } from './storage'
+import { languagesService } from '@/services/languagesService'
+import { translationsService } from '@/services/translationsService'
 
-// Built-in supported languages
-const BUILT_IN_LANGUAGES: LanguageDef[] = [
+// Built-in supported languages. Exported so TranslationManager can treat
+// these codes as reserved — without this, an admin adding a custom
+// language with e.g. code "es" would collide with the built-in Spanish
+// entry with no warning (see mergeTranslations below for what that
+// collision does on the read side).
+export const BUILT_IN_LANGUAGES: LanguageDef[] = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
   { code: 'es', name: 'Español', flag: '🇪🇸' },
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
@@ -52,12 +60,35 @@ function buildBuiltInTranslations(): TranslationMap {
 
 const BUILT_IN_TRANSLATIONS = buildBuiltInTranslations()
 
+// `{ ...builtIn, ...stored }` looks like a merge but isn't one at the level
+// that matters: for any language present in `stored`, it replaces that
+// language's ENTIRE translation object rather than merging key-by-key. In
+// practice that means saving even a single edited string for a built-in
+// language (e.g. French) via TranslationManager silently discards every
+// other built-in French string that wasn't also re-saved — they'd fall
+// back to raw translation keys instead of their shipped translations.
+// Merging per-key, per-language keeps built-ins as the base and lets
+// `stored` override only the specific keys someone actually edited.
+function mergeTranslations(builtIn: TranslationMap, stored: TranslationMap): TranslationMap {
+  const result: TranslationMap = {}
+  const codes = new Set([...Object.keys(builtIn), ...Object.keys(stored)])
+
+  codes.forEach((code) => {
+    result[code] = { ...(builtIn[code] ?? {}), ...(stored[code] ?? {}) }
+  })
+
+  return result
+}
+
+// The Header's switcher should only ever show English plus whatever
+// languages have actually been added via TranslationManager — not every
+// built-in language automatically. BUILT_IN_LANGUAGES/BUILT_IN_TRANSLATIONS
+// still exist so that adding e.g. "es" comes with pre-filled Spanish
+// translations rather than starting from scratch, but the language itself
+// only appears in the switcher once someone has explicitly added it.
 function withDefaultLanguage(languages: LanguageDef[]): LanguageDef[] {
   const additional = languages.filter((language) => language.code !== 'en')
-  // Merge built-in languages with stored languages, preferring built-in
-  const builtInCodes = BUILT_IN_LANGUAGES.map((l) => l.code)
-  const customLanguages = additional.filter((l) => !builtInCodes.includes(l.code))
-  return [...BUILT_IN_LANGUAGES, ...customLanguages]
+  return [DEFAULT_LANGUAGE, ...additional]
 }
 
 function sameLanguages(a: LanguageDef[], b: LanguageDef[]): boolean {
@@ -84,8 +115,7 @@ export function useTranslations(): UseTranslationsResult {
 
   const [translationData, setTranslationData] = useState<TranslationMap>(() => {
     const stored = loadTranslationData()
-    // Merge stored translations with built-in translations
-    return { ...BUILT_IN_TRANSLATIONS, ...stored }
+    return mergeTranslations(BUILT_IN_TRANSLATIONS, stored)
   })
 
   const [language, setLanguageState] = useState<string>(() => {
@@ -102,7 +132,7 @@ export function useTranslations(): UseTranslationsResult {
     const sync = () => {
       const nextLanguages = withDefaultLanguage(loadLanguages())
       const stored = loadTranslationData()
-      const nextData = { ...BUILT_IN_TRANSLATIONS, ...stored }
+      const nextData = mergeTranslations(BUILT_IN_TRANSLATIONS, stored)
 
       setLanguages((prev) => (sameLanguages(prev, nextLanguages) ? prev : nextLanguages))
       setTranslationData((prev) =>
@@ -121,6 +151,84 @@ export function useTranslations(): UseTranslationsResult {
     sync()
 
     return subscribeToTranslationChanges(sync)
+  }, [])
+
+  // --------------------------------------------------------------------------
+  // Load from the backend on mount.
+  //
+  // localStorage (via the state initializers above and the `sync` effect)
+  // gives an instant, offline-safe first paint using whatever was cached
+  // from the last successful fetch. This effect then tries the real API
+  // and, if it succeeds, overwrites both React state and the localStorage
+  // cache with the authoritative server data.
+  //
+  // Any failure here — logged out, no `translations.view` permission,
+  // offline, backend down — is swallowed on purpose: this hook is used
+  // app-wide (e.g. from Header), including on pages rendered before login,
+  // so it must never throw or block rendering. Worst case, the UI just
+  // falls back to the built-in translations plus whatever was last cached.
+  // --------------------------------------------------------------------------
+
+  const hasFetchedRef = useRef(false)
+
+  useEffect(() => {
+    if (hasFetchedRef.current) return
+    hasFetchedRef.current = true
+
+    let cancelled = false
+
+    async function loadFromApi() {
+      try {
+        const records = await languagesService.list()
+        const fetchedLanguages = withDefaultLanguage(
+          records.map((record) => ({
+            code: record.code.toLowerCase(),
+            name: record.name,
+            flag: getFlagFromLanguageCode(record.code),
+          })),
+        )
+
+        const additionalCodes = fetchedLanguages
+          .map((lang) => lang.code)
+          .filter((code) => code !== 'en')
+
+        const fetchedEntries = await Promise.all(
+          additionalCodes.map(async (code) => {
+            try {
+              return [code, await translationsService.get(code)] as const
+            } catch {
+              // One language's translations failing to load shouldn't take
+              // down the rest — just fall back to built-ins for that code.
+              return [code, {}] as const
+            }
+          }),
+        )
+
+        if (cancelled) return
+
+        const storedFromApi: TranslationMap = Object.fromEntries(fetchedEntries)
+        const nextData = mergeTranslations(BUILT_IN_TRANSLATIONS, storedFromApi)
+
+        setLanguages((prev) => (sameLanguages(prev, fetchedLanguages) ? prev : fetchedLanguages))
+        setTranslationData((prev) =>
+          JSON.stringify(prev) === JSON.stringify(nextData) ? prev : nextData,
+        )
+
+        // Refresh the offline cache so the next page load (or a failed
+        // fetch) has up-to-date data to fall back to.
+        saveLanguages(fetchedLanguages.filter((lang) => lang.code !== 'en'))
+        saveTranslationData(storedFromApi)
+      } catch {
+        // No network / not authenticated / no permission yet — keep
+        // whatever localStorage already gave us.
+      }
+    }
+
+    loadFromApi()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // --------------------------------------------------------------------------

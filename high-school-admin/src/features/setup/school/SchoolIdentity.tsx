@@ -11,12 +11,13 @@ interface Props {
   updateField: (field: keyof SchoolFormState, value: string) => void;
   errors: Partial<Record<keyof SchoolFormState, string>>; // better than any
 }
+// In SchoolIdentity.tsx, add these props:
 
 export default function SchoolIdentity({ form, updateField, errors }: Props) {
   return (
     <section className="rounded-[28px] glass-sm">
       <div className="border-b border-slate-200/60 px-6 py-5 dark:border-slate-800">
-        <SectionHeader icon={<GraduationCap size={19} />} title="School Identity" description="..." />
+        <SectionHeader icon={<GraduationCap size={19} />} title="School Identity" description="" />
       </div>
       <div className="space-y-5 p-6">
         <div className="grid gap-5 md:grid-cols-2">

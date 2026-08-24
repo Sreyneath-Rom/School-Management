@@ -820,8 +820,32 @@ export default function Header({
 
           {/* ================================================================
               DYNAMIC LANGUAGE SWITCHER
+
+              `languages` only ever contains English plus whatever's been
+              explicitly added in TranslationManager — see
+              useTranslations.ts. When nothing else has been added, there's
+              nothing to switch to, so this renders as a plain non-
+              interactive "English" badge instead of a dropdown trigger
+              that would open an empty/pointless menu.
               ================================================================ */}
 
+          {(() => {
+            const hasAdditionalLanguages = languages.length > 1
+
+            if (!hasAdditionalLanguages) {
+              return (
+                <div className="inline-flex h-10 items-center gap-1.5 rounded-full glass-sm px-3 text-stone-600 dark:text-stone-300">
+                  <span className="text-base leading-none">
+                    {activeLanguage.flag}
+                  </span>
+                  <span className="hidden text-xs font-semibold uppercase sm:inline">
+                    {activeLanguage.code}
+                  </span>
+                </div>
+              )
+            }
+
+            return (
           <div
             className="relative"
             ref={langRef}
@@ -936,6 +960,8 @@ export default function Header({
             )}
 
           </div>
+            )
+          })()}
 
           {/* ================================================================
               NOTIFICATIONS

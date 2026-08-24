@@ -8,7 +8,7 @@ interface Props {
 export default function SectionHeader({ icon, title, description }: Props) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100/70 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to from-brand-100 to-brand-200/60 text-brand-700 dark:from-brand-900/30 dark:to-brand-800/20 dark:text-brand-300">
         {icon}
       </div>
       <div>

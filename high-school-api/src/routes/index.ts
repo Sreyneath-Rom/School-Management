@@ -20,6 +20,8 @@ import leaveRequestsRoutes from '@/modules/leaveRequests/leaveRequests.routes'
 import announcementsRoutes from '@/modules/announcements/announcements.routes'
 import notificationsRoutes from '@/modules/notifications/notifications.routes'
 import reportsRoutes from '@/modules/reports/reports.routes'
+import languagesRoutes from '@/modules/languages/languages.routes'
+import translationsRoutes from '@/modules/translations/translations.routes'
 
 const router = Router()
 
@@ -43,5 +45,7 @@ router.use('/leaves', leaveRequestsRoutes)
 router.use('/announcements', announcementsRoutes)
 router.use('/notifications', notificationsRoutes)
 router.use('/reports', reportsRoutes)
+router.use('/languages', languagesRoutes)
+router.use('/translations', translationsRoutes)
 
 export default router

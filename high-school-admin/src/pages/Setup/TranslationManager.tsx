@@ -31,10 +31,19 @@ import {
   subscribeToTranslationChanges,
   DEFAULT_LANGUAGE as DEFAULT_LANG,
   LANGUAGE_STORAGE_KEY,
+  BUILT_IN_LANGUAGES,
   type LanguageDef,
   type TranslationMap,
   type StringEntry,
 } from '@/i18n'
+import { languagesService } from '@/services/languagesService'
+import { translationsService, type AutoTranslateEntry } from '@/services/translationsService'
+import { ApiError } from '@/lib/apiClient'
+
+// How long to wait after the last keystroke in a translation field before
+// sending the change to the server. Keeps typing snappy (state updates are
+// local/instant) while avoiding a network request per character.
+const TRANSLATION_SYNC_DEBOUNCE_MS = 600
 
 // ============================================================================
 // COMPONENT
@@ -94,6 +103,30 @@ export default function TranslationManager() {
 
   const isFirstDataEffect =
     useRef(true)
+
+  // --------------------------------------------------------------------------
+  // Server sync status
+  // --------------------------------------------------------------------------
+
+  // Tracks whether the *current* in-memory state (languages + data) reflects
+  // what's on the server, so add/remove/edit only fire once we know we're
+  // not about to stomp on data we haven't loaded yet.
+  const [isLoaded, setIsLoaded] =
+    useState(false)
+
+  const [loadError, setLoadError] =
+    useState<string | null>(null)
+
+  const [translationSyncError, setTranslationSyncError] =
+    useState<string | null>(null)
+
+  const pendingEditsRef = useRef<{
+    code: string
+    changes: Record<string, string>
+  } | null>(null)
+
+  const syncTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // --------------------------------------------------------------------------
   // All languages
@@ -178,6 +211,65 @@ export default function TranslationManager() {
   ])
 
   // --------------------------------------------------------------------------
+  // Load languages + translations from the server on mount.
+  //
+  // The initial state above (loadLanguages()/loadData()) comes from the
+  // localStorage cache so the page isn't blank while this request is in
+  // flight. Once it resolves, server data replaces it as the source of
+  // truth. add/remove/edit handlers below refuse to fire until this
+  // completes, so a slow first load can't be raced by an edit that then
+  // gets silently overwritten when the fetch finally lands.
+  // --------------------------------------------------------------------------
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadFromServer() {
+      try {
+        const records = await languagesService.list()
+        const nextLanguages: LanguageDef[] = records.map((record) => ({
+          code: record.code.toLowerCase(),
+          name: record.name,
+          flag: getFlagFromLanguageCode(record.code),
+        }))
+
+        const entries = await Promise.all(
+          nextLanguages.map(async (lang) => {
+            try {
+              return [lang.code, await translationsService.get(lang.code)] as const
+            } catch {
+              return [lang.code, {}] as const
+            }
+          }),
+        )
+
+        if (cancelled) return
+
+        const nextData: TranslationMap = Object.fromEntries(entries)
+
+        setLanguages(nextLanguages)
+        setData(nextData)
+        setLoadError(null)
+      } catch (error) {
+        if (cancelled) return
+        setLoadError(
+          error instanceof ApiError
+            ? `Couldn't load translations from the server (${error.status}). Showing your locally cached copy — changes won't be saved until this is resolved.`
+            : "Couldn't reach the server. Showing your locally cached copy — changes won't be saved until you're back online.",
+        )
+      } finally {
+        if (!cancelled) setIsLoaded(true)
+      }
+    }
+
+    loadFromServer()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // --------------------------------------------------------------------------
   // Listen for external changes
   // --------------------------------------------------------------------------
 
@@ -222,6 +314,26 @@ export default function TranslationManager() {
     activeCode === 'en'
 
   // --------------------------------------------------------------------------
+  // Missing-only filter — lets an admin find exactly what's left to reach
+  // 100% by hand without scrolling every category. Disabled/meaningless
+  // while English (the source language, always "complete") is active.
+  // --------------------------------------------------------------------------
+
+  const [showMissingOnly, setShowMissingOnly] =
+    useState(false)
+
+  const missingKeys =
+    useMemo(() => {
+      if (isDefaultActive) return new Set<string>()
+      const langData = data[activeCode] ?? {}
+      return new Set(
+        STRINGS.filter((entry) => !langData[entry.key]?.trim()).map(
+          (entry) => entry.key,
+        ),
+      )
+    }, [data, activeCode, isDefaultActive])
+
+  // --------------------------------------------------------------------------
   // Filter strings
   // --------------------------------------------------------------------------
 
@@ -232,20 +344,34 @@ export default function TranslationManager() {
           .trim()
           .toLowerCase()
 
-      if (!query) {
-        return STRINGS
+      // STRINGS is defined with `as const`, so TS infers it as an exact
+      // 94-element readonly tuple rather than a general array. Spreading
+      // into a plainly-typed StringEntry[] here (instead of `let result =
+      // STRINGS`) avoids TS trying to force the filtered result back into
+      // that exact-length tuple type, which it can't do once .filter()
+      // produces a shorter array.
+      let result: StringEntry[] = [...STRINGS]
+
+      if (query) {
+        result = result.filter(
+          (item) =>
+            item.key
+              .toLowerCase()
+              .includes(query) ||
+            item.en
+              .toLowerCase()
+              .includes(query),
+        )
       }
 
-      return STRINGS.filter(
-        (item) =>
-          item.key
-            .toLowerCase()
-            .includes(query) ||
-          item.en
-            .toLowerCase()
-            .includes(query),
-      )
-    }, [search])
+      if (showMissingOnly && !isDefaultActive) {
+        result = result.filter((item) =>
+          missingKeys.has(item.key),
+        )
+      }
+
+      return result
+    }, [search, showMissingOnly, missingKeys, isDefaultActive])
 
   // --------------------------------------------------------------------------
   // Group strings
@@ -366,6 +492,35 @@ export default function TranslationManager() {
   // Update translation
   // --------------------------------------------------------------------------
 
+  const flushPendingEdits = () => {
+    const pending = pendingEditsRef.current
+    pendingEditsRef.current = null
+    if (!pending || Object.keys(pending.changes).length === 0) {
+      return
+    }
+
+    translationsService
+      .upsert(pending.code, pending.changes)
+      .then(() => setTranslationSyncError(null))
+      .catch(() => {
+        setTranslationSyncError(
+          `Couldn't save your changes to ${pending.code}. Check your connection — your edits are still visible here but haven't been saved.`,
+        )
+      })
+  }
+
+  // Flush any debounced edit still pending when the component unmounts,
+  // so navigating away right after typing doesn't drop the last change.
+  useEffect(() => {
+    return () => {
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current)
+      }
+      flushPendingEdits()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const updateTranslation = (
     key: string,
     value: string,
@@ -384,14 +539,144 @@ export default function TranslationManager() {
         [key]: value,
       },
     }))
+
+    // --------------------------------------------------------------------
+    // Debounce the server write. Editing a different language than the one
+    // currently pending flushes the old batch immediately first, so a fast
+    // language switch doesn't lose in-flight edits to the previous one.
+    // --------------------------------------------------------------------
+
+    if (
+      pendingEditsRef.current &&
+      pendingEditsRef.current.code !== activeCode
+    ) {
+      flushPendingEdits()
+    }
+
+    pendingEditsRef.current = {
+      code: activeCode,
+      changes: {
+        ...(pendingEditsRef.current?.code === activeCode
+          ? pendingEditsRef.current.changes
+          : {}),
+        [key]: value,
+      },
+    }
+
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current)
+    }
+
+    syncTimerRef.current = setTimeout(
+      flushPendingEdits,
+      TRANSLATION_SYNC_DEBOUNCE_MS,
+    )
   }
+
+  // --------------------------------------------------------------------------
+  // Auto-translate missing keys
+  //
+  // Sends every currently-untranslated STRINGS entry for the active
+  // language to the backend, which machine-translates them and persists
+  // the results. This bypasses the per-keystroke debounce entirely since
+  // it's one deliberate bulk action, not typing.
+  // --------------------------------------------------------------------------
+
+  const [isAutoTranslating, setIsAutoTranslating] =
+    useState(false)
+
+  const [autoTranslateNotice, setAutoTranslateNotice] =
+    useState<string | null>(null)
+
+  const handleAutoTranslate =
+    async () => {
+      if (isDefaultActive || isAutoTranslating) {
+        return
+      }
+
+      // Flush any pending manual edits first so a race between the two
+      // doesn't let auto-translate overwrite something just typed.
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current)
+      }
+      flushPendingEdits()
+
+      const entries: AutoTranslateEntry[] =
+        STRINGS.filter((entry) =>
+          missingKeys.has(entry.key),
+        ).map((entry) => ({
+          key: entry.key,
+          text: entry.en,
+        }))
+
+      if (entries.length === 0) {
+        setAutoTranslateNotice(
+          'Nothing to translate — every string already has a value.',
+        )
+        return
+      }
+
+      setIsAutoTranslating(true)
+      setAutoTranslateNotice(null)
+      setTranslationSyncError(null)
+
+      // MyMemory's free tier is best done in modest batches — translating
+      // hundreds of strings in one request is slow and more likely to hit
+      // a rate limit partway through. 40 per request keeps each call quick
+      // while still being far fewer round trips than one-per-key.
+      const BATCH_SIZE = 40
+      const allFailedKeys: string[] = []
+      let translatedCountThisRun = 0
+
+      try {
+        for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+          const batch = entries.slice(i, i + BATCH_SIZE)
+          const result = await translationsService.autoTranslate(
+            activeCode,
+            batch,
+          )
+
+          setData((previous) => ({
+            ...previous,
+            [activeCode]: {
+              ...(previous[activeCode] ?? {}),
+              ...result.translations,
+            },
+          }))
+
+          allFailedKeys.push(...result.failedKeys)
+          translatedCountThisRun += batch.length - result.failedKeys.length
+        }
+
+        if (allFailedKeys.length === 0) {
+          setAutoTranslateNotice(
+            `Auto-translated ${translatedCountThisRun} string${translatedCountThisRun === 1 ? '' : 's'}. Please review — machine translation is a starting draft, not a final one.`,
+          )
+        } else {
+          setAutoTranslateNotice(
+            `Auto-translated ${translatedCountThisRun} string${translatedCountThisRun === 1 ? '' : 's'}; ${allFailedKeys.length} couldn't be translated automatically (rate limit or provider error) and still need manual entry. Please review the rest — machine translation is a starting draft, not a final one.`,
+          )
+        }
+      } catch (error) {
+        setAutoTranslateNotice(
+          error instanceof ApiError
+            ? `Auto-translate failed: ${error.status === 403 ? 'you don\u2019t have permission to edit translations.' : 'the server rejected the request.'}`
+            : "Auto-translate failed — couldn't reach the server.",
+        )
+      } finally {
+        setIsAutoTranslating(false)
+      }
+    }
 
   // --------------------------------------------------------------------------
   // Add language
   // --------------------------------------------------------------------------
 
+  const [isAddingLanguage, setIsAddingLanguage] =
+    useState(false)
+
   const handleAddLanguage =
-    () => {
+    async () => {
       const name =
         newName.trim()
 
@@ -453,6 +738,31 @@ export default function TranslationManager() {
       }
 
       // ----------------------------------------------------------------------
+      // CREATE ON THE SERVER FIRST
+      //
+      // Language codes are unique on the backend too, so this is also the
+      // real conflict check — the client-side ones above just give a fast
+      // local error before making a round trip for the common case.
+      // ----------------------------------------------------------------------
+
+      setIsAddingLanguage(true)
+      setFormError(null)
+
+      try {
+        await languagesService.create({ code, name })
+      } catch (error) {
+        setFormError(
+          error instanceof ApiError && typeof error.body === 'object' && error.body && 'message' in error.body
+            ? String((error.body as { message?: unknown }).message ?? 'Could not add that language.')
+            : 'Could not add that language. Check your connection and try again.',
+        )
+        setIsAddingLanguage(false)
+        return
+      }
+
+      setIsAddingLanguage(false)
+
+      // ----------------------------------------------------------------------
       // AUTOMATIC FLAG
       // ----------------------------------------------------------------------
 
@@ -469,7 +779,7 @@ export default function TranslationManager() {
         }
 
       // ----------------------------------------------------------------------
-      // ADD LANGUAGE
+      // ADD LANGUAGE (now that the server has confirmed it)
       // ----------------------------------------------------------------------
 
       setLanguages(
@@ -522,7 +832,7 @@ export default function TranslationManager() {
   // Remove language
   // --------------------------------------------------------------------------
 
-  const handleRemoveLanguage = (
+  const handleRemoveLanguage = async (
     code: string,
   ) => {
     if (code === 'en') {
@@ -545,6 +855,20 @@ export default function TranslationManager() {
       )
 
     if (!confirmed) {
+      return
+    }
+
+    // ------------------------------------------------------------------------
+    // Remove on the server first. Translation rows cascade-delete with the
+    // language on the backend, so a single call handles both.
+    // ------------------------------------------------------------------------
+
+    try {
+      await languagesService.remove(code)
+    } catch {
+      window.alert(
+        `Couldn't remove ${language.name}. Check your connection and try again.`,
+      )
       return
     }
 
@@ -623,6 +947,22 @@ export default function TranslationManager() {
         title="Translations"
         subtitle="Manage the default English text and add other languages for the system."
       />
+
+      {/* ======================================================================
+          LOAD / SYNC ERROR BANNERS
+          ====================================================================== */}
+
+      {loadError && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+          {loadError}
+        </div>
+      )}
+
+      {translationSyncError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+          {translationSyncError}
+        </div>
+      )}
 
       {/* ======================================================================
           LANGUAGE BAR
@@ -711,6 +1051,7 @@ export default function TranslationManager() {
           {!showAddForm && (
             <Button
               variant="glass"
+              disabled={!isLoaded}
               onClick={() =>
                 setShowAddForm(
                   true,
@@ -812,11 +1153,16 @@ export default function TranslationManager() {
 
                 <Button
                   variant="solid"
+                  disabled={
+                    isAddingLanguage
+                  }
                   onClick={
                     handleAddLanguage
                   }
                 >
-                  Add
+                  {isAddingLanguage
+                    ? 'Adding…'
+                    : 'Add'}
                 </Button>
 
                 <Button
@@ -853,6 +1199,19 @@ export default function TranslationManager() {
 
               </div>
             )}
+
+            {/* Pre-filled translations hint for built-in codes */}
+
+            {newCode.trim() &&
+              BUILT_IN_LANGUAGES.some(
+                (language) =>
+                  language.code ===
+                  slugifyCode(newCode),
+              ) && (
+                <div className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+                  "{slugifyCode(newCode)}" has built-in translations — they'll be pre-filled once added.
+                </div>
+              )}
 
             {/* Error */}
 
@@ -958,6 +1317,53 @@ export default function TranslationManager() {
         </div>
 
       </div>
+
+      {/* ======================================================================
+          MISSING-ONLY TOGGLE + AUTO-TRANSLATE
+          ====================================================================== */}
+
+      {!isDefaultActive && (
+        <div className="flex flex-col gap-3 rounded-[28px] glass-sm p-4 sm:flex-row sm:items-center sm:justify-between">
+
+          <label className="flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300">
+            <input
+              type="checkbox"
+              checked={showMissingOnly}
+              onChange={(event) =>
+                setShowMissingOnly(event.target.checked)
+              }
+              className="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500 dark:border-stone-600"
+            />
+            Show untranslated only
+            {missingKeys.size > 0 && (
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                {missingKeys.size}
+              </span>
+            )}
+          </label>
+
+          <Button
+            variant="glass"
+            disabled={isAutoTranslating || !isLoaded || missingKeys.size === 0}
+            onClick={handleAutoTranslate}
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold"
+          >
+            <Globe size={14} />
+            {isAutoTranslating
+              ? 'Translating…'
+              : missingKeys.size === 0
+                ? 'All strings translated'
+                : `Auto-translate ${missingKeys.size} missing`}
+          </Button>
+
+        </div>
+      )}
+
+      {autoTranslateNotice && (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-300">
+          {autoTranslateNotice}
+        </div>
+      )}
 
       {/* ======================================================================
           CATEGORY CONTROLS
@@ -1108,7 +1514,8 @@ export default function TranslationManager() {
                                 value
                               }
                               disabled={
-                                isDefaultActive
+                                isDefaultActive ||
+                                !isLoaded
                               }
                               onChange={(
                                 event,
