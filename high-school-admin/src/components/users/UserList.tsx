@@ -157,7 +157,11 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
       return next
     })
   }
@@ -203,16 +207,16 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
       )}
 
       {showHeading && (
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <PageHeading title="User Management" subtitle={`${totalItems} user${totalItems === 1 ? '' : 's'} across all roles`} />
           <div className="flex flex-wrap items-center gap-2">
-            <button className="glass glass-interactive flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-text-main">
+            <button className="glass glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-text-main">
               <Upload size={16} /> Import
             </button>
-            <button className="glass glass-interactive flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-text-main">
+            <button className="glass glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-text-main">
               <Download size={16} /> Export
             </button>
-            <button className="glass-teal glass-interactive flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white">
+            <button className="glass-teal glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white">
               <UserPlus size={16} /> Add User
             </button>
           </div>
@@ -220,25 +224,25 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
       )}
 
       {/* Search & Dynamic Filters */}
-      <div className="glass-strong rounded-3xl p-4 mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-60">
+      <div className="glass-strong rounded-2xl sm:rounded-3xl p-3 sm:p-4 mb-4 flex flex-wrap items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0 sm:min-w-60">
           <select
             value={searchField}
             onChange={(e) => setSearchField(e.target.value as SearchField)}
-            className="glass rounded-full px-3 py-2 text-sm text-text-main focus:outline-none"
+            className="glass rounded-full px-3 py-2 text-xs sm:text-sm text-text-main focus:outline-none shrink-0"
           >
             {Object.entries(SEARCH_FIELD_LABELS).map(([value, label]) => (
               <option key={value} value={value} className="bg-slate-800 text-white">{label}</option>
             ))}
           </select>
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3.5 top-3 text-text-main/50" />
+          <div className="relative flex-1 min-w-0">
+            <Search size={16} className="absolute left-3.5 top-2.5 text-text-main/50" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search users..."
-              className="glass w-full pl-9 pr-3 py-2 rounded-full text-sm text-text-main placeholder:text-text-main/40 focus:outline-none"
+              className="glass w-full pl-9 pr-3 py-2 rounded-full text-xs sm:text-sm text-text-main placeholder:text-text-main/40 focus:outline-none"
             />
           </div>
         </div>

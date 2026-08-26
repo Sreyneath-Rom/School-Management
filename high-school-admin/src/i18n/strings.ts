@@ -74,12 +74,28 @@ export const STRINGS = [
   { key: 'sidebar.subjects', category: 'Sidebar', en: 'Subjects', es: 'Asignaturas', fr: 'Matières', de: 'Fächer', pt: 'Disciplinas', it: 'Materie', ja: '科目', zh: '科目', ar: 'المواد', hi: 'विषय' },
   { key: 'sidebar.schedules', category: 'Sidebar', en: 'Schedules', es: 'Horarios', fr: 'Horaires', de: 'Zeitpläne', pt: 'Horários', it: 'Orari', ja: 'スケジュール', zh: '日程', ar: 'الجداول الزمنية', hi: 'शेड्यूल' },
   { key: 'sidebar.users', category: 'Sidebar', en: 'Users', es: 'Usuarios', fr: 'Utilisateurs', de: 'Benutzer', pt: 'Usuários', it: 'Utenti', ja: 'ユーザー', zh: '用户', ar: 'المستخدمون', hi: 'उपयोगकर्ता' },
+  { key: 'sidebar.translations', category: 'Sidebar', en: 'Translations', es: 'Traducciones', fr: 'Traductions', de: 'Übersetzungen', pt: 'Traduções', it: 'Traduzioni', ja: '翻訳', zh: '翻译', ar: 'الترجمات', hi: 'अनुवाद' },
   { key: 'sidebar.academic', category: 'Sidebar', en: 'Academic', es: 'Académico', fr: 'Académique', de: 'Akademisch', pt: 'Acadêmico', it: 'Accademico', ja: '学術', zh: '学术', ar: 'أكاديمي', hi: 'शैक्षणिक' },
   { key: 'sidebar.classes', category: 'Sidebar', en: 'Classes', es: 'Clases', fr: 'Classes', de: 'Klassen', pt: 'Turmas', it: 'Classi', ja: 'クラス', zh: '班级', ar: 'الفئات', hi: 'कक्षाएं' },
   { key: 'sidebar.lessons', category: 'Sidebar', en: 'Lessons', es: 'Lecciones', fr: 'Leçons', de: 'Lektionen', pt: 'Aulas', it: 'Lezioni', ja: 'レッスン', zh: '课程', ar: 'الدروس', hi: 'पाठ' },
   { key: 'sidebar.homework', category: 'Sidebar', en: 'Homework', es: 'Tarea', fr: 'Devoirs', de: 'Hausaufgaben', pt: 'Lição de casa', it: 'Compiti', ja: '宿題', zh: '家庭作业', ar: 'الواجب المنزلي', hi: 'गृहकार्य' },
   { key: 'sidebar.quizTests', category: 'Sidebar', en: 'Quiz & Tests', es: 'Pruebas y Exámenes', fr: 'Quiz et tests', de: 'Quizze und Tests', pt: 'Quiz e Testes', it: 'Quiz e Test', ja: 'クイズとテスト', zh: '测验和考试', ar: 'الاختبارات والاختبارات', hi: 'क्विज़ और परीक्षण' },
   { key: 'sidebar.grades', category: 'Sidebar', en: 'Grades', es: 'Calificaciones', fr: 'Notes', de: 'Noten', pt: 'Notas', it: 'Voti', ja: '成績', zh: '成绩', ar: 'الدرجات', hi: 'ग्रेड' },
+  { key: 'sidebar.exams', category: 'Sidebar', en: 'Exams & Marks', es: 'Exámenes y Calificaciones', fr: 'Examens et Notes', de: 'Prüfungen & Noten', pt: 'Exames e Notas', it: 'Esami e Voti', ja: '試験と成績', zh: '考试和成绩', ar: 'الامتحانات والدرجات', hi: 'परीक्षा और अंक' },
+  { key: 'sidebar.examList', category: 'Sidebar', en: 'Exam List', es: 'Lista de Exámenes', fr: 'Liste des examens', de: 'Prüfungsliste', pt: 'Lista de Exames', it: 'Elenco Esami', ja: '試験リスト', zh: '考试列表', ar: 'قائمة الامتحانات', hi: 'परीक्षा सूची' },
+  { key: 'sidebar.reportCards', category: 'Sidebar', en: 'Report Cards', es: 'Boletines', fr: 'Bulletins scolaires', de: 'Zeugnisse', pt: 'Boletins', it: 'Pagelle', ja: '成績証明書', zh: '成绩单', ar: 'بطاقات التقرير', hi: 'रिपोर्ट कार्ड' },
+  { key: 'sidebar.fees', category: 'Sidebar', en: 'Finance & Fees', es: 'Finanzas y Tarifas', fr: 'Finances et Frais', de: 'Finanzen & Gebühren', pt: 'Finanças e Mensalidades', it: 'Finanze e Tariffe', ja: '財務と料金', zh: '财务和费用', ar: 'المالية والرسوم', hi: 'वित्त और शुल्क' },
+  { key: 'sidebar.feeStructures', category: 'Sidebar', en: 'Fee Structures', es: 'Estructura de Tarifas', fr: 'Structures tarifaires', de: 'Gebührenstrukturen', pt: 'Estrutura de Mensalidades', it: 'Strutture Tariffarie', ja: '料金体系', zh: '收费标准', ar: 'هياكل الرسوم', hi: 'शुल्क संरचनाएं' },
+  { key: 'sidebar.invoices', category: 'Sidebar', en: 'Invoices', es: 'Facturas', fr: 'Factures', de: 'Rechnungen', pt: 'Faturas', it: 'Fatture', ja: '請求書', zh: '发票', ar: 'الفواتير', hi: 'चालान' },
+  { key: 'sidebar.payments', category: 'Sidebar', en: 'Payments', es: 'Pagos', fr: 'Paiements', de: 'Zahlungen', pt: 'Pagamentos', it: 'Pagamenti', ja: '支払い', zh: '付款', ar: 'المدفوعات', hi: 'भुगतान' },
+  { key: 'sidebar.library', category: 'Sidebar', en: 'Library', es: 'Biblioteca', fr: 'Bibliothèque', de: 'Bibliothek', pt: 'Biblioteca', it: 'Biblioteca', ja: '図書館', zh: '图书馆', ar: 'المكتبة', hi: 'पुस्तकालय' },
+  { key: 'sidebar.books', category: 'Sidebar', en: 'Book Catalog', es: 'Catálogo de Libros', fr: 'Catalogue de livres', de: 'Bücherkatalog', pt: 'Catálogo de Livros', it: 'Catalogo Libri', ja: '図書目録', zh: '图书目录', ar: 'كتالوج الكتب', hi: 'पुस्तक सूची' },
+  { key: 'sidebar.borrow', category: 'Sidebar', en: 'Issue / Borrow', es: 'Préstamos', fr: 'Emprunt', de: 'Ausleihe', pt: 'Empréstimos', it: 'Prestito', ja: '貸出', zh: '借阅', ar: 'إعارة', hi: 'उधार / जारी' },
+  { key: 'sidebar.returns', category: 'Sidebar', en: 'Returns', es: 'Devoluciones', fr: 'Retours', de: 'Rückgaben', pt: 'Devoluções', it: 'Restituzioni', ja: '返却', zh: '归还', ar: 'إرجاع', hi: 'वापसी' },
+  { key: 'sidebar.calendar', category: 'Sidebar', en: 'Calendar', es: 'Calendario', fr: 'Calendrier', de: 'Kalender', pt: 'Calendário', it: 'Calendario', ja: 'カレンダー', zh: '日历', ar: 'التقويم', hi: 'कैलेंडर' },
+  { key: 'sidebar.calendarView', category: 'Sidebar', en: 'Events Calendar', es: 'Calendario de Eventos', fr: 'Calendrier des événements', de: 'Ereigniskalender', pt: 'Calendário de Eventos', it: 'Calendario Eventi', ja: 'イベントカレンダー', zh: '活动日历', ar: 'تقويم الأحداث', hi: 'इवेंट कैलेंडर' },
+  { key: 'sidebar.messages', category: 'Sidebar', en: 'Messages', es: 'Mensajes', fr: 'Messages', de: 'Nachrichten', pt: 'Mensagens', it: 'Messaggi', ja: 'メッセージ', zh: '消息', ar: 'الرسائل', hi: 'संदेश' },
+  { key: 'sidebar.inbox', category: 'Sidebar', en: 'Inbox', es: 'Bandeja de Entrada', fr: 'Boîte de réception', de: 'Posteingang', pt: 'Caixa de Entrada', it: 'Posta in arrivo', ja: '受信トレイ', zh: '收件箱', ar: 'صندوق الوارد', hi: 'इनबॉक्स' },
   { key: 'sidebar.students', category: 'Sidebar', en: 'Students', es: 'Estudiantes', fr: 'Étudiants', de: 'Schüler', pt: 'Alunos', it: 'Studenti', ja: '学生', zh: '学生', ar: 'الطلاب', hi: 'छात्र' },
   { key: 'sidebar.studentList', category: 'Sidebar', en: 'Student List', es: 'Lista de Estudiantes', fr: 'Liste des étudiants', de: 'Schülerliste', pt: 'Lista de Alunos', it: 'Elenco Studenti', ja: '学生リスト', zh: '学生列表', ar: 'قائمة الطلاب', hi: 'छात्र सूची' },
   { key: 'sidebar.attendance', category: 'Sidebar', en: 'Attendance', es: 'Asistencia', fr: 'Présence', de: 'Anwesenheit', pt: 'Presença', it: 'Frequenza', ja: '出席', zh: '考勤', ar: 'الحضور', hi: 'उपस्थिति' },
@@ -89,11 +105,16 @@ export const STRINGS = [
   { key: 'sidebar.teacherAssignments', category: 'Sidebar', en: 'Teacher Assignments', es: 'Asignaciones de Maestros', fr: 'Attributions des enseignants', de: 'Lehreraufträge', pt: 'Atribuições de Professores', it: 'Incarichi Insegnanti', ja: '教師割り当て', zh: '教师分配', ar: 'مهام المعلمين', hi: 'शिक्षक असाइनमेंट' },
   { key: 'sidebar.communication', category: 'Sidebar', en: 'Communication', es: 'Comunicación', fr: 'Communication', de: 'Kommunikation', pt: 'Comunicação', it: 'Comunicazione', ja: 'コミュニケーション', zh: '沟通', ar: 'التواصل', hi: 'संचार' },
   { key: 'sidebar.announcements', category: 'Sidebar', en: 'Announcements', es: 'Anuncios', fr: 'Annonces', de: 'Ankündigungen', pt: 'Anúncios', it: 'Annunci', ja: 'お知らせ', zh: '公告', ar: 'الإعلانات', hi: 'घोषणाएं' },
+  { key: 'sidebar.notifications', category: 'Sidebar', en: 'Notifications', es: 'Notificaciones', fr: 'Notifications', de: 'Benachrichtigungen', pt: 'Notificações', it: 'Notifiche', ja: '通知', zh: '通知', ar: 'الإشعارات', hi: 'सूचनाएं' },
   { key: 'sidebar.reports', category: 'Sidebar', en: 'Reports', es: 'Informes', fr: 'Rapports', de: 'Berichte', pt: 'Relatórios', it: 'Relazioni', ja: 'レポート', zh: '报告', ar: 'التقارير', hi: 'रिपोर्ट' },
   { key: 'sidebar.attendanceReport', category: 'Sidebar', en: 'Attendance Report', es: 'Informe de Asistencia', fr: 'Rapport de présence', de: 'Anwesenheitsbericht', pt: 'Relatório de Presença', it: 'Rapporto di Frequenza', ja: '出席レポート', zh: '考勤报告', ar: 'تقرير الحضور', hi: 'उपस्थिति रिपोर्ट' },
   { key: 'sidebar.gradeReport', category: 'Sidebar', en: 'Grade Report', es: 'Informe de Calificaciones', fr: 'Rapport de notes', de: 'Notenbericht', pt: 'Relatório de Notas', it: 'Rapporto Voti', ja: '成績レポート', zh: '成绩报告', ar: 'تقرير الدرجات', hi: 'ग्रेड रिपोर्ट' },
   { key: 'sidebar.studentReport', category: 'Sidebar', en: 'Student Report', es: 'Informe de Estudiante', fr: 'Rapport étudiant', de: 'Schülerbericht', pt: 'Relatório de Aluno', it: 'Rapporto Studente', ja: '学生レポート', zh: '学生报告', ar: 'تقرير الطالب', hi: 'छात्र रिपोर्ट' },
   { key: 'sidebar.teacherReport', category: 'Sidebar', en: 'Teacher Report', es: 'Informe de Maestro', fr: 'Rapport enseignant', de: 'Lehrerbericht', pt: 'Relatório de Professor', it: 'Rapporto Insegnante', ja: '教師レポート', zh: '教师报告', ar: 'تقرير المعلم', hi: 'शिक्षक रिपोर्ट' },
+  { key: 'sidebar.children', category: 'Sidebar', en: 'Children', es: 'Hijos', fr: 'Enfants', de: 'Kinder', pt: 'Filhos', it: 'Figli', ja: '子ども', zh: '子女', ar: 'الأطفال', hi: 'बच्चे' },
+  { key: 'sidebar.myChildren', category: 'Sidebar', en: 'My Children', es: 'Mis Hijos', fr: 'Mes Enfants', de: 'Meine Kinder', pt: 'Meus Filhos', it: 'I miei Figli', ja: '私の子ども', zh: '我的孩子', ar: 'أطفالي', hi: 'मेरे बच्चे' },
+  { key: 'sidebar.system', category: 'Sidebar', en: 'System', es: 'Sistema', fr: 'Système', de: 'System', pt: 'Sistema', it: 'Sistema', ja: 'システム', zh: '系统', ar: 'النظام', hi: 'सिस्टम' },
+  { key: 'sidebar.auditLogs', category: 'Sidebar', en: 'Audit Logs', es: 'Registros de Auditoría', fr: 'Journaux d\'audit', de: 'Audit-Protokolle', pt: 'Registros de Auditoria', it: 'Registri di Controllo', ja: '監査ログ', zh: '审计日志', ar: 'سجلات التدقيق', hi: 'ऑडिट लॉग' },
 
   // --------------------------------------------------------------------------
   // Common Actions
@@ -148,6 +169,22 @@ export const STRINGS = [
   { key: 'teacher.attendance', category: 'Teacher', en: 'Mark Attendance', es: 'Marcar Asistencia', fr: 'Marquer la Présence', de: 'Anwesenheit markieren', pt: 'Marcar Presença', it: 'Segna Frequenza', ja: '出席をマーク', zh: '标记出席', ar: 'علامة الحضور', hi: 'उपस्थिति चिह्नित करें' },
   { key: 'teacher.grades', category: 'Teacher', en: 'Enter Grades', es: 'Ingresar Calificaciones', fr: 'Entrer les Notes', de: 'Noten eingeben', pt: 'Inserir Notas', it: 'Inserisci Voti', ja: '成績を入力', zh: '输入成绩', ar: 'إدخال الدرجات', hi: 'ग्रेड दर्ज करें' },
   { key: 'teacher.createAssignment', category: 'Teacher', en: 'Create Assignment', es: 'Crear Asignación', fr: 'Créer une Mission', de: 'Aufgabe erstellen', pt: 'Criar Atribuição', it: 'Crea Compito', ja: '課題を作成', zh: '创建作业', ar: 'إنشاء مهمة', hi: 'असाइनमेंट बनाएं' },
+
+  // --------------------------------------------------------------------------
+  // Breadcrumb
+  // --------------------------------------------------------------------------
+  { key: 'breadcrumb.home', category: 'Breadcrumb', en: 'Home', es: 'Inicio', fr: 'Accueil', de: 'Startseite', pt: 'Início', it: 'Home', ja: 'ホーム', zh: '首页', ar: 'الرئيسية', hi: 'होम' },
+  { key: 'breadcrumb.dashboard', category: 'Breadcrumb', en: 'Dashboard', es: 'Panel', fr: 'Tableau de bord', de: 'Dashboard', pt: 'Painel', it: 'Dashboard', ja: 'ダッシュボード', zh: '仪表板', ar: 'لوحة القيادة', hi: 'डैशबोर्ड' },
+  { key: 'breadcrumb.back', category: 'Breadcrumb', en: 'Back', es: 'Atrás', fr: 'Retour', de: 'Zurück', pt: 'Voltar', it: 'Indietro', ja: '戻る', zh: '返回', ar: 'رجوع', hi: 'वापस' },
+  { key: 'breadcrumb.copyLink', category: 'Breadcrumb', en: 'Copy page link', es: 'Copiar enlace', fr: 'Copier le lien', de: 'Link kopieren', pt: 'Copiar link', it: 'Copia link', ja: 'リンクをコピー', zh: '复制链接', ar: 'نسخ الرابط', hi: 'लिंक कॉपी करें' },
+  { key: 'breadcrumb.linkCopied', category: 'Breadcrumb', en: 'Link copied to clipboard', es: 'Enlace copiado al portapapeles', fr: 'Lien copié', de: 'Link kopiert', pt: 'Link copiado', it: 'Link copiato', ja: 'リンクをコピーしました', zh: '链接已复制', ar: 'تم نسخ الرابط', hi: 'लिंक कॉपी हो गया' },
+  { key: 'breadcrumb.createExam', category: 'Breadcrumb', en: 'Create Exam', es: 'Crear Examen', fr: 'Créer un examen', de: 'Prüfung erstellen', pt: 'Criar Exame', it: 'Crea Esame', ja: '試験の作成', zh: '创建考试', ar: 'إنشاء امتحان', hi: 'परीक्षा बनाएं' },
+  { key: 'breadcrumb.editExam', category: 'Breadcrumb', en: 'Edit Exam', es: 'Editar Examen', fr: 'Modifier l\'examen', de: 'Prüfung bearbeiten', pt: 'Editar Exame', it: 'Modifica Esame', ja: '試験を編集', zh: '编辑考试', ar: 'تعديل الامتحان', hi: 'परीक्षा संपादित करें' },
+  { key: 'breadcrumb.marksEntry', category: 'Breadcrumb', en: 'Mark Entry', es: 'Ingreso de Calificaciones', fr: 'Saisie des notes', de: 'Noteneingabe', pt: 'Lançamento de Notas', it: 'Inserimento Voti', ja: '成績入力', zh: '成绩录入', ar: 'إدخال الدرجات', hi: 'अंक प्रविष्टि' },
+  { key: 'breadcrumb.createEvent', category: 'Breadcrumb', en: 'Create Event', es: 'Crear Evento', fr: 'Créer un événement', de: 'Ereignis erstellen', pt: 'Criar Evento', it: 'Crea Evento', ja: 'イベント作成', zh: '创建活动', ar: 'إنشاء حدث', hi: 'इवेंट बनाएं' },
+  { key: 'breadcrumb.editEvent', category: 'Breadcrumb', en: 'Edit Event', es: 'Editar Evento', fr: 'Modifier l\'événement', de: 'Ereignis bearbeiten', pt: 'Editar Evento', it: 'Modifica Evento', ja: 'イベント編集', zh: '编辑活动', ar: 'تعديل الحدث', hi: 'इवेंट संपादित करें' },
+  { key: 'breadcrumb.childDetails', category: 'Breadcrumb', en: 'Child Details', es: 'Detalles del Hijo', fr: 'Détails de l\'enfant', de: 'Kinddetails', pt: 'Detalhes do Filho', it: 'Dettagli Figlio', ja: '子どもの詳細', zh: '孩子详情', ar: 'تفاصيل الطفل', hi: 'बच्चे का विवरण' },
+  { key: 'breadcrumb.conversation', category: 'Breadcrumb', en: 'Conversation', es: 'Conversación', fr: 'Conversation', de: 'Unterhaltung', pt: 'Conversa', it: 'Conversazione', ja: '会話', zh: '对话', ar: 'محادثة', hi: 'बातचीत' },
 
   // --------------------------------------------------------------------------
   // Footer

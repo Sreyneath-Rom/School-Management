@@ -4,6 +4,7 @@ import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import Footer from "./Footer";
+import Breadcrumbs from "@/components/common/Breadcrumbs";
 import { SchoolProvider } from "@/context/SchoolContext";
 import { useAuth } from "@/hooks/useAuth"; // <-- to get role
 
@@ -17,14 +18,15 @@ export default function AppLayout() {
         <Sidebar
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}
-          role={role} // <-- pass role to filter menu items
+          role={role ?? undefined} // <-- pass role to filter menu items
         />
 
         <div className="flex-1 min-h-screen flex flex-col">
           <Header onOpenSidebar={() => setMobileOpen(true)} />
 
-          {/* === MAIN CONTENT – NOW WITH GLASS === */}
-          <main className="flex-1 m-4 rounded-2xl glass-sm p-4 sm:p-6 lg:p-8">
+          {/* === MAIN CONTENT – WITH RESPONSIVE GLASS CONTAINER & BREADCRUMBS === */}
+          <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8 overflow-hidden">
+            <Breadcrumbs />
             <Outlet />
           </main>
 

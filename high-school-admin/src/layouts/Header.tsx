@@ -1,4 +1,4 @@
-﻿import {
+import {
   useState,
   useRef,
   useEffect,
@@ -277,10 +277,10 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
 
   return (
 
-    <header className="sticky top-0 z-30 ">
-      <div className="flex h-20 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 backdrop-blur-md">
+      <div className="flex h-16 sm:h-20 items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 lg:px-8">
         {/* LEFT */}
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onOpenSidebar}
@@ -290,7 +290,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
             <Menu size={19} />
           </button>
           <div ref={searchWrapRef} className="relative hidden sm:block">
-            <div className="flex min-w-90 items-center gap-3 rounded-full glass-sm px-4 py-3">
+            <div className="flex min-w-72 lg:min-w-90 items-center gap-3 rounded-full glass-sm px-4 py-2.5 sm:py-3">
               <Search size={17} className="shrink-0 text-stone-600 dark:text-stone-400" />
               <input
                 type="text"
@@ -323,7 +323,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
           </div>
           <button
             type="button"
-            onClick={() => setMobileSearchOpen(true)}
+            onClick={() => setMobileSearchOpen((prev) => !prev)}
             className="flex h-10 w-10 items-center justify-center rounded-full glass-sm text-stone-600 sm:hidden dark:text-stone-300"
             aria-label="Search"
           >
@@ -332,8 +332,8 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
         </div>
 
         {/* RIGHT */}
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <div className="hidden items-center gap-2 text-sm text-stone-500 lg:flex dark:text-stone-400">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <div className="hidden items-center gap-2 text-sm text-stone-500 xl:flex dark:text-stone-400">
             <Calendar size={16} />
             <span>{today}</span>
           </div>
@@ -504,7 +504,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
               <ChevronDown size={14} className="hidden text-stone-400 md:block" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-56 overflow-hidden rounded-2xl glass-sm p-2 shadow-xl">
+              <div className="absolute right-0 top-full z-40 mt-2 w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl glass-sm p-2 shadow-xl">
                 <button
                   type="button"
                   onClick={() => {

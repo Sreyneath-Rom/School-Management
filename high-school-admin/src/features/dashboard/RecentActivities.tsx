@@ -1,6 +1,7 @@
 import { recentActivities } from '@/services/mockData'
 import { CheckCircle2, ClipboardCheck, Flag, Megaphone, Sparkles } from 'lucide-react'
 import Button from '@/components/common/Button'
+import { ListCardSkeleton } from '@/components/common/Skeleton'
 
 const iconMap = {
   enrolled: CheckCircle2,
@@ -18,7 +19,15 @@ const tintMap: Record<keyof typeof iconMap, string> = {
   announcement: 'bg-error/20 text-error',
 }
 
-export default function RecentActivities() {
+interface RecentActivitiesProps {
+  loading?: boolean
+}
+
+export default function RecentActivities({ loading }: RecentActivitiesProps = {}) {
+  if (loading) {
+    return <ListCardSkeleton rows={4} />
+  }
+
   return (
     <section className="glass rounded-[28px] p-6 text-text-main">
       <div className="mb-6 flex items-center justify-between">

@@ -10,10 +10,20 @@ import {
 import { attendanceData } from '@/services/mockData'
 import { useFetch } from '@/hooks/useFetch'
 import { dashboardService, type AttendanceSummary } from '@/services/dashboardService'
+import { ChartCardSkeleton } from '@/components/common/Skeleton'
 
-export default function AttendanceChart() {
-  const { data: summary } = useFetch<AttendanceSummary>(() => dashboardService.getAttendanceSummary())
+interface AttendanceChartProps {
+  loading?: boolean
+}
+
+export default function AttendanceChart({ loading: externalLoading }: AttendanceChartProps = {}) {
+  const { data: summary, loading: fetchLoading } = useFetch<AttendanceSummary>(() => dashboardService.getAttendanceSummary())
+  const loading = externalLoading ?? fetchLoading
   const totalCount = summary?.reduce((sum, item) => sum + item._count, 0) ?? 0
+
+  if (loading) {
+    return <ChartCardSkeleton type="area" />
+  }
 
   return (
     <section className="rounded-[28px] glass-sm p-6 min-h-90">

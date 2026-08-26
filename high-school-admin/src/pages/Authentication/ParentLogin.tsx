@@ -13,23 +13,23 @@ import {
   EyeClosed,
   LockKeyhole,
   User,
-  BookOpen,
+  Users,
   Zap,
-  GraduationCap,
-  Calendar,
+  BellRing,
   Award,
+  HeartHandshake,
   Sparkles,
   ArrowRight,
-  Compass,
+  Lock,
 } from 'lucide-react';
 
-interface StudentLoginForm {
-  studentId: string;
+interface ParentLoginForm {
+  parentId: string;
   password: string;
   rememberDevice: boolean;
 }
 
-export default function StudentLogin() {
+export default function ParentLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,20 +38,20 @@ export default function StudentLogin() {
   const navigate = useNavigate();
 
   const { values, errors, handleChange, handleBlur, handleSubmit, setFieldValue } =
-    useForm<StudentLoginForm>(
-      { studentId: '', password: '', rememberDevice: false },
-      async (formValues: StudentLoginForm) => {
+    useForm<ParentLoginForm>(
+      { parentId: '', password: '', rememberDevice: false },
+      async (formValues: ParentLoginForm) => {
         setIsLoading(true);
         setError('');
         try {
-          const result = await authService.login(formValues.studentId.trim(), formValues.password);
-          if (result.user.role !== 'student') {
-            setError('This account is not a student account');
+          const result = await authService.login(formValues.parentId.trim(), formValues.password);
+          if (result.user.role !== 'parent') {
+            setError('This account is not registered as a parent/guardian account');
             return;
           }
 
           login(result);
-          navigate('/student/dashboard', { replace: true });
+          navigate('/parent/dashboard', { replace: true });
         } catch {
           setError('Login failed. Please verify your credentials or use quick demo login.');
         } finally {
@@ -60,8 +60,8 @@ export default function StudentLogin() {
       },
       (formValues) => {
         const validationErrors: Record<string, string> = {};
-        if (!formValues.studentId.trim()) {
-          validationErrors.studentId = 'Student ID or Email is required';
+        if (!formValues.parentId.trim()) {
+          validationErrors.parentId = 'Parent ID or Email is required';
         }
         if (!formValues.password) {
           validationErrors.password = 'Password is required';
@@ -70,23 +70,23 @@ export default function StudentLogin() {
       }
     );
 
-  const displayName = getUserGreeting(values.studentId);
+  const displayName = getUserGreeting(values.parentId);
 
   const handleQuickFill = () => {
-    setFieldValue('studentId', 'student@example.com');
+    setFieldValue('parentId', 'parent@example.com');
     setFieldValue('password', 'password');
   };
 
   const handleDirectDemoLogin = () => {
-    const result = authService.loginAsRole('student');
+    const result = authService.loginAsRole('parent');
     login(result);
-    navigate('/student/dashboard', { replace: true });
+    navigate('/parent/dashboard', { replace: true });
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-between relative overflow-hidden bg-slate-50/60 dark:bg-slate-950 font-sans">
-      <AuthBackground variant="student" />
-      <AuthHeader activeRole="student" />
+      <AuthBackground variant="parent" />
+      <AuthHeader activeRole="parent" />
 
       {/* Main Responsive Container */}
       <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -94,68 +94,68 @@ export default function StudentLogin() {
           {/* Left / Showcase Panel */}
           <div className="lg:col-span-5 flex flex-col justify-between space-y-6 text-slate-800 dark:text-slate-200">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 text-xs font-semibold border border-purple-200 dark:border-purple-800 mb-4 shadow-sm">
-                <BookOpen size={15} className="text-purple-600 dark:text-purple-400" />
-                <span>Student Academic & Learning Hub</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs font-semibold border border-amber-200 dark:border-amber-800 mb-4 shadow-sm">
+                <Users size={15} className="text-amber-600 dark:text-amber-400" />
+                <span>Family & Guardian Portal</span>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-                Your Studies, Grades & Campus Life
+                Stay Connected with Your Child’s Journey
               </h2>
               <p className="mt-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Check class timetables, review homework assignments, view upcoming exam dates, and inspect your cumulative GPA records.
+                Monitor student attendance in real time, view quarterly grade reports, receive teacher feedback, and manage fee dues.
               </p>
             </div>
 
             {/* Feature Highlights */}
             <div className="space-y-3.5">
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/80 backdrop-blur-md">
-                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 shrink-0">
-                  <Calendar size={18} />
+                <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shrink-0">
+                  <BellRing size={18} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Class Timetable & Periods</h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Daily room schedules, teacher contacts, and bell timetables.</p>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Instant Attendance Alerts</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Get notified when your child checks into or departs from class.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/80 backdrop-blur-md">
-                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 shrink-0">
+                <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shrink-0">
                   <Award size={18} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Grade Reports & Transcripts</h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Instant access to midterm scores, semester rankings, and teacher notes.</p>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Academic Performance Cards</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">View midterm grades, subject progress, and teacher remarks.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/80 backdrop-blur-md">
-                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 shrink-0">
-                  <Compass size={18} />
+                <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shrink-0">
+                  <HeartHandshake size={18} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Assignments & Exam Schedule</h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Download assignment rubrics and monitor deadline count-downs.</p>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Direct School Communication</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Send notes to homeroom teachers and schedule parent-teacher meetings.</p>
                 </div>
               </div>
             </div>
 
             {/* Quick Demo Info Box */}
-            <div className="p-4 rounded-2xl bg-purple-50/80 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/60">
+            <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
-                  <Zap size={14} className="text-purple-600" />
-                  Student Demo Credentials
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                  <Zap size={14} className="text-amber-600" />
+                  Parent Demo Credentials
                 </span>
                 <button
                   type="button"
                   onClick={handleQuickFill}
-                  className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 hover:underline"
+                  className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:underline"
                 >
                   Auto-Fill
                 </button>
               </div>
               <div className="text-xs font-mono text-slate-700 dark:text-slate-300 space-y-0.5">
-                <p>Email / ID: <strong className="text-slate-900 dark:text-white">student@example.com</strong> or <strong className="text-slate-900 dark:text-white">STU123456</strong></p>
+                <p>Email / ID: <strong className="text-slate-900 dark:text-white">parent@example.com</strong> or <strong className="text-slate-900 dark:text-white">PAR-123456</strong></p>
                 <p>Password: <strong className="text-slate-900 dark:text-white">password</strong></p>
               </div>
             </div>
@@ -167,29 +167,29 @@ export default function StudentLogin() {
               {/* Form Header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/25">
-                    <BookOpen size={26} />
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/25">
+                    <Users size={26} />
                   </div>
                   <div>
                     <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                      Student Sign In
+                      Parent Sign In
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {displayName ? (
-                        <span className="text-purple-600 font-semibold flex items-center gap-1">
+                        <span className="text-amber-600 font-semibold flex items-center gap-1">
                           <Sparkles size={13} />
                           Welcome back, {displayName}!
                         </span>
                       ) : (
-                        'Enter your Student ID (STU...) or school email.'
+                        'Enter your Parent ID (PAR...) or email address.'
                       )}
                     </p>
                   </div>
                 </div>
 
                 <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
-                  <GraduationCap size={13} className="text-purple-500" />
-                  Student Portal
+                  <Lock size={12} className="text-amber-500" />
+                  Parent Portal
                 </span>
               </div>
 
@@ -202,10 +202,10 @@ export default function StudentLogin() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                {/* Student ID / Email Field */}
+                {/* Parent ID / Email Field */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                    Student ID or School Email
+                    Parent ID or Registered Email
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500">
@@ -213,16 +213,16 @@ export default function StudentLogin() {
                     </span>
                     <input
                       type="text"
-                      name="studentId"
-                      placeholder="student@example.com or STU123456"
-                      value={values.studentId}
+                      name="parentId"
+                      placeholder="parent@example.com or PAR-123456"
+                      value={values.parentId}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       autoComplete="username"
-                      className="w-full pl-11 pr-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                      className="w-full pl-11 pr-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
                     />
                   </div>
-                  {errors.studentId && <p className="text-red-500 text-xs mt-1.5 pl-1">{errors.studentId}</p>}
+                  {errors.parentId && <p className="text-red-500 text-xs mt-1.5 pl-1">{errors.parentId}</p>}
                 </div>
 
                 {/* Password Field */}
@@ -242,7 +242,7 @@ export default function StudentLogin() {
                       onChange={handleChange}
                       onBlur={handleBlur}
                       autoComplete="current-password"
-                      className="w-full pl-11 pr-12 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                      className="w-full pl-11 pr-12 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
                     />
                     <button
                       type="button"
@@ -264,7 +264,7 @@ export default function StudentLogin() {
                       name="rememberDevice"
                       checked={values.rememberDevice}
                       onChange={handleChange}
-                      className="w-4 h-4 accent-purple-600 rounded border-slate-300"
+                      className="w-4 h-4 accent-amber-500 rounded border-slate-300"
                     />
                     <span>Remember this device</span>
                   </label>
@@ -272,7 +272,7 @@ export default function StudentLogin() {
                   <button
                     type="button"
                     onClick={() => setIsForgotModalOpen(true)}
-                    className="font-semibold text-purple-600 dark:text-purple-400 hover:underline"
+                    className="font-semibold text-amber-600 dark:text-amber-400 hover:underline"
                   >
                     Forgot Password?
                   </button>
@@ -283,13 +283,13 @@ export default function StudentLogin() {
                   variant="solid"
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3.5 rounded-2xl transition shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 text-sm disabled:opacity-70 cursor-pointer"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-2xl transition shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 text-sm disabled:opacity-70 cursor-pointer"
                 >
                   {isLoading ? (
                     <span>Authenticating...</span>
                   ) : (
                     <>
-                      <span>Sign In as Student</span>
+                      <span>Sign In as Parent / Guardian</span>
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -300,10 +300,10 @@ export default function StudentLogin() {
                   <button
                     type="button"
                     onClick={handleDirectDemoLogin}
-                    className="w-full py-2.5 px-4 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/50 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80 text-xs font-semibold flex items-center justify-center gap-2 transition"
+                    className="w-full py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/80 text-xs font-semibold flex items-center justify-center gap-2 transition"
                   >
-                    <Zap size={14} className="text-purple-600" />
-                    <span>⚡ 1-Click Instant Student Demo Login</span>
+                    <Zap size={14} className="text-amber-600" />
+                    <span>⚡ 1-Click Instant Parent Demo Login</span>
                   </button>
                 </div>
               </form>
@@ -311,11 +311,11 @@ export default function StudentLogin() {
               {/* Bottom Switcher */}
               <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Looking for teacher or parent portal?{' '}
+                  Looking for student or teacher portal?{' '}
                   <button
                     type="button"
                     onClick={() => navigate('/login')}
-                    className="font-semibold text-purple-600 dark:text-purple-400 hover:underline"
+                    className="font-semibold text-amber-600 dark:text-amber-400 hover:underline"
                   >
                     View All Portals
                   </button>
@@ -328,15 +328,15 @@ export default function StudentLogin() {
 
       {/* Footer */}
       <footer className="relative z-10 w-full py-4 text-center text-xs text-slate-500 dark:text-slate-400">
-        <p>© {new Date().getFullYear()} Varin High School. All rights reserved. • Student Academic Information System</p>
+        <p>© {new Date().getFullYear()} Varin High School. All rights reserved. • Parent & Family Engagement Portal</p>
       </footer>
 
       {/* Forgot Password Modal */}
       <ForgotPasswordModal
         isOpen={isForgotModalOpen}
         onClose={() => setIsForgotModalOpen(false)}
-        roleName="Student"
-        defaultIdentifier={values.studentId}
+        roleName="Parent"
+        defaultIdentifier={values.parentId}
       />
     </div>
   );

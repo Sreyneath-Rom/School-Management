@@ -1,4 +1,5 @@
 import { leaveRequests } from '@/services/mockData'
+import { ListCardSkeleton } from '@/components/common/Skeleton'
 
 function statusClass(status: string) {
   switch (status) {
@@ -11,7 +12,15 @@ function statusClass(status: string) {
   }
 }
 
-export default function RecentLeaveRequests() {
+interface RecentLeaveRequestsProps {
+  loading?: boolean
+}
+
+export default function RecentLeaveRequests({ loading }: RecentLeaveRequestsProps = {}) {
+  if (loading) {
+    return <ListCardSkeleton rows={3} />
+  }
+
   return (
     <section className="glass rounded-[28px] p-6 text-text-main">
       <div className="mb-6">

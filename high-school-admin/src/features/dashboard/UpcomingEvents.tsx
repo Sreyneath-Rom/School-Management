@@ -1,7 +1,16 @@
 import { upcomingEvents } from '@/services/mockData'
 import Button from '@/components/common/Button'
+import { ListCardSkeleton } from '@/components/common/Skeleton'
 
-export default function UpcomingEvents() {
+interface UpcomingEventsProps {
+  loading?: boolean
+}
+
+export default function UpcomingEvents({ loading }: UpcomingEventsProps = {}) {
+  if (loading) {
+    return <ListCardSkeleton rows={3} />
+  }
+
   return (
     <section className="glass rounded-[28px] p-6 text-text-main">
       <div className="mb-6 flex items-center justify-between">

@@ -5,6 +5,7 @@
 // automatically when the access token expires.
 
 import { LOCAL_STORAGE_KEYS } from '@/utils/constants'
+import { mockApiHandler } from '@/lib/mockApiHandler'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
 
@@ -104,23 +105,44 @@ async function handleResponse<T>(res: Response, path: string): Promise<T> {
 async function request<T>(path: string, options: RequestInit = {}, retry = true): Promise<T> {
   const token = window.localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  })
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    })
 
-  if (res.status === 401 && retry) {
-    const refreshedToken = await refreshAccessToken()
-    if (refreshedToken) {
-      return request<T>(path, options, false)
+    if (res.status === 401 && retry) {
+      const refreshedToken = await refreshAccessToken()
+      if (refreshedToken) {
+        return request<T>(path, options, false)
+      }
     }
-  }
 
-  return handleResponse<T>(res, path)
+    return await handleResponse<T>(res, path)
+  } catch (err) {
+    // If remote endpoint is unreachable, fallback to client-side mockApiHandler
+    const method = options.method || 'GET'
+    let parsedBody: any
+    try {
+      parsedBody = options.body ? JSON.parse(options.body as string) : undefined
+    } catch {
+      parsedBody = options.body
+    }
+
+    const mockRes = await mockApiHandler.handle(path, method, parsedBody)
+    if (mockRes) {
+      if (!mockRes.success) {
+        throw new ApiError(400, mockRes.message || 'API request failed', mockRes)
+      }
+      return mockRes.data as T
+    }
+
+    throw err
+  }
 }
 
 /**
@@ -132,22 +154,33 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
 async function requestUpload<T>(path: string, formData: FormData, retry = true): Promise<T> {
   const token = window.localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: formData,
-  })
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    })
 
-  if (res.status === 401 && retry) {
-    const refreshedToken = await refreshAccessToken()
-    if (refreshedToken) {
-      return requestUpload<T>(path, formData, false)
+    if (res.status === 401 && retry) {
+      const refreshedToken = await refreshAccessToken()
+      if (refreshedToken) {
+        return requestUpload<T>(path, formData, false)
+      }
     }
-  }
 
-  return handleResponse<T>(res, path)
+    return await handleResponse<T>(res, path)
+  } catch (err) {
+    const mockRes = await mockApiHandler.handle(path, 'POST', formData)
+    if (mockRes) {
+      if (!mockRes.success) {
+        throw new ApiError(400, mockRes.message || 'Upload failed', mockRes)
+      }
+      return mockRes.data as T
+    }
+    throw err
+  }
 }
 
 export const apiClient = {

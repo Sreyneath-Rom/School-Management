@@ -12,6 +12,7 @@ export interface MockUser {
   role: UserRole
   studentId?: string
   teacherId?: string
+  parentId?: string
 }
 
 export const mockUsers: MockUser[] = [
@@ -44,11 +45,21 @@ export const mockUsers: MockUser[] = [
     role: 'student',
     studentId: 'STU123456',
   },
+  {
+    id: '4',
+    name: 'Parent Robert',
+    firstName: 'Robert',
+    gender: 'male',
+    email: 'parent@example.com',
+    password: 'password',
+    role: 'parent',
+    parentId: 'PAR-123456',
+  },
 ]
 
 /**
  * Mock login — replace with a real API call once the backend exists.
- * `identifier` may be either an email address or a student/teacher ID.
+ * `identifier` may be either an email address or a student/teacher/parent ID.
  * Returns the matching user (without the password) or null if invalid.
  */
 export const mockLogin = (
@@ -60,7 +71,8 @@ export const mockLogin = (
     (u) =>
       (u.email.toLowerCase() === normalized ||
         u.studentId?.toLowerCase() === normalized ||
-        u.teacherId?.toLowerCase() === normalized) &&
+        u.teacherId?.toLowerCase() === normalized ||
+        u.parentId?.toLowerCase() === normalized) &&
       u.password === password
   )
   if (!match) return null
@@ -69,7 +81,7 @@ export const mockLogin = (
 }
 
 /**
- * Look up a user's display name by email/studentId/teacherId — no
+ * Look up a user's display name by email/studentId/teacherId/parentId — no
  * password required. Meant for lightweight UI touches like showing
  * "Welcome back, {name}" as someone types their ID, before they've
  * actually authenticated. Returns null if there's no match yet.
@@ -81,7 +93,8 @@ export const getUserDisplayName = (identifier: string): string | null => {
     (u) =>
       u.email.toLowerCase() === normalized ||
       u.studentId?.toLowerCase() === normalized ||
-      u.teacherId?.toLowerCase() === normalized
+      u.teacherId?.toLowerCase() === normalized ||
+      u.parentId?.toLowerCase() === normalized
   )
   return match?.name ?? null
 }
@@ -129,7 +142,8 @@ export const getUserGreeting = (identifier: string): string | null => {
     (u) =>
       u.email.toLowerCase() === normalized ||
       u.studentId?.toLowerCase() === normalized ||
-      u.teacherId?.toLowerCase() === normalized
+      u.teacherId?.toLowerCase() === normalized ||
+      u.parentId?.toLowerCase() === normalized
   )
   if (!match) return null
   return getGreetingForUser(match)

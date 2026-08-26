@@ -65,6 +65,22 @@ export const ROLE_PERMISSIONS = {
       'view_notifications',
     ],
   },
+  parent: {
+    label: 'Parent',
+    color: 'orange',
+    canAccess: [
+      'dashboard',
+      'academic',
+      'communication',
+    ],
+    features: [
+      'view_classes',
+      'view_grades',
+      'view_attendance',
+      'view_announcements',
+      'view_notifications',
+    ],
+  },
 } as const;
 
 export type UserRole = keyof typeof ROLE_PERMISSIONS;
@@ -74,7 +90,7 @@ export type UserRole = keyof typeof ROLE_PERMISSIONS;
  */
 export const hasPermission = (role: UserRole, feature: string): boolean => {
   const rolePermissions = ROLE_PERMISSIONS[role];
-  return rolePermissions?.features.includes(feature) ?? false;
+  return (rolePermissions?.features as readonly string[] | undefined)?.includes(feature) ?? false;
 };
 
 /**
@@ -82,7 +98,7 @@ export const hasPermission = (role: UserRole, feature: string): boolean => {
  */
 export const canAccessSection = (role: UserRole, section: string): boolean => {
   const rolePermissions = ROLE_PERMISSIONS[role];
-  return rolePermissions?.canAccess.includes(section) ?? false;
+  return (rolePermissions?.canAccess as readonly string[] | undefined)?.includes(section) ?? false;
 };
 
 /**

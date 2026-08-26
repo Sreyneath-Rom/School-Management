@@ -2,8 +2,13 @@ import { useState } from 'react'
 import { announcements as initialAnnouncements } from '@/services/mockData'
 import Button from '@/components/common/Button'
 import { X } from 'lucide-react'
+import { ListCardSkeleton } from '@/components/common/Skeleton'
 
-export default function Announcements() {
+interface AnnouncementsProps {
+  loading?: boolean
+}
+
+export default function Announcements({ loading }: AnnouncementsProps = {}) {
   const [items, setItems] = useState(initialAnnouncements)
   const [isOpen, setIsOpen] = useState(false)
   const [title, setTitle] = useState('')
@@ -24,6 +29,10 @@ export default function Announcements() {
       ...items,
     ])
     closeModal()
+  }
+
+  if (loading) {
+    return <ListCardSkeleton rows={3} />
   }
 
   return (

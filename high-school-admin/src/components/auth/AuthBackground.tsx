@@ -1,7 +1,6 @@
 import {
   GraduationCap,
   ScrollText,
-  Tag,
   Calculator,
   BookOpen,
   FlaskConical,
@@ -9,121 +8,112 @@ import {
   Sparkles,
   TrendingUp,
   School,
-} from 'lucide-react'
+  ShieldCheck,
+  Users,
+  Award,
+} from 'lucide-react';
 
-type AuthBackgroundVariant = 'admin' | 'student' | 'teacher'
+export type AuthBackgroundVariant = 'admin' | 'student' | 'teacher' | 'parent';
 
-const variantIconColor: Record<AuthBackgroundVariant, string> = {
-  admin: 'text-brand-500',
-  student: 'text-success',
-  teacher: 'text-success',
+interface Props {
+  variant: AuthBackgroundVariant;
 }
 
-/**
- * Shared decorative background for auth screens: gradient blobs,
- * two floating "notification card" shapes, and role-specific
- * outline icons scattered in the corners.
- */
-export default function AuthBackground({ variant }: { variant: AuthBackgroundVariant }) {
-  const iconColor = variantIconColor[variant]
+export default function AuthBackground({ variant }: Props) {
+  const themeConfig = {
+    admin: {
+      blob1: 'bg-blue-500/20 dark:bg-blue-600/15',
+      blob2: 'bg-indigo-500/20 dark:bg-indigo-600/15',
+      blob3: 'bg-cyan-500/15 dark:bg-cyan-600/10',
+      iconColor: 'text-blue-500/40 dark:text-blue-400/30',
+      glow: 'shadow-blue-500/10',
+    },
+    teacher: {
+      blob1: 'bg-emerald-500/20 dark:bg-emerald-600/15',
+      blob2: 'bg-teal-500/20 dark:bg-teal-600/15',
+      blob3: 'bg-green-500/15 dark:bg-green-600/10',
+      iconColor: 'text-emerald-500/40 dark:text-emerald-400/30',
+      glow: 'shadow-emerald-500/10',
+    },
+    student: {
+      blob1: 'bg-purple-500/20 dark:bg-purple-600/15',
+      blob2: 'bg-violet-500/20 dark:bg-violet-600/15',
+      blob3: 'bg-pink-500/15 dark:bg-pink-600/10',
+      iconColor: 'text-purple-500/40 dark:text-purple-400/30',
+      glow: 'shadow-purple-500/10',
+    },
+    parent: {
+      blob1: 'bg-amber-500/20 dark:bg-amber-600/15',
+      blob2: 'bg-orange-500/20 dark:bg-orange-600/15',
+      blob3: 'bg-rose-500/15 dark:bg-rose-600/10',
+      iconColor: 'text-amber-500/40 dark:text-amber-400/30',
+      glow: 'shadow-amber-500/10',
+    },
+  }[variant];
 
   return (
-    <>
-      {/* Background Circles */}
-      <div className="absolute -left-40 bottom-55 w-162 h-162 rounded-full glass-teal"></div>
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+      {/* Background Soft Mesh Gradients */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-100/90 via-slate-50/70 to-slate-200/90 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500" />
 
-      <div className="absolute -right-40 -bottom-40 w-155 h-155 rounded-full glass-org"></div>
+      {/* Dynamic Animated Blobs */}
+      <div
+        className={`absolute -top-24 -left-24 w-96 h-96 sm:w-[32rem] sm:h-[32rem] rounded-full blur-3xl ${themeConfig.blob1} animate-pulse`}
+        style={{ animationDuration: '8s' }}
+      />
+      <div
+        className={`absolute -bottom-24 -right-24 w-96 h-96 sm:w-[36rem] sm:h-[36rem] rounded-full blur-3xl ${themeConfig.blob2} animate-pulse`}
+        style={{ animationDuration: '10s', animationDelay: '1s' }}
+      />
+      <div
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 sm:w-[28rem] sm:h-[28rem] rounded-full blur-3xl ${themeConfig.blob3}`}
+      />
 
-      <div className="absolute right-80 top-55 w-65 h-65 rounded-full glass-teal"></div>
+      {/* Subtle Grid Pattern Overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+        style={{
+          backgroundImage: `radial-gradient(currentColor 1px, transparent 1px)`,
+          backgroundSize: '24px 24px',
+        }}
+      />
 
-      <div className="absolute left-82 top-55 w-65 h-65 rounded-full glass-org"></div>
-
-      {/* Gradient blobs */}
-      <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-[rgba(255,159,0,0.5)] rounded-full blur-3xl" />
-      <div className="absolute top-1/2 left-1/4 w-80 h-80 bg-[rgba(5,136,151,0.5)] rounded-full blur-3xl" />
-
-      {/* Floating notification cards (shared across all auth screens) */}
-      <div className="absolute top-[27%] left-[13%] w-44 h-16 rounded-2xl glass-sm flex items-center gap-2 px-4">
-        <Sparkles size={18} className="text-brand-500 shrink-0" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-1.5 w-3/4 rounded-full glass-strong" />
-          <div className="h-1.5 w-1/2 rounded-full glass-strong" />
-        </div>
-      </div>
-      <div className="absolute top-[36%] left-[16%] w-52 h-14 rounded-2xl glass-sm flex items-center gap-2 px-4">
-        <TrendingUp size={18} className="text-warning shrink-0" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-1.5 w-full rounded-full glass-strong" />
-        </div>
-      </div>
-    <div className="absolute bottom-[36%] right-[16%] w-44 h-16 rounded-2xl glass-sm flex items-center gap-2 px-4">
-        <GraduationCap size={18} className="text-brand-500 shrink-0" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-1.5 w-3/4 rounded-full glass-strong" />
-          <div className="h-1.5 w-1/2 rounded-full glass-strong" />
-        </div>
-      </div>
-      <div className="absolute bottom-[27%] right-[13%] w-52 h-14 rounded-2xl glass-sm flex items-center gap-2 px-4">
-        <School size={18} className="text-warning shrink-0" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-1.5 w-full rounded-full glass-strong" />
-        </div>
-      </div>
-      {/* Role-specific corner icons (skip entirely for admin, which has none) */}
-      {variant === 'student' && (
+      {/* Floating Role-Specific Decorative Outline Icons */}
+      {variant === 'admin' && (
         <>
-          <GraduationCap
-            className={`absolute top-8 left-10 w-14 h-14 ${iconColor} opacity-70 animate-[float_5s_ease-in-out_infinite]`}
-            strokeWidth={1.5}
-          />
-          <ScrollText
-            className={`absolute top-56 right-16 w-12 h-12 ${iconColor} opacity-70 animate-[float_4.5s_ease-in-out_infinite]`}
-            strokeWidth={1.5}
-            style={{ animationDelay: '0.6s' }}
-          />
-          <Calculator
-            className={`absolute bottom-24 left-6 w-14 h-14 ${iconColor} opacity-70 animate-[float_5.5s_ease-in-out_infinite]`}
-            strokeWidth={1.5}
-            style={{ animationDelay: '1.2s' }}
-          />
-          <BookOpen
-            className={`absolute bottom-16 right-24 w-16 h-16 ${iconColor} opacity-70 animate-[float_5s_ease-in-out_infinite]`}
-            strokeWidth={1.5}
-            style={{ animationDelay: '1.8s' }}
-          />
+          <ShieldCheck className={`absolute top-16 left-12 w-16 h-16 ${themeConfig.iconColor} hidden lg:block animate-bounce`} style={{ animationDuration: '6s' }} />
+          <Award className={`absolute bottom-24 left-16 w-14 h-14 ${themeConfig.iconColor} hidden md:block`} />
+          <School className={`absolute top-28 right-20 w-16 h-16 ${themeConfig.iconColor} hidden lg:block`} />
+          <TrendingUp className={`absolute bottom-20 right-28 w-14 h-14 ${themeConfig.iconColor} hidden md:block`} />
         </>
       )}
 
       {variant === 'teacher' && (
         <>
-          <BookOpen
-            className={`absolute top-6 left-6 w-14 h-14 ${iconColor} opacity-70 animate-[float_5s_ease-in-out_infinite]`}
-            strokeWidth={1.5}
-          />
-          <FlaskConical
-            className={`absolute top-32 right-24 w-12 h-12 ${iconColor} opacity-70 animate-[float_4.5s_ease-in-out_infinite]`}
-            strokeWidth={1.5}
-            style={{ animationDelay: '0.6s' }}
-          />
-          <Compass
-            className={`absolute bottom-16 left-8 w-12 h-12 ${iconColor} opacity-70 animate-[float_5.5s_ease-in-out_infinite]`}
-            strokeWidth={1.5}
-            style={{ animationDelay: '1.2s' }}
-          />
-          <Tag
-            className={`absolute bottom-24 right-10 w-14 h-14 ${iconColor} opacity-70 animate-[float_5s_ease-in-out_infinite]`}
-            strokeWidth={1.5}
-            style={{ animationDelay: '1.8s' }}
-          />
+          <BookOpen className={`absolute top-16 left-12 w-16 h-16 ${themeConfig.iconColor} hidden lg:block animate-bounce`} style={{ animationDuration: '6s' }} />
+          <FlaskConical className={`absolute bottom-24 left-16 w-14 h-14 ${themeConfig.iconColor} hidden md:block`} />
+          <GraduationCap className={`absolute top-28 right-20 w-16 h-16 ${themeConfig.iconColor} hidden lg:block`} />
+          <Compass className={`absolute bottom-20 right-28 w-14 h-14 ${themeConfig.iconColor} hidden md:block`} />
         </>
       )}
 
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-14px) rotate(3deg); }
-        }
-      `}</style>
-    </>
-  )
+      {variant === 'student' && (
+        <>
+          <GraduationCap className={`absolute top-16 left-12 w-16 h-16 ${themeConfig.iconColor} hidden lg:block animate-bounce`} style={{ animationDuration: '6s' }} />
+          <Calculator className={`absolute bottom-24 left-16 w-14 h-14 ${themeConfig.iconColor} hidden md:block`} />
+          <ScrollText className={`absolute top-28 right-20 w-16 h-16 ${themeConfig.iconColor} hidden lg:block`} />
+          <Sparkles className={`absolute bottom-20 right-28 w-14 h-14 ${themeConfig.iconColor} hidden md:block`} />
+        </>
+      )}
+
+      {variant === 'parent' && (
+        <>
+          <Users className={`absolute top-16 left-12 w-16 h-16 ${themeConfig.iconColor} hidden lg:block animate-bounce`} style={{ animationDuration: '6s' }} />
+          <School className={`absolute bottom-24 left-16 w-14 h-14 ${themeConfig.iconColor} hidden md:block`} />
+          <Sparkles className={`absolute top-28 right-20 w-16 h-16 ${themeConfig.iconColor} hidden lg:block`} />
+          <TrendingUp className={`absolute bottom-20 right-28 w-14 h-14 ${themeConfig.iconColor} hidden md:block`} />
+        </>
+      )}
+    </div>
+  );
 }

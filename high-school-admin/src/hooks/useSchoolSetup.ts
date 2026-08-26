@@ -90,9 +90,11 @@ export function useSchoolSetup() {
   // ---- Load school data ----
   useEffect(() => {
     if (!school) return;
-    const next = buildFormFromSchool(school, form);
-    setForm(next);
-    setSavedSnapshot(next);
+    setForm((prev) => {
+      const next = buildFormFromSchool(school, prev);
+      setSavedSnapshot(next);
+      return next;
+    });
 
     const savedScale = school.settings?.gradingScale;
     if (Array.isArray(savedScale) && savedScale.length > 0) {

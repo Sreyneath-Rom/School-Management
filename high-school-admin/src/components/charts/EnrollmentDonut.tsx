@@ -1,10 +1,19 @@
 import { useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { enrollmentData } from '@/services/mockData'
+import { ChartCardSkeleton } from '@/components/common/Skeleton'
 
-export default function EnrollmentDonut() {
+interface EnrollmentDonutProps {
+  loading?: boolean
+}
+
+export default function EnrollmentDonut({ loading }: EnrollmentDonutProps = {}) {
   const total = enrollmentData.reduce((sum, item) => sum + item.count, 0)
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null)
+
+  if (loading) {
+    return <ChartCardSkeleton type="donut" />
+  }
 
   return (
     <section className="rounded-[28px] glass-sm p-6 min-h-90">

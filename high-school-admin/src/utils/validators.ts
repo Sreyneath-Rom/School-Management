@@ -19,7 +19,7 @@ export const isValidPassword = (password: string): boolean => {
  * Validate phone number
  */
 export const isValidPhoneNumber = (phone: string): boolean => {
-  const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
+  const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
   return phoneRegex.test(phone);
 };
 

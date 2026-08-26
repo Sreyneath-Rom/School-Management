@@ -1,0 +1,8 @@
+{
+  "name": "High School Management System",
+  "description": "School administration dashboard for student management, attendance, grades, and schedules.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
