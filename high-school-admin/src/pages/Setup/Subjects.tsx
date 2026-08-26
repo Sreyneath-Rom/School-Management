@@ -96,8 +96,8 @@ export default function Subjects() {
                 </div>
                 <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-300">{card.subtitle}</span>
               </div>
-              <div className="mt-5 text-sm font-medium text-stone-500 dark:text-stone-400">{card.title}</div>
-              <div className="mt-2 text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{card.value}</div>
+              <div className="mt-5 text-sm font-medium text-text-main/55">{card.title}</div>
+              <div className="mt-2 text-3xl font-bold tracking-tight text-text-main">{card.value}</div>
             </div>
           )
         })}
@@ -105,30 +105,30 @@ export default function Subjects() {
 
       <div className="flex flex-col gap-4 rounded-[28px] glass-sm p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative flex-1">
-          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
+          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-main/40" />
           <input
             type="text"
             placeholder="Filter by name or code..."
-            className="w-full rounded-full border border-stone-200 bg-stone-50 py-2.5 pl-11 pr-4 text-sm text-stone-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:focus:ring-brand-900"
+            className="w-full rounded-full border border-text-main/15 bg-text-main/5 py-2.5 pl-11 pr-4 text-sm text-text-main/85 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:focus:ring-brand-900"
           />
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <select className="rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm text-stone-700 outline-none transition focus:border-brand-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100">
+          <select className="rounded-full border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main/85 outline-none transition focus:border-brand-400">
             <option>All Departments</option>
             <option>Science</option>
             <option>Mathematics</option>
             <option>Fine Arts</option>
             <option>Humanities</option>
           </select>
-          <select className="rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm text-stone-700 outline-none transition focus:border-brand-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100">
+          <select className="rounded-full border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main/85 outline-none transition focus:border-brand-400">
             <option>Category</option>
             <option>Core</option>
             <option>Elective</option>
           </select>
-          <Button variant="none" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-stone-600 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800" onClick={() => {}}>
+          <Button variant="none" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-text-main/15 bg-text-main/5 text-text-main/70 transition hover:bg-text-main/10" onClick={() => {}}>
             <SlidersHorizontal size={17} />
           </Button>
-          <Button variant="glass" className="inline-flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-100" onClick={() => {}}>
+          <Button variant="glass" className="inline-flex items-center gap-2 text-sm font-semibold text-text-main/85" onClick={() => {}}>
             <Download size={16} />
             Export
           </Button>
@@ -136,34 +136,34 @@ export default function Subjects() {
       </div>
 
       <div className="overflow-x-auto rounded-[28px] glass-sm">
-        <table className="min-w-180 w-full divide-y divide-stone-100 dark:divide-stone-800">
-          <thead className="bg-stone-50 dark:bg-stone-900">
+        <table className="min-w-180 w-full divide-y divide-text-main/10">
+          <thead className="bg-text-main/5">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">Subject Name</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">Code</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">Department</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">Teachers</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">Category</th>
-              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">Actions</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">Subject Name</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">Code</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">Department</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">Teachers</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">Category</th>
+              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+          <tbody className="divide-y divide-text-main/10">
             {subjects.map((subject) => {
               const Icon = subject.icon
               return (
-                <tr key={subject.id} className="transition hover:bg-stone-50 dark:hover:bg-stone-900">
+                <tr key={subject.id} className="transition hover:bg-text-main/5">
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
                       <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${subject.iconColor}`}>
                         <Icon size={18} />
                       </div>
                       <div>
-                        <div className="font-semibold text-stone-900 dark:text-stone-100">{subject.name}</div>
-                        <div className="text-sm text-stone-500 dark:text-stone-400">{subject.subtitle}</div>
+                        <div className="font-semibold text-text-main">{subject.name}</div>
+                        <div className="text-sm text-text-main/55">{subject.subtitle}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-5 text-stone-700 dark:text-stone-200">{subject.code}</td>
+                  <td className="px-6 py-5 text-text-main/85">{subject.code}</td>
                   <td className="px-6 py-5">
                     <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${subject.deptColor}`}>
                       {subject.department}
@@ -174,13 +174,13 @@ export default function Subjects() {
                       {subject.teachers.map((teacher) => (
                         <span
                           key={teacher.label}
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white dark:border-stone-900 text-xs font-semibold text-white ${teacher.color}`}
+                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white ${teacher.color}`}
                         >
                           {teacher.label}
                         </span>
                       ))}
                       {subject.indicator && (
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white dark:border-stone-900 bg-stone-200 text-xs font-semibold text-stone-600 dark:bg-stone-700 dark:text-stone-300">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-text-main/15 text-xs font-semibold text-text-main/70">
                           {subject.indicator}
                         </span>
                       )}
@@ -198,14 +198,14 @@ export default function Subjects() {
                     </span>
                   </td>
                   <td className="px-6 py-5 text-right">
-                    <div className="inline-flex items-center gap-3 text-stone-400 dark:text-stone-400">
-                      <Button variant="none" onClick={() => {}} className="rounded-full p-1.5 transition hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-brand-600">
+                    <div className="inline-flex items-center gap-3 text-text-main/40">
+                      <Button variant="none" onClick={() => {}} className="rounded-full p-1.5 transition hover:bg-text-main/10 hover:text-brand-600">
                         <Pencil size={16} />
                       </Button>
-                      <Button variant="none" onClick={() => {}} className="rounded-full p-1.5 transition hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-700">
+                      <Button variant="none" onClick={() => {}} className="rounded-full p-1.5 transition hover:bg-text-main/10 hover:text-text-main/85">
                         <Eye size={16} />
                       </Button>
-                      <Button variant="none" onClick={() => {}} className="rounded-full p-1.5 transition hover:bg-rose-50 dark:hover:bg-rose-950 hover:text-rose-600">
+                      <Button variant="none" onClick={() => {}} className="rounded-full p-1.5 transition hover:bg-error/10 hover:text-error">
                         <Trash2 size={16} />
                       </Button>
                     </div>

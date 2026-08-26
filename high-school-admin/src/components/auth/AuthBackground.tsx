@@ -14,9 +14,9 @@ import {
 type AuthBackgroundVariant = 'admin' | 'student' | 'teacher'
 
 const variantIconColor: Record<AuthBackgroundVariant, string> = {
-  admin: 'text-teal-500',
-  student: 'text-emerald-400',
-  teacher: 'text-emerald-400',
+  admin: 'text-brand-500',
+  student: 'text-success',
+  teacher: 'text-success',
 }
 
 /**
@@ -44,27 +44,27 @@ export default function AuthBackground({ variant }: { variant: AuthBackgroundVar
 
       {/* Floating notification cards (shared across all auth screens) */}
       <div className="absolute top-[27%] left-[13%] w-44 h-16 rounded-2xl glass-sm flex items-center gap-2 px-4">
-        <Sparkles size={18} className="text-teal-500 shrink-0" />
+        <Sparkles size={18} className="text-brand-500 shrink-0" />
         <div className="flex-1 space-y-1.5">
           <div className="h-1.5 w-3/4 rounded-full glass-strong" />
           <div className="h-1.5 w-1/2 rounded-full glass-strong" />
         </div>
       </div>
       <div className="absolute top-[36%] left-[16%] w-52 h-14 rounded-2xl glass-sm flex items-center gap-2 px-4">
-        <TrendingUp size={18} className="text-amber-500 shrink-0" />
+        <TrendingUp size={18} className="text-warning shrink-0" />
         <div className="flex-1 space-y-1.5">
           <div className="h-1.5 w-full rounded-full glass-strong" />
         </div>
       </div>
     <div className="absolute bottom-[36%] right-[16%] w-44 h-16 rounded-2xl glass-sm flex items-center gap-2 px-4">
-        <GraduationCap size={18} className="text-teal-500 shrink-0" />
+        <GraduationCap size={18} className="text-brand-500 shrink-0" />
         <div className="flex-1 space-y-1.5">
           <div className="h-1.5 w-3/4 rounded-full glass-strong" />
           <div className="h-1.5 w-1/2 rounded-full glass-strong" />
         </div>
       </div>
       <div className="absolute bottom-[27%] right-[13%] w-52 h-14 rounded-2xl glass-sm flex items-center gap-2 px-4">
-        <School size={18} className="text-amber-500 shrink-0" />
+        <School size={18} className="text-warning shrink-0" />
         <div className="flex-1 space-y-1.5">
           <div className="h-1.5 w-full rounded-full glass-strong" />
         </div>

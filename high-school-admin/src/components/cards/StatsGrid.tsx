@@ -35,21 +35,21 @@ interface StatsGridProps {
 }
 
 const tintClasses: Record<StatCard['tint'], string> = {
-  blue: 'bg-brand-700/15 text-brand-700 ring-1 ring-brand-700/15',
-  green: 'bg-emerald-700/15 text-emerald-700 ring-1 ring-emerald-700/15',
-  amber: 'bg-amber-700/15 text-amber-700 ring-1 ring-amber-700/15',
-  violet: 'bg-violet-700/15 text-violet-700 ring-1 ring-violet-700/15',
-  sky: 'bg-sky-700/15 text-sky-700 ring-1 ring-sky-700/15',
-  red: 'bg-rose-700/15 text-rose-700 ring-1 ring-rose-700/15',
+  blue: 'bg-info/15 text-info ring-1 ring-info/25',
+  green: 'bg-success/15 text-success ring-1 ring-success/25',
+  amber: 'bg-warning/15 text-warning ring-1 ring-warning/25',
+  violet: 'bg-orange-600/15 text-orange-600 ring-1 ring-orange-600/25 dark:text-orange-300',
+  sky: 'bg-brand-600/15 text-brand-600 ring-1 ring-brand-600/25 dark:text-brand-300',
+  red: 'bg-error/15 text-error ring-1 ring-error/25',
 }
 
 const deltaTintClasses: Record<StatCard['tint'], string> = {
-  blue: 'bg-emerald-50 text-emerald-700',
-  green: 'bg-emerald-50 text-emerald-700',
-  amber: 'bg-emerald-50 text-emerald-700',
-  violet: 'bg-emerald-50 text-emerald-700',
-  sky: 'bg-emerald-50 text-emerald-700',
-  red: 'bg-rose-50 text-rose-700',
+  blue: 'bg-success/15 text-success',
+  green: 'bg-success/15 text-success',
+  amber: 'bg-success/15 text-success',
+  violet: 'bg-success/15 text-success',
+  sky: 'bg-success/15 text-success',
+  red: 'bg-error/15 text-error',
 }
 
 function StatCardView({ card }: { card: StatCard }) {
@@ -72,8 +72,8 @@ function StatCardView({ card }: { card: StatCard }) {
           {card.delta}
         </div>
       </div>
-      <div className="mt-6 text-sm font-medium text-stone-600 dark:text-stone-400">{card.label}</div>
-      <div className="mt-2 text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">{card.value}</div>
+      <div className="mt-6 text-sm font-medium text-text-main/65">{card.label}</div>
+      <div className="mt-2 text-3xl font-semibold tracking-tight text-text-main">{card.value}</div>
     </div>
   )
 }

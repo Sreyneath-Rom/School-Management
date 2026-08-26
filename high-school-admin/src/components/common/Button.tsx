@@ -1,11 +1,13 @@
 import React from 'react'
 
-type ButtonVariant = 'glass' | 'solid' | 'none' | 'solidOutline'
+type ButtonVariant = 'glass' | 'solid' | 'none' | 'solidOutline' | 'teal'
 
 const variantClasses: Record<ButtonVariant, string> = {
   none: '',
   glass:
-    'rounded-full glass-sm px-4 py-2 text-sm font-semibold text-stone-700 dark:text-stone-300 transition hover:bg-stone-100',
+    'rounded-full glass-sm glass-interactive px-4 py-2 text-sm font-semibold text-text-main/70 transition hover:bg-text-main/5',
+  teal:
+    'rounded-full glass-teal glass-interactive px-4 py-2 text-sm font-semibold text-white',
   solid:
     'rounded-full bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-700/20 transition hover:bg-brand-800',
   solidOutline:

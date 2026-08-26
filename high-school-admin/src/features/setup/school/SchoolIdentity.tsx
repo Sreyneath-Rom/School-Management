@@ -16,7 +16,7 @@ interface Props {
 export default function SchoolIdentity({ form, updateField, errors }: Props) {
   return (
     <section className="rounded-[28px] glass-sm">
-      <div className="border-b border-slate-200/60 px-6 py-5 dark:border-slate-800">
+      <div className="border-b border-(--glass-outline) px-6 py-5">
         <SectionHeader icon={<GraduationCap size={19} />} title="School Identity" description="" />
       </div>
       <div className="space-y-5 p-6">
@@ -25,7 +25,7 @@ export default function SchoolIdentity({ form, updateField, errors }: Props) {
             <input
               value={form.name}
               onChange={(e) => updateField('name', e.target.value)}
-              className={`${inputClass} ${errors.name ? 'border-red-400' : ''}`}
+              className={`${inputClass} ${errors.name ? 'border-error/50' : ''}`}
               placeholder="Varin High School"
             />
           </Field>
@@ -49,11 +49,11 @@ export default function SchoolIdentity({ form, updateField, errors }: Props) {
           </Field>
           <Field label="Website" error={errors.website}>
             <div className="relative">
-              <Link2 size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Link2 size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-main/45" />
               <input
                 value={form.website}
                 onChange={(e) => updateField('website', e.target.value)}
-                className={`${inputClass} pl-11 ${errors.website ? 'border-red-400' : ''}`}
+                className={`${inputClass} pl-11 ${errors.website ? 'border-error/50' : ''}`}
                 placeholder="https://yourschool.edu"
               />
             </div>

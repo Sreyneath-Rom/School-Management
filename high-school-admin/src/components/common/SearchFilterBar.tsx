@@ -23,13 +23,13 @@ export default function SearchFilterBar({
   return (
     <div className="flex flex-col gap-4 rounded-[28px] glass-sm p-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="relative flex-1">
-        <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
+        <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-main/45" />
         <input
           type="text"
           placeholder={placeholder}
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full rounded-full border border-stone-200 bg-stone-50 py-2.5 pl-11 pr-4 text-sm text-stone-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+          className="w-full rounded-full glass-sm py-2.5 pl-11 pr-4 text-sm text-text-main/70 outline-none transition focus:ring-2 focus:ring-brand-500/30"
         />
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -37,7 +37,7 @@ export default function SearchFilterBar({
           <select
             value={statusFilter || ''}
             onChange={(e) => onStatusFilterChange(e.target.value)}
-            className="rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm text-stone-700 outline-none transition focus:border-brand-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+            className="rounded-full glass-sm px-4 py-2.5 text-sm text-text-main/70 outline-none transition focus:ring-2 focus:ring-brand-500/30"
           >
             <option value="">All Status</option>
             <option value="Draft">Draft</option>
@@ -49,7 +49,7 @@ export default function SearchFilterBar({
           </select>
         )}
         {additionalFilters}
-        <Button variant="none" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-stone-600 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
+        <Button variant="none" className="inline-flex h-11 w-11 items-center justify-center rounded-full glass-sm text-text-main/65 transition hover:bg-text-main/5">
           <SlidersHorizontal size={17} />
         </Button>
         {onExport && (

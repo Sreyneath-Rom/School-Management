@@ -69,11 +69,11 @@ export default function StepReview({
           </div>
 
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-base font-bold text-text-main">
               Review School Configuration
             </h2>
 
-            <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-sm leading-5 text-text-main/55">
               Review the information below before saving your school setup.
             </p>
           </div>
@@ -97,7 +97,7 @@ export default function StepReview({
 
           {logoResolved && (
             <div className="flex items-center justify-between gap-4 pt-2">
-              <dt className="text-slate-500 dark:text-slate-400">Logo</dt>
+              <dt className="text-text-main/55">Logo</dt>
 
               <dd>
                 <div
@@ -108,9 +108,7 @@ export default function StepReview({
                     bg-white/70
                     p-1
                     shadow-sm
-                    ring-1 ring-slate-200/60
-                    dark:bg-slate-900/60
-                    dark:ring-slate-700/60
+                    ring-1 ring-(--glass-outline)
                   "
                 >
                   <img
@@ -152,7 +150,7 @@ export default function StepReview({
       <ReviewCard
         icon={<ChartNoAxesCombined size={18} />}
         title="Grading Summary"
-        iconClass="bg-purple-500/15 text-purple-600 dark:text-purple-300"
+        iconClass="bg-brand-500/15 text-brand-600 dark:text-brand-300"
         fullWidth
       >
         {/* Stats */}
@@ -161,10 +159,8 @@ export default function StepReview({
             label="Levels"
             value={gradingScale.length}
             className="
-              bg-slate-100/70
-              text-slate-700
-              dark:bg-slate-800/50
-              dark:text-slate-200
+              glass-sm
+              text-text-main/70
             "
           />
 
@@ -172,10 +168,8 @@ export default function StepReview({
             label="Passing"
             value={passingCount}
             className="
-              bg-emerald-50/80
-              text-emerald-700
-              dark:bg-emerald-950/30
-              dark:text-emerald-300
+              bg-success/15
+              text-success
             "
           />
 
@@ -183,10 +177,8 @@ export default function StepReview({
             label="Failing"
             value={failingCount}
             className="
-              bg-rose-50/80
-              text-rose-700
-              dark:bg-rose-950/30
-              dark:text-rose-300
+              bg-error/15
+              text-error
             "
           />
 
@@ -205,7 +197,7 @@ export default function StepReview({
         {/* Grade levels */}
         {gradingScale.length > 0 && (
           <div className="mt-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-main/45">
               Grade Scale
             </p>
 
@@ -226,20 +218,14 @@ export default function StepReview({
                     ${
                       g.passing
                         ? `
-                          bg-emerald-50
-                          text-emerald-700
-                          ring-1 ring-emerald-200/70
-                          dark:bg-emerald-950/30
-                          dark:text-emerald-300
-                          dark:ring-emerald-800/40
+                          bg-success/10
+                          text-success
+                          ring-1 ring-success/25
                         `
                         : `
-                          bg-rose-50
-                          text-rose-700
-                          ring-1 ring-rose-200/70
-                          dark:bg-rose-950/30
-                          dark:text-rose-300
-                          dark:ring-rose-800/40
+                          bg-error/10
+                          text-error
+                          ring-1 ring-error/25
                         `
                     }
                   `}
@@ -268,7 +254,7 @@ export default function StepReview({
       <ReviewCard
         icon={<Earth size={18} />}
         title="Regional Settings"
-        iconClass="bg-cyan-500/15 text-cyan-600 dark:text-cyan-300"
+        iconClass="bg-info/15 text-info"
         fullWidth
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -391,7 +377,7 @@ function ReviewCard({
           {icon}
         </div>
 
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+        <h3 className="text-sm font-bold text-text-main">
           {title}
         </h3>
       </div>
@@ -424,13 +410,12 @@ function ReviewRow({
         justify-between
         gap-4
         border-b
-        border-slate-200/60
+        border-(--glass-outline)
         pb-2.5
         last:border-0
-        dark:border-slate-700/50
       "
     >
-      <dt className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+      <dt className="flex shrink-0 items-center gap-1.5 text-xs text-text-main/55">
         {icon}
         {label}
       </dt>
@@ -442,8 +427,7 @@ function ReviewRow({
           text-right
           text-sm
           font-semibold
-          text-slate-800
-          dark:text-slate-200
+          text-text-main
         "
         title={value || '—'}
       >
@@ -509,16 +493,15 @@ function RegionalItem({
     <div
       className="
         rounded-2xl
-        bg-slate-100/60
+        glass-sm
         p-4
-        dark:bg-slate-800/40
       "
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-text-main/45">
         {label}
       </p>
 
-      <p className="mt-1.5 truncate text-sm font-bold text-slate-800 dark:text-slate-200">
+      <p className="mt-1.5 truncate text-sm font-bold text-text-main">
         {value || '—'}
       </p>
     </div>

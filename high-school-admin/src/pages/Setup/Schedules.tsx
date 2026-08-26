@@ -140,7 +140,7 @@ export default function Schedules() {
           subtitle="Organize class timetables, faculty assignments, and exam periods."
         />
         <div className="flex items-center gap-3">
-          <Button variant="glass" className="inline-flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300" onClick={() => {}}>
+          <Button variant="glass" className="inline-flex items-center gap-2 text-sm font-semibold text-text-main/85" onClick={() => {}}>
             <Download size={16} />
             Export Schedule
           </Button>
@@ -152,14 +152,14 @@ export default function Schedules() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] glass-sm p-3">
-        <div className="flex items-center gap-1 rounded-2xl bg-stone-50 dark:bg-stone-800 p-1">
+        <div className="flex items-center gap-1 rounded-2xl bg-text-main/5 p-1">
           {tabs.map((tab) => (
             <Button
               key={tab}
               variant="none"
               onClick={() => setActiveTab(tab)}
               className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-                activeTab === tab ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm' : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                activeTab === tab ? 'bg-white text-text-main shadow-sm' : 'text-text-main/55 hover:text-text-main/85'
               }`}
             >
               {tab}
@@ -168,24 +168,24 @@ export default function Schedules() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <select className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300 outline-none focus:border-brand-400">
+          <select className="rounded-xl border border-text-main/15 bg-white px-4 py-2.5 text-sm text-text-main/85 outline-none focus:border-brand-400">
             <option>Grade 10</option>
             <option>Grade 11</option>
             <option>Grade 12</option>
           </select>
-          <select className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300 outline-none focus:border-brand-400">
+          <select className="rounded-xl border border-text-main/15 bg-white px-4 py-2.5 text-sm text-text-main/85 outline-none focus:border-brand-400">
             <option>Semester 1</option>
             <option>Semester 2</option>
           </select>
-          <div className="h-6 w-px bg-stone-200 dark:bg-stone-700" />
-          <div className="flex items-center gap-1 rounded-xl bg-stone-50 dark:bg-stone-800 p-1">
+          <div className="h-6 w-px bg-text-main/15" />
+          <div className="flex items-center gap-1 rounded-xl bg-text-main/5 p-1">
             {(['D', 'W', 'M'] as const).map((v) => (
               <Button
                 key={v}
                 variant="none"
                 onClick={() => setView(v)}
                 className={`h-8 w-8 rounded-lg text-sm font-semibold transition ${
-                  view === v ? 'bg-brand-600 text-white' : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                  view === v ? 'bg-brand-600 text-white' : 'text-text-main/55 hover:text-text-main/85'
                 }`}
               >
                 {v}
@@ -200,16 +200,16 @@ export default function Schedules() {
           <table className="w-full min-w-180 table-fixed border-separate border-spacing-2">
             <thead>
               <tr>
-                <th className="w-20 text-left text-xs font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500">Time</th>
+                <th className="w-20 text-left text-xs font-semibold uppercase tracking-widest text-text-main/40">Time</th>
                 {days.map((d, i) => (
                   <th
                     key={d.label}
                     className={`rounded-xl px-2 py-2 text-sm ${
-                      i === 2 ? 'bg-brand-700 text-white' : 'text-stone-700 dark:text-stone-300'
+                      i === 2 ? 'bg-brand-700 text-white' : 'text-text-main/85'
                     }`}
                   >
                     <div className="font-bold">{d.label}</div>
-                    <div className={`text-xs ${i === 2 ? 'text-brand-100' : 'text-stone-400 dark:text-stone-500'}`}>{d.date}</div>
+                    <div className={`text-xs ${i === 2 ? 'text-brand-100' : 'text-text-main/40'}`}>{d.date}</div>
                   </th>
                 ))}
               </tr>
@@ -217,7 +217,7 @@ export default function Schedules() {
             <tbody>
               {times.map((time, rowIndex) => (
                 <tr key={time}>
-                  <td className="align-top text-xs font-semibold text-stone-400 dark:text-stone-500">{time}</td>
+                  <td className="align-top text-xs font-semibold text-text-main/40">{time}</td>
                   {days.map((_, dayIndex) => {
                     if (isCovered(dayIndex, rowIndex)) return null
                     const block = findBlock(dayIndex, rowIndex)
@@ -225,7 +225,7 @@ export default function Schedules() {
                     if (isMaintenance && dayIndex === 3) {
                       return (
                         <td key={dayIndex} colSpan={3} className="align-top">
-                          <div className="flex h-20 items-center justify-center rounded-xl border border-dashed border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-xs font-semibold uppercase tracking-widest text-rose-500 dark:text-rose-400">
+                          <div className="flex h-20 items-center justify-center rounded-xl border border-dashed border-error/20 bg-error/10 text-xs font-semibold uppercase tracking-widest text-error/70">
                             Maintenance Window
                           </div>
                         </td>
@@ -245,7 +245,7 @@ export default function Schedules() {
                             }`}
                           >
                             {block.conflict && (
-                              <span className="absolute -top-2 right-2 rounded-full bg-rose-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-white">
+                              <span className="absolute -top-2 right-2 rounded-full bg-error px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-white">
                                 Conflict
                               </span>
                             )}
@@ -267,8 +267,8 @@ export default function Schedules() {
                             isDragTarget
                               ? dragOverValid
                                 ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300'
-                                : 'border-rose-400 bg-rose-50 text-rose-500 dark:bg-rose-950/20 dark:text-rose-400'
-                              : 'border-stone-200 dark:border-stone-700 text-stone-300 dark:text-stone-600 hover:border-brand-300 hover:text-brand-500 dark:hover:border-brand-600 dark:hover:text-brand-400'
+                                : 'border-error/50 bg-error/10 text-error/70'
+                              : 'border-text-main/15 text-text-main/25 hover:border-brand-300 hover:text-brand-500 dark:hover:border-brand-600 dark:hover:text-brand-400'
                           }`}
                         >
                           {isDragTarget ? (dragOverValid ? 'Drop here' : 'Unavailable') : '+ Add Lesson'}
@@ -284,37 +284,37 @@ export default function Schedules() {
 
         <div className="space-y-6">
           <div className="rounded-[28px] glass-sm p-6">
-            <div className="flex items-center gap-2 text-base font-bold text-rose-600 dark:text-rose-400">
+            <div className="flex items-center gap-2 text-base font-bold text-error">
               <AlertTriangle size={18} />
               Scheduling Alerts
             </div>
             <div className="mt-4 space-y-4">
               {alerts.map((alert) => (
-                <div key={alert.title} className="border-l-2 border-rose-400 dark:border-rose-600 pl-3">
-                  <div className="text-sm font-semibold text-stone-900 dark:text-stone-100">{alert.title}</div>
-                  <div className="mt-1 text-sm text-stone-500 dark:text-stone-400">{alert.detail}</div>
+                <div key={alert.title} className="border-l-2 border-error/50 pl-3">
+                  <div className="text-sm font-semibold text-text-main">{alert.title}</div>
+                  <div className="mt-1 text-sm text-text-main/55">{alert.detail}</div>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="rounded-[28px] glass-sm p-6">
-            <div className="text-base font-bold text-stone-900 dark:text-stone-100">Pending Assignments</div>
+            <div className="text-base font-bold text-text-main">Pending Assignments</div>
             <div className="mt-4 space-y-3">
               {pending.map((item) => (
                 <div
                   key={item.title}
-                  className="flex items-center justify-between rounded-2xl bg-stone-50 dark:bg-stone-800 px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl bg-text-main/5 px-4 py-3"
                 >
                   <div>
-                    <div className="text-sm font-semibold text-stone-900 dark:text-stone-100">{item.title}</div>
-                    <div className="text-sm text-stone-500 dark:text-stone-400">{item.detail}</div>
+                    <div className="text-sm font-semibold text-text-main">{item.title}</div>
+                    <div className="text-sm text-text-main/55">{item.detail}</div>
                   </div>
-                  <GripVertical size={16} className="text-stone-300 dark:text-stone-600" />
+                  <GripVertical size={16} className="text-text-main/25" />
                 </div>
               ))}
             </div>
-            <Button variant="glass" className="mt-4 w-full rounded-xl py-2.5 text-sm font-semibold text-stone-600 dark:text-stone-400" onClick={() => {}}>
+            <Button variant="glass" className="mt-4 w-full rounded-xl py-2.5 text-sm font-semibold text-text-main/70" onClick={() => {}}>
               View All (8)
             </Button>
           </div>

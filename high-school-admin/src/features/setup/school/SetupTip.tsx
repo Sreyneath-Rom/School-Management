@@ -4,7 +4,7 @@ import { ArrowRight, Lightbulb } from 'lucide-react';
 
 export default function SetupTip() {
   return (
-    <section className="glass-sm relative overflow-hidden rounded-[28px] p-5 text-slate-900 dark:text-slate-100">
+    <section className="glass-sm relative overflow-hidden rounded-[28px] p-5 text-text-main">
       {/* Ambient glow */}
       <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-brand-400/15 blur-3xl" />
 
@@ -26,7 +26,7 @@ export default function SetupTip() {
           </div>
         </div>
 
-        <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
+        <p className="mt-3 text-xs leading-5 text-text-main/55">
           Configure the grading scale before teachers begin
           entering student results. The same scale can then be
           used for grades, report cards, and student performance

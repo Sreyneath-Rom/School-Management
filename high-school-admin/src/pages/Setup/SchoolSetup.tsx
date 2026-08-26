@@ -13,6 +13,7 @@ import RegionalPreferences from "@/features/setup/school/RegionalPreferences";
 import SchoolSetupHeader from "@/features/setup/school/SchoolSetupHeader";
 import WizardSidebar from "@/features/setup/school/WizardSidebar";
 import WizardNavigation from "@/features/setup/school/WizardNavigation";
+import LogoUploader from "@/features/setup/school/LogoUploader";
 import StepReview from "@/features/setup/school/StepReview";
 
 const STEPS = [
@@ -20,6 +21,11 @@ const STEPS = [
     id: "identity",
     label: "School Identity",
     component: SchoolIdentity,
+  },
+  {
+    id: "logo",
+    label: "Upload Logo",
+    component: LogoUploader,
   },
   {
     id: "contact",
@@ -104,19 +110,19 @@ export default function SchoolSetup() {
   // Props shared with setup steps
   // ------------------------------------------------------------
 
-  const stepProps = {
-    form,
-    updateField,
-    gradingScale,
-    updateGrade,
-    addGrade,
-    removeGrade,
-    resetGradingScale,
-    errors: fieldErrors,
-    onLogoUpload: handleLogoUpload,
-    onRemoveLogo: handleRemoveLogo,
-    logoUrl: form.logoUrl,
-  };
+const stepProps = {
+  form,
+  updateField,
+  gradingScale,
+  updateGrade,
+  addGrade,
+  removeGrade,
+  resetGradingScale,
+  errors: fieldErrors,
+  onUpload: handleLogoUpload, 
+  onRemove: handleRemoveLogo, 
+  logoUrl: form.logoUrl,
+};
 
   const ActiveStepComponent = STEPS[currentStep].component;
 
@@ -127,17 +133,17 @@ export default function SchoolSetup() {
   if (isLoading) {
     return (
       <div className="min-h-full pb-12">
-        <div className="flex min-h-70 items-center justify-center rounded-[30px] border border-slate-200/70 bg-white/80 shadow-[0_20px_70px_-35px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/70">
+        <div className="flex min-h-70 items-center justify-center rounded-[30px] glass-sm text-text-main">
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/40">
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-400" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-950/40">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-text-main/15 border-t-brand-600 dark:border-t-brand-400" />
             </div>
 
-            <p className="mt-4 text-sm font-bold text-slate-900 dark:text-white">
+            <p className="mt-4 text-sm font-bold text-text-main">
               Loading school configuration
             </p>
 
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs text-text-main/55">
               Preparing your school setup...
             </p>
           </div>
@@ -153,18 +159,18 @@ export default function SchoolSetup() {
   if (error) {
     return (
       <div className="min-h-full pb-12">
-        <div className="rounded-[30px] border border-rose-200 bg-rose-50/80 p-6 shadow-[0_20px_70px_-35px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-rose-900/50 dark:bg-rose-950/30">
+        <div className="rounded-[30px] glass-strong p-6">
           <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-error/15 text-error">
               <AlertCircle size={19} />
             </div>
 
             <div>
-              <p className="text-sm font-bold text-rose-800 dark:text-rose-200">
+              <p className="text-sm font-bold text-error">
                 Unable to load school configuration
               </p>
 
-              <p className="mt-1 text-xs leading-5 text-rose-600 dark:text-rose-300">
+              <p className="mt-1 text-xs leading-5 text-error/80">
                 Something went wrong while loading the school setup. Please try
                 again.
               </p>
@@ -192,7 +198,7 @@ export default function SchoolSetup() {
           PROGRESS / STEPPER
       ========================================================= */}
 
-      <section className="overflow-hidden rounded-[30px] border border-slate-200/70 bg-white/80 shadow-[0_20px_70px_-35px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/70">
+      <section className="overflow-hidden rounded-[30px] glass-strong">
         <div className="p-4 sm:p-5">
           {/* Desktop stepper */}
           <div className="hidden lg:flex lg:items-center">
@@ -209,10 +215,10 @@ export default function SchoolSetup() {
                         rounded-xl text-xs font-black transition-all duration-200
                         ${
                           isComplete
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                            ? "bg-brand-600 text-white shadow-lg shadow-brand-600/20"
                             : isActive
-                              ? "bg-blue-50 text-blue-700 ring-2 ring-blue-500/20 dark:bg-blue-950/40 dark:text-blue-300"
-                              : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                              ? "bg-brand-50 text-brand-700 ring-2 ring-brand-500/20 dark:bg-brand-950/40 dark:text-brand-300"
+                              : "bg-text-main/10 text-text-main/40"
                         }
                       `}
                     >
@@ -225,17 +231,17 @@ export default function SchoolSetup() {
                           truncate text-xs font-bold
                           ${
                             isActive
-                              ? "text-slate-950 dark:text-white"
+                              ? "text-text-main"
                               : isComplete
-                                ? "text-slate-600 dark:text-slate-300"
-                                : "text-slate-400 dark:text-slate-500"
+                                ? "text-text-main/70"
+                                : "text-text-main/40"
                           }
                         `}
                       >
                         {step.label}
                       </p>
 
-                      <p className="mt-0.5 text-[9px] text-slate-400">
+                      <p className="mt-0.5 text-[9px] text-text-main/40">
                         Step {index + 1}
                       </p>
                     </div>
@@ -247,8 +253,8 @@ export default function SchoolSetup() {
                         mx-4 h-px flex-1 transition-colors duration-300
                         ${
                           index < currentStep
-                            ? "bg-blue-500"
-                            : "bg-slate-200 dark:bg-slate-800"
+                            ? "bg-brand-500"
+                            : "bg-text-main/15"
                         }
                       `}
                     />
@@ -262,29 +268,29 @@ export default function SchoolSetup() {
           <div className="lg:hidden">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white shadow-lg shadow-blue-600/20">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-sm font-black text-white shadow-lg shadow-brand-600/20">
                   {currentStep + 1}
                 </div>
 
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-slate-950 dark:text-white">
+                  <p className="truncate text-sm font-bold text-text-main">
                     {STEPS[currentStep].label}
                   </p>
 
-                  <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-0.5 text-[10px] text-text-main/55">
                     Step {currentStep + 1} of {STEPS.length}
                   </p>
                 </div>
               </div>
 
-              <span className="shrink-0 text-xs font-bold text-blue-600 dark:text-blue-400">
+              <span className="shrink-0 text-xs font-bold text-brand-600 dark:text-brand-400">
                 {Math.round(progress)}%
               </span>
             </div>
 
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-text-main/10">
               <div
-                className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                className="h-full rounded-full bg-brand-600 transition-all duration-300"
                 style={{
                   width: `${Math.max(
                     5,
@@ -310,38 +316,38 @@ export default function SchoolSetup() {
         {/* Main */}
         <main className="min-w-0 space-y-5">
           {/* Current step container */}
-          <section className="overflow-hidden rounded-[30px] border border-slate-200/70 bg-white/80 shadow-[0_20px_70px_-35px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/70">
+          <section className="overflow-hidden rounded-[30px] glass-strong">
             {/* Step header */}
-            <div className="border-b border-slate-200/70 px-5 py-5 sm:px-7 dark:border-slate-800">
+            <div className="border-b border-text-main/15 px-5 py-5 sm:px-7">
               <div className="flex items-end justify-between gap-4">
                 <div className="min-w-0">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                    <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-brand-600 dark:bg-brand-950/40 dark:text-brand-300">
                       Step {currentStep + 1}
                     </span>
 
                     {isDirty && (
-                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:bg-amber-950/30 dark:text-amber-300">
+                      <span className="rounded-full bg-warning/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-warning">
                         Unsaved changes
                       </span>
                     )}
                   </div>
 
-                  <h2 className="truncate text-lg font-bold tracking-tight text-slate-950 dark:text-white sm:text-xl">
+                  <h2 className="truncate text-lg font-bold tracking-tight text-text-main sm:text-xl">
                     {STEPS[currentStep].label}
                   </h2>
 
-                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-xs leading-5 text-text-main/55">
                     Configure this section of your school profile.
                   </p>
                 </div>
 
                 <div className="hidden shrink-0 text-right sm:block">
-                  <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-text-main/40">
                     Setup Progress
                   </p>
 
-                  <p className="mt-1 text-lg font-black text-slate-950 dark:text-white">
+                  <p className="mt-1 text-lg font-black text-text-main">
                     {Math.round(progress)}%
                   </p>
                 </div>

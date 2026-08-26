@@ -86,24 +86,22 @@ export default function WizardNavigation({
               items-center
               justify-center
               rounded-xl
-              bg-slate-100/80
+              glass-sm
               px-2.5
               text-xs
               font-bold
-              text-slate-600
+              text-text-main/65
               shadow-sm
-              dark:bg-slate-800/60
-              dark:text-slate-300
             "
           >
             {currentStep + 1}
-            <span className="mx-1 text-slate-400">/</span>
+            <span className="mx-1 text-text-main/45">/</span>
             {totalSteps}
           </div>
 
-          <div className="hidden h-5 w-px bg-slate-200 sm:block dark:bg-slate-700" />
+          <div className="hidden h-5 w-px bg-(--glass-outline) sm:block" />
 
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-semibold text-text-main/55">
             {isLastStep ? 'Ready to save' : 'Continue setup'}
           </p>
         </div>

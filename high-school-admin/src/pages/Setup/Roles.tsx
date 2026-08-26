@@ -187,7 +187,7 @@ export default function Roles() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-24 text-sm text-stone-500 dark:text-stone-400">
+      <div className="flex items-center justify-center py-24 text-sm text-text-main/55">
         Loading roles and permissions…
       </div>
     )
@@ -195,7 +195,7 @@ export default function Roles() {
 
   if (loadError) {
     return (
-      <div className="rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 px-5 py-4 text-sm font-medium text-rose-700 dark:text-rose-400">
+      <div className="rounded-2xl border border-error/20 bg-error/10 px-5 py-4 text-sm font-medium text-error">
         {loadError}
       </div>
     )
@@ -220,20 +220,20 @@ export default function Roles() {
       </div>
 
       {savedMessage && (
-        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 px-5 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+        <div className="rounded-2xl bg-success/10 border border-success/20 px-5 py-3 text-sm font-medium text-success">
           {savedMessage}
         </div>
       )}
 
       {saveError && (
-        <div className="rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 px-5 py-3 text-sm font-medium text-rose-700 dark:text-rose-400">
+        <div className="rounded-2xl bg-error/10 border border-error/20 px-5 py-3 text-sm font-medium text-error">
           {saveError}
         </div>
       )}
 
       <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
         <div className="rounded-[28px] glass-sm p-5">
-          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
+          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-text-main/55">
             Global Roles
           </div>
           <div className="mt-4 space-y-2">
@@ -247,7 +247,7 @@ export default function Roles() {
                   className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                     isActive
                       ? 'bg-brand-700 text-white shadow'
-                      : 'text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
+                      : 'text-text-main/70 hover:bg-text-main/5'
                   }`}
                 >
                   <span className="text-xs font-semibold">{role.initial}</span>
@@ -257,14 +257,14 @@ export default function Roles() {
             })}
 
             {isCreatingRole ? (
-              <div className="mt-2 space-y-2 rounded-2xl border border-stone-200 dark:border-stone-700 p-3">
+              <div className="mt-2 space-y-2 rounded-2xl border border-text-main/15 p-3">
                 <input
                   autoFocus
                   value={newRoleName}
                   onChange={(e) => setNewRoleName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateRole()}
                   placeholder="Role name"
-                  className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                  className="w-full rounded-xl border border-text-main/15 bg-white px-3 py-2 text-sm outline-none focus:border-brand-400"
                 />
                 <div className="flex gap-2">
                   <Button
@@ -291,7 +291,7 @@ export default function Roles() {
               <Button
                 variant="glass"
                 onClick={() => setIsCreatingRole(true)}
-                className="mt-2 w-full justify-center gap-2 text-sm font-semibold text-stone-500 dark:text-stone-400"
+                className="mt-2 w-full justify-center gap-2 text-sm font-semibold text-text-main/55"
               >
                 <span className="text-lg">+</span>
                 Create New Role
@@ -304,21 +304,21 @@ export default function Roles() {
           <div className="overflow-x-auto rounded-[28px] glass-sm">
             <table className="min-w-160 w-full text-sm">
               <thead>
-                <tr className="border-b border-stone-200 dark:border-stone-700">
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
+                <tr className="border-b border-text-main/15">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">
                     Module / Category
                   </th>
                   {columns.map((col) => (
                     <th
                       key={col.action}
-                      className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400"
+                      className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55"
                     >
                       {col.label}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+              <tbody className="divide-y divide-text-main/10">
                 {MODULES.map((module) => (
                   <tr key={module.id}>
                     <td className="px-6 py-4">
@@ -326,7 +326,7 @@ export default function Roles() {
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">
                           <span className="text-xs font-semibold">{module.initial}</span>
                         </div>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">
+                        <span className="font-semibold text-text-main/95">
                           {module.label}
                         </span>
                       </div>
@@ -340,7 +340,7 @@ export default function Roles() {
                           className={`mx-auto flex h-6 w-6 items-center justify-center rounded-md border transition disabled:opacity-40 ${
                             matrix[module.id]?.[colIndex]
                               ? 'border-brand-600 bg-brand-600 text-white'
-                              : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-transparent'
+                              : 'border-text-main/25 bg-white text-transparent'
                           }`}
                         >
                           {matrix[module.id]?.[colIndex] ? (
@@ -359,8 +359,8 @@ export default function Roles() {
 
           {dirtyCount > 0 && (
             <div className="flex flex-col gap-4 rounded-[28px] glass-sm p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3 text-sm text-stone-600 dark:text-stone-400">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
+              <div className="flex items-center gap-3 text-sm text-text-main/70">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-text-main/10 text-text-main/85">
                   i
                 </span>
                 Unsaved changes detected in {dirtyCount} permission{dirtyCount === 1 ? '' : 's'}.
@@ -370,7 +370,7 @@ export default function Roles() {
                   variant="glass"
                   onClick={handleReset}
                   disabled={isSaving}
-                  className="rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 dark:text-rose-400"
+                  className="rounded-xl px-4 py-2.5 text-sm font-semibold text-error"
                 >
                   Reset to Default
                 </Button>

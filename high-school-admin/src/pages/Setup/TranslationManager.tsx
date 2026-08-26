@@ -953,13 +953,13 @@ export default function TranslationManager() {
           ====================================================================== */}
 
       {loadError && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+        <div className="rounded-2xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
           {loadError}
         </div>
       )}
 
       {translationSyncError && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+        <div className="rounded-2xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error">
           {translationSyncError}
         </div>
       )}
@@ -996,7 +996,7 @@ export default function TranslationManager() {
                     className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
                       isActive
                         ? 'glass text-brand-700 dark:text-brand-300'
-                        : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200'
+                        : 'text-text-main/70 hover:text-text-main'
                     }`}
                   >
 
@@ -1014,7 +1014,7 @@ export default function TranslationManager() {
 
                     {language.code ===
                       'en' && (
-                      <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                      <span className="rounded-full bg-text-main/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-main/55">
                         Default
                       </span>
                     )}
@@ -1033,7 +1033,7 @@ export default function TranslationManager() {
                           language.code,
                         )
                       }
-                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-stone-200 text-stone-600 transition hover:bg-rose-100 hover:text-rose-600 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-rose-950/50 dark:hover:text-rose-400"
+                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-text-main/15 text-text-main/70 transition hover:bg-error/15 hover:text-error"
                     >
                       <X
                         size={11}
@@ -1071,15 +1071,15 @@ export default function TranslationManager() {
             ==================================================================== */}
 
         {showAddForm && (
-          <div className="mt-5 rounded-3xl border border-dashed border-stone-200 p-5 dark:border-stone-700">
+          <div className="mt-5 rounded-3xl border border-dashed border-text-main/15 p-5">
 
             <div className="mb-4">
 
-              <div className="text-sm font-bold text-stone-800 dark:text-stone-200">
+              <div className="text-sm font-bold text-text-main/95">
                 Add new language
               </div>
 
-              <div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+              <div className="mt-1 text-xs text-text-main/55">
                 The flag will be detected automatically from the language code.
               </div>
 
@@ -1091,7 +1091,7 @@ export default function TranslationManager() {
 
               <div>
 
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">
                   Language name
                 </label>
 
@@ -1107,7 +1107,7 @@ export default function TranslationManager() {
                     )
                   }
                   placeholder="e.g. Khmer"
-                  className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+                  className="w-full rounded-2xl border border-text-main/15 bg-white px-4 py-2.5 text-sm text-text-main/95 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                 />
 
               </div>
@@ -1116,7 +1116,7 @@ export default function TranslationManager() {
 
               <div>
 
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-text-main/55">
                   Language code
                 </label>
 
@@ -1142,7 +1142,7 @@ export default function TranslationManager() {
                   }
                   placeholder="km"
                   maxLength={5}
-                  className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+                  className="w-full rounded-2xl border border-text-main/15 bg-white px-4 py-2.5 text-sm text-text-main/95 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                 />
 
               </div>
@@ -1181,7 +1181,7 @@ export default function TranslationManager() {
             {/* Automatic flag preview */}
 
             {newCode.trim() && (
-              <div className="mt-4 flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+              <div className="mt-4 flex items-center gap-2 text-sm text-text-main/55">
 
                 <span>
                   Flag:
@@ -1208,7 +1208,7 @@ export default function TranslationManager() {
                   language.code ===
                   slugifyCode(newCode),
               ) && (
-                <div className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+                <div className="mt-2 text-xs text-success">
                   "{slugifyCode(newCode)}" has built-in translations — they'll be pre-filled once added.
                 </div>
               )}
@@ -1216,7 +1216,7 @@ export default function TranslationManager() {
             {/* Error */}
 
             {formError && (
-              <div className="mt-3 text-sm text-rose-600 dark:text-rose-400">
+              <div className="mt-3 text-sm text-error">
                 {formError}
               </div>
             )}
@@ -1236,7 +1236,7 @@ export default function TranslationManager() {
 
         <div className="flex-1">
 
-          <div className="flex items-center justify-between text-sm font-medium text-stone-700 dark:text-stone-300">
+          <div className="flex items-center justify-between text-sm font-medium text-text-main/85">
 
             <span className="flex items-center gap-2">
 
@@ -1256,7 +1256,7 @@ export default function TranslationManager() {
             <span
               className={`flex items-center gap-1 transition-opacity ${
                 savedPulse
-                  ? 'opacity-100 text-emerald-600 dark:text-emerald-400'
+                  ? 'opacity-100 text-success'
                   : 'opacity-0'
               }`}
             >
@@ -1267,7 +1267,7 @@ export default function TranslationManager() {
           </div>
 
           {!isDefaultActive && (
-            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-text-main/10">
 
               <div
                 className="h-full rounded-full bg-brand-600 transition-all duration-500"
@@ -1287,7 +1287,7 @@ export default function TranslationManager() {
 
           <Search
             size={16}
-            className="shrink-0 text-stone-500 dark:text-stone-400"
+            className="shrink-0 text-text-main/55"
           />
 
           <input
@@ -1299,7 +1299,7 @@ export default function TranslationManager() {
               )
             }
             placeholder="Filter strings..."
-            className="w-full border-0 bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-500 dark:text-stone-100 dark:placeholder:text-stone-400"
+            className="w-full border-0 bg-transparent text-sm text-text-main outline-none placeholder:text-text-main/55"
           />
 
           {search && (
@@ -1308,7 +1308,7 @@ export default function TranslationManager() {
               onClick={() =>
                 setSearch('')
               }
-              className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
+              className="text-text-main/40 hover:text-text-main/85"
             >
               <X size={14} />
             </button>
@@ -1325,18 +1325,18 @@ export default function TranslationManager() {
       {!isDefaultActive && (
         <div className="flex flex-col gap-3 rounded-[28px] glass-sm p-4 sm:flex-row sm:items-center sm:justify-between">
 
-          <label className="flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300">
+          <label className="flex items-center gap-2 text-sm font-medium text-text-main/85">
             <input
               type="checkbox"
               checked={showMissingOnly}
               onChange={(event) =>
                 setShowMissingOnly(event.target.checked)
               }
-              className="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500 dark:border-stone-600"
+              className="h-4 w-4 rounded border-text-main/25 text-brand-600 focus:ring-brand-500"
             />
             Show untranslated only
             {missingKeys.size > 0 && (
-              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+              <span className="rounded-full bg-text-main/10 px-2 py-0.5 text-xs font-semibold text-text-main/55">
                 {missingKeys.size}
               </span>
             )}
@@ -1360,7 +1360,7 @@ export default function TranslationManager() {
       )}
 
       {autoTranslateNotice && (
-        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-300">
+        <div className="rounded-2xl border border-info/20 bg-info/10 px-4 py-3 text-sm text-info">
           {autoTranslateNotice}
         </div>
       )}
@@ -1376,7 +1376,7 @@ export default function TranslationManager() {
           onClick={
             openAllCategories
           }
-          className="rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200"
+          className="rounded-full px-3 py-1.5 text-xs font-semibold text-text-main/55 transition hover:bg-text-main/10 hover:text-text-main/95"
         >
           Expand all
         </button>
@@ -1386,7 +1386,7 @@ export default function TranslationManager() {
           onClick={
             closeAllCategories
           }
-          className="rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200"
+          className="rounded-full px-3 py-1.5 text-xs font-semibold text-text-main/55 transition hover:bg-text-main/10 hover:text-text-main/95"
         >
           Collapse all
         </button>
@@ -1432,11 +1432,11 @@ export default function TranslationManager() {
                 className="flex w-full items-center justify-between px-6 py-4 text-left"
               >
 
-                <span className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-stone-700 dark:text-stone-300">
+                <span className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-text-main/85">
 
                   {category}
 
-                  <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                  <span className="rounded-full bg-text-main/10 px-2 py-0.5 text-[11px] font-semibold text-text-main/55">
                     {
                       entries.length
                     }
@@ -1459,7 +1459,7 @@ export default function TranslationManager() {
               {/* Category content */}
 
               {isOpen && (
-                <div className="divide-y divide-stone-200/60 border-t border-stone-200/60 dark:divide-stone-700/60 dark:border-stone-700/60">
+                <div className="divide-y divide-text-main/15 border-t border-text-main/15">
 
                   {entries.map(
                     (entry) => {
@@ -1485,13 +1485,13 @@ export default function TranslationManager() {
 
                           <div className="min-w-0">
 
-                            <div className="truncate font-mono text-xs text-stone-400 dark:text-stone-500">
+                            <div className="truncate font-mono text-xs text-text-main/40">
                               {
                                 entry.key
                               }
                             </div>
 
-                            <div className="mt-0.5 truncate text-sm font-medium text-stone-800 dark:text-stone-200">
+                            <div className="mt-0.5 truncate text-sm font-medium text-text-main/95">
                               {
                                 entry.en
                               }
@@ -1505,7 +1505,7 @@ export default function TranslationManager() {
 
                             <Globe
                               size={14}
-                              className="shrink-0 text-stone-400 dark:text-stone-500"
+                              className="shrink-0 text-text-main/40"
                             />
 
                             <input
@@ -1534,8 +1534,8 @@ export default function TranslationManager() {
                               }
                               className={`w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition ${
                                 isDefaultActive
-                                  ? 'cursor-not-allowed border-stone-100 bg-stone-50 text-stone-500 dark:border-stone-800 dark:bg-stone-900/60 dark:text-stone-500'
-                                  : 'border-stone-200 bg-white text-stone-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100'
+                                  ? 'cursor-not-allowed border-text-main/10 bg-text-main/5 text-text-main/55'
+                                  : 'border-text-main/15 bg-white text-text-main/95 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
                               }`}
                             />
 
@@ -1557,7 +1557,7 @@ export default function TranslationManager() {
 
         {filteredStrings.length ===
           0 && (
-          <div className="rounded-[28px] glass-sm p-10 text-center text-sm text-stone-500 dark:text-stone-400">
+          <div className="rounded-[28px] glass-sm p-10 text-center text-sm text-text-main/55">
             No strings match "
             {search}".
           </div>

@@ -24,8 +24,7 @@ export default function GradingSummary({
         overflow-hidden
         rounded-[28px]
         p-5
-        text-slate-900
-        dark:text-slate-200
+        text-text-main
       "
     >
       {/* Ambient glow */}
@@ -70,7 +69,7 @@ export default function GradingSummary({
                 Grading Summary
               </p>
 
-              <p className="text-[10px] text-slate-400 dark:text-slate-500">
+              <p className="text-[10px] text-text-main">
                 {gradingScale.length} grading levels
               </p>
             </div>
@@ -85,13 +84,12 @@ export default function GradingSummary({
                   items-center
                   gap-1
                   rounded-full
-                  bg-emerald-500/10
+                  bg-success/15
                   px-2
                   py-1
                   text-[10px]
                   font-bold
-                  text-emerald-600
-                  dark:text-emerald-400
+                  text-success
                 "
               >
                 <CheckCircle2 size={11} />
@@ -104,13 +102,12 @@ export default function GradingSummary({
                   items-center
                   gap-1
                   rounded-full
-                  bg-red-500/10
+                  bg-error/15
                   px-2
                   py-1
                   text-[10px]
                   font-bold
-                  text-red-600
-                  dark:text-red-400
+                  text-error
                 "
               >
                 <XCircle size={11} />
@@ -148,16 +145,12 @@ export default function GradingSummary({
                   ${
                     item.passing
                       ? `
-                        border-emerald-200/50
-                        bg-emerald-500/10
-                        dark:border-emerald-800/30
-                        dark:bg-emerald-500/10
+                        border-success/25
+                        bg-success/15
                       `
                       : `
-                        border-red-200/50
-                        bg-red-500/10
-                        dark:border-red-800/30
-                        dark:bg-red-500/10
+                        border-error/25
+                        bg-error/15
                       `
                   }
                 `}
@@ -169,8 +162,8 @@ export default function GradingSummary({
                     font-black
                     ${
                       item.passing
-                        ? 'text-emerald-600 dark:text-emerald-300'
-                        : 'text-red-600 dark:text-red-300'
+                        ? 'text-success'
+                        : 'text-error'
                     }
                   `}
                 >
@@ -178,12 +171,12 @@ export default function GradingSummary({
                 </p>
 
                 {/* Score range */}
-                <p className="mt-0.5 text-[9px] font-medium text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-[9px] font-medium text-text-main/55">
                   {item.minScore}–{item.maxScore}
                 </p>
 
                 {/* GPA */}
-                <p className="mt-1 text-[9px] font-semibold text-slate-400 dark:text-slate-500">
+                <p className="mt-1 text-[9px] font-semibold text-text-main/45">
                   GPA {Number(item.point).toFixed(1)}
                 </p>
 
@@ -200,8 +193,8 @@ export default function GradingSummary({
                     opacity-60
                     ${
                       item.passing
-                        ? 'bg-emerald-500'
-                        : 'bg-red-500'
+                        ? 'bg-success'
+                        : 'bg-error'
                     }
                   `}
                 />
@@ -216,25 +209,23 @@ export default function GradingSummary({
               rounded-2xl
               border
               border-dashed
-              border-slate-300/70
-              bg-slate-50/40
+              border-(--glass-outline)
+              bg-text-main/5
               px-4
               py-6
               text-center
-              dark:border-slate-700
-              dark:bg-slate-900/30
             "
           >
             <Trophy
               size={22}
-              className="mx-auto text-slate-300 dark:text-slate-600"
+              className="mx-auto text-text-main/30"
             />
 
-            <p className="mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-xs font-semibold text-text-main/55">
               No grading scale configured
             </p>
 
-            <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
+            <p className="mt-1 text-[10px] text-text-main/45">
               Add grading levels to see the summary here.
             </p>
           </div>
@@ -246,8 +237,7 @@ export default function GradingSummary({
             mt-4
             text-xs
             leading-5
-            text-slate-500
-            dark:text-slate-400
+            text-text-main
           "
         >
           These grading rules will be used when converting

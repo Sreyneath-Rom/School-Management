@@ -17,13 +17,13 @@ export default function FormModal({
   children,
 }: FormModalProps) {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center glass-sm dark:glass-sm">
+    <div className="fixed inset-0 z-40 flex items-center justify-center glass-sm">
       <div className="w-full max-w-lg rounded-3xl glass-sm p-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">{title}</h3>
+          <h3 className="text-lg font-bold text-text-main">{title}</h3>
           <button
             onClick={onCancel}
-            className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+            className="text-text-main/45 hover:text-text-main/70"
           >
             <X size={20} />
           </button>

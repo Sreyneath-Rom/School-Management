@@ -1,225 +1,227 @@
 @import "tailwindcss";
 
-/* Enable dark: utilities using the .dark class */
+/* 1. បង្កើត Variant សម្រាប់ Dark Mode ដើរដោយ .dark class */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* 2. កំណត់ប្រព័ន្ធរចនា (Theme Settings) */
 @theme {
-  /* Embossed shadow utilities */
+  /* ស្រមោលបែបផុស និងផត (Embossed Shadows) */
   --shadow-emboss: var(--shadow-emboss-raised);
   --shadow-sunken: var(--shadow-emboss-sunken);
 
-  /* Brand colors */
-  --color-brand-50: #ecfcfd;
-  --color-brand-100: #d5f8fc;
-  --color-brand-200: #aaf0f8;
-  --color-brand-300: #71e7f4;
-  --color-brand-400: #39ddef;
-  --color-brand-500: #12c5d9;
-  --color-brand-600: #0fa3b3;
-  --color-brand-700: #0c8592;
-  --color-brand-800: #096771;
-  --color-brand-900: #074d55;
-  --color-brand-950: #042f34;
+  /* ពណ៌ម៉ាកសញ្ញា (Brand Colors - Teal) ប្តូរជា RGBA */
+  --color-brand-50: rgba(236, 252, 253, 1);
+  --color-brand-100: rgba(213, 248, 252, 1);
+  --color-brand-200: rgba(170, 240, 248, 1);
+  --color-brand-300: rgba(113, 231, 244, 1);
+  --color-brand-400: rgba(57, 221, 239, 1);
+  --color-brand-500: rgba(18, 197, 217, 1);
+  --color-brand-600: rgba(15, 163, 179, 1);
+  --color-brand-700: rgba(12, 133, 146, 1);
+  --color-brand-800: rgba(9, 103, 113, 1);
+  --color-brand-900: rgba(7, 77, 85, 1);
+  --color-brand-950: rgba(4, 47, 52, 1);
+
+  /* កំណត់ពណ៌អក្សរទៅក្នុងប្រព័ន្ធ Tailwind */
+  --color-text-main: var(--text-color);
+
+  /* ប្រព័ន្ធពណ៌ស្ថានភាព (Status Colors) */
+  --color-success: var(--status-success);
+  --color-info: var(--status-info);
+  --color-warning: var(--status-warning);
+  --color-error: var(--status-error);
 }
 
 /* =========================================================
-   LIGHT MODE
+   LIGHT MODE (ផ្ទៃភ្លឺ)
    ========================================================= */
-
 :root {
+  /* ពណ៌ផ្ទៃខាងក្រោយរត់កាត់ (Teal ទៅ Orange) */
   --app-bg: linear-gradient(
     135deg,
-    rgba(5, 136, 151, 0.5) 0%,
-    rgba(255, 159, 0, 0.5) 100%
+    rgba(5, 136, 151, 0.45) 0%,
+    rgba(255, 159, 0, 0.4) 100%
   );
 
-  --glass-bg: rgba(255, 255, 255, 0.5);
-  --glass-outline: rgba(0, 0, 0, 0.05);
+  /* ពណ៌កញ្ចក់គ្រឹះ (Liquid Optical Translucency) */
+  --glass-bg: rgba(255, 255, 255, 0.35);
+  --glass-outline: rgba(255, 255, 255, 0.6);
 
-  /* Raised embossed effect */
+  /* Dynamic Liquid Specular Highlights */
+  --glass-specular-top: rgba(255, 255, 255, 0.75);
+  --glass-specular-bottom: rgba(0, 0, 0, 0.08);
+  --glass-inner-glow: inset 0 1px 1px rgba(255, 255, 255, 0.9);
+
+  /* ស្រមោលផុស & ស្រមោលអណ្តែតចាំង (Liquid Ambient Shadow) */
   --shadow-emboss-raised:
-    -5px -5px 12px rgba(215, 215, 215, 0.5),
-    6px 6px 16px rgba(15, 23, 42, 0.18);
+    0 20px 40px -15px rgba(15, 23, 42, 0.18),
+    -4px -4px 12px rgba(255, 255, 255, 0.7);
 
-  /* Sunken embossed effect */
+  /* ស្រមោលផត (Sunken Effect) */
   --shadow-emboss-sunken:
-    inset -4px -4px 10px rgba(255, 255, 255, 0.8),
-    inset 4px 4px 10px rgba(15, 23, 42, 0.15);
+    inset -4px -4px 10px rgba(255, 255, 255, 0.7),
+    inset 4px 4px 10px rgba(15, 23, 42, 0.12);
 
   --glass-shadow: var(--shadow-emboss-raised);
 
-  --glass-strong-bg: rgba(255, 255, 255, 0.12);
-  --glass-strong-border: rgba(255, 255, 255, 0.14);
-  --glass-strong-shadow:
-    0 10px 30px rgba(15, 23, 42, 0.08);
+  /* កញ្ចក់កម្រិតខ្លាំង */
+  --glass-strong-bg: rgba(255, 255, 255, 0.55);
+  --glass-strong-border: rgba(255, 255, 255, 0.8);
+  --glass-strong-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
 
-  --text-color: #1e293b;
+  /* ពណ៌អក្សរពេលភ្លឺ (Slate 800) */
+  --text-color: rgba(30, 41, 59, 1); 
+
+  /* ពណ៌ស្ថានភាពពេលភ្លឺ (Status Colors) */
+  --status-success: rgba(16, 185, 129, 1);
+  --status-info: rgba(14, 165, 233, 1);
+  --status-warning: rgba(245, 158, 11, 1);
+  --status-error: rgba(239, 68, 68, 1);
 }
 
 /* =========================================================
-   DARK MODE
+   DARK MODE (ផ្ទៃងងឹត)
    ========================================================= */
-
 .dark {
+  /* ពណ៌ផ្ទៃខាងក្រោយងងឹត */
   --app-bg: linear-gradient(
     135deg,
-    rgba(3, 51, 57, 0.9) 0%,
-    rgba(46, 27, 0, 0.9) 100%
+    rgba(10, 37, 42, 1) 0%,
+    rgba(43, 29, 14, 1) 100%
   );
 
-  --glass-bg: rgba(28, 25, 23, 0.55);
-  --glass-outline: rgba(255, 255, 255, 0.08);
+  /* ពណ៌កញ្ចក់ងងឹត */
+  --glass-bg: rgba(18, 16, 14, 0.45);
+  --glass-outline: rgba(255, 255, 255, 0.15);
 
-  /* Raised embossed effect */
+  /* Dynamic Liquid Specular Highlights (Dark) */
+  --glass-specular-top: rgba(255, 255, 255, 0.35);
+  --glass-specular-bottom: rgba(0, 0, 0, 0.4);
+  --glass-inner-glow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+
+  /* ស្រមោលផុសងងឹត */
   --shadow-emboss-raised:
-    -5px -5px 14px rgba(255, 255, 255, 0.06),
-    6px 6px 16px rgba(0, 0, 0, 0.6);
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    -4px -4px 14px rgba(255, 255, 255, 0.04);
 
-  /* Sunken embossed effect */
+  /* ស្រមោលផតងងឹត */
   --shadow-emboss-sunken:
-    inset -4px -4px 10px rgba(255, 255, 255, 0.04),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.03),
     inset 4px 4px 10px rgba(0, 0, 0, 0.5);
 
   --glass-shadow: var(--shadow-emboss-raised);
 
-  --glass-strong-bg: rgba(28, 25, 23, 0.35);
-  --glass-strong-border: rgba(255, 255, 255, 0.1);
-  --glass-strong-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.35);
+  /* កញ្ចក់កម្រិតខ្លាំងងងឹត */
+  --glass-strong-bg: rgba(23, 23, 23, 0.65);
+  --glass-strong-border: rgba(255, 255, 255, 0.25);
+  --glass-strong-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
 
-  --text-color: #f1f5f9;
+  /* ពណ៌អក្សរពេលងងឹត (Slate 50) */
+  --text-color: rgba(248, 250, 252, 1); 
+
+  /* ពណ៌ស្ថានភាពពេលងងឹត */
+  --status-success: rgba(52, 211, 153, 1);
+  --status-info: rgba(56, 189, 248, 1);
+  --status-warning: rgba(251, 191, 36, 1);
+  --status-error: rgba(248, 113, 113, 1);
 }
 
 /* =========================================================
-   GLASS UI
+   LIQUID GLASS UTILITIES (ស្ទីលកញ្ចក់រាវ)
    ========================================================= */
-
-.glass {
-  background: var(--glass-bg);
-  outline: 1px solid var(--glass-outline);
-
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-
-  box-shadow: var(--glass-shadow);
+.glass, .glass-teal, .glass-org, .glass-sm, .glass-strong {
+  position: relative;
+  isolation: isolate;
+  backdrop-filter: blur(28px) saturate(210%);
+  -webkit-backdrop-filter: blur(28px) saturate(210%);
+  box-shadow: var(--glass-shadow), var(--glass-inner-glow);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+              background 0.3s ease;
 }
 
-/* =========================================================
-   TEAL GLASS
-   ========================================================= */
-
-.glass-teal {
-  background: rgba(5, 136, 151, 0.5);
-  border: none;
-  outline: 1px solid var(--glass-outline);
-
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-
-  box-shadow: var(--glass-shadow);
+/* គែមរាងកោងចាំងពន្លឺ (Refractive Rim Light Layer) */
+.glass::before, .glass-teal::before, .glass-org::before, .glass-sm::before, .glass-strong::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--glass-specular-top) 0%,
+    transparent 50%,
+    var(--glass-specular-bottom) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
-/* =========================================================
-   ORANGE GLASS
-   ========================================================= */
-
-.glass-org {
-  background: rgba(255, 159, 0, 0.5);
-  border: none;
-  outline: 1px solid var(--glass-outline);
-
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-
-  box-shadow: var(--glass-shadow);
-}
-
-/* =========================================================
-   SMALL GLASS
-   ========================================================= */
-
-.glass-sm {
-  background: var(--glass-bg);
-  border: none;
-  outline: 1px solid var(--glass-outline);
-
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-
-  box-shadow: var(--glass-shadow);
-}
-
-/* =========================================================
-   STRONG GLASS
-   ========================================================= */
+.glass        { background: var(--glass-bg); }
+.glass-teal   { background: rgba(5, 136, 151, 0.3); }
+.glass-org    { background: rgba(255, 159, 0, 0.25); }
+.glass-sm     { background: var(--glass-bg); }
 
 .glass-strong {
   background: var(--glass-strong-bg);
-  border: 1px solid var(--glass-strong-border);
+  backdrop-filter: blur(40px) saturate(240%);
+  -webkit-backdrop-filter: blur(40px) saturate(240%);
+  box-shadow: var(--glass-strong-shadow), var(--glass-inner-glow);
+}
 
-  backdrop-filter: blur(14px) saturate(130%);
-  -webkit-backdrop-filter: blur(14px) saturate(130%);
-
-  box-shadow: var(--glass-strong-shadow);
+/* Interactive Fluid Response (ចុច ឬ Hover លើ Element) */
+.glass-interactive {
+  cursor: pointer;
+}
+.glass-interactive:hover {
+  transform: translateY(-2px) scale(1.005);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3), var(--glass-inner-glow);
+}
+.glass-interactive:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: 0.08s;
 }
 
 /* =========================================================
-   GLOBAL BODY
+   GLOBAL BODY & SCROLLBAR
    ========================================================= */
-
-html,
-body {
-  min-height: 100%;
+html, body {
+  min-height: 100vh;
 }
 
 body {
   margin: 0;
   background: var(--app-bg);
+  background-attachment: fixed;
   color: var(--text-color);
-  color-scheme: light dark;
-
-  min-height: 100vh;
-
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* =========================================================
-   OPTIONAL SCROLLBAR
-   ========================================================= */
-
+/* របារខ្សែកំពស់ (Scrollbar) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
   background: rgba(15, 118, 110, 0.35);
-  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(15, 118, 110, 0.55);
 }
 
-/* =========================================================
-   SELECTION
-   ========================================================= */
-
+/* (Selection) */
 ::selection {
-  background: rgba(18, 197, 217, 0.3);
+  background: rgba(18, 197, 217, 0.35);
   color: inherit;
 }

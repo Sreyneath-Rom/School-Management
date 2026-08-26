@@ -12,8 +12,8 @@ export default function SectionHeader({ icon, title, description }: Props) {
         {icon}
       </div>
       <div>
-        <h2 className="text-base font-bold text-slate-900 dark:text-white">{title}</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+        <h2 className="text-base font-bold text-text-main">{title}</h2>
+        <p className="mt-1 text-sm text-text-main/55">{description}</p>
       </div>
     </div>
   );

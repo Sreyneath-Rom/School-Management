@@ -28,12 +28,12 @@ export default function StatusDialog({
     <Modal open={open} onClose={onClose} title={title}>
       <div className="flex flex-col items-center text-center">
         <div className="text-4xl">{icon}</div>
-        <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">{message}</p>
+        <p className="mt-3 text-sm text-text-main/65">{message}</p>
         <div className="mt-6 flex gap-3">
           {actionLabel && onAction && (
             <Button
               variant={isSuccess ? 'solid' : 'solid'}
-              className={isSuccess ? '' : 'bg-rose-600 hover:bg-rose-700'}
+              className={isSuccess ? '' : 'bg-error hover:bg-error/85'}
               onClick={onAction}
             >
               {actionLabel}

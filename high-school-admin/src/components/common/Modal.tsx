@@ -34,13 +34,13 @@ export default function Modal({
         {/* Header */}
         <div className="flex items-center justify-between">
           {title && (
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
+            <h3 className="text-lg font-bold text-text-main">
               {title}
             </h3>
           )}
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+            className="text-text-main/45 hover:text-text-main/70"
           >
             <X size={20} />
           </button>

@@ -55,7 +55,7 @@ export default function SchoolSetupHeader({
           </div>
 
           {/* Heading */}
-          <div className="text-slate-900 dark:text-slate-100">
+          <div className="text-text-main">
             <PageHeading
               title="School Setup"
               subtitle="Configure your school’s identity, academic settings, grading system, and regional preferences."
@@ -73,21 +73,18 @@ export default function SchoolSetupHeader({
               className="
                 inline-flex items-center justify-center gap-2
                 rounded-xl
-                border border-amber-200/70
-                bg-amber-50/70
+                border border-warning/25
+                bg-warning/15
                 px-3.5 py-2.5
                 text-xs font-bold
-                text-amber-700
+                text-warning
                 shadow-sm
                 backdrop-blur-md
-                dark:border-amber-800/50
-                dark:bg-amber-950/30
-                dark:text-amber-300
               "
             >
               <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-warning" />
               </span>
 
               Unsaved changes

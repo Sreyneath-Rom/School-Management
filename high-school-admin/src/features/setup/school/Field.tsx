@@ -24,10 +24,9 @@ export default function Field({
           block
           text-sm
           font-semibold
-          text-slate-700
+          text-text-main
           transition-colors
           group-focus-within:text-brand-700
-          dark:text-slate-300
           dark:group-focus-within:text-brand-300
         "
       >
@@ -37,8 +36,7 @@ export default function Field({
           <span
             className="
               ml-1
-              text-red-500
-              dark:text-red-400
+              text-error
             "
             aria-hidden="true"
           >
@@ -65,12 +63,10 @@ export default function Field({
               items-center
               justify-center
               rounded-full
-              bg-red-50
+              bg-error/10
               p-1
-              text-red-500
+              text-error
               shadow-sm
-              dark:bg-red-950/40
-              dark:text-red-400
             "
             aria-hidden="true"
           >
@@ -90,8 +86,7 @@ export default function Field({
             gap-1.5
             text-xs
             font-medium
-            text-red-600
-            dark:text-red-400
+            text-error
           "
         >
           <AlertCircle

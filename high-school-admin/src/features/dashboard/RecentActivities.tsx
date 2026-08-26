@@ -11,24 +11,22 @@ const iconMap = {
 }
 
 const tintMap: Record<keyof typeof iconMap, string> = {
-  enrolled: 'bg-emerald-700/15 text-emerald-700 ring-1 ring-emerald-700/15',
-  grade: 'bg-sky-700/15 text-sky-700 ring-1 ring-sky-700/15',
-  homework: 'bg-violet-700/15 text-violet-700 ring-1 ring-violet-700/15',
-  leave: 'bg-amber-700/15 text-amber-700 ring-1 ring-amber-700/15',
-  announcement: 'bg-rose-700/15 text-rose-700 ring-1 ring-rose-700/15',
+  enrolled: 'bg-success/20 text-success',
+  grade: 'bg-info/20 text-info',
+  homework: 'bg-brand-500/20 text-brand-300',
+  leave: 'bg-warning/20 text-warning',
+  announcement: 'bg-error/20 text-error',
 }
 
 export default function RecentActivities() {
   return (
-    <section className="rounded-[28px] glass-sm p-6">
+    <section className="glass rounded-[28px] p-6 text-text-main">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Recent Activities</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">Live updates from the admin portal</p>
+          <h2 className="text-base font-semibold text-text-main">Recent Activities</h2>
+          <p className="text-sm text-text-main/70">Live updates from the admin portal</p>
         </div>
-        <Button variant="solid" className="text-slate-300 hover:bg-slate-700">
-          View Logs
-        </Button>
+        <Button variant="teal">View Logs</Button>
       </div>
 
       <div className="space-y-4">
@@ -38,16 +36,16 @@ export default function RecentActivities() {
           return (
             <div
               key={item.id}
-              className="group flex items-start gap-3 rounded-3xl glass-sm p-4 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-white/50 hover:shadow-[0_16px_35px_-15px_rgba(15,23,42,0.2)]"
+              className="glass glass-interactive flex items-start gap-3 rounded-3xl p-4"
             >
-              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 ease-out group-hover:scale-105 ${tintMap[key]}`}>
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${tintMap[key]}`}>
                 <Icon size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{item.subtitle}</p>
+                <p className="text-sm font-semibold text-text-main">{item.title}</p>
+                <p className="text-sm text-text-main/70">{item.subtitle}</p>
               </div>
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{item.time}</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-text-main/50">{item.time}</span>
             </div>
           )
         })}
