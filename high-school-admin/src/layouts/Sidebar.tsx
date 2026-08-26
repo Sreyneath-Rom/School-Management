@@ -31,7 +31,7 @@ import {
   MessageSquare,
   Wallet,
   FileText,
-  Users as UsersIcon,
+  
 } from "lucide-react";
 import { useSchool } from "@/context/SchoolContext";
 import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
