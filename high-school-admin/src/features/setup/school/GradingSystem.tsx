@@ -29,17 +29,18 @@ interface Props {
 }
 
 export default function GradingSystem({
-  gradingScale,
+  gradingScale = [],
   updateGrade,
   // removeGrade,
   resetGradingScale,
 }: Props) {
+  const safeScale = useMemo(() => (Array.isArray(gradingScale) ? gradingScale : []), [gradingScale]);
   const [previewScore, setPreviewScore] = useState(87);
 
   const getGradeForScore = (score: number): GradeScale | null => {
     return (
-      gradingScale.find(
-        (item) => score >= item.minScore && score <= item.maxScore
+      safeScale.find(
+        (item) => item && score >= item.minScore && score <= item.maxScore
       ) ?? null
     );
   };
@@ -47,17 +48,17 @@ export default function GradingSystem({
   const previewGrade = getGradeForScore(previewScore);
 
   const passingCount = useMemo(
-    () => gradingScale.filter((item) => item.passing).length,
-    [gradingScale]
+    () => safeScale.filter((item) => item?.passing).length,
+    [safeScale]
   );
 
-  const failingCount = gradingScale.length - passingCount;
+  const failingCount = safeScale.length - passingCount;
 
   const highestGpa = useMemo(() => {
-    if (!gradingScale.length) return 0;
+    if (!safeScale.length) return 0;
 
-    return Math.max(...gradingScale.map((item) => Number(item.point) || 0));
-  }, [gradingScale]);
+    return Math.max(...safeScale.map((item) => Number(item?.point) || 0));
+  }, [safeScale]);
 
   const handleReset = () => {
     const confirmed = window.confirm(

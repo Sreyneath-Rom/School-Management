@@ -198,34 +198,42 @@ const stepProps = {
           PROGRESS / STEPPER
       ========================================================= */}
 
-      <section className="overflow-hidden rounded-[30px] glass-strong">
+      <section className="overflow-hidden rounded-[28px] glass-sm border border-text-main/10 shadow-sm">
         <div className="p-4 sm:p-5">
-          {/* Desktop stepper */}
-          <div className="hidden lg:flex lg:items-center">
+          {/* Desktop & Tablet stepper */}
+          <div className="hidden md:flex md:items-center">
             {STEPS.map((step, index) => {
               const isActive = index === currentStep;
               const isComplete = index < currentStep;
 
               return (
                 <div key={step.id} className="flex min-w-0 flex-1 items-center">
-                  <div className="flex min-w-0 items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (index <= currentStep || isStepValid(currentStep)) {
+                        setCurrentStep(index);
+                      }
+                    }}
+                    className="flex min-w-0 items-center gap-3 text-left transition-all hover:opacity-90 cursor-pointer"
+                  >
                     <div
                       className={`
                         flex h-9 w-9 shrink-0 items-center justify-center
                         rounded-xl text-xs font-black transition-all duration-200
                         ${
                           isComplete
-                            ? "bg-brand-600 text-white shadow-lg shadow-brand-600/20"
+                            ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
                             : isActive
-                              ? "bg-brand-50 text-brand-700 ring-2 ring-brand-500/20 dark:bg-brand-950/40 dark:text-brand-300"
-                              : "bg-text-main/10 text-text-main/40"
+                              ? "bg-brand-500 text-white shadow-md shadow-brand-500/20 ring-2 ring-brand-500/30"
+                              : "bg-text-main/10 text-text-main/45"
                         }
                       `}
                     >
-                      {isComplete ? <Check size={15} /> : index + 1}
+                      {isComplete ? <Check size={16} strokeWidth={2.5} /> : index + 1}
                     </div>
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 pr-1">
                       <p
                         className={`
                           truncate text-xs font-bold
@@ -233,24 +241,24 @@ const stepProps = {
                             isActive
                               ? "text-text-main"
                               : isComplete
-                                ? "text-text-main/70"
-                                : "text-text-main/40"
+                                ? "text-text-main/80"
+                                : "text-text-main/45"
                           }
                         `}
                       >
                         {step.label}
                       </p>
 
-                      <p className="mt-0.5 text-[9px] text-text-main/40">
+                      <p className="text-[10px] text-text-main/45">
                         Step {index + 1}
                       </p>
                     </div>
-                  </div>
+                  </button>
 
                   {index < STEPS.length - 1 && (
                     <div
                       className={`
-                        mx-4 h-px flex-1 transition-colors duration-300
+                        mx-3 h-0.5 flex-1 rounded-full transition-colors duration-300
                         ${
                           index < currentStep
                             ? "bg-brand-500"
@@ -264,11 +272,11 @@ const stepProps = {
             })}
           </div>
 
-          {/* Mobile / tablet stepper */}
-          <div className="lg:hidden">
+          {/* Mobile stepper */}
+          <div className="md:hidden">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-sm font-black text-white shadow-lg shadow-brand-600/20">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-sm font-black text-white shadow-md shadow-brand-600/20">
                   {currentStep + 1}
                 </div>
 
@@ -277,27 +285,53 @@ const stepProps = {
                     {STEPS[currentStep].label}
                   </p>
 
-                  <p className="mt-0.5 text-[10px] text-text-main/55">
+                  <p className="text-[11px] text-text-main/55">
                     Step {currentStep + 1} of {STEPS.length}
                   </p>
                 </div>
               </div>
 
-              <span className="shrink-0 text-xs font-bold text-brand-600 dark:text-brand-400">
-                {Math.round(progress)}%
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-brand-50 dark:bg-brand-950/40 px-2.5 py-1 text-xs font-bold text-brand-600 dark:text-brand-300">
+                  {Math.round(progress)}%
+                </span>
+              </div>
             </div>
 
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-text-main/10">
+            <div className="mt-3.5 h-2 overflow-hidden rounded-full bg-text-main/10">
               <div
                 className="h-full rounded-full bg-brand-600 transition-all duration-300"
                 style={{
                   width: `${Math.max(
-                    5,
+                    6,
                     ((currentStep + 1) / STEPS.length) * 100,
                   )}%`,
                 }}
               />
+            </div>
+
+            {/* Mobile step chips scroll */}
+            <div className="mt-3.5 flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              {STEPS.map((s, idx) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    if (idx <= currentStep || isStepValid(currentStep)) {
+                      setCurrentStep(idx);
+                    }
+                  }}
+                  className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
+                    idx === currentStep
+                      ? "bg-brand-600 text-white"
+                      : idx < currentStep
+                        ? "bg-text-main/10 text-text-main/80"
+                        : "bg-text-main/5 text-text-main/40"
+                  }`}
+                >
+                  {idx + 1}. {s.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>

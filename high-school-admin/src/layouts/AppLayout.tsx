@@ -14,18 +14,20 @@ export default function AppLayout() {
 
   return (
     <SchoolProvider>
-      <div className="min-h-screen flex text-stone-900 dark:text-stone-100">
+      <div className="h-screen w-full flex overflow-hidden text-stone-900 dark:text-stone-100 bg-stone-50 dark:bg-stone-950">
+        {/* Fixed Desktop Sidebar & Mobile Drawer (self-contained scrolling, independent of main container) */}
         <Sidebar
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}
-          role={role ?? undefined} // <-- pass role to filter menu items
+          role={role ?? undefined}
         />
 
-        <div className="flex-1 min-h-screen flex flex-col">
+        {/* Main Content Viewport with independent scrolling */}
+        <div className="flex-1 h-full flex flex-col min-w-0 overflow-y-auto overflow-x-hidden">
           <Header onOpenSidebar={() => setMobileOpen(true)} />
 
           {/* === MAIN CONTENT – WITH RESPONSIVE GLASS CONTAINER & BREADCRUMBS === */}
-          <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8 overflow-hidden">
+          <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8">
             <Breadcrumbs />
             <Outlet />
           </main>

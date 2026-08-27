@@ -87,12 +87,14 @@ function mergeTranslations(builtIn: TranslationMap, stored: TranslationMap): Tra
 // translations rather than starting from scratch, but the language itself
 // only appears in the switcher once someone has explicitly added it.
 function withDefaultLanguage(languages: LanguageDef[]): LanguageDef[] {
-  const additional = languages.filter((language) => language.code !== 'en')
+  if (!Array.isArray(languages)) return [DEFAULT_LANGUAGE]
+  const additional = languages.filter((language) => language && language.code !== 'en')
   return [DEFAULT_LANGUAGE, ...additional]
 }
 
 function sameLanguages(a: LanguageDef[], b: LanguageDef[]): boolean {
-  return a.length === b.length && a.every((lang, i) => lang.code === b[i].code && lang.name === b[i].name)
+  if (!Array.isArray(a) || !Array.isArray(b)) return false
+  return a.length === b.length && a.every((lang, i) => lang && b[i] && lang.code === b[i].code && lang.name === b[i].name)
 }
 
 export interface UseTranslationsResult {
@@ -180,11 +182,12 @@ export function useTranslations(): UseTranslationsResult {
     async function loadFromApi() {
       try {
         const records = await languagesService.list()
+        const safeRecords = Array.isArray(records) ? records : []
         const fetchedLanguages = withDefaultLanguage(
-          records.map((record) => ({
-            code: record.code.toLowerCase(),
-            name: record.name,
-            flag: getFlagFromLanguageCode(record.code),
+          safeRecords.map((record) => ({
+            code: (record.code || '').toLowerCase(),
+            name: record.name || '',
+            flag: getFlagFromLanguageCode(record.code || ''),
           })),
         )
 

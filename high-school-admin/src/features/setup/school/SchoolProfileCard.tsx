@@ -6,14 +6,14 @@ import type { SchoolFormState } from '@/types/school';
 
 export default function SchoolProfileCard({ form }: { form: SchoolFormState }) {
   const initials =
-    form.name
+    (form?.name || '')
       .split(' ')
       .filter(Boolean)
       .slice(0, 2)
       .map((part: string) => part[0]?.toUpperCase())
       .join('') || 'SC';
 
-  const logoUrl = resolveAssetUrl(form.logoUrl);
+  const logoUrl = resolveAssetUrl(form?.logoUrl);
 
   return (
     <section className="glass-sm relative overflow-hidden rounded-[30px]">

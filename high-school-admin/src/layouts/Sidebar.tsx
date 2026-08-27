@@ -1,5 +1,5 @@
 // src/layouts/Sidebar.tsx
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -35,6 +35,9 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
+  Sparkles,
+  Layers,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 import { useSchool } from "@/context/SchoolContext";
@@ -46,12 +49,12 @@ type Section =
   | "SETUP"
   | "ACADEMIC"
   | "EXAMS"
+  | "STUDENTS"
+  | "TEACHERS"
   | "FEES"
   | "LIBRARY"
   | "CALENDAR"
   | "MESSAGES"
-  | "STUDENTS"
-  | "TEACHERS"
   | "COMMUNICATION"
   | "REPORTS"
   | "CHILDREN"
@@ -63,12 +66,14 @@ interface MenuItem {
   path: string;
   badge?: string | number;
   badgeColor?: string;
+  badgePulse?: boolean;
 }
 
 interface MenuSection {
   key: Section;
   titleKey: TranslationKey;
   icon: LucideIcon;
+  categoryGroup?: "core" | "academic" | "management" | "system";
   items: MenuItem[];
 }
 
@@ -79,6 +84,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "SETUP",
       titleKey: "sidebar.setup",
       icon: Settings,
+      categoryGroup: "core",
       items: [
         { translationKey: "sidebar.schoolSetup", icon: Settings, path: "/setup/school" },
         { translationKey: "sidebar.rolesPermissions", icon: ShieldCheck, path: "/setup/roles" },
@@ -92,6 +98,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "ACADEMIC",
       titleKey: "sidebar.academic",
       icon: BookOpenCheck,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.classes", icon: BookOpenCheck, path: "/academic/classes" },
         { translationKey: "sidebar.lessons", icon: NotebookText, path: "/academic/lessons" },
@@ -104,15 +111,38 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "EXAMS",
       titleKey: "sidebar.exams",
       icon: FileText,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.examList", icon: FileText, path: "/academic/exams" },
         { translationKey: "sidebar.reportCards", icon: Award, path: "/academic/report-cards" },
       ],
     },
     {
+      key: "STUDENTS",
+      titleKey: "sidebar.students",
+      icon: Users2,
+      categoryGroup: "management",
+      items: [
+        { translationKey: "sidebar.studentList", icon: Users2, path: "/students" },
+        { translationKey: "sidebar.attendance", icon: ClipboardCheck, path: "/students/attendance" },
+        { translationKey: "sidebar.leaveRequests", icon: FileClock, path: "/students/leave-requests", badge: "2", badgeColor: "bg-amber-500 text-white", badgePulse: true },
+      ],
+    },
+    {
+      key: "TEACHERS",
+      titleKey: "sidebar.teachers",
+      icon: UserCog,
+      categoryGroup: "management",
+      items: [
+        { translationKey: "sidebar.teacherList", icon: UserCog, path: "/teachers" },
+        { translationKey: "sidebar.teacherAssignments", icon: UserSquare2, path: "/teachers/assignments" },
+      ],
+    },
+    {
       key: "FEES",
       titleKey: "sidebar.fees",
       icon: Wallet,
+      categoryGroup: "management",
       items: [
         { translationKey: "sidebar.feeStructures", icon: Wallet, path: "/fees/structures" },
         { translationKey: "sidebar.invoices", icon: FileText, path: "/fees/invoices" },
@@ -123,6 +153,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "LIBRARY",
       titleKey: "sidebar.library",
       icon: Library,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.books", icon: Library, path: "/library/books" },
         { translationKey: "sidebar.borrow", icon: Library, path: "/library/borrow" },
@@ -133,6 +164,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "CALENDAR",
       titleKey: "sidebar.calendar",
       icon: CalendarIcon,
+      categoryGroup: "core",
       items: [
         { translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/calendar" },
       ],
@@ -141,33 +173,16 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "MESSAGES",
       titleKey: "sidebar.messages",
       icon: MessageSquare,
+      categoryGroup: "core",
       items: [
-        { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
-      ],
-    },
-    {
-      key: "STUDENTS",
-      titleKey: "sidebar.students",
-      icon: Users2,
-      items: [
-        { translationKey: "sidebar.studentList", icon: Users2, path: "/students" },
-        { translationKey: "sidebar.attendance", icon: ClipboardCheck, path: "/students/attendance" },
-        { translationKey: "sidebar.leaveRequests", icon: FileClock, path: "/students/leave-requests", badge: "2", badgeColor: "bg-amber-500 text-white" },
-      ],
-    },
-    {
-      key: "TEACHERS",
-      titleKey: "sidebar.teachers",
-      icon: UserCog,
-      items: [
-        { translationKey: "sidebar.teacherList", icon: UserCog, path: "/teachers" },
-        { translationKey: "sidebar.teacherAssignments", icon: UserSquare2, path: "/teachers/assignments" },
+        { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/messages", badge: "3", badgeColor: "bg-teal-500 text-white", badgePulse: true },
       ],
     },
     {
       key: "COMMUNICATION",
       titleKey: "sidebar.communication",
       icon: Megaphone,
+      categoryGroup: "management",
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/communication/announcements" },
         { translationKey: "sidebar.notifications", icon: Megaphone, path: "/communication/notifications" },
@@ -177,6 +192,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "REPORTS",
       titleKey: "sidebar.reports",
       icon: BarChart3,
+      categoryGroup: "system",
       items: [
         { translationKey: "sidebar.attendanceReport", icon: ClipboardCheck, path: "/reports/attendance" },
         { translationKey: "sidebar.gradeReport", icon: FileBarChart, path: "/reports/grades" },
@@ -188,6 +204,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "SYSTEM",
       titleKey: "sidebar.system",
       icon: Settings,
+      categoryGroup: "system",
       items: [
         { translationKey: "sidebar.auditLogs", icon: Settings, path: "/system/logs" },
       ],
@@ -198,6 +215,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "ACADEMIC",
       titleKey: "sidebar.academic",
       icon: BookOpenCheck,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.classes", icon: BookOpenCheck, path: "/teacher/classes" },
         { translationKey: "sidebar.lessons", icon: NotebookText, path: "/teacher/lessons" },
@@ -210,6 +228,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "EXAMS",
       titleKey: "sidebar.exams",
       icon: FileText,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.examList", icon: FileText, path: "/teacher/exams" },
       ],
@@ -218,6 +237,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "STUDENTS",
       titleKey: "sidebar.students",
       icon: Users2,
+      categoryGroup: "management",
       items: [
         { translationKey: "sidebar.studentList", icon: Users2, path: "/teacher/students" },
         { translationKey: "sidebar.attendance", icon: ClipboardCheck, path: "/teacher/attendance" },
@@ -227,6 +247,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "COMMUNICATION",
       titleKey: "sidebar.communication",
       icon: Megaphone,
+      categoryGroup: "management",
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/teacher/announcements" },
         { translationKey: "sidebar.notifications", icon: Megaphone, path: "/teacher/notifications" },
@@ -236,6 +257,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "MESSAGES",
       titleKey: "sidebar.messages",
       icon: MessageSquare,
+      categoryGroup: "core",
       items: [
         { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/teacher/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
       ],
@@ -244,6 +266,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "CALENDAR",
       titleKey: "sidebar.calendar",
       icon: CalendarIcon,
+      categoryGroup: "core",
       items: [
         { translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/teacher/calendar" },
       ],
@@ -252,6 +275,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "LIBRARY",
       titleKey: "sidebar.library",
       icon: Library,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.books", icon: Library, path: "/teacher/library" },
       ],
@@ -262,6 +286,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "ACADEMIC",
       titleKey: "sidebar.academic",
       icon: BookOpenCheck,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.classes", icon: BookOpenCheck, path: "/student/classes" },
         { translationKey: "sidebar.homework", icon: PenLine, path: "/student/homework" },
@@ -273,6 +298,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "EXAMS",
       titleKey: "sidebar.exams",
       icon: FileText,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.examList", icon: FileText, path: "/student/exams" },
         { translationKey: "sidebar.reportCards", icon: Award, path: "/student/report-cards" },
@@ -282,6 +308,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "STUDENTS",
       titleKey: "sidebar.students",
       icon: Users2,
+      categoryGroup: "management",
       items: [
         { translationKey: "sidebar.attendance", icon: ClipboardCheck, path: "/student/attendance" },
         { translationKey: "sidebar.leaveRequests", icon: FileClock, path: "/student/leave-requests" },
@@ -291,6 +318,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "FEES",
       titleKey: "sidebar.fees",
       icon: Wallet,
+      categoryGroup: "management",
       items: [
         { translationKey: "sidebar.invoices", icon: Wallet, path: "/student/fees" },
       ],
@@ -299,6 +327,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "LIBRARY",
       titleKey: "sidebar.library",
       icon: Library,
+      categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.books", icon: Library, path: "/student/library" },
       ],
@@ -307,6 +336,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "CALENDAR",
       titleKey: "sidebar.calendar",
       icon: CalendarIcon,
+      categoryGroup: "core",
       items: [
         { translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/student/calendar" },
       ],
@@ -315,6 +345,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "MESSAGES",
       titleKey: "sidebar.messages",
       icon: MessageSquare,
+      categoryGroup: "core",
       items: [
         { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/student/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
       ],
@@ -323,6 +354,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "COMMUNICATION",
       titleKey: "sidebar.communication",
       icon: Megaphone,
+      categoryGroup: "management",
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/student/announcements" },
         { translationKey: "sidebar.notifications", icon: Megaphone, path: "/student/notifications" },
@@ -334,6 +366,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "CHILDREN",
       titleKey: "sidebar.children",
       icon: Users2,
+      categoryGroup: "core",
       items: [
         { translationKey: "sidebar.myChildren", icon: Users2, path: "/parent/children" },
       ],
@@ -342,6 +375,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "COMMUNICATION",
       titleKey: "sidebar.communication",
       icon: Megaphone,
+      categoryGroup: "management",
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/parent/announcements" },
         { translationKey: "sidebar.notifications", icon: Megaphone, path: "/parent/notifications" },
@@ -351,6 +385,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       key: "MESSAGES",
       titleKey: "sidebar.messages",
       icon: MessageSquare,
+      categoryGroup: "core",
       items: [
         { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/parent/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
       ],
@@ -358,11 +393,31 @@ const roleMenus: Record<string, MenuSection[]> = {
   ],
 };
 
-const roleBadgeColorMap: Record<string, string> = {
-  admin: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
-  teacher: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  student: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
-  parent: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+const roleBadgeColorMap: Record<string, { label: string; bg: string; text: string; ring: string }> = {
+  admin: {
+    label: "Administrator",
+    bg: "bg-gradient-to-r from-purple-500/15 to-indigo-500/15 text-purple-700 dark:text-purple-300",
+    text: "text-purple-700 dark:text-purple-300",
+    ring: "border-purple-500/30 dark:border-purple-400/30",
+  },
+  teacher: {
+    label: "Teacher / Faculty",
+    bg: "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-emerald-700 dark:text-emerald-300",
+    text: "text-emerald-700 dark:text-emerald-300",
+    ring: "border-emerald-500/30 dark:border-emerald-400/30",
+  },
+  student: {
+    label: "Student",
+    bg: "bg-gradient-to-r from-sky-500/15 to-blue-500/15 text-sky-700 dark:text-sky-300",
+    text: "text-sky-700 dark:text-sky-300",
+    ring: "border-sky-500/30 dark:border-sky-400/30",
+  },
+  parent: {
+    label: "Parent / Guardian",
+    bg: "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-amber-700 dark:text-amber-300",
+    text: "text-amber-700 dark:text-amber-300",
+    ring: "border-amber-500/30 dark:border-amber-400/30",
+  },
 };
 
 function sectionForPath(pathname: string, menu: MenuSection[]): Section | null {
@@ -371,11 +426,6 @@ function sectionForPath(pathname: string, menu: MenuSection[]): Section | null {
   );
   return match?.key ?? null;
 }
-
-const activeItemClass =
-  "border-l-4 sm:border-l-6 border-brand-700 glass p-3 sm:p-3.5 font-semibold text-brand-700 hover:text-brand-800 hover:border-brand-800 dark:text-brand-300 dark:hover:text-brand-200 shadow-xs";
-const inactiveItemClass =
-  "border border-transparent text-stone-600 hover:text-stone-800 hover:bg-black/5 dark:hover:bg-white/5 dark:text-stone-400 dark:hover:text-stone-200";
 
 export default function Sidebar({
   mobileOpen,
@@ -391,8 +441,11 @@ export default function Sidebar({
   const { role: authRole, user, logout } = useAuth();
   const { t } = useTranslations();
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const activeRole = (propRole || authRole || "admin").toLowerCase();
-  const schoolName = school?.name || "School Portal";
+  const schoolName = school?.name || "High School Admin";
+  const schoolMotto = school?.settings?.motto || "Academic Management OS";
   const logoUrl = resolveAssetUrl(school?.logoUrl);
 
   // --- Collapsed State with LocalStorage Persistence ---
@@ -416,10 +469,11 @@ export default function Sidebar({
     });
   };
 
-  // --- Quick Search Filter for Sidebar Items ---
+  // --- Search & Category Filtering ---
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>("ALL");
 
-  // Hover Popover in Compact Mode
+  // Hover Popover in Compact Rail Mode
   const [hoveredSection, setHoveredSection] = useState<Section | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -428,19 +482,48 @@ export default function Sidebar({
     return roleMenus[activeRole] || roleMenus.admin;
   }, [activeRole]);
 
-  // Filtered menu based on search query
+  // Keyboard shortcut listener: Cmd/Ctrl+K to focus search, Esc to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }
+      if (e.key === "Escape") {
+        if (mobileOpen && onClose) {
+          onClose();
+        }
+        setSearchQuery("");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen, onClose]);
+
+  // Filtered menu based on search query & active category filter
   const filteredMenu = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return baseMenu;
 
     return baseMenu
       .map((section) => {
+        // Filter by category group if not "ALL"
+        if (activeCategoryFilter !== "ALL") {
+          if (section.categoryGroup !== activeCategoryFilter.toLowerCase()) {
+            return null;
+          }
+        }
+
+        if (!query) return section;
+
         const translatedSectionTitle = t(section.titleKey).toLowerCase();
         const sectionMatches = translatedSectionTitle.includes(query);
 
         const matchingItems = section.items.filter((item) => {
           const translatedItem = t(item.translationKey).toLowerCase();
-          return translatedItem.includes(query);
+          return translatedItem.includes(query) || item.path.toLowerCase().includes(query);
         });
 
         if (sectionMatches) {
@@ -457,7 +540,7 @@ export default function Sidebar({
         return null;
       })
       .filter((s): s is MenuSection => s !== null);
-  }, [baseMenu, searchQuery, t]);
+  }, [baseMenu, searchQuery, activeCategoryFilter, t]);
 
   // Open section management
   const [openSection, setOpenSection] = useState<Section | null>(() =>
@@ -475,12 +558,12 @@ export default function Sidebar({
     setOpenSection((prev) => (prev === section ? null : section));
   };
 
-  const handleLinkClick = () => {
+  const handleLinkClick = useCallback(() => {
     if (onClose) {
       onClose();
     }
     setHoveredSection(null);
-  };
+  }, [onClose]);
 
   const handleMouseEnter = (sectionKey: Section) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -493,27 +576,38 @@ export default function Sidebar({
     if (isCollapsed) {
       hoverTimeoutRef.current = setTimeout(() => {
         setHoveredSection(null);
-      }, 180);
+      }, 150);
     }
   };
 
   const dashboardPath = activeRole === "admin" ? "/dashboard" : `/${activeRole}/dashboard`;
   const isDashboardActive = location.pathname === dashboardPath || (activeRole === "admin" && location.pathname === "/");
 
-  const userDisplayName = user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User Profile');
-  const userInitials = userDisplayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'AD';
-  const roleBadgeStyle = roleBadgeColorMap[activeRole] || roleBadgeColorMap.admin;
+  const userDisplayName = user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Administrator');
+  const userInitials = userDisplayName.split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'AD';
+  const roleConfig = roleBadgeColorMap[activeRole] || roleBadgeColorMap.admin;
 
-  // --- Render compact rail mode for desktop ---
+  // Category tags
+  const categoryFilters = [
+    { key: "ALL", label: "All" },
+    { key: "ACADEMIC", label: "Academic" },
+    { key: "MANAGEMENT", label: "People & Fees" },
+    { key: "SYSTEM", label: "System" },
+  ];
+
+  // --- Render Compact Rail Mode for Desktop ---
   const renderCompactMenu = () => (
-    <div className="flex h-full flex-col justify-between p-2">
-      <div className="flex flex-col items-center space-y-3">
+    <div className="flex h-full flex-col justify-between p-2 select-none overflow-hidden">
+      <div className="flex flex-col items-center space-y-3 overflow-y-auto no-scrollbar flex-1 py-1">
         {/* Brand / Logo */}
-        <div className="my-2 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl glass-sm text-stone-700 dark:text-stone-200">
+        <div
+          title={schoolName}
+          className="group relative my-1 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl glass-sm text-stone-700 dark:text-stone-200 border border-stone-200/60 dark:border-white/10 shadow-xs cursor-pointer"
+        >
           {logoUrl ? (
-            <img src={logoUrl} alt="" className="h-full w-full object-cover" />
+            <img src={logoUrl} alt={schoolName} className="h-full w-full object-cover" />
           ) : (
-            <GraduationCap size={22} />
+            <GraduationCap size={22} className="text-brand-600 dark:text-brand-400 group-hover:scale-110 transition-transform duration-200" />
           )}
         </div>
 
@@ -522,25 +616,29 @@ export default function Sidebar({
           to={dashboardPath}
           onClick={handleLinkClick}
           title={t("sidebar.dashboard")}
-          className={`flex h-11 w-11 items-center justify-center rounded-2xl transition ${
+          className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition duration-200 shrink-0 ${
             isDashboardActive
-              ? "bg-brand-700 text-white shadow-md shadow-brand-700/20 dark:bg-brand-600 font-semibold"
-              : "text-stone-600 hover:bg-black/5 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-stone-100"
+              ? "bg-gradient-to-tr from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/25 font-semibold"
+              : "text-stone-600 hover:bg-stone-500/10 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
           }`}
         >
           <LayoutDashboard size={20} />
+          {isDashboardActive && (
+            <span className="absolute -right-0.5 top-2 h-2 w-2 rounded-full bg-white ring-2 ring-brand-600" />
+          )}
         </NavLink>
 
-        <div className="h-px w-8 bg-stone-300/60 dark:bg-white/10 my-1" />
+        <div className="h-px w-8 bg-stone-300/60 dark:bg-white/10 my-1 shrink-0" />
 
         {/* Section Icons with Hover Popover */}
-        <nav className="flex flex-col space-y-1.5">
+        <nav className="flex flex-col space-y-1.5" aria-label="Compact navigation">
           {baseMenu.map((section) => {
             const SectionIcon = section.icon;
             const isSectionActive = section.items.some((item) =>
               location.pathname === item.path || location.pathname.startsWith(item.path + "/")
             );
             const isHovered = hoveredSection === section.key;
+            const hasBadges = section.items.some((item) => !!item.badge);
 
             return (
               <div
@@ -553,30 +651,36 @@ export default function Sidebar({
                   type="button"
                   onClick={() => toggle(section.key)}
                   aria-label={t(section.titleKey)}
-                  className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition ${
+                  className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-200 ${
                     isSectionActive
-                      ? "bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-semibold"
-                      : "text-stone-600 hover:bg-black/5 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-stone-100"
+                      ? "bg-brand-500/15 text-brand-700 dark:text-brand-300 font-semibold shadow-xs"
+                      : "text-stone-600 hover:bg-stone-500/10 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
                   }`}
                 >
                   <SectionIcon size={20} />
                   {isSectionActive && (
-                    <span className="absolute -right-0.5 top-2 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-stone-900" />
+                    <span className="absolute -right-0.5 top-2 h-2.5 w-2.5 rounded-full bg-brand-600 ring-2 ring-white dark:ring-stone-900" />
+                  )}
+                  {!isSectionActive && hasBadges && (
+                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-500 ring-1 ring-white dark:ring-stone-900" />
                   )}
                 </button>
 
                 {/* Popover Flyout for Compact Mode */}
                 {isHovered && (
                   <div
-                    className="absolute left-full top-0 z-50 ml-3 w-56 rounded-2xl glass-sm p-3 shadow-2xl backdrop-blur-xl border border-white/20 animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute left-full top-0 z-50 ml-3 w-60 rounded-2xl glass-strong p-3 shadow-2xl backdrop-blur-2xl border border-stone-200/80 dark:border-white/15 animate-in fade-in zoom-in-95 duration-150"
                     onMouseEnter={() => handleMouseEnter(section.key)}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div className="mb-2 flex items-center justify-between border-b border-stone-200/50 pb-2 px-1 dark:border-white/10">
-                      <span className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200">
+                    <div className="mb-2.5 flex items-center justify-between border-b border-stone-200/50 pb-2 px-1 dark:border-white/10">
+                      <span className="text-xs font-bold uppercase tracking-wider text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                        <SectionIcon size={14} className="text-brand-600 dark:text-brand-400" />
                         {t(section.titleKey)}
                       </span>
-                      <span className="text-[10px] text-stone-400 font-medium">{section.items.length} items</span>
+                      <span className="text-[10px] text-stone-400 font-semibold px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-white/5">
+                        {section.items.length} items
+                      </span>
                     </div>
                     <div className="space-y-1">
                       {section.items.map((item) => {
@@ -590,10 +694,10 @@ export default function Sidebar({
                             key={item.path}
                             to={item.path}
                             onClick={handleLinkClick}
-                            className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-medium transition ${
+                            className={`flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium transition duration-150 ${
                               isItemActive
-                                ? "bg-brand-700 text-white font-semibold shadow-xs"
-                                : "text-stone-600 hover:bg-black/5 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-white/5 dark:hover:text-white"
+                                ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold shadow-xs"
+                                : "text-stone-600 hover:bg-stone-500/10 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-white/10 dark:hover:text-white"
                             }`}
                           >
                             <span className="flex items-center gap-2 truncate">
@@ -601,7 +705,7 @@ export default function Sidebar({
                               <span className="truncate">{t(item.translationKey)}</span>
                             </span>
                             {item.badge && (
-                              <span className={`ml-1.5 rounded-full px-1.5 py-0.2 text-[9px] font-bold ${item.badgeColor || 'bg-brand-600 text-white'}`}>
+                              <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${item.badgeColor || 'bg-brand-600 text-white'} ${item.badgePulse ? 'animate-pulse' : ''}`}>
                                 {item.badge}
                               </span>
                             )}
@@ -618,20 +722,20 @@ export default function Sidebar({
       </div>
 
       {/* Compact Mode Footer with Expand Button & User Avatar */}
-      <div className="flex flex-col items-center space-y-2 pt-3 border-t border-stone-200/50 dark:border-white/10">
+      <div className="flex flex-col items-center space-y-2 pt-3 border-t border-stone-200/50 dark:border-white/10 shrink-0">
         <button
           type="button"
           onClick={toggleCollapsed}
           title="Expand sidebar"
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-stone-500 hover:bg-black/5 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-stone-200 transition"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-stone-500 hover:bg-stone-500/10 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-200 transition"
           aria-label="Expand sidebar"
         >
           <PanelLeft size={18} />
         </button>
 
         <div
-          title={`${userDisplayName} (${activeRole})`}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-700 text-white font-bold text-xs shadow-xs cursor-default select-none"
+          title={`${userDisplayName} (${roleConfig.label})`}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs cursor-default select-none ring-2 ring-white dark:ring-stone-800"
         >
           {userInitials}
         </div>
@@ -639,107 +743,159 @@ export default function Sidebar({
     </div>
   );
 
-  // --- Render standard expanded menu ---
+  // --- Render Standard Expanded Menu ---
   const renderExpandedMenu = (isMobile = false) => (
-    <div className="flex min-h-full flex-col justify-between">
-      <div>
-        {/* Header Branding */}
-        <div className="sticky top-0 z-10 rounded-2xl sm:rounded-[28px] glass-sm px-4 py-3.5 m-2.5 sm:m-3 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl glass-sm text-stone-700 dark:text-stone-200 shadow-xs">
-              {logoUrl ? (
-                <img src={logoUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <GraduationCap size={22} />
+    <div className="flex h-full flex-col justify-between select-none overflow-hidden">
+      {/* Top Fixed Area: School Branding */}
+      <div className="shrink-0 p-2.5 sm:p-3 pb-1">
+        <div className="glass-sm p-3 sm:p-3.5 rounded-2xl border border-stone-200/60 dark:border-white/10 shadow-xs">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl glass-sm text-stone-700 dark:text-stone-200 border border-stone-200/60 dark:border-white/10 shadow-xs">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={schoolName} className="h-full w-full object-cover" />
+                ) : (
+                  <GraduationCap size={22} className="text-brand-600 dark:text-brand-400" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100">
+                  {schoolName}
+                </h2>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="truncate text-[10px] font-semibold text-stone-500 dark:text-stone-400 tracking-wide uppercase">
+                    {schoolMotto}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              {/* Desktop collapse toggle */}
+              {!isMobile && (
+                <button
+                  type="button"
+                  onClick={toggleCollapsed}
+                  className="hidden lg:flex h-8 w-8 items-center justify-center rounded-xl text-stone-400 hover:bg-stone-500/10 hover:text-stone-700 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-white transition"
+                  title="Collapse sidebar"
+                  aria-label="Collapse sidebar"
+                >
+                  <PanelLeftClose size={17} />
+                </button>
+              )}
+
+              {/* Mobile close button */}
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-200/60 hover:text-stone-800 lg:hidden dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-white transition"
+                  aria-label="Close navigation"
+                >
+                  <X size={18} />
+                </button>
               )}
             </div>
-            <div className="min-w-0">
-              <h2 className="truncate text-sm sm:text-[15px] font-bold leading-tight text-stone-900 dark:text-stone-100">
-                {schoolName}
-              </h2>
-              <p className="truncate text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
-                {t("footer.systemName")}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            {/* Desktop collapse toggle */}
-            {!isMobile && (
-              <button
-                type="button"
-                onClick={toggleCollapsed}
-                className="hidden lg:flex h-8 w-8 items-center justify-center rounded-xl text-stone-400 hover:bg-black/5 hover:text-stone-700 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-white transition"
-                title="Collapse sidebar"
-                aria-label="Collapse sidebar"
-              >
-                <PanelLeftClose size={17} />
-              </button>
-            )}
-
-            {/* Mobile close button */}
-            {isMobile && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-200/50 hover:text-stone-800 lg:hidden dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-white transition"
-                aria-label="Close navigation"
-              >
-                <X size={18} />
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Dashboard Link */}
-        <div className="px-3 sm:px-4 pt-1">
+        {/* Dashboard Link with Modern Glow */}
+        <div className="pt-2">
           <NavLink
             to={dashboardPath}
             onClick={handleLinkClick}
-            className={({ isActive }) =>
-              `flex min-h-[42px] items-center justify-between gap-3 rounded-2xl px-3.5 py-2 text-sm font-medium transition ${
-                isActive ? activeItemClass : inactiveItemClass
-              }`
-            }
+            className={`group relative flex min-h-[42px] items-center justify-between gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
+              isDashboardActive
+                ? "bg-gradient-to-r from-brand-600 via-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20"
+                : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:hover:bg-white/10 dark:text-stone-300 dark:hover:text-white"
+            }`}
           >
             <div className="flex items-center gap-3">
-              <LayoutDashboard size={17} />
+              <div className={`flex h-7 w-7 items-center justify-center rounded-xl transition-colors ${isDashboardActive ? 'bg-white/20 text-white' : 'text-brand-600 dark:text-brand-400'}`}>
+                <LayoutDashboard size={17} />
+              </div>
               <span>{t("sidebar.dashboard")}</span>
             </div>
-            {isDashboardActive && (
-              <span className="h-2 w-2 rounded-full bg-brand-600 dark:bg-brand-400" />
+            {isDashboardActive ? (
+              <span className="flex h-2 w-2 rounded-full bg-white shadow-xs" />
+            ) : (
+              <span className="text-[10px] text-stone-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                ↵
+              </span>
             )}
           </NavLink>
         </div>
 
-        {/* Quick Menu Filter Input */}
-        <div className="px-3 sm:px-4 py-2">
+        {/* Quick Menu Filter Input & Category Tabs */}
+        <div className="pt-2 space-y-1.5">
           <div className="relative flex items-center">
             <Search size={14} className="absolute left-3 text-stone-400 pointer-events-none" />
             <input
+              ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search menu items..."
-              className="w-full rounded-xl bg-stone-100/70 dark:bg-white/5 pl-8 pr-7 py-1.5 text-xs text-stone-800 dark:text-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-1.5 focus:ring-brand-500/50 transition border border-transparent dark:border-white/5"
+              placeholder="Search features (⌘K)..."
+              className="w-full rounded-xl bg-stone-100/80 dark:bg-white/5 pl-8.5 pr-8 py-2 text-xs text-stone-800 dark:text-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-1.5 focus:ring-brand-500/50 transition border border-stone-200/50 dark:border-white/5"
             />
-            {searchQuery && (
+            {searchQuery ? (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
+                className="absolute right-2.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
+                aria-label="Clear search"
               >
                 <X size={13} />
               </button>
+            ) : (
+              <span className="absolute right-2.5 hidden sm:inline-block rounded px-1.5 py-0.5 text-[9px] font-bold text-stone-400 bg-stone-200/60 dark:bg-white/10">
+                ⌘K
+              </span>
             )}
           </div>
-        </div>
 
-        {/* Navigation Sections */}
-        <nav className="flex-1 px-3 sm:px-4 py-1 space-y-1">
+          {/* Category Pills (Filter) */}
+          {!searchQuery && (
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 px-0.5">
+              {categoryFilters.map((cat) => (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => setActiveCategoryFilter(cat.key)}
+                  className={`rounded-lg px-2 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap transition-all ${
+                    activeCategoryFilter === cat.key
+                      ? "bg-brand-500/15 text-brand-700 dark:text-brand-300 font-bold border border-brand-500/20"
+                      : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200 hover:bg-stone-500/5 dark:hover:bg-white/5"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Middle Scrollable Navigation List (Self-contained scroll) */}
+      <div className="flex-1 overflow-y-auto px-2.5 sm:px-3 py-1 space-y-1">
+        <nav aria-label="Sidebar Sections">
           {filteredMenu.length === 0 ? (
-            <div className="px-3 py-6 text-center text-xs text-stone-400 dark:text-stone-500">
-              No matching menu items found.
+            <div className="px-4 py-8 text-center rounded-2xl glass-sm border border-dashed border-stone-200 dark:border-white/10 my-2">
+              <Layers size={24} className="mx-auto text-stone-400 mb-2" />
+              <p className="text-xs font-semibold text-stone-600 dark:text-stone-400">
+                No matching navigation items
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveCategoryFilter("ALL");
+                }}
+                className="mt-2 text-[11px] font-bold text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                Reset filters
+              </button>
             </div>
           ) : (
             filteredMenu.map((section) => {
@@ -754,10 +910,10 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => toggle(section.key)}
-                    className={`flex min-h-[40px] w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition ${
+                    className={`flex min-h-[38px] w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-all duration-150 ${
                       hasActiveChild
-                        ? "text-brand-700 dark:text-brand-300 bg-brand-50/50 dark:bg-brand-950/20"
-                        : "text-stone-600 hover:text-stone-900 hover:bg-black/5 dark:text-stone-400 dark:hover:text-stone-200 dark:hover:bg-white/5"
+                        ? "text-brand-700 dark:text-brand-300 bg-brand-500/10 dark:bg-brand-500/15 border border-brand-500/20"
+                        : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:text-stone-400 dark:hover:text-stone-200 dark:hover:bg-white/10"
                     }`}
                   >
                     <span className="flex items-center gap-2.5 truncate">
@@ -765,15 +921,22 @@ export default function Sidebar({
                       <span className="truncate">{t(section.titleKey)}</span>
                     </span>
                     <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-semibold text-stone-400 dark:text-stone-500 font-mono">
+                        {section.items.length}
+                      </span>
                       {hasActiveChild && (
                         <span className="h-1.5 w-1.5 rounded-full bg-brand-600 dark:bg-brand-400" />
                       )}
-                      {isSectionOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      {isSectionOpen ? (
+                        <ChevronDown size={14} className="transition-transform duration-200" />
+                      ) : (
+                        <ChevronRight size={14} className="transition-transform duration-200" />
+                      )}
                     </div>
                   </button>
 
                   {isSectionOpen && (
-                    <div className="mt-1 space-y-0.5 pl-3 sm:pl-3.5 border-l-2 border-stone-200/60 dark:border-white/10 ml-3.5 my-1">
+                    <div className="mt-1 space-y-0.5 pl-3 sm:pl-3.5 border-l-2 border-stone-200/70 dark:border-white/10 ml-3.5 my-1">
                       {section.items.map((item) => {
                         const Icon = item.icon;
                         const isItemActive =
@@ -785,19 +948,23 @@ export default function Sidebar({
                             key={item.path}
                             to={item.path}
                             onClick={handleLinkClick}
-                            className={`flex min-h-[36px] items-center justify-between gap-2 rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-                              isItemActive ? activeItemClass : inactiveItemClass
+                            className={`group relative flex min-h-[36px] items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-150 ${
+                              isItemActive
+                                ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold shadow-xs"
+                                : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
                             }`}
                           >
                             <span className="flex items-center gap-2.5 truncate">
-                              <Icon size={15} className="shrink-0" />
+                              <Icon size={15} className={`shrink-0 transition-transform duration-150 ${isItemActive ? 'scale-110' : 'group-hover:scale-105'}`} />
                               <span className="truncate">{t(item.translationKey)}</span>
                             </span>
-                            {item.badge && (
-                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${item.badgeColor || 'bg-brand-600 text-white'}`}>
+                            {item.badge ? (
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${item.badgeColor || 'bg-brand-600 text-white'} ${item.badgePulse ? 'animate-pulse' : ''}`}>
                                 {item.badge}
                               </span>
-                            )}
+                            ) : isItemActive ? (
+                              <Check size={13} className="text-white shrink-0" />
+                            ) : null}
                           </NavLink>
                         );
                       })}
@@ -810,63 +977,68 @@ export default function Sidebar({
         </nav>
       </div>
 
-      {/* User Profile Mini Footer Card */}
-      <div className="p-3 m-2.5 sm:m-3 rounded-2xl glass-sm border border-stone-200/50 dark:border-white/10 flex items-center justify-between gap-2 shadow-xs">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white font-bold text-xs shadow-xs select-none">
-            {userInitials}
+      {/* User Profile Bottom Footer Card (Always visible at bottom) */}
+      <div className="shrink-0 p-2.5 sm:p-3 pt-1">
+        <div className="p-3 rounded-2xl glass-sm border border-stone-200/60 dark:border-white/10 flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs select-none ring-2 ring-white dark:ring-stone-800">
+              {userInitials}
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-stone-900" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold text-stone-900 dark:text-stone-100 leading-tight">
+                {userDisplayName}
+              </p>
+              <span className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md mt-0.5 border ${roleConfig.bg} ${roleConfig.ring}`}>
+                <Sparkles size={9} />
+                {roleConfig.label}
+              </span>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-xs font-bold text-stone-900 dark:text-stone-100 leading-tight">
-              {userDisplayName}
-            </p>
-            <span className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded-md ${roleBadgeStyle}`}>
-              {activeRole}
-            </span>
-          </div>
-        </div>
 
-        {logout && (
-          <button
-            type="button"
-            onClick={() => logout()}
-            title="Sign out"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-stone-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition"
-            aria-label="Sign out"
-          >
-            <LogOut size={15} />
-          </button>
-        )}
+          {logout && (
+            <button
+              type="button"
+              onClick={() => logout()}
+              title="Sign out"
+              className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl text-stone-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors"
+              aria-label="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Mobile Backdrop Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-xs transition-opacity duration-200 lg:hidden ${
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity duration-300 lg:hidden ${
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => onClose && onClose()}
         aria-hidden={!mobileOpen}
       />
 
-      {/* Mobile drawer (Always full view) */}
+      {/* Mobile Drawer (Touch Optimized for Phones & Tablets < 1024px) */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[295px] max-w-[85vw] transform glass-sm text-stone-900 shadow-2xl transition-transform duration-300 ease-in-out lg:hidden dark:text-stone-100 ${
+        className={`fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform glass-strong text-stone-900 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-in-out lg:hidden dark:text-stone-100 border-r border-stone-200/60 dark:border-white/10 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
         aria-modal="true"
+        aria-label="Mobile Navigation"
       >
-        <div className="h-full overflow-y-auto">{renderExpandedMenu(true)}</div>
+        <div className="h-full overflow-hidden">{renderExpandedMenu(true)}</div>
       </div>
 
-      {/* Desktop sidebar (supports compact rail and full view) */}
+      {/* Desktop / Laptop Sidebar (Fixed viewport height, completely independent of main view scroll) */}
       <aside
-        className={`hidden sticky top-0 h-screen shrink-0 flex-col lg:flex glass-sm overflow-y-auto transition-all duration-300 ease-in-out ${
-          isCollapsed ? "w-18" : "w-72"
+        className={`hidden h-full shrink-0 flex-col lg:flex glass-sm overflow-hidden transition-all duration-300 ease-in-out border-r border-stone-200/50 dark:border-white/10 ${
+          isCollapsed ? "w-19" : "w-72 xl:w-76"
         }`}
       >
         {isCollapsed ? renderCompactMenu() : renderExpandedMenu(false)}

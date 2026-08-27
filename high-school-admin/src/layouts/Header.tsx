@@ -340,13 +340,15 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
 
           {/* LANGUAGE SWITCHER (unchanged) */}
           {(() => {
-            const hasAdditionalLanguages = languages.length > 1
+            const safeLanguages = Array.isArray(languages) ? languages : []
+            const safeActiveLang = activeLanguage || { code: 'en', name: 'English', flag: '🇬🇧' }
+            const hasAdditionalLanguages = safeLanguages.length > 1
             if (!hasAdditionalLanguages) {
               return (
                 <div className="inline-flex h-10 items-center gap-1.5 rounded-full glass-sm px-3 text-stone-600 dark:text-stone-300">
-                  <span className="text-base leading-none">{activeLanguage.flag}</span>
+                  <span className="text-base leading-none">{safeActiveLang.flag}</span>
                   <span className="hidden text-xs font-semibold uppercase sm:inline">
-                    {activeLanguage.code}
+                    {safeActiveLang.code}
                   </span>
                 </div>
               )
@@ -355,14 +357,14 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
               <div className="relative" ref={langRef}>
                 <button
                   type="button"
-                  aria-label={`${t('header.changeLanguage')}: ${activeLanguage.name}`}
+                  aria-label={`${t('header.changeLanguage')}: ${safeActiveLang.name}`}
                   aria-expanded={langOpen}
                   onClick={() => setLangOpen((open) => !open)}
                   className="inline-flex h-10 items-center gap-1.5 rounded-full glass-sm px-3 text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white"
                 >
-                  <span className="text-base leading-none">{activeLanguage.flag}</span>
+                  <span className="text-base leading-none">{safeActiveLang.flag}</span>
                   <span className="hidden text-xs font-semibold uppercase sm:inline">
-                    {activeLanguage.code}
+                    {safeActiveLang.code}
                   </span>
                   <ChevronDown
                     size={13}
@@ -375,7 +377,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                       {t('header.changeLanguage')}
                     </div>
                     <div className="space-y-0.5">
-                      {languages.map((lang) => (
+                      {safeLanguages.map((lang) => (
                         <button
                           key={lang.code}
                           type="button"

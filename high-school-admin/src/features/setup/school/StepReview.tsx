@@ -21,17 +21,18 @@ interface Props {
 
 export default function StepReview({
   form,
-  gradingScale,
+  gradingScale = [],
   logoUrl,
 }: Props) {
   const logoResolved = resolveAssetUrl(logoUrl);
 
-  const passingCount = gradingScale.filter((g) => g.passing).length;
-  const failingCount = gradingScale.length - passingCount;
+  const safeScale = Array.isArray(gradingScale) ? gradingScale : [];
+  const passingCount = safeScale.filter((g) => g?.passing).length;
+  const failingCount = safeScale.length - passingCount;
 
-  const highestGpa = gradingScale.length
+  const highestGpa = safeScale.length
     ? Math.max(
-        ...gradingScale.map((g) => Number(g.point) || 0),
+        ...safeScale.map((g) => Number(g?.point) || 0),
       ).toFixed(1)
     : '—';
 

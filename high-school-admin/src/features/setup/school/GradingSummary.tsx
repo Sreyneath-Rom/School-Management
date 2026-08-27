@@ -5,16 +5,17 @@ import { CheckCircle2, Trophy, XCircle } from 'lucide-react';
 import type { GradeScale } from '@/types/school';
 
 export default function GradingSummary({
-  gradingScale,
+  gradingScale = [],
 }: {
-  gradingScale: GradeScale[];
+  gradingScale?: GradeScale[];
 }) {
-  const passingCount = gradingScale.filter(
-    (item) => item.passing,
+  const safeScale = Array.isArray(gradingScale) ? gradingScale : [];
+  const passingCount = safeScale.filter(
+    (item) => item?.passing,
   ).length;
 
   const failingCount =
-    gradingScale.length - passingCount;
+    safeScale.length - passingCount;
 
   return (
     <section

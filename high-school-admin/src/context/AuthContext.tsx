@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback } from "react";
 import type { UserRole } from "@/utils/rolePermissions";
 import { authService, type AuthResult } from "@/services/authService";
 import { LOCAL_STORAGE_KEYS } from "@/utils/constants";
@@ -39,13 +39,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = (newUser: AuthUser | null) => {
     setUserState(newUser);
   };
+
+  const clearSession = useCallback(() => {
+    setUser(null);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.USER);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
+  }, []);
+
   // AuthContext.tsx
   useEffect(() => {
     const handleSessionExpired = () => clearSession();
     window.addEventListener("auth:session-expired", handleSessionExpired);
     return () =>
       window.removeEventListener("auth:session-expired", handleSessionExpired);
-  }, []);
+  }, [clearSession]);
   useEffect(() => {
     const restoreSession = async () => {
       try {
@@ -106,13 +114,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
     localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN, result.accessToken);
     localStorage.setItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN, result.refreshToken);
-  };
-
-  const clearSession = () => {
-    setUser(null);
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.USER);
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
   };
 
   const login = (result: AuthResult) => {
