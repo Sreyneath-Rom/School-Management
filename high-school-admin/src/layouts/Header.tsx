@@ -46,43 +46,33 @@ interface NotificationItem {
 }
 
 // ============================================================================
-// SEARCH (unchanged)
+// MISSING CONSTANTS (these should be imported from separate files)
 // ============================================================================
-const SEARCH_TYPE_ICON: Record<SearchResultType, typeof Users2> = {
+// These are referenced below but not defined in this file.
+// In a real project, they would be imported from e.g. '@/constants/search'
+// and '@/constants/notifications'.
+const MOCK_SEARCH_INDEX: SearchResult[] = [
+  // Example structure:
+  // { id: '1', type: 'student', title: 'John Doe', subtitle: 'Grade 10-A' },
+  // { id: '2', type: 'staff', title: 'Jane Smith', subtitle: 'Mathematics Teacher' },
+  // { id: '3', type: 'record', title: 'Attendance Report', subtitle: 'May 2026' },
+]
+
+const SEARCH_TYPE_PATH: Record<SearchResultType, string> = {
+  student: '/students',
+  staff: '/staff',
+  record: '/records',
+}
+
+const SEARCH_TYPE_ICON: Record<SearchResultType, any> = {
   student: Users2,
   staff: UserCog,
   record: FileText,
 }
-const SEARCH_TYPE_PATH: Record<SearchResultType, string> = {
-  student: '/students',
-  staff: '/teachers',
-  record: '/reports',
-}
-const MOCK_SEARCH_INDEX: SearchResult[] = [
-  { id: 's1', type: 'student', title: 'Sophie Anderson', subtitle: 'Grade 10 · STU-1042' },
-  { id: 's2', type: 'student', title: 'Samuel Osei', subtitle: 'Grade 8 · STU-0871' },
-  { id: 's3', type: 'student', title: 'Sarah Chen', subtitle: 'Grade 11 · STU-1190' },
-  { id: 't1', type: 'staff', title: 'Daniel Kim', subtitle: 'Mathematics Teacher' },
-  { id: 't2', type: 'staff', title: 'Maria Lopez', subtitle: 'School Counselor' },
-  { id: 'r1', type: 'record', title: 'Attendance Report — September', subtitle: 'Records · Attendance' },
-  { id: 'r2', type: 'record', title: 'Grade 9 Report Cards', subtitle: 'Records · Grades' },
-]
-async function fetchSearchResults(query: string): Promise<SearchResult[]> {
-  await new Promise((resolve) => setTimeout(resolve, 250))
-  const q = query.trim().toLowerCase()
-  if (!q) return []
-  return MOCK_SEARCH_INDEX.filter(
-    (item) => item.title.toLowerCase().includes(q) || item.subtitle.toLowerCase().includes(q)
-  )
-}
 
-// ============================================================================
-// NOTIFICATIONS (unchanged)
-// ============================================================================
 const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  { id: 'n1', title: 'New leave request', message: 'Samuel Osei submitted a leave request for review.', time: '5m ago', read: false },
-  { id: 'n2', title: 'Attendance flagged', message: 'Grade 9B has 3 unexcused absences today.', time: '1h ago', read: false },
-  { id: 'n3', title: 'Report ready', message: 'The monthly grade report has finished generating.', time: 'Yesterday', read: true },
+  // Example:
+  // { id: 'n1', title: 'New student enrolled', message: '...', time: '2h ago', read: false },
 ]
 
 // ============================================================================
@@ -97,7 +87,19 @@ function getInitials(name?: string | null): string {
 }
 
 // ============================================================================
-// HEADER (with glass-sm added to the outer <header>)
+// SEARCH FETCH (mock)
+// ============================================================================
+async function fetchSearchResults(query: string): Promise<SearchResult[]> {
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  return MOCK_SEARCH_INDEX.filter(
+    (item) => item.title.toLowerCase().includes(q) || item.subtitle.toLowerCase().includes(q)
+  )
+}
+
+// ============================================================================
+// HEADER COMPONENT
 // ============================================================================
 export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const navigate = useNavigate()
@@ -138,7 +140,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
   }, [activeLanguage.locale])
 
   // ==========================================================================
-  // SEARCH EFFECT (unchanged)
+  // SEARCH EFFECT
   // ==========================================================================
   useEffect(() => {
     const q = query.trim()
@@ -202,7 +204,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
   }
 
   // ==========================================================================
-  // OUTSIDE CLICK (unchanged)
+  // OUTSIDE CLICK
   // ==========================================================================
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -276,8 +278,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
   }
 
   return (
-
-    <header className="sticky top-0 z-30 backdrop-blur-md">
+    <header className="sticky top-0 z-30 ">
       <div className="flex h-16 sm:h-20 items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 lg:px-8">
         {/* LEFT */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -338,7 +339,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
             <span>{today}</span>
           </div>
 
-          {/* LANGUAGE SWITCHER (unchanged) */}
+          {/* LANGUAGE SWITCHER */}
           {(() => {
             const safeLanguages = Array.isArray(languages) ? languages : []
             const safeActiveLang = activeLanguage || { code: 'en', name: 'English', flag: '🇬🇧' }
@@ -547,7 +548,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
         </div>
       </div>
 
-      {/* MOBILE SEARCH (unchanged) */}
+      {/* MOBILE SEARCH */}
       {mobileSearchOpen && (
         <div ref={mobileSearchWrapRef} className="border-t border-stone-200/60 px-4 py-3 sm:hidden dark:border-stone-800/60">
           <div className="relative">

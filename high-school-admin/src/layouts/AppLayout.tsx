@@ -14,7 +14,7 @@ export default function AppLayout() {
 
   return (
     <SchoolProvider>
-      <div className="h-screen w-full flex overflow-hidden text-stone-900 dark:text-stone-100 bg-stone-50 dark:bg-stone-950">
+      <div className="h-screen w-full flex overflow-hidden text-stone-900 dark:text-stone-100 ">
         {/* Fixed Desktop Sidebar & Mobile Drawer (self-contained scrolling, independent of main container) */}
         <Sidebar
           mobileOpen={mobileOpen}

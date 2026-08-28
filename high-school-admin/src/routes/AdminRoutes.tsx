@@ -42,11 +42,7 @@ import TeacherProfiles from "@/pages/Teachers/TeacherProfiles";
 import TeacherAssignments from "@/pages/Teachers/TeacherAssignments";
 import TeacherAttendance from "@/pages/Teachers/TeacherAttendance";
 
-// Fees & Finance
-import FeeStructure from "@/pages/Fees/FeeStructure";
-import Invoices from "@/pages/Fees/Invoices";
-import Payments from "@/pages/Fees/Payments";
-import PaymentHistory from "@/pages/Fees/PaymentHistory";
+
 
 // Library
 import BookList from "@/pages/Library/BookList";
@@ -55,22 +51,6 @@ import BorrowForm from "@/pages/Library/BorrowForm";
 import ReturnForm from "@/pages/Library/ReturnForm";
 import OverdueBooks from "@/pages/Library/OverdueBooks";
 
-// Transport
-import RoutesList from "@/pages/Transport/RoutesList";
-import Vehicles from "@/pages/Transport/Vehicles";
-import Drivers from "@/pages/Transport/Drivers";
-import TransportAssignments from "@/pages/Transport/TransportAssignments";
-
-// Hostel
-import HostelRooms from "@/pages/Hostel/HostelRooms";
-import RoomAllocation from "@/pages/Hostel/RoomAllocation";
-import HostelFees from "@/pages/Hostel/HostelFees";
-
-// Inventory
-import ItemCategories from "@/pages/Inventory/ItemCategories";
-import InventoryItems from "@/pages/Inventory/InventoryItems";
-import ItemIssuance from "@/pages/Inventory/ItemIssuance";
-import Suppliers from "@/pages/Inventory/Suppliers";
 
 // Calendar
 import CalendarView from "@/pages/Calendar/CalendarView";
@@ -135,11 +115,7 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/teachers/assignments" element={<TeacherAssignments />} />
     <Route path="/teachers/attendance" element={<TeacherAttendance />} />
 
-    {/* Fees */}
-    <Route path="/fees/structures" element={<FeeStructure />} />
-    <Route path="/fees/invoices" element={<Invoices />} />
-    <Route path="/fees/payments" element={<Payments />} />
-    <Route path="/fees/history" element={<PaymentHistory />} />
+    
 
     {/* Library */}
     <Route path="/library/books" element={<BookList />} />
@@ -147,23 +123,6 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/library/borrow" element={<BorrowForm />} />
     <Route path="/library/returns" element={<ReturnForm />} />
     <Route path="/library/overdue" element={<OverdueBooks />} />
-
-    {/* Transport */}
-    <Route path="/transport/routes" element={<RoutesList />} />
-    <Route path="/transport/vehicles" element={<Vehicles />} />
-    <Route path="/transport/drivers" element={<Drivers />} />
-    <Route path="/transport/assignments" element={<TransportAssignments />} />
-
-    {/* Hostel */}
-    <Route path="/hostel/rooms" element={<HostelRooms />} />
-    <Route path="/hostel/allocation" element={<RoomAllocation />} />
-    <Route path="/hostel/fees" element={<HostelFees />} />
-
-    {/* Inventory */}
-    <Route path="/inventory/categories" element={<ItemCategories />} />
-    <Route path="/inventory/items" element={<InventoryItems />} />
-    <Route path="/inventory/issuance" element={<ItemIssuance />} />
-    <Route path="/inventory/suppliers" element={<Suppliers />} />
 
     {/* Calendar */}
     <Route path="/calendar" element={<CalendarView />} />
@@ -186,7 +145,6 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/reports/grades" element={<GradeReport />} />
     <Route path="/reports/students" element={<StudentReport />} />
     <Route path="/reports/teachers" element={<TeacherReport />} />
-    <Route path="/reports/finance" element={<Invoices />} />
     <Route path="/reports/library" element={<BookList />} />
 
     {/* System */}

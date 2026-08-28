@@ -29,19 +29,14 @@ import {
   UserCheck,
   Megaphone,
   BarChart3,
-  FileBarChart,
   LineChart,
   DollarSign,
   Library,
   Calendar as CalendarIcon,
   MessageSquare,
-  Wallet,
-  Receipt,
   FileText,
   CalendarClock,
   CheckSquare,
-  CreditCard,
-  History,
   Tags,
   BookmarkPlus,
   Undo2,
@@ -59,13 +54,6 @@ import {
   Sparkles,
   Layers,
   Check,
-  Bus,
-  Truck,
-  Building2,
-  Bed,
-  Boxes,
-  FolderTree,
-  ArrowRightLeft,
   type LucideIcon,
 } from "lucide-react";
 import { useSchool } from "@/context/SchoolContext";
@@ -80,14 +68,8 @@ type Section =
   | "EXAMS"
   | "STUDENTS"
   | "TEACHERS"
-  | "FINANCE"
-  | "FEES"
   | "LIBRARY"
-  | "TRANSPORT"
-  | "HOSTEL"
-  | "INVENTORY"
   | "CALENDAR"
-  | "MESSAGES"
   | "COMMUNICATION"
   | "REPORTS"
   | "CHILDREN"
@@ -181,18 +163,6 @@ const roleMenus: Record<string, MenuSection[]> = {
       ],
     },
     {
-      key: "FINANCE",
-      titleKey: "sidebar.finance",
-      icon: Wallet,
-      categoryGroup: "management",
-      items: [
-        { translationKey: "sidebar.feeStructures", icon: Receipt, path: "/fees/structures" },
-        { translationKey: "sidebar.invoices", icon: FileText, path: "/fees/invoices" },
-        { translationKey: "sidebar.payments", icon: CreditCard, path: "/fees/payments" },
-        { translationKey: "sidebar.paymentHistory", icon: History, path: "/fees/history" },
-      ],
-    },
-    {
       key: "LIBRARY",
       titleKey: "sidebar.library",
       icon: Library,
@@ -203,41 +173,6 @@ const roleMenus: Record<string, MenuSection[]> = {
         { translationKey: "sidebar.borrow", icon: BookmarkPlus, path: "/library/borrow" },
         { translationKey: "sidebar.returns", icon: Undo2, path: "/library/returns" },
         { translationKey: "sidebar.overdueBooks", icon: AlertCircle, path: "/library/overdue", badge: "4", badgeColor: "bg-rose-500 text-white" },
-      ],
-    },
-    {
-      key: "TRANSPORT",
-      titleKey: "sidebar.transport",
-      icon: Bus,
-      categoryGroup: "management",
-      items: [
-        { translationKey: "sidebar.routes", icon: Bus, path: "/transport/routes" },
-        { translationKey: "sidebar.vehicles", icon: Truck, path: "/transport/vehicles" },
-        { translationKey: "sidebar.drivers", icon: User, path: "/transport/drivers" },
-        { translationKey: "sidebar.transportAssignments", icon: ArrowRightLeft, path: "/transport/assignments" },
-      ],
-    },
-    {
-      key: "HOSTEL",
-      titleKey: "sidebar.hostel",
-      icon: Building2,
-      categoryGroup: "management",
-      items: [
-        { translationKey: "sidebar.hostelRooms", icon: Bed, path: "/hostel/rooms" },
-        { translationKey: "sidebar.roomAllocation", icon: User, path: "/hostel/allocation" },
-        { translationKey: "sidebar.hostelFees", icon: DollarSign, path: "/hostel/fees" },
-      ],
-    },
-    {
-      key: "INVENTORY",
-      titleKey: "sidebar.inventory",
-      icon: Boxes,
-      categoryGroup: "management",
-      items: [
-        { translationKey: "sidebar.itemCategories", icon: FolderTree, path: "/inventory/categories" },
-        { translationKey: "sidebar.inventoryItems", icon: Boxes, path: "/inventory/items" },
-        { translationKey: "sidebar.itemIssuance", icon: ArrowRightLeft, path: "/inventory/issuance" },
-        { translationKey: "sidebar.suppliers", icon: Building2, path: "/inventory/suppliers" },
       ],
     },
     {
@@ -272,7 +207,6 @@ const roleMenus: Record<string, MenuSection[]> = {
         { translationKey: "sidebar.academicPerformanceReport", icon: LineChart, path: "/reports/academic" },
         { translationKey: "sidebar.studentReport", icon: Users2, path: "/reports/students" },
         { translationKey: "sidebar.teacherReport", icon: UserSquare2, path: "/reports/teachers" },
-        { translationKey: "sidebar.financeReport", icon: DollarSign, path: "/reports/finance" },
         { translationKey: "sidebar.libraryReport", icon: Library, path: "/reports/library" },
       ],
     },
@@ -329,14 +263,6 @@ const roleMenus: Record<string, MenuSection[]> = {
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/teacher/announcements" },
         { translationKey: "sidebar.notifications", icon: Megaphone, path: "/teacher/notifications" },
-      ],
-    },
-    {
-      key: "MESSAGES",
-      titleKey: "sidebar.messages",
-      icon: MessageSquare,
-      categoryGroup: "core",
-      items: [
         { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/teacher/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
       ],
     },
@@ -393,15 +319,6 @@ const roleMenus: Record<string, MenuSection[]> = {
       ],
     },
     {
-      key: "FEES",
-      titleKey: "sidebar.fees",
-      icon: Wallet,
-      categoryGroup: "management",
-      items: [
-        { translationKey: "sidebar.invoices", icon: Wallet, path: "/student/fees" },
-      ],
-    },
-    {
       key: "LIBRARY",
       titleKey: "sidebar.library",
       icon: Library,
@@ -419,15 +336,7 @@ const roleMenus: Record<string, MenuSection[]> = {
         { translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/student/calendar" },
       ],
     },
-    {
-      key: "MESSAGES",
-      titleKey: "sidebar.messages",
-      icon: MessageSquare,
-      categoryGroup: "core",
-      items: [
-        { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/student/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
-      ],
-    },
+   
     {
       key: "COMMUNICATION",
       titleKey: "sidebar.communication",
@@ -436,6 +345,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/student/announcements" },
         { translationKey: "sidebar.notifications", icon: Megaphone, path: "/student/notifications" },
+        { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/student/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
       ],
     },
   ],
@@ -457,17 +367,10 @@ const roleMenus: Record<string, MenuSection[]> = {
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/parent/announcements" },
         { translationKey: "sidebar.notifications", icon: Megaphone, path: "/parent/notifications" },
-      ],
-    },
-    {
-      key: "MESSAGES",
-      titleKey: "sidebar.messages",
-      icon: MessageSquare,
-      categoryGroup: "core",
-      items: [
         { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/parent/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
       ],
     },
+
   ],
 };
 
