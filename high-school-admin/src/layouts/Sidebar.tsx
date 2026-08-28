@@ -11,6 +11,9 @@ import {
   ShieldCheck,
   BookMarked,
   CalendarDays,
+  CalendarRange,
+  Clock,
+  DoorOpen,
   User,
   BookOpenCheck,
   NotebookText,
@@ -22,14 +25,32 @@ import {
   FileClock,
   UserCog,
   UserSquare2,
+  Contact2,
+  UserCheck,
   Megaphone,
   BarChart3,
   FileBarChart,
+  LineChart,
+  DollarSign,
   Library,
   Calendar as CalendarIcon,
   MessageSquare,
   Wallet,
+  Receipt,
   FileText,
+  CalendarClock,
+  CheckSquare,
+  CreditCard,
+  History,
+  Tags,
+  BookmarkPlus,
+  Undo2,
+  AlertCircle,
+  PartyPopper,
+  SunMedium,
+  Bell,
+  Activity,
+  Sliders,
   X,
   Search,
   PanelLeftClose,
@@ -38,6 +59,13 @@ import {
   Sparkles,
   Layers,
   Check,
+  Bus,
+  Truck,
+  Building2,
+  Bed,
+  Boxes,
+  FolderTree,
+  ArrowRightLeft,
   type LucideIcon,
 } from "lucide-react";
 import { useSchool } from "@/context/SchoolContext";
@@ -46,13 +74,18 @@ import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
 import { useTranslations, type TranslationKey } from "@/i18n";
 
 type Section =
+  | "DASHBOARD"
   | "SETUP"
   | "ACADEMIC"
   | "EXAMS"
   | "STUDENTS"
   | "TEACHERS"
+  | "FINANCE"
   | "FEES"
   | "LIBRARY"
+  | "TRANSPORT"
+  | "HOSTEL"
+  | "INVENTORY"
   | "CALENDAR"
   | "MESSAGES"
   | "COMMUNICATION"
@@ -87,9 +120,11 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "core",
       items: [
         { translationKey: "sidebar.schoolSetup", icon: Settings, path: "/setup/school" },
-        { translationKey: "sidebar.rolesPermissions", icon: ShieldCheck, path: "/setup/roles" },
+        { translationKey: "sidebar.academicYears", icon: CalendarRange, path: "/setup/academic-years" },
+        { translationKey: "sidebar.terms", icon: Clock, path: "/setup/terms" },
         { translationKey: "sidebar.subjects", icon: BookMarked, path: "/setup/subjects" },
-        { translationKey: "sidebar.schedules", icon: CalendarDays, path: "/setup/schedules" },
+        { translationKey: "sidebar.rooms", icon: DoorOpen, path: "/setup/rooms" },
+        { translationKey: "sidebar.rolesPermissions", icon: ShieldCheck, path: "/setup/roles" },
         { translationKey: "sidebar.users", icon: User, path: "/setup/users" },
         { translationKey: "sidebar.translations", icon: Languages, path: "/setup/translations" },
       ],
@@ -101,6 +136,8 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.classes", icon: BookOpenCheck, path: "/academic/classes" },
+        { translationKey: "sidebar.classSubjects", icon: BookMarked, path: "/academic/class-subjects" },
+        { translationKey: "sidebar.classSchedules", icon: CalendarDays, path: "/academic/schedules" },
         { translationKey: "sidebar.lessons", icon: NotebookText, path: "/academic/lessons" },
         { translationKey: "sidebar.homework", icon: PenLine, path: "/academic/homework" },
         { translationKey: "sidebar.quizTests", icon: FileQuestion, path: "/academic/quizzes" },
@@ -113,7 +150,9 @@ const roleMenus: Record<string, MenuSection[]> = {
       icon: FileText,
       categoryGroup: "academic",
       items: [
-        { translationKey: "sidebar.examList", icon: FileText, path: "/academic/exams" },
+        { translationKey: "sidebar.exams", icon: FileText, path: "/academic/exams" },
+        { translationKey: "sidebar.examSchedules", icon: CalendarClock, path: "/academic/exam-schedules" },
+        { translationKey: "sidebar.markEntry", icon: CheckSquare, path: "/academic/mark-entry" },
         { translationKey: "sidebar.reportCards", icon: Award, path: "/academic/report-cards" },
       ],
     },
@@ -124,6 +163,7 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "management",
       items: [
         { translationKey: "sidebar.studentList", icon: Users2, path: "/students" },
+        { translationKey: "sidebar.studentProfiles", icon: Contact2, path: "/students/profiles" },
         { translationKey: "sidebar.attendance", icon: ClipboardCheck, path: "/students/attendance" },
         { translationKey: "sidebar.leaveRequests", icon: FileClock, path: "/students/leave-requests", badge: "2", badgeColor: "bg-amber-500 text-white", badgePulse: true },
       ],
@@ -135,18 +175,21 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "management",
       items: [
         { translationKey: "sidebar.teacherList", icon: UserCog, path: "/teachers" },
+        { translationKey: "sidebar.teacherProfiles", icon: UserCheck, path: "/teachers/profiles" },
         { translationKey: "sidebar.teacherAssignments", icon: UserSquare2, path: "/teachers/assignments" },
+        { translationKey: "sidebar.teacherAttendance", icon: ClipboardCheck, path: "/teachers/attendance" },
       ],
     },
     {
-      key: "FEES",
-      titleKey: "sidebar.fees",
+      key: "FINANCE",
+      titleKey: "sidebar.finance",
       icon: Wallet,
       categoryGroup: "management",
       items: [
-        { translationKey: "sidebar.feeStructures", icon: Wallet, path: "/fees/structures" },
+        { translationKey: "sidebar.feeStructures", icon: Receipt, path: "/fees/structures" },
         { translationKey: "sidebar.invoices", icon: FileText, path: "/fees/invoices" },
-        { translationKey: "sidebar.payments", icon: FileText, path: "/fees/payments" },
+        { translationKey: "sidebar.payments", icon: CreditCard, path: "/fees/payments" },
+        { translationKey: "sidebar.paymentHistory", icon: History, path: "/fees/history" },
       ],
     },
     {
@@ -156,8 +199,45 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.books", icon: Library, path: "/library/books" },
-        { translationKey: "sidebar.borrow", icon: Library, path: "/library/borrow" },
-        { translationKey: "sidebar.returns", icon: Library, path: "/library/returns" },
+        { translationKey: "sidebar.libraryCategories", icon: Tags, path: "/library/categories" },
+        { translationKey: "sidebar.borrow", icon: BookmarkPlus, path: "/library/borrow" },
+        { translationKey: "sidebar.returns", icon: Undo2, path: "/library/returns" },
+        { translationKey: "sidebar.overdueBooks", icon: AlertCircle, path: "/library/overdue", badge: "4", badgeColor: "bg-rose-500 text-white" },
+      ],
+    },
+    {
+      key: "TRANSPORT",
+      titleKey: "sidebar.transport",
+      icon: Bus,
+      categoryGroup: "management",
+      items: [
+        { translationKey: "sidebar.routes", icon: Bus, path: "/transport/routes" },
+        { translationKey: "sidebar.vehicles", icon: Truck, path: "/transport/vehicles" },
+        { translationKey: "sidebar.drivers", icon: User, path: "/transport/drivers" },
+        { translationKey: "sidebar.transportAssignments", icon: ArrowRightLeft, path: "/transport/assignments" },
+      ],
+    },
+    {
+      key: "HOSTEL",
+      titleKey: "sidebar.hostel",
+      icon: Building2,
+      categoryGroup: "management",
+      items: [
+        { translationKey: "sidebar.hostelRooms", icon: Bed, path: "/hostel/rooms" },
+        { translationKey: "sidebar.roomAllocation", icon: User, path: "/hostel/allocation" },
+        { translationKey: "sidebar.hostelFees", icon: DollarSign, path: "/hostel/fees" },
+      ],
+    },
+    {
+      key: "INVENTORY",
+      titleKey: "sidebar.inventory",
+      icon: Boxes,
+      categoryGroup: "management",
+      items: [
+        { translationKey: "sidebar.itemCategories", icon: FolderTree, path: "/inventory/categories" },
+        { translationKey: "sidebar.inventoryItems", icon: Boxes, path: "/inventory/items" },
+        { translationKey: "sidebar.itemIssuance", icon: ArrowRightLeft, path: "/inventory/issuance" },
+        { translationKey: "sidebar.suppliers", icon: Building2, path: "/inventory/suppliers" },
       ],
     },
     {
@@ -167,15 +247,8 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "core",
       items: [
         { translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/calendar" },
-      ],
-    },
-    {
-      key: "MESSAGES",
-      titleKey: "sidebar.messages",
-      icon: MessageSquare,
-      categoryGroup: "core",
-      items: [
-        { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/messages", badge: "3", badgeColor: "bg-teal-500 text-white", badgePulse: true },
+        { translationKey: "sidebar.calendarEvents", icon: PartyPopper, path: "/calendar/events" },
+        { translationKey: "sidebar.calendarHolidays", icon: SunMedium, path: "/calendar/holidays" },
       ],
     },
     {
@@ -185,7 +258,8 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "management",
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/communication/announcements" },
-        { translationKey: "sidebar.notifications", icon: Megaphone, path: "/communication/notifications" },
+        { translationKey: "sidebar.notifications", icon: Bell, path: "/communication/notifications" },
+        { translationKey: "sidebar.messages", icon: MessageSquare, path: "/messages", badge: "3", badgeColor: "bg-teal-500 text-white", badgePulse: true },
       ],
     },
     {
@@ -195,18 +269,22 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "system",
       items: [
         { translationKey: "sidebar.attendanceReport", icon: ClipboardCheck, path: "/reports/attendance" },
-        { translationKey: "sidebar.gradeReport", icon: FileBarChart, path: "/reports/grades" },
+        { translationKey: "sidebar.academicPerformanceReport", icon: LineChart, path: "/reports/academic" },
         { translationKey: "sidebar.studentReport", icon: Users2, path: "/reports/students" },
         { translationKey: "sidebar.teacherReport", icon: UserSquare2, path: "/reports/teachers" },
+        { translationKey: "sidebar.financeReport", icon: DollarSign, path: "/reports/finance" },
+        { translationKey: "sidebar.libraryReport", icon: Library, path: "/reports/library" },
       ],
     },
     {
       key: "SYSTEM",
       titleKey: "sidebar.system",
-      icon: Settings,
+      icon: Sliders,
       categoryGroup: "system",
       items: [
-        { translationKey: "sidebar.auditLogs", icon: Settings, path: "/system/logs" },
+        { translationKey: "sidebar.auditLogs", icon: FileText, path: "/system/logs" },
+        { translationKey: "sidebar.activityLogs", icon: Activity, path: "/system/activity" },
+        { translationKey: "sidebar.systemSettings", icon: Sliders, path: "/system/settings" },
       ],
     },
   ],

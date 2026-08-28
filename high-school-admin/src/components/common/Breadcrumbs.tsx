@@ -49,20 +49,25 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   children: { key: 'sidebar.myChildren', fallback: 'My Children', defaultChildPath: '/parent/children' },
 
   // Setup sub-items
-  school: { key: 'sidebar.schoolSetup', fallback: 'School Setup' },
-  roles: { key: 'sidebar.rolesPermissions', fallback: 'Roles & Permissions' },
+  school: { key: 'sidebar.schoolSetup', fallback: 'School Information' },
+  'academic-years': { key: 'sidebar.academicYears', fallback: 'Academic Years' },
+  terms: { key: 'sidebar.terms', fallback: 'Terms' },
   subjects: { key: 'sidebar.subjects', fallback: 'Subjects' },
-  schedules: { key: 'sidebar.schedules', fallback: 'Schedules' },
+  rooms: { key: 'sidebar.rooms', fallback: 'Rooms' },
+  roles: { key: 'sidebar.rolesPermissions', fallback: 'Roles & Permissions' },
   users: { key: 'sidebar.users', fallback: 'Users' },
   translations: { key: 'sidebar.translations', fallback: 'Translations' },
 
   // Academic sub-items
   classes: { key: 'sidebar.classes', fallback: 'Classes' },
+  'class-subjects': { key: 'sidebar.classSubjects', fallback: 'Class Subjects' },
   lessons: { key: 'sidebar.lessons', fallback: 'Lessons' },
   homework: { key: 'sidebar.homework', fallback: 'Homework' },
-  quizzes: { key: 'sidebar.quizTests', fallback: 'Quiz & Tests' },
+  quizzes: { key: 'sidebar.quizTests', fallback: 'Quizzes' },
   grades: { key: 'sidebar.grades', fallback: 'Grades' },
-  exams: { key: 'sidebar.exams', fallback: 'Exams & Marks', defaultChildPath: '/academic/exams' },
+  exams: { key: 'sidebar.exams', fallback: 'Exams', defaultChildPath: '/academic/exams' },
+  'exam-schedules': { key: 'sidebar.examSchedules', fallback: 'Exam Schedules' },
+  'mark-entry': { key: 'sidebar.markEntry', fallback: 'Mark Entry' },
   'report-cards': { key: 'sidebar.reportCards', fallback: 'Report Cards' },
 
   // Exam actions
@@ -74,16 +79,21 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   structures: { key: 'sidebar.feeStructures', fallback: 'Fee Structures' },
   invoices: { key: 'sidebar.invoices', fallback: 'Invoices' },
   payments: { key: 'sidebar.payments', fallback: 'Payments' },
+  history: { key: 'sidebar.paymentHistory', fallback: 'Payment History' },
 
   // Library sub-items
-  books: { key: 'sidebar.books', fallback: 'Book Catalog' },
-  borrow: { key: 'sidebar.borrow', fallback: 'Issue / Borrow' },
+  books: { key: 'sidebar.books', fallback: 'Books' },
+  categories: { key: 'sidebar.libraryCategories', fallback: 'Categories' },
+  borrow: { key: 'sidebar.borrow', fallback: 'Borrowing' },
   returns: { key: 'sidebar.returns', fallback: 'Returns' },
+  overdue: { key: 'sidebar.overdueBooks', fallback: 'Overdue Books' },
 
   // Calendar sub-items
-  events: { key: 'sidebar.calendarView', fallback: 'Events' },
+  events: { key: 'sidebar.calendarEvents', fallback: 'Events' },
+  holidays: { key: 'sidebar.calendarHolidays', fallback: 'Holidays' },
 
   // Student sub-items
+  profiles: { key: 'sidebar.studentProfiles', fallback: 'Profiles' },
   attendance: { key: 'sidebar.attendance', fallback: 'Attendance' },
   'leave-requests': { key: 'sidebar.leaveRequests', fallback: 'Leave Requests' },
 
@@ -96,12 +106,16 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
 
   // Report sub-items
   'attendance-report': { key: 'sidebar.attendanceReport', fallback: 'Attendance Report' },
-  'grade-report': { key: 'sidebar.gradeReport', fallback: 'Grade Report' },
+  'grade-report': { key: 'sidebar.gradeReport', fallback: 'Academic Performance' },
   'student-report': { key: 'sidebar.studentReport', fallback: 'Student Report' },
   'teacher-report': { key: 'sidebar.teacherReport', fallback: 'Teacher Report' },
+  'finance-report': { key: 'sidebar.financeReport', fallback: 'Finance Report' },
+  'library-report': { key: 'sidebar.libraryReport', fallback: 'Library Report' },
 
   // System sub-items
   logs: { key: 'sidebar.auditLogs', fallback: 'Audit Logs' },
+  activity: { key: 'sidebar.activityLogs', fallback: 'Activity Logs' },
+  'system-settings': { key: 'sidebar.systemSettings', fallback: 'System Settings' },
 
   // User Profile & Settings
   profile: { key: 'header.myProfile', fallback: 'My Profile' },

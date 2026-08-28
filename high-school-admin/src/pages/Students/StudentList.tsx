@@ -1,5 +1,7 @@
-import PlaceholderPage from "@/components/common/PlaceholderPage"
+// src/pages/Students/StudentList.tsx
+import StudentsFeature from '@/features/students'
 
 export default function StudentList() {
-  return <PlaceholderPage title="Student List" description="Browse and manage enrolled students." />
+  return <StudentsFeature />
 }
+

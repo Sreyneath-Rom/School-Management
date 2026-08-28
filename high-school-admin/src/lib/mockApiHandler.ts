@@ -435,6 +435,83 @@ let schedulesStore: ScheduleSlot[] = [
 
 let usersStore: SystemUser[] = [...mockUserDirectory]
 
+export interface MockAttendanceRecord {
+  id: string
+  studentId: string
+  studentName: string
+  studentCode: string
+  studentAvatar: string
+  grade: string
+  class: string
+  date: string // YYYY-MM-DD
+  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED'
+  checkIn?: string | null
+  checkOut?: string | null
+  note?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+// Generate realistic initial attendance records for mock students across recent dates
+const getInitialAttendance = (): MockAttendanceRecord[] => {
+  const students = mockUserDirectory.filter((u) => u.role === 'student' || u.role === 'mazer')
+  const records: MockAttendanceRecord[] = []
+  
+  // Dates for current week
+  const today = new Date()
+  for (let offset = -7; offset <= 2; offset++) {
+    const d = new Date()
+    d.setDate(today.getDate() + offset)
+    const dateStr = d.toISOString().split('T')[0]
+    const dayOfWeek = d.getDay()
+    if (dayOfWeek === 0 || dayOfWeek === 6) continue // skip weekends
+
+    students.forEach((stu, idx) => {
+      let status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' = 'PRESENT'
+      let checkIn: string | null = '07:55 AM'
+      let checkOut: string | null = '03:30 PM'
+      let note: string | null = null
+
+      if ((idx + offset) % 11 === 0) {
+        status = 'ABSENT'
+        checkIn = null
+        checkOut = null
+        note = 'Sick leave reported by guardian'
+      } else if ((idx + offset) % 7 === 0) {
+        status = 'LATE'
+        checkIn = '08:24 AM'
+        note = 'Traffic delay on transit bus route 4'
+      } else if ((idx + offset) % 13 === 0) {
+        status = 'EXCUSED'
+        checkIn = null
+        checkOut = null
+        note = 'Official Math Olympiad tournament'
+      }
+
+      records.push({
+        id: `att-${stu.id}-${dateStr}`,
+        studentId: stu.id,
+        studentName: `${stu.firstName} ${stu.lastName}`,
+        studentCode: (stu as any).studentId || `STU-${stu.id.replace(/\D/g, '')}`,
+        studentAvatar: `${stu.firstName[0]}${stu.lastName[0]}`,
+        grade: (stu as any).grade || 'Grade 10',
+        class: (stu as any).class || 'Grade 10 - A',
+        date: dateStr,
+        status,
+        checkIn,
+        checkOut,
+        note,
+        createdAt: d.toISOString(),
+        updatedAt: d.toISOString(),
+      })
+    })
+  }
+  return records
+}
+
+let attendanceStore: MockAttendanceRecord[] = getInitialAttendance()
+
+
 export const mockApiHandler = {
   handle: async (
     path: string,
@@ -602,6 +679,73 @@ export const mockApiHandler = {
     // ==========================================
     if (cleanPath === '/users' && method === 'GET') {
       return { success: true, data: [...usersStore] }
+    }
+
+    // ==========================================
+    // STUDENTS ENDPOINTS
+    // ==========================================
+    if (cleanPath === '/students' && method === 'GET') {
+      const students = usersStore.filter((u) => u.role === 'student' || u.role === 'mazer')
+      return { success: true, data: [...students] }
+    }
+
+    if (cleanPath === '/students' && method === 'POST') {
+      const idNum = Math.floor(Math.random() * 9000 + 1000)
+      const firstName = body?.firstName || 'Student'
+      const lastName = body?.lastName || 'User'
+      const newStudent: any = {
+        id: `U-${idNum}`,
+        username: body?.username || `${firstName.toLowerCase()}.${lastName.toLowerCase()}`,
+        email: body?.email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@varinhs.edu`,
+        status: body?.status || 'active',
+        createdDate: new Date().toISOString().split('T')[0],
+        firstName,
+        lastName,
+        gender: body?.gender || 'male',
+        dateOfBirth: body?.dateOfBirth || '2009-05-15',
+        phone: body?.phone || '+1 555-303-9999',
+        address: body?.address || 'Springfield Campus',
+        nationality: body?.nationality || 'American',
+        role: body?.role || 'student',
+        studentId: body?.studentId || `STU${idNum}`,
+        grade: body?.grade || 'Grade 10',
+        class: body?.class || 'Grade 10 - A',
+        academicYear: body?.academicYear || '2025-2026',
+        enrollmentDate: body?.enrollmentDate || new Date().toISOString().split('T')[0],
+        fatherName: body?.fatherName || '',
+        motherName: body?.motherName || '',
+        guardianName: body?.guardianName || '',
+        parentPhone: body?.parentPhone || '',
+        parentEmail: body?.parentEmail || '',
+        relationship: body?.relationship || 'father',
+        gpa: body?.gpa || 3.8,
+        attendanceRate: body?.attendanceRate || 96,
+      }
+      usersStore.unshift(newStudent)
+      return { success: true, data: newStudent }
+    }
+
+    if (cleanPath.startsWith('/students/') && method === 'GET') {
+      const id = cleanPath.split('/')[2]
+      const student = usersStore.find((u) => u.id === id && (u.role === 'student' || u.role === 'mazer'))
+      if (student) return { success: true, data: student }
+      return { success: false, message: 'Student not found' }
+    }
+
+    if (cleanPath.startsWith('/students/') && method === 'PATCH') {
+      const id = cleanPath.split('/')[2]
+      const index = usersStore.findIndex((u) => u.id === id)
+      if (index !== -1) {
+        usersStore[index] = { ...usersStore[index], ...body }
+        return { success: true, data: usersStore[index] }
+      }
+      return { success: false, message: 'Student not found' }
+    }
+
+    if (cleanPath.startsWith('/students/') && method === 'DELETE') {
+      const id = cleanPath.split('/')[2]
+      usersStore = usersStore.filter((u) => u.id !== id)
+      return { success: true, data: null }
     }
 
     if (cleanPath === '/users' && method === 'POST') {
@@ -810,8 +954,192 @@ export const mockApiHandler = {
       return { success: true, data: null }
     }
 
+    // ==========================================
+    // ATTENDANCE ENDPOINTS (/api/v1/attendance)
+    // ==========================================
+    if (cleanPath === '/attendance/stats' && method === 'GET') {
+      const url = new URL(`http://localhost${path}`)
+      const dateParam = url.searchParams.get('date') || new Date().toISOString().split('T')[0]
+      const recordsForDate = attendanceStore.filter((r) => r.date === dateParam)
+      const students = usersStore.filter((u) => u.role === 'student' || u.role === 'mazer')
+      const total = students.length || recordsForDate.length || 1
+
+      const present = recordsForDate.filter((r) => r.status === 'PRESENT').length
+      const absent = recordsForDate.filter((r) => r.status === 'ABSENT').length
+      const late = recordsForDate.filter((r) => r.status === 'LATE').length
+      const excused = recordsForDate.filter((r) => r.status === 'EXCUSED').length
+      const rate = total > 0 ? Number((((present + late) / total) * 100).toFixed(1)) : 100
+
+      return {
+        success: true,
+        data: {
+          date: dateParam,
+          total,
+          present,
+          absent,
+          late,
+          excused,
+          attendanceRate: rate,
+          presentToday: present,
+          absentToday: absent,
+          lateToday: late,
+          pendingExcuses: 4,
+          perfectAttendanceCount: Math.max(0, present - 2),
+        },
+      }
+    }
+
+    if (cleanPath === '/attendance' && method === 'GET') {
+      const url = new URL(`http://localhost${path}`)
+      const date = url.searchParams.get('date')
+      const studentId = url.searchParams.get('studentId')
+      const classParam = url.searchParams.get('class')
+      const gradeParam = url.searchParams.get('grade')
+      const from = url.searchParams.get('from')
+      const to = url.searchParams.get('to')
+
+      let filtered = [...attendanceStore]
+
+      if (date) {
+        // If query for a specific date has no records yet, create default records for students so teacher can mark immediately
+        const existingForDate = filtered.filter((r) => r.date === date)
+        if (existingForDate.length === 0) {
+          const students = usersStore.filter((u) => u.role === 'student' || u.role === 'mazer')
+          students.forEach((stu) => {
+            const newRec: MockAttendanceRecord = {
+              id: `att-${stu.id}-${date}`,
+              studentId: stu.id,
+              studentName: `${stu.firstName} ${stu.lastName}`,
+              studentCode: (stu as any).studentId || `STU-${stu.id.replace(/\D/g, '')}`,
+              studentAvatar: `${stu.firstName[0]}${stu.lastName[0]}`,
+              grade: (stu as any).grade || 'Grade 10',
+              class: (stu as any).class || 'Grade 10 - A',
+              date,
+              status: 'PRESENT',
+              checkIn: '07:55 AM',
+              checkOut: '03:30 PM',
+              note: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }
+            attendanceStore.push(newRec)
+          })
+          filtered = [...attendanceStore]
+        }
+        filtered = filtered.filter((r) => r.date === date)
+      }
+
+      if (studentId) {
+        filtered = filtered.filter((r) => r.studentId === studentId)
+      }
+      if (classParam && classParam !== 'all') {
+        filtered = filtered.filter((r) => r.class.toLowerCase() === classParam.toLowerCase())
+      }
+      if (gradeParam && gradeParam !== 'all') {
+        filtered = filtered.filter((r) => r.grade.toLowerCase() === gradeParam.toLowerCase())
+      }
+      if (from) {
+        filtered = filtered.filter((r) => r.date >= from)
+      }
+      if (to) {
+        filtered = filtered.filter((r) => r.date <= to)
+      }
+
+      return { success: true, data: filtered }
+    }
+
+    if (cleanPath === '/attendance/check-in' && method === 'POST') {
+      const { studentId, date, status, checkIn, checkOut, note } = body || {}
+      const targetDate = date || new Date().toISOString().split('T')[0]
+      const existingIdx = attendanceStore.findIndex((r) => r.studentId === studentId && r.date === targetDate)
+      const student = usersStore.find((u) => u.id === studentId)
+
+      const rec: MockAttendanceRecord = {
+        id: existingIdx !== -1 ? attendanceStore[existingIdx].id : `att-${studentId}-${targetDate}`,
+        studentId,
+        studentName: student ? `${student.firstName} ${student.lastName}` : 'Student',
+        studentCode: student ? (student as any).studentId || studentId : studentId,
+        studentAvatar: student ? `${student.firstName[0]}${student.lastName[0]}` : 'ST',
+        grade: student ? (student as any).grade || 'Grade 10' : 'Grade 10',
+        class: student ? (student as any).class || 'Grade 10 - A' : 'Grade 10 - A',
+        date: targetDate,
+        status: status || 'PRESENT',
+        checkIn: checkIn ?? (status === 'PRESENT' || status === 'LATE' ? '08:00 AM' : null),
+        checkOut: checkOut ?? null,
+        note: note || null,
+        createdAt: existingIdx !== -1 ? attendanceStore[existingIdx].createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      if (existingIdx !== -1) {
+        attendanceStore[existingIdx] = rec
+      } else {
+        attendanceStore.push(rec)
+      }
+
+      return { success: true, data: rec }
+    }
+
+    if (cleanPath === '/attendance/bulk' && method === 'POST') {
+      const { date, records } = body || {}
+      const targetDate = date || new Date().toISOString().split('T')[0]
+      const updated: MockAttendanceRecord[] = []
+
+      if (Array.isArray(records)) {
+        records.forEach((r: any) => {
+          const existingIdx = attendanceStore.findIndex((att) => att.studentId === r.studentId && att.date === targetDate)
+          const student = usersStore.find((u) => u.id === r.studentId)
+
+          const rec: MockAttendanceRecord = {
+            id: existingIdx !== -1 ? attendanceStore[existingIdx].id : `att-${r.studentId}-${targetDate}`,
+            studentId: r.studentId,
+            studentName: student ? `${student.firstName} ${student.lastName}` : (r.studentName || 'Student'),
+            studentCode: student ? (student as any).studentId || r.studentId : (r.studentCode || r.studentId),
+            studentAvatar: student ? `${student.firstName[0]}${student.lastName[0]}` : 'ST',
+            grade: student ? (student as any).grade || 'Grade 10' : 'Grade 10',
+            class: student ? (student as any).class || 'Grade 10 - A' : 'Grade 10 - A',
+            date: targetDate,
+            status: r.status || 'PRESENT',
+            checkIn: r.checkIn !== undefined ? r.checkIn : (r.status === 'PRESENT' || r.status === 'LATE' ? '08:00 AM' : null),
+            checkOut: r.checkOut !== undefined ? r.checkOut : null,
+            note: r.note || null,
+            createdAt: existingIdx !== -1 ? attendanceStore[existingIdx].createdAt : new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+
+          if (existingIdx !== -1) {
+            attendanceStore[existingIdx] = rec
+          } else {
+            attendanceStore.push(rec)
+          }
+          updated.push(rec)
+        })
+      }
+
+      return { success: true, data: { count: updated.length, records: updated } }
+    }
+
+    if (cleanPath === '/attendance/check-out' && method === 'POST') {
+      const { studentId, date, checkOut } = body || {}
+      const targetDate = date || new Date().toISOString().split('T')[0]
+      const existingIdx = attendanceStore.findIndex((r) => r.studentId === studentId && r.date === targetDate)
+      if (existingIdx !== -1) {
+        attendanceStore[existingIdx].checkOut = checkOut || '03:30 PM'
+        attendanceStore[existingIdx].updatedAt = new Date().toISOString()
+        return { success: true, data: attendanceStore[existingIdx] }
+      }
+      return { success: false, message: 'Attendance record not found for check-out' }
+    }
+
+    if (cleanPath.startsWith('/attendance/') && method === 'DELETE') {
+      const id = cleanPath.split('/')[2]
+      attendanceStore = attendanceStore.filter((r) => r.id !== id)
+      return { success: true, data: null }
+    }
+
     // Dashboard stats
     if (cleanPath === '/dashboard/stats' && method === 'GET') {
+
       const stats: DashboardStats = {
         studentCount: 1284,
         teacherCount: 86,

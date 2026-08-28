@@ -4,10 +4,12 @@ import { authenticate } from '@/middleware/auth.middleware'
 import { requirePermission } from '@/middleware/role.middleware'
 import { validateBody } from '@/middleware/validation.middleware'
 import { asyncHandler } from '@/utils/asyncHandler'
-import { checkInSchema, checkOutSchema } from './attendance.validation'
+import { checkInSchema, checkOutSchema, bulkMarkSchema } from './attendance.validation'
 
 const router = Router()
 router.use(authenticate)
+
+router.get('/stats', requirePermission('attendance', 'view'), asyncHandler(attendanceController.getStats))
 
 router.get('/', requirePermission('attendance', 'view'), asyncHandler(attendanceController.list))
 
@@ -18,6 +20,13 @@ router.post(
   requirePermission('attendance', 'create'),
   validateBody(checkInSchema),
   asyncHandler(attendanceController.checkIn)
+)
+
+router.post(
+  '/bulk',
+  requirePermission('attendance', 'create'),
+  validateBody(bulkMarkSchema),
+  asyncHandler(attendanceController.bulkMark)
 )
 
 router.post(

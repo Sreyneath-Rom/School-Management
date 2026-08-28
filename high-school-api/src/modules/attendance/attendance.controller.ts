@@ -4,8 +4,19 @@ import { sendSuccess } from '@/utils/apiResponse'
 
 export const attendanceController = {
   async list(req: Request, res: Response) {
-    const { studentId, from, to } = req.query as { studentId?: string; from?: string; to?: string }
-    sendSuccess(res, await attendanceService.list({ studentId, from, to }))
+    const { studentId, date, from, to, classId } = req.query as {
+      studentId?: string
+      date?: string
+      from?: string
+      to?: string
+      classId?: string
+    }
+    sendSuccess(res, await attendanceService.list({ studentId, date, from, to, classId }))
+  },
+
+  async getStats(req: Request, res: Response) {
+    const { date } = req.query as { date?: string }
+    sendSuccess(res, await attendanceService.getStats(date))
   },
 
   async getById(req: Request, res: Response) {
@@ -16,14 +27,16 @@ export const attendanceController = {
     sendSuccess(res, await attendanceService.checkIn(req.body))
   },
 
+  async bulkMark(req: Request, res: Response) {
+    sendSuccess(res, await attendanceService.bulkMark(req.body))
+  },
+
   async checkOut(req: Request, res: Response) {
-    sendSuccess(res, await attendanceService.checkOut(req.body.studentId, req.body.date))
+    sendSuccess(res, await attendanceService.checkOut(req.body.studentId, req.body.date, req.body.checkOut))
   },
 
   async remove(req: Request, res: Response) {
     await attendanceService.remove(req.params.id)
-    // No sendSuccess helper for empty bodies here — 204 must not include a
-    // response body, so this bypasses the JSON envelope entirely.
     res.status(204).end()
   },
 }
