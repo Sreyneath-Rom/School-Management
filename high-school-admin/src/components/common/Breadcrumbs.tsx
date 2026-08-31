@@ -116,6 +116,8 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   logs: { key: 'sidebar.auditLogs', fallback: 'Audit Logs' },
   activity: { key: 'sidebar.activityLogs', fallback: 'Activity Logs' },
   'system-settings': { key: 'sidebar.systemSettings', fallback: 'System Settings' },
+  'responsive-studio': { key: 'sidebar.responsiveStudio', fallback: 'Responsive Screen Studio' },
+  screens: { key: 'sidebar.responsiveStudio', fallback: 'Responsive Screen Studio' },
 
   // User Profile & Settings
   profile: { key: 'header.myProfile', fallback: 'My Profile' },

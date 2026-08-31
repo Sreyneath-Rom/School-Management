@@ -70,6 +70,7 @@ import TeacherReport from "@/pages/Reports/TeacherReport";
 
 // System
 import AuditLogs from "@/pages/System/AuditLogs";
+import ResponsiveScreenStudio from "@/pages/System/ResponsiveScreenStudio";
 
 export const adminRoutes = (): ReactElement => (
   <Route element={<AppLayout />}>
@@ -151,6 +152,8 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/system/logs" element={<AuditLogs />} />
     <Route path="/system/activity" element={<AuditLogs />} />
     <Route path="/system/settings" element={<SchoolSetup />} />
+    <Route path="/system/responsive-studio" element={<ResponsiveScreenStudio />} />
+    <Route path="/system/screens" element={<ResponsiveScreenStudio />} />
 
     {/* Fallback */}
     <Route path="/" element={<Navigate to="/dashboard" replace />} />

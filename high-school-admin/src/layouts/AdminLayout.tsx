@@ -5,19 +5,25 @@ import Breadcrumbs from "@/components/common/Breadcrumbs";
 import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import { SchoolProvider } from "@/context/SchoolContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { role } = useAuth();
 
   return (
     <SchoolProvider>
-      <div className="min-h-screen flex text-stone-900 dark:text-stone-100">
-        <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <div className="h-screen w-full flex overflow-hidden text-stone-900 dark:text-stone-100">
+        <Sidebar
+          mobileOpen={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          role={role ?? 'admin'}
+        />
 
-        <div className="flex-1 min-h-screen flex flex-col">
+        <div className="flex-1 h-full flex flex-col min-w-0 overflow-y-auto overflow-x-hidden">
           <Header onOpenSidebar={() => setMobileOpen(true)} />
 
-          <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8 overflow-hidden">
+          <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8">
             <Breadcrumbs />
             <Outlet />
           </main>
