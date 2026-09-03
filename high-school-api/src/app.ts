@@ -34,7 +34,7 @@ export function createApp() {
   app.use('/uploads', express.static(env.UPLOAD_PATH))
 
   app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }))
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+  app.use('/api-docs', ...(swaggerUi.serve as any), swaggerUi.setup(swaggerSpec) as any)
   app.use('/api/v1', apiRoutes)
 
   app.use(notFoundHandler)

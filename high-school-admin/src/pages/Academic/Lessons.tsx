@@ -1,297 +1,182 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import PageHeading from '@/components/common/PageHeading'
-import Button from '@/components/common/Button'
-import { useToast } from '@/components/common/ToastProvider'
-import { useAuth } from '@/context/AuthContext'
 import {
-  lessonService,
-  type Lesson,
-  type LessonStatus,
-  type LessonAttachment,
-  type CreateLessonPayload,
-} from '@/services/lessonService'
-import { homeworkService, type HomeworkAssignment } from '@/services/homeworkService'
-import { quizService, type Quiz } from '@/services/quizService'
-import {
-  BookOpen,
+  NotebookText,
   Plus,
   Search,
-  Clock,
+  BookOpen,
   Calendar,
-  MapPin,
+  Clock,
   FileText,
-  Video,
-  Presentation,
-  ExternalLink,
-  CheckCircle2,
-  Circle,
-  Sparkles,
-  Edit,
-  Trash2,
   Download,
-  Eye,
-  PenLine,
-  FileQuestion,
+  ExternalLink,
+  Trash2,
+  Edit3,
+  CheckCircle2,
+  X,
   Layers,
   ChevronRight,
-  Filter,
-  RotateCcw,
-  Check,
-  X,
-  GraduationCap,
-  Users,
 } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { academicService } from '@/services/academicService'
+import type { Lesson, LessonMaterial } from '@/types/academic'
+import { useToast } from '@/components/common/ToastProvider'
 
 export default function Lessons() {
-  const { user, role: currentRole } = useAuth()
+  const { user } = useAuth()
   const { showToast } = useToast()
-  const navigate = useNavigate()
-
-  // Support toggling view perspective for ease of previewing both Teacher and Student workflows
-  const [activeRolePerspective, setActiveRolePerspective] = useState<'teacher' | 'student'>(() => {
-    return currentRole === 'student' ? 'student' : 'teacher'
-  })
+  const isTeacherOrAdmin = user?.role === 'teacher' || user?.role === 'admin'
+  const isStudent = user?.role === 'student'
 
   const [lessons, setLessons] = useState<Lesson[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedClass, setSelectedClass] = useState('All Classes')
-  const [selectedSubject, setSelectedSubject] = useState('All Subjects')
-  const [selectedStatus, setSelectedStatus] = useState<string>('All')
-  const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline')
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [selectedClass, setSelectedClass] = useState<string>(isStudent ? 'Grade 10-A' : 'all')
+  const [selectedSubject, setSelectedSubject] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  // Modals & Drawers
+  // Modals
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null)
-  const [viewingLesson, setViewingLesson] = useState<Lesson | null>(null)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
 
-  // Dynamic filter options
-  const [filterOptions, setFilterOptions] = useState<{
-    classes: string[]
-    subjects: string[]
-    units: string[]
-  }>({ classes: [], subjects: [], units: [] })
-
-  // Existing assignments & quizzes for linking
-  const [availableHomework, setAvailableHomework] = useState<HomeworkAssignment[]>([])
-  const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([])
-
-  useEffect(() => {
-    const loadAssocs = async () => {
-      try {
-        const [hws, qzs] = await Promise.all([
-          homeworkService.getAssignments(),
-          quizService.getQuizzes(),
-        ])
-        setAvailableHomework(hws)
-        setAvailableQuizzes(qzs)
-      } catch (e) {
-        console.error(e)
-      }
-    }
-    loadAssocs()
-  }, [])
-
-  // Load lessons from service
-  const loadLessons = useCallback(() => {
-    const list = lessonService.list()
-    setLessons(list)
-    setFilterOptions(lessonService.getFilterOptions())
-  }, [])
-
-  useEffect(() => {
-    loadLessons()
-  }, [loadLessons])
-
-  // Computed statistics
-  const stats = useMemo(() => {
-    const total = lessons.length
-    const scheduled = lessons.filter((l) => l.status === 'Scheduled').length
-    const completed = lessons.filter((l) => l.status === 'Completed').length
-    const studentId = user?.id || 'std-1'
-    const reviewed = lessons.filter((l) => l.reviewedByStudents.includes(studentId)).length
-    const reviewPct = total > 0 ? Math.round((reviewed / total) * 100) : 0
-    return { total, scheduled, completed, reviewed, reviewPct }
-  }, [lessons, user?.id])
-
-  // Filtered lessons
-  const filteredLessons = useMemo(() => {
-    return lessons.filter((lesson) => {
-      if (selectedClass !== 'All Classes' && lesson.class !== selectedClass) return false
-      if (selectedSubject !== 'All Subjects' && lesson.subject !== selectedSubject) return false
-      if (selectedStatus !== 'All' && lesson.status !== selectedStatus) return false
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase()
-        const matchTitle = lesson.title.toLowerCase().includes(q)
-        const matchSubject = lesson.subject.toLowerCase().includes(q)
-        const matchUnit = lesson.unit.toLowerCase().includes(q)
-        const matchTeacher = lesson.teacherName.toLowerCase().includes(q)
-        const matchSummary = lesson.summary.toLowerCase().includes(q)
-        if (!matchTitle && !matchSubject && !matchUnit && !matchTeacher && !matchSummary) {
-          return false
-        }
-      }
-      return true
-    })
-  }, [lessons, selectedClass, selectedSubject, selectedStatus, searchTerm])
-
-  // Group lessons by Unit for the timeline view
-  const groupedByUnit = useMemo(() => {
-    const map = new Map<string, Lesson[]>()
-    filteredLessons.forEach((l) => {
-      const unitKey = l.unit || 'General Curriculum'
-      if (!map.has(unitKey)) {
-        map.set(unitKey, [])
-      }
-      map.get(unitKey)!.push(l)
-    })
-    return Array.from(map.entries())
-  }, [filteredLessons])
-
-  // Student toggle review status
-  const handleToggleReview = (lessonId: string) => {
-    const studentId = user?.id || 'std-1'
-    const isNowReviewed = lessonService.toggleStudentReviewed(lessonId, studentId)
-    loadLessons()
-    showToast(
-      isNowReviewed
-        ? 'Lesson marked as reviewed and studied!'
-        : 'Lesson removed from reviewed checklist.',
-      'success'
-    )
-  }
-
-  // Teacher quick status update
-  const handleQuickStatusChange = (lessonId: string, newStatus: LessonStatus) => {
-    lessonService.updateStatus(lessonId, newStatus)
-    loadLessons()
-    showToast(`Lesson status updated to ${newStatus}`, 'success')
-  }
-
-  // Delete lesson
-  const handleDeleteLesson = (id: string) => {
-    lessonService.delete(id)
-    setDeleteConfirmId(null)
-    loadLessons()
-    showToast('Lesson deleted successfully', 'success')
-  }
-
-  // Reset demo curriculum
-  const handleResetData = () => {
-    lessonService.resetDemoData()
-    loadLessons()
-    showToast('Demo curriculum and lessons reset successfully', 'info')
-  }
-
-  // Form State for Create / Edit Modal
-  const [formData, setFormData] = useState<CreateLessonPayload>({
+  // Form state
+  const [formData, setFormData] = useState({
     title: '',
-    subject: 'Mathematics',
-    class: 'Grade 10 - A',
-    teacherId: user?.id || 'tch-1',
-    teacherName: user ? `${user.firstName} ${user.lastName}` : 'Dr. Robert Jenkins',
-    unit: 'Unit 1: Foundations & Fundamentals',
-    chapter: 'Chapter 1.1',
+    description: '',
+    className: 'Grade 10-A',
+    subjectName: 'Mathematics',
     date: new Date().toISOString().split('T')[0],
-    startTime: '09:00',
-    durationMinutes: 60,
-    room: 'Room 204',
-    objectives: ['Understand key definitions and underlying theories'],
-    summary: '',
-    status: 'Scheduled',
-    attachments: [],
-    linkedHomeworkId: '',
-    linkedHomeworkTitle: '',
-    linkedQuizId: '',
-    linkedQuizTitle: '',
+    time: '08:30 - 09:45 AM',
+    durationMinutes: 75,
+    objectives: ['Master key concepts', 'Solve real-world applied problems'],
+    content: '',
+    status: 'Scheduled' as 'Scheduled' | 'Draft' | 'Completed',
+    materials: [] as LessonMaterial[],
   })
 
-  // Attachment input helper state
-  const [newAttachmentName, setNewAttachmentName] = useState('')
-  const [newAttachmentUrl, setNewAttachmentUrl] = useState('')
-  const [newAttachmentType, setNewAttachmentType] = useState<LessonAttachment['type']>('pdf')
-  const [newObjectiveText, setNewObjectiveText] = useState('')
+  const [newObjective, setNewObjective] = useState('')
+  const [newMaterialName, setNewMaterialName] = useState('')
+  const [newMaterialType, setNewMaterialType] = useState<'pdf' | 'doc' | 'slides' | 'link'>('pdf')
 
-  const openCreateModal = () => {
-    setEditingLesson(null)
+  const loadLessons = async () => {
+    try {
+      setLoading(true)
+      const data = await academicService.getLessons()
+      setLessons(data)
+    } catch {
+      showToast('Failed to load lessons', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadLessons()
+  }, [])
+
+  const filteredLessons = lessons.filter((lesson) => {
+    if (isStudent && lesson.className !== 'Grade 10-A') return false
+    if (selectedClass !== 'all' && lesson.className !== selectedClass) return false
+    if (selectedSubject !== 'all' && lesson.subjectName.toLowerCase() !== selectedSubject.toLowerCase()) return false
+    if (statusFilter !== 'all' && lesson.status !== statusFilter) return false
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      const matchTitle = lesson.title.toLowerCase().includes(q)
+      const matchDesc = lesson.description.toLowerCase().includes(q)
+      const matchSub = lesson.subjectName.toLowerCase().includes(q)
+      if (!matchTitle && !matchDesc && !matchSub) return false
+    }
+    return true
+  })
+
+  const handleOpenCreate = () => {
+    setEditingLessonId(null)
     setFormData({
       title: '',
-      subject: filterOptions.subjects[0] || 'Mathematics',
-      class: filterOptions.classes[0] || 'Grade 10 - A',
-      teacherId: user?.id || 'tch-1',
-      teacherName: user ? `${user.firstName} ${user.lastName}` : 'Dr. Robert Jenkins',
-      unit: 'Unit 1: Foundations & Fundamentals',
-      chapter: 'Chapter 1.1',
+      description: '',
+      className: 'Grade 10-A',
+      subjectName: 'Mathematics',
       date: new Date().toISOString().split('T')[0],
-      startTime: '09:00',
-      durationMinutes: 60,
-      room: 'Room 204',
-      objectives: ['Master foundational concepts and applications'],
-      summary: '',
+      time: '09:00 - 10:15 AM',
+      durationMinutes: 75,
+      objectives: ['Master lesson foundational theorems', 'Engage in collaborative problem set analysis'],
+      content: '',
       status: 'Scheduled',
-      attachments: [],
-      linkedHomeworkId: '',
-      linkedHomeworkTitle: '',
-      linkedQuizId: '',
-      linkedQuizTitle: '',
+      materials: [
+        { id: `mat-${Date.now()}`, name: 'Lecture_Handout.pdf', type: 'pdf', url: '#', size: '1.2 MB' },
+      ],
     })
     setIsCreateModalOpen(true)
   }
 
-  const openEditModal = (lesson: Lesson) => {
-    setEditingLesson(lesson)
+  const handleOpenEdit = (l: Lesson) => {
+    setEditingLessonId(l.id)
     setFormData({
-      title: lesson.title,
-      subject: lesson.subject,
-      class: lesson.class,
-      teacherId: lesson.teacherId,
-      teacherName: lesson.teacherName,
-      unit: lesson.unit,
-      chapter: lesson.chapter || '',
-      date: lesson.date,
-      startTime: lesson.startTime,
-      durationMinutes: lesson.durationMinutes,
-      room: lesson.room,
-      objectives: [...lesson.objectives],
-      summary: lesson.summary,
-      status: lesson.status,
-      attachments: [...lesson.attachments],
-      linkedHomeworkId: lesson.linkedHomeworkId || '',
-      linkedHomeworkTitle: lesson.linkedHomeworkTitle || '',
-      linkedQuizId: lesson.linkedQuizId || '',
-      linkedQuizTitle: lesson.linkedQuizTitle || '',
+      title: l.title,
+      description: l.description,
+      className: l.className,
+      subjectName: l.subjectName,
+      date: l.date,
+      time: l.time,
+      durationMinutes: l.durationMinutes,
+      objectives: [...l.objectives],
+      content: l.content,
+      status: l.status,
+      materials: [...l.materials],
     })
     setIsCreateModalOpen(true)
   }
 
-  const handleSaveLesson = (e: React.FormEvent) => {
+  const handleSaveLesson = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title.trim() || !formData.unit.trim()) {
-      showToast('Please enter lesson title and unit name', 'error')
+    if (!formData.title.trim()) {
+      showToast('Lesson title is required', 'error')
       return
     }
 
-    if (editingLesson) {
-      lessonService.update(editingLesson.id, formData)
-      showToast('Lesson updated successfully', 'success')
-    } else {
-      lessonService.create(formData)
-      showToast('Lesson created and published to syllabus', 'success')
+    try {
+      if (editingLessonId) {
+        await academicService.updateLesson(editingLessonId, {
+          ...formData,
+          classId: formData.className === 'Grade 10-A' ? 'cls-1' : 'cls-2',
+          subjectId: `sub-${formData.subjectName.toLowerCase().slice(0, 3)}`,
+        })
+        showToast('Lesson updated successfully', 'success')
+      } else {
+        await academicService.createLesson({
+          ...formData,
+          classId: formData.className === 'Grade 10-A' ? 'cls-1' : 'cls-2',
+          subjectId: `sub-${formData.subjectName.toLowerCase().slice(0, 3)}`,
+          teacherId: user?.id || '2',
+          teacherName: user?.name || 'Faculty Instructor',
+        })
+        showToast('New lesson created successfully', 'success')
+      }
+      setIsCreateModalOpen(false)
+      loadLessons()
+    } catch {
+      showToast('Error saving lesson', 'error')
     }
+  }
 
-    setIsCreateModalOpen(false)
-    setEditingLesson(null)
-    loadLessons()
+  const handleDeleteLesson = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (window.confirm('Are you sure you want to delete this lesson?')) {
+      await academicService.deleteLesson(id)
+      showToast('Lesson deleted', 'info')
+      if (activeLesson?.id === id) setActiveLesson(null)
+      loadLessons()
+    }
   }
 
   const handleAddObjective = () => {
-    if (!newObjectiveText.trim()) return
+    if (!newObjective.trim()) return
     setFormData((prev) => ({
       ...prev,
-      objectives: [...prev.objectives, newObjectiveText.trim()],
+      objectives: [...prev.objectives, newObjective.trim()],
     }))
-    setNewObjectiveText('')
+    setNewObjective('')
   }
 
   const handleRemoveObjective = (index: number) => {
@@ -301,1249 +186,593 @@ export default function Lessons() {
     }))
   }
 
-  const handleAddAttachment = () => {
-    if (!newAttachmentName.trim()) return
-    const newAtt: LessonAttachment = {
-      id: `att-${Date.now()}`,
-      name: newAttachmentName.trim(),
-      url: newAttachmentUrl.trim() || '#',
-      size: newAttachmentType === 'link' ? 'External Link' : '1.4 MB',
-      type: newAttachmentType,
+  const handleAddMaterial = () => {
+    if (!newMaterialName.trim()) return
+    const newMat: LessonMaterial = {
+      id: `mat-${Date.now()}`,
+      name: newMaterialName.trim().endsWith('.pdf') ? newMaterialName.trim() : `${newMaterialName.trim()}.${newMaterialType}`,
+      type: newMaterialType,
+      url: '#',
+      size: '1.5 MB',
     }
     setFormData((prev) => ({
       ...prev,
-      attachments: [...(prev.attachments || []), newAtt],
+      materials: [...prev.materials, newMat],
     }))
-    setNewAttachmentName('')
-    setNewAttachmentUrl('')
-  }
-
-  const handleRemoveAttachment = (id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      attachments: (prev.attachments || []).filter((a) => a.id !== id),
-    }))
-  }
-
-  const renderAttachmentIcon = (type: LessonAttachment['type']) => {
-    switch (type) {
-      case 'slide':
-        return <Presentation className="w-4 h-4 text-amber-600" />
-      case 'video':
-        return <Video className="w-4 h-4 text-rose-600" />
-      case 'link':
-        return <ExternalLink className="w-4 h-4 text-sky-600" />
-      default:
-        return <FileText className="w-4 h-4 text-emerald-600" />
-    }
+    setNewMaterialName('')
   }
 
   return (
-    <div className="space-y-6 pb-12" id="lessons-page-container">
-      {/* Top Banner & Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <PageHeading
-            title="Lessons & Syllabus"
-            subtitle="Plan, organize, and track curriculum delivery with learning objectives, lecture notes, and study resources."
+    <div id="lessons-page-container" className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <PageHeading
+          title={isStudent ? 'My Class Lessons & Notes' : 'Academic Lessons'}
+          subtitle={
+            isStudent
+              ? 'Access class curriculum, lecture notes, syllabus plans, and study materials.'
+              : 'Plan, publish, and manage curriculum modules and teaching materials for assigned classes.'
+          }
+        />
+
+        {isTeacherOrAdmin && (
+          <button
+            id="create-lesson-btn"
+            onClick={handleOpenCreate}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm transition"
+          >
+            <Plus className="w-4 h-4" />
+            Create Lesson
+          </button>
+        )}
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            id="search-lessons-input"
+            type="text"
+            placeholder="Search lessons by title, topic..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-sm border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           />
         </div>
 
-        {/* Perspective toggle & Action buttons */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* View mode switcher */}
-          <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 text-xs">
-            <button
-              type="button"
-              onClick={() => setActiveRolePerspective('teacher')}
-              className={`px-3 py-1.5 font-medium rounded-md transition-colors ${
-                activeRolePerspective === 'teacher'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5" />
-                <span>Teacher View</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveRolePerspective('student')}
-              className={`px-3 py-1.5 font-medium rounded-md transition-colors ${
-                activeRolePerspective === 'student'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <GraduationCap className="w-3.5 h-3.5" />
-                <span>Student View</span>
-              </div>
-            </button>
-          </div>
-
-          <Button
-            variant="solidOutline"
-            size="sm"
-            onClick={handleResetData}
-            title="Reset to default sample curriculum"
-          >
-            <RotateCcw className="w-4 h-4 mr-1.5" />
-            Reset Data
-          </Button>
-
-          {activeRolePerspective === 'teacher' && (
-            <Button variant="solid" size="sm" onClick={openCreateModal}>
-              <Plus className="w-4 h-4 mr-1.5" />
-              New Lesson
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Stats Summary Bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
-            <BookOpen className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-2xl font-semibold text-slate-900">{stats.total}</div>
-            <div className="text-xs font-medium text-slate-500">Total Lessons</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-2xl font-semibold text-slate-900">{stats.completed}</div>
-            <div className="text-xs font-medium text-slate-500">Delivered & Completed</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-2xl font-semibold text-slate-900">{stats.scheduled}</div>
-            <div className="text-xs font-medium text-slate-500">Upcoming Scheduled</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-2xl font-semibold text-slate-900">
-              {stats.reviewPct}%
-            </div>
-            <div className="text-xs font-medium text-slate-500">
-              Reviewed ({stats.reviewed}/{stats.total})
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search Toolbar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
-          {/* Search bar */}
-          <div className="relative min-w-60 flex-1 max-w-sm">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search topics, objectives, units..."
-              className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Class Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-500 hidden sm:inline">Class:</span>
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          {!isStudent && (
             <select
+              id="filter-class-select"
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="px-2.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+              className="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
             >
-              <option value="All Classes">All Classes</option>
-              {filterOptions.classes.map((cls) => (
-                <option key={cls} value={cls}>
-                  {cls}
-                </option>
-              ))}
+              <option value="all">All Classes</option>
+              <option value="Grade 10-A">Grade 10-A</option>
+              <option value="Grade 10-B">Grade 10-B</option>
+              <option value="Grade 11-A">Grade 11-A</option>
             </select>
-          </div>
+          )}
 
-          {/* Subject Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-500 hidden sm:inline">Subject:</span>
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              className="px-2.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500"
-            >
-              <option value="All Subjects">All Subjects</option>
-              {filterOptions.subjects.map((sub) => (
-                <option key={sub} value={sub}>
-                  {sub}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-500 hidden sm:inline">Status:</span>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-2.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Scheduled">Scheduled</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-        </div>
-
-        {/* View mode toggle */}
-        <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-1 bg-slate-50 self-end md:self-auto">
-          <button
-            type="button"
-            onClick={() => setViewMode('timeline')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              viewMode === 'timeline'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
+          <select
+            id="filter-subject-select"
+            value={selectedSubject}
+            onChange={(e) => setSelectedSubject(e.target.value)}
+            className="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
           >
-            Syllabus Timeline
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('grid')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              viewMode === 'grid'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
+            <option value="all">All Subjects</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Physics">Physics</option>
+            <option value="English Literature">English Literature</option>
+            <option value="Chemistry">Chemistry</option>
+            <option value="Computer Science">Computer Science</option>
+          </select>
+
+          <select
+            id="filter-status-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
           >
-            Grid View
-          </button>
+            <option value="all">All Statuses</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Completed">Completed</option>
+            <option value="Draft">Draft</option>
+          </select>
         </div>
       </div>
 
-      {/* Active Role Notice / Guidance */}
-      <div className="bg-sky-50/70 border border-sky-200/70 rounded-xl px-4 py-3 text-xs text-sky-900 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-sky-600 shrink-0" />
-          <span>
-            {activeRolePerspective === 'teacher'
-              ? 'Teacher Mode active: You can create new lesson plans, upload study materials, modify delivery status, and link homework/quizzes.'
-              : 'Student Mode active: Review upcoming and delivered syllabus topics, download slides and worksheets, and mark topics as reviewed.'}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() =>
-            setActiveRolePerspective((p) => (p === 'teacher' ? 'student' : 'teacher'))
-          }
-          className="font-medium text-sky-700 hover:text-sky-900 underline ml-3 shrink-0"
-        >
-          Switch to {activeRolePerspective === 'teacher' ? 'Student' : 'Teacher'}
-        </button>
-      </div>
-
-      {/* Main Content Area */}
-      {filteredLessons.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-          <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-3">
-            <Filter className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-semibold text-slate-900 mb-1">No lessons found</h3>
-          <p className="text-sm text-slate-500 max-w-sm mx-auto mb-4">
-            No lesson plans match your current filters. Try changing your class, subject, or search keywords.
+      {/* Lesson Grid */}
+      {loading ? (
+        <div className="py-16 text-center text-slate-500">Loading lessons...</div>
+      ) : filteredLessons.length === 0 ? (
+        <div className="glass-sm rounded-2xl p-12 text-center border border-slate-200/80 dark:border-slate-800">
+          <NotebookText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">No lessons found</h3>
+          <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+            {isTeacherOrAdmin
+              ? 'Click "Create Lesson" to publish your first academic lecture plan.'
+              : 'There are currently no published lessons matching your filters.'}
           </p>
-          <Button
-            variant="solidOutline"
-            size="sm"
-            onClick={() => {
-              setSearchTerm('')
-              setSelectedClass('All Classes')
-              setSelectedSubject('All Subjects')
-              setSelectedStatus('All')
-            }}
-          >
-            Reset Filters
-          </Button>
         </div>
-      ) : viewMode === 'timeline' ? (
-        /* Syllabus Timeline View */
-        <div className="space-y-6">
-          {groupedByUnit.map(([unitName, unitLessons]) => (
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {filteredLessons.map((lesson) => (
             <div
-              key={unitName}
-              className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden"
+              key={lesson.id}
+              id={`lesson-card-${lesson.id}`}
+              onClick={() => setActiveLesson(lesson)}
+              className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500/40 hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
             >
-              {/* Unit Header */}
-              <div className="bg-slate-50/80 px-5 py-3.5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-md bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-semibold">
-                    <Layers className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">{unitName}</h3>
-                    <div className="text-xs text-slate-500">
-                      {unitLessons.length} {unitLessons.length === 1 ? 'lesson' : 'lessons'} in this unit
-                    </div>
-                  </div>
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60">
+                    <BookOpen className="w-3 h-3" />
+                    {lesson.subjectName}
+                  </span>
+
+                  <span
+                    className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                      lesson.status === 'Completed'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                        : lesson.status === 'Scheduled'
+                        ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                    }`}
+                  >
+                    {lesson.status}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-700 font-medium">
-                    {unitLessons[0]?.subject}
-                  </span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-700 font-medium">
-                    {unitLessons[0]?.class}
-                  </span>
+
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base group-hover:text-brand-600 transition line-clamp-1">
+                  {lesson.title}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                  {lesson.description}
+                </p>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs text-slate-500">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      {lesson.date}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      {lesson.time}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+                      <Layers className="w-3.5 h-3.5 text-slate-400" />
+                      {lesson.className}
+                    </span>
+                    <span className="text-slate-400">
+                      {lesson.materials.length} resource{lesson.materials.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Lesson Items inside Unit */}
-              <div className="divide-y divide-slate-100">
-                {unitLessons.map((lesson) => {
-                  const studentId = user?.id || 'std-1'
-                  const isReviewed = lesson.reviewedByStudents.includes(studentId)
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
+                <span className="text-xs text-slate-400 truncate max-w-[150px]">
+                  By {lesson.teacherName}
+                </span>
 
-                  return (
-                    <div
-                      key={lesson.id}
-                      className="p-5 hover:bg-slate-50/60 transition-colors flex flex-col lg:flex-row lg:items-start justify-between gap-4"
-                    >
-                      <div className="space-y-2.5 flex-1">
-                        {/* Status + Chapter + Meta */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md font-medium text-xs ${
-                              lesson.status === 'Completed'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : lesson.status === 'In Progress'
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-sky-50 text-sky-700 border border-sky-200'
-                            }`}
-                          >
-                            {lesson.status}
-                          </span>
-
-                          {lesson.chapter && (
-                            <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">
-                              {lesson.chapter}
-                            </span>
-                          )}
-
-                          <div className="flex items-center gap-1 text-slate-500">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>{lesson.date}</span>
-                          </div>
-
-                          <div className="flex items-center gap-1 text-slate-500">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>
-                              {lesson.startTime} ({lesson.durationMinutes} mins)
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1 text-slate-500">
-                            <MapPin className="w-3.5 h-3.5" />
-                            <span>{lesson.room}</span>
-                          </div>
-                        </div>
-
-                        {/* Title */}
-                        <h4
-                          onClick={() => setViewingLesson(lesson)}
-                          className="text-base font-semibold text-slate-900 hover:text-sky-600 cursor-pointer transition-colors"
-                        >
-                          {lesson.title}
-                        </h4>
-
-                        {/* Summary */}
-                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                          {lesson.summary}
-                        </p>
-
-                        {/* Objectives preview */}
-                        {lesson.objectives && lesson.objectives.length > 0 && (
-                          <div className="space-y-1 pt-1">
-                            <div className="text-xs font-medium text-slate-700 flex items-center gap-1">
-                              <Sparkles className="w-3 h-3 text-sky-500" />
-                              <span>Key Objectives:</span>
-                            </div>
-                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs text-slate-600 pl-4 list-disc">
-                              {lesson.objectives.slice(0, 2).map((obj, i) => (
-                                <li key={i} className="line-clamp-1">
-                                  {obj}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Attachments & Linked Activities pills */}
-                        <div className="flex flex-wrap items-center gap-2 pt-1.5">
-                          {lesson.attachments.map((att) => (
-                            <button
-                              key={att.id}
-                              type="button"
-                              onClick={() => {
-                                showToast(`Accessing material: ${att.name}`, 'info')
-                              }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition-colors border border-slate-200/60"
-                            >
-                              {renderAttachmentIcon(att.type)}
-                              <span className="font-medium truncate max-w-45">{att.name}</span>
-                              <Download className="w-3 h-3 text-slate-400" />
-                            </button>
-                          ))}
-
-                          {lesson.linkedHomeworkId && (
-                            <button
-                              type="button"
-                              onClick={() => navigate('/academic/homework')}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-medium border border-amber-200 transition-colors"
-                            >
-                              <PenLine className="w-3 h-3 text-amber-600" />
-                              <span>HW: {lesson.linkedHomeworkTitle || 'Linked Homework'}</span>
-                            </button>
-                          )}
-
-                          {lesson.linkedQuizId && (
-                            <button
-                              type="button"
-                              onClick={() => navigate('/academic/quizzes')}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-medium border border-purple-200 transition-colors"
-                            >
-                              <FileQuestion className="w-3 h-3 text-purple-600" />
-                              <span>Quiz: {lesson.linkedQuizTitle || 'Linked Quiz'}</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right Action Column */}
-                      <div className="flex lg:flex-col items-center lg:items-end gap-2 lg:gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-                        {/* Student Review Button */}
-                        {activeRolePerspective === 'student' ? (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleReview(lesson.id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
-                              isReviewed
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
-                                : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
-                            }`}
-                          >
-                            {isReviewed ? (
-                              <>
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                <span>Reviewed</span>
-                              </>
-                            ) : (
-                              <>
-                                <Circle className="w-4 h-4 text-slate-400" />
-                                <span>Mark Reviewed</span>
-                              </>
-                            )}
-                          </button>
-                        ) : (
-                          /* Teacher Quick Status Change */
-                          <div className="flex items-center gap-1">
-                            <select
-                              value={lesson.status}
-                              onChange={(e) =>
-                                handleQuickStatusChange(lesson.id, e.target.value as LessonStatus)
-                              }
-                              className="px-2 py-1 text-xs font-medium bg-slate-50 border border-slate-200 rounded-md text-slate-700"
-                            >
-                              <option value="Scheduled">Scheduled</option>
-                              <option value="In Progress">In Progress</option>
-                              <option value="Completed">Completed</option>
-                              <option value="Cancelled">Cancelled</option>
-                            </select>
-                          </div>
-                        )}
-
-                        {/* More Action Buttons */}
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setViewingLesson(lesson)}
-                            className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-md transition-colors"
-                            title="View Full Lesson Details"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          {activeRolePerspective === 'teacher' && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(lesson)}
-                                className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
-                                title="Edit Lesson"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteConfirmId(lesson.id)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
-                                title="Delete Lesson"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+                <div className="flex items-center gap-1">
+                  {isTeacherOrAdmin && (
+                    <>
+                      <button
+                        title="Edit Lesson"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleOpenEdit(lesson)
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        title="Delete Lesson"
+                        onClick={(e) => handleDeleteLesson(lesson.id, e)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
+                  <span className="text-xs font-medium text-brand-600 flex items-center gap-0.5 ml-1">
+                    Details <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      ) : (
-        /* Grid Card View */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredLessons.map((lesson) => {
-            const studentId = user?.id || 'std-1'
-            const isReviewed = lesson.reviewedByStudents.includes(studentId)
-
-            return (
-              <div
-                key={lesson.id}
-                className="bg-white rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden"
-              >
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        lesson.status === 'Completed'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : lesson.status === 'In Progress'
-                          ? 'bg-amber-50 text-amber-700'
-                          : 'bg-sky-50 text-sky-700'
-                      }`}
-                    >
-                      {lesson.status}
-                    </span>
-                    <span className="text-xs text-slate-500 font-medium">
-                      {lesson.subject}
-                    </span>
-                  </div>
-
-                  <div>
-                    <div className="text-xs text-sky-600 font-semibold mb-1">
-                      {lesson.unit}
-                    </div>
-                    <h4
-                      onClick={() => setViewingLesson(lesson)}
-                      className="text-base font-semibold text-slate-900 line-clamp-2 hover:text-sky-600 cursor-pointer"
-                    >
-                      {lesson.title}
-                    </h4>
-                  </div>
-
-                  <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                    {lesson.summary}
-                  </p>
-
-                  <div className="pt-2 border-t border-slate-100 space-y-1.5 text-xs text-slate-500">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        {lesson.date}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {lesson.durationMinutes} mins
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        {lesson.room}
-                      </span>
-                      <span className="font-medium text-slate-700">{lesson.class}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer action bar */}
-                <div className="bg-slate-50 px-5 py-3 border-t border-slate-200/80 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {activeRolePerspective === 'student' ? (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleReview(lesson.id)}
-                        className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors ${
-                          isReviewed
-                            ? 'text-emerald-700 bg-emerald-100/70 font-semibold'
-                            : 'text-slate-600 hover:text-slate-900 bg-white border border-slate-200'
-                        }`}
-                      >
-                        {isReviewed ? (
-                          <>
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Reviewed</span>
-                          </>
-                        ) : (
-                          <>
-                            <Circle className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Review</span>
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <span className="text-xs text-slate-500">
-                        {lesson.attachments.length} {lesson.attachments.length === 1 ? 'asset' : 'assets'}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setViewingLesson(lesson)}
-                      className="text-xs font-medium text-sky-600 hover:text-sky-800 px-2 py-1 rounded-md hover:bg-sky-50 transition-colors flex items-center gap-1"
-                    >
-                      <span>Details</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
       )}
 
-      {/* Detail Drawer / Modal (UC-LESSON-02) */}
-      {viewingLesson && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-slate-200 flex items-start justify-between gap-4">
+      {/* Lesson Detail Modal */}
+      {activeLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div
+            id="lesson-detail-modal"
+            className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6"
+          >
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
-                      viewingLesson.status === 'Completed'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : viewingLesson.status === 'In Progress'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-sky-50 text-sky-700 border border-sky-200'
-                    }`}
-                  >
-                    {viewingLesson.status}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
+                    {activeLesson.subjectName}
                   </span>
-                  <span className="text-xs font-medium text-slate-600">
-                    {viewingLesson.subject} • {viewingLesson.class}
+                  <span className="text-xs text-slate-400">
+                    {activeLesson.className} • {activeLesson.date}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">{viewingLesson.title}</h3>
-                <div className="text-xs font-medium text-sky-600 mt-0.5">
-                  {viewingLesson.unit} {viewingLesson.chapter && `• ${viewingLesson.chapter}`}
-                </div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  {activeLesson.title}
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Instructor: {activeLesson.teacherName} ({activeLesson.time})
+                </p>
               </div>
               <button
-                type="button"
-                onClick={() => setViewingLesson(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                id="close-lesson-detail"
+                onClick={() => setActiveLesson(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-5 overflow-y-auto flex-1 text-sm">
-              {/* Meta Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs">
-                <div>
-                  <span className="text-slate-400 block">Instructor</span>
-                  <span className="font-medium text-slate-800">{viewingLesson.teacherName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block">Date</span>
-                  <span className="font-medium text-slate-800">{viewingLesson.date}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block">Time & Duration</span>
-                  <span className="font-medium text-slate-800">
-                    {viewingLesson.startTime} ({viewingLesson.durationMinutes}m)
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block">Location</span>
-                  <span className="font-medium text-slate-800">{viewingLesson.room}</span>
-                </div>
-              </div>
-
-              {/* Summary / Lecture Notes */}
+            <div className="space-y-4">
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Lecture Synopsis & Notes
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Lesson Summary
                 </h4>
-                <p className="text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50/50 p-3.5 rounded-xl border border-slate-100">
-                  {viewingLesson.summary}
+                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  {activeLesson.description}
                 </p>
               </div>
 
-              {/* Objectives */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Learning Objectives
-                </h4>
-                <ul className="space-y-2">
-                  {viewingLesson.objectives.map((obj, i) => (
-                    <li key={i} className="flex items-start gap-2 text-slate-700">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                      <span>{obj}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Attachments / Study Materials */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Study Materials & Resources ({viewingLesson.attachments.length})
-                </h4>
-                {viewingLesson.attachments.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">No attached materials.</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {viewingLesson.attachments.map((att) => (
-                      <div
-                        key={att.id}
-                        className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5 truncate">
-                          <div className="p-2 rounded-lg bg-white border border-slate-200">
-                            {renderAttachmentIcon(att.type)}
-                          </div>
-                          <div className="truncate">
-                            <div className="font-medium text-xs text-slate-900 truncate">
-                              {att.name}
-                            </div>
-                            <div className="text-[11px] text-slate-400 uppercase">{att.size}</div>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => showToast(`Downloading: ${att.name}`, 'info')}
-                          className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-md"
-                          title="Download Resource"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Linked Activities (Homework & Quizzes) */}
-              {(viewingLesson.linkedHomeworkId || viewingLesson.linkedQuizId) && (
-                <div className="pt-2 border-t border-slate-100">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                    Linked Assessments & Tasks
+              {activeLesson.objectives.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                    Learning Objectives
                   </h4>
-                  <div className="flex flex-wrap gap-3">
-                    {viewingLesson.linkedHomeworkId && (
-                      <button
-                        type="button"
-                        onClick={() => navigate('/academic/homework')}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium hover:bg-amber-100 transition-colors"
+                  <ul className="space-y-2">
+                    {activeLesson.objectives.map((obj, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300"
                       >
-                        <PenLine className="w-4 h-4 text-amber-600" />
-                        <span>Homework: {viewingLesson.linkedHomeworkTitle || 'Open Assignment'}</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-amber-600" />
-                      </button>
-                    )}
+                        <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
+                        <span>{obj}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-                    {viewingLesson.linkedQuizId && (
-                      <button
-                        type="button"
-                        onClick={() => navigate('/academic/quizzes')}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 text-xs font-medium hover:bg-purple-100 transition-colors"
-                      >
-                        <FileQuestion className="w-4 h-4 text-purple-600" />
-                        <span>Quiz: {viewingLesson.linkedQuizTitle || 'Open Quiz'}</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-purple-600" />
-                      </button>
-                    )}
+              {activeLesson.content && (
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Lecture Notes & Overview
+                  </h4>
+                  <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800 whitespace-pre-line">
+                    {activeLesson.content}
                   </div>
                 </div>
               )}
+
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                  Learning Materials & Attachments ({activeLesson.materials.length})
+                </h4>
+                {activeLesson.materials.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No attachments for this session.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {activeLesson.materials.map((mat) => (
+                      <div
+                        key={mat.id}
+                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <FileText className="w-4 h-4 text-brand-600 shrink-0" />
+                          <div className="truncate">
+                            <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                              {mat.name}
+                            </p>
+                            {mat.size && <span className="text-[11px] text-slate-400">{mat.size}</span>}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => showToast(`Downloading ${mat.name}...`, 'info')}
+                          className="p-1.5 rounded-lg text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/40 transition shrink-0"
+                          title="Download Resource"
+                        >
+                          {mat.type === 'link' ? (
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          ) : (
+                            <Download className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 rounded-b-2xl flex items-center justify-between">
-              <div>
-                <button
-                  type="button"
-                  onClick={() => handleToggleReview(viewingLesson.id)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 hover:bg-white flex items-center gap-1.5 transition-colors"
-                >
-                  {viewingLesson.reviewedByStudents.includes(user?.id || 'std-1') ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Marked as Reviewed</span>
-                    </>
-                  ) : (
-                    <>
-                      <Circle className="w-4 h-4 text-slate-400" />
-                      <span>Mark as Reviewed</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {activeRolePerspective === 'teacher' && (
-                  <Button
-                    variant="solidOutline"
-                    size="sm"
-                    onClick={() => {
-                      const l = viewingLesson
-                      setViewingLesson(null)
-                      openEditModal(l)
-                    }}
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit Lesson
-                  </Button>
-                )}
-                <Button variant="solid" size="sm" onClick={() => setViewingLesson(null)}>
-                  Done
-                </Button>
-              </div>
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button
+                onClick={() => setActiveLesson(null)}
+                className="px-5 py-2 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition"
+              >
+                Close View
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Create / Edit Lesson Modal (UC-LESSON-01) */}
+      {/* Create / Edit Lesson Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200">
-            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  {editingLesson ? 'Edit Lesson Plan' : 'Create New Lesson Plan'}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Define learning goals, attach lecture materials, and link assessments.
-                </p>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <form
+            id="lesson-form-modal"
+            onSubmit={handleSaveLesson}
+            className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {editingLessonId ? 'Edit Academic Lesson' : 'Create New Lesson Plan'}
+              </h2>
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveLesson} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-6 space-y-4 overflow-y-auto flex-1 text-sm">
-                {/* Title */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Lesson Title *
-                  </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Lesson Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Solving Quadratic Equations with the Discriminant"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Class Assignment
+                </label>
+                <select
+                  value={formData.className}
+                  onChange={(e) => setFormData({ ...formData, className: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="Grade 10-A">Grade 10-A</option>
+                  <option value="Grade 10-B">Grade 10-B</option>
+                  <option value="Grade 11-A">Grade 11-A</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Subject
+                </label>
+                <select
+                  value={formData.subjectName}
+                  onChange={(e) => setFormData({ ...formData, subjectName: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="Mathematics">Mathematics</option>
+                  <option value="Physics">Physics</option>
+                  <option value="English Literature">English Literature</option>
+                  <option value="Chemistry">Chemistry</option>
+                  <option value="Computer Science">Computer Science</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Scheduled Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Time / Period
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 08:30 - 09:45 AM"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Brief Description
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Summary of topics explored in this lesson..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+
+              {/* Objectives Builder */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Learning Objectives
+                </label>
+                <div className="flex gap-2 mb-2">
                   <input
                     type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g., Cellular Respiration: Glycolysis & The Krebs Cycle"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:bg-white"
-                  />
-                </div>
-
-                {/* Subject & Class */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Subject *
-                    </label>
-                    <select
-                      value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500"
-                    >
-                      {filterOptions.subjects.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Target Class *
-                    </label>
-                    <select
-                      value={formData.class}
-                      onChange={(e) => setFormData({ ...formData, class: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500"
-                    >
-                      {filterOptions.classes.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Unit & Chapter */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Curriculum Unit / Theme *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.unit}
-                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                      placeholder="e.g., Unit 2: Cellular Bioenergetics"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Chapter / Section Reference
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.chapter}
-                      onChange={(e) => setFormData({ ...formData, chapter: e.target.value })}
-                      placeholder="e.g., Chapter 2.4"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Date, Time, Duration, Room */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Scheduled Date *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Start Time *
-                    </label>
-                    <input
-                      type="time"
-                      required
-                      value={formData.startTime}
-                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                      className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Duration (mins)
-                    </label>
-                    <input
-                      type="number"
-                      min={15}
-                      step={5}
-                      value={formData.durationMinutes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, durationMinutes: Number(e.target.value) })
+                    placeholder="Add an objective and press Add..."
+                    value={newObjective}
+                    onChange={(e) => setNewObjective(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleAddObjective()
                       }
-                      className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Room / Lab
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.room}
-                      onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                      placeholder="Room 302"
-                      className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Lesson Delivery Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value as LessonStatus })
-                    }
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
-                  >
-                    <option value="Scheduled">Scheduled</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
-                </div>
-
-                {/* Summary / Lecture Notes */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Lecture Notes & Syllabus Overview
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={formData.summary}
-                    onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                    placeholder="Provide a summary of the concepts, experiments, or discussion topics covered..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                    }}
+                    className="flex-1 px-3.5 py-1.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   />
+                  <button
+                    type="button"
+                    onClick={handleAddObjective}
+                    className="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200"
+                  >
+                    Add
+                  </button>
                 </div>
-
-                {/* Learning Objectives */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Key Learning Objectives
-                  </label>
-                  <div className="space-y-2 mb-2">
-                    {formData.objectives.map((obj, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span className="text-xs text-slate-700 flex-1">{obj}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveObjective(i)}
-                          className="text-slate-400 hover:text-rose-600 p-1"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newObjectiveText}
-                      onChange={(e) => setNewObjectiveText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          handleAddObjective()
-                        }
-                      }}
-                      placeholder="Add an actionable outcome (press Enter)..."
-                      className="flex-1 px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500"
-                    />
-                    <Button type="button" variant="solidOutline" size="sm" onClick={handleAddObjective}>
-                      Add
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Attachments Section */}
-                <div className="pt-2 border-t border-slate-200">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Learning Materials & Attachments
-                  </label>
-                  <div className="space-y-2 mb-3">
-                    {(formData.attachments || []).map((att) => (
-                      <div
-                        key={att.id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          {renderAttachmentIcon(att.type)}
-                          <span className="font-medium text-slate-800">{att.name}</span>
-                          <span className="text-slate-400">({att.size})</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveAttachment(att.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input
-                      type="text"
-                      value={newAttachmentName}
-                      onChange={(e) => setNewAttachmentName(e.target.value)}
-                      placeholder="File or Resource Title"
-                      className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg sm:col-span-2"
-                    />
-                    <div className="flex gap-1">
-                      <select
-                        value={newAttachmentType}
-                        onChange={(e) =>
-                          setNewAttachmentType(e.target.value as LessonAttachment['type'])
-                        }
-                        className="px-2 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg flex-1"
-                      >
-                        <option value="pdf">PDF</option>
-                        <option value="slide">Slides</option>
-                        <option value="doc">Doc / Lab</option>
-                        <option value="video">Video</option>
-                        <option value="link">External Link</option>
-                      </select>
-                      <Button
+                <div className="space-y-1.5">
+                  {formData.objectives.map((obj, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between text-xs px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60"
+                    >
+                      <span className="truncate">{obj}</span>
+                      <button
                         type="button"
-                        variant="solidOutline"
-                        size="sm"
-                        onClick={handleAddAttachment}
+                        onClick={() => handleRemoveObjective(i)}
+                        className="text-slate-400 hover:text-rose-500 ml-2"
                       >
-                        Attach
-                      </Button>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  </div>
-                </div>
-
-                {/* Linked Homework & Quiz Assessment (UC-LESSON-01) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Link Existing Homework
-                    </label>
-                    <select
-                      value={formData.linkedHomeworkId || ''}
-                      onChange={(e) => {
-                        const hw = availableHomework.find((h: HomeworkAssignment) => h.id === e.target.value)
-                        setFormData({
-                          ...formData,
-                          linkedHomeworkId: e.target.value,
-                          linkedHomeworkTitle: hw ? hw.title : '',
-                        })
-                      }}
-                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg"
-                    >
-                      <option value="">-- No Linked Homework --</option>
-                      {availableHomework.map((hw: HomeworkAssignment) => (
-                        <option key={hw.id} value={hw.id}>
-                          {hw.title} ({hw.subject})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Link Existing Quiz / Test
-                    </label>
-                    <select
-                      value={formData.linkedQuizId || ''}
-                      onChange={(e) => {
-                        const qz = availableQuizzes.find((q: Quiz) => q.id === e.target.value)
-                        setFormData({
-                          ...formData,
-                          linkedQuizId: e.target.value,
-                          linkedQuizTitle: qz ? qz.title : '',
-                        })
-                      }}
-                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg"
-                    >
-                      <option value="">-- No Linked Quiz --</option>
-                      {availableQuizzes.map((qz: Quiz) => (
-                        <option key={qz.id} value={qz.id}>
-                          {qz.title} ({qz.subject})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className="p-4 bg-slate-50 border-t border-slate-200 rounded-b-2xl flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="solidOutline"
-                  size="sm"
-                  onClick={() => setIsCreateModalOpen(false)}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Detailed Notes / Teaching Content
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Elaborate on lecture flow, examples, formulas, and references..."
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs"
+                />
+              </div>
+
+              {/* Material Attachments */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Learning Materials / File Upload
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Material file name (e.g. Lab_Manual.pdf)..."
+                    value={newMaterialName}
+                    onChange={(e) => setNewMaterialName(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                  <select
+                    value={newMaterialType}
+                    onChange={(e) => setNewMaterialType(e.target.value as any)}
+                    className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="pdf">PDF Document</option>
+                    <option value="slides">Slides / Presentation</option>
+                    <option value="doc">Worksheet</option>
+                    <option value="link">Web Link</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddMaterial}
+                    className="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200"
+                  >
+                    Attach
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {formData.materials.map((m) => (
+                    <span
+                      key={m.id}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    >
+                      <FileText className="w-3 h-3 text-brand-600" />
+                      {m.name}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            materials: formData.materials.filter((item) => item.id !== m.id),
+                          })
+                        }
+                        className="text-slate-400 hover:text-rose-500"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Status
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 >
-                  Cancel
-                </Button>
-                <Button type="submit" variant="solid" size="sm">
-                  {editingLesson ? 'Save Changes' : 'Create Lesson'}
-                </Button>
+                  <option value="Scheduled">Scheduled</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Completed">Completed</option>
+                </select>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl border border-slate-200 space-y-4">
-            <h3 className="text-base font-bold text-slate-900">Delete Lesson Plan?</h3>
-            <p className="text-sm text-slate-600">
-              Are you sure you want to remove this lesson from the syllabus? This action cannot be undone.
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <Button
-                variant="solidOutline"
-                size="sm"
-                onClick={() => setDeleteConfirmId(null)}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
                 Cancel
-              </Button>
-              <Button
-                variant="solid"
-                size="sm"
-                className="bg-rose-600 hover:bg-rose-700 text-white"
-                onClick={() => handleDeleteLesson(deleteConfirmId)}
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition"
               >
-                Delete Lesson
-              </Button>
+                {editingLessonId ? 'Update Lesson' : 'Publish Lesson'}
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

@@ -12,9 +12,12 @@ import DailyCalendarScheduleView from '@/features/attendance/DailyCalendarSchedu
 import AttendanceExcuseNoteModal from '@/features/attendance/AttendanceExcuseNoteModal'
 import StudentAttendanceHistoryDrawer from '@/features/attendance/StudentAttendanceHistoryDrawer'
 import AttendanceExportModal from '@/features/attendance/AttendanceExportModal'
+import StudentPersonalAttendanceView from '@/features/attendance/StudentPersonalAttendanceView'
 import { useToast } from '@/components/common/ToastProvider'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function Attendance() {
+  const { user } = useAuth()
   const { addToast } = useToast()
 
   // Selected date state (defaults to today)
@@ -195,6 +198,11 @@ export default function Attendance() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // If student is viewing, render student personal attendance portal directly (UC-ATTENDANCE-02 / BR-09)
+  if (user?.role === 'student') {
+    return <StudentPersonalAttendanceView />
   }
 
   return (

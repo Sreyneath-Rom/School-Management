@@ -2,101 +2,71 @@ import { apiClient } from '@/lib/apiClient'
 
 export interface TeacherRecord {
   id: string
-  teacherId: string // e.g. "TCH-1001" or "FAC-SCI-01"
+  employeeId: string
   firstName: string
   lastName: string
+  name?: string
+  title?: string
+  avatarUrl?: string
   email: string
   phone: string
   department: string
   position?: string
-  qualification: string
-  specialization?: string
-  experienceYears?: number
-  hireDate: string
-  weeklyTeachingHours?: number
-  status: 'active' | 'on_leave' | 'inactive'
-  subjects: string[]
+  qualifications: string
+  specialization: string
+  weeklyTeachingHours: number
   assignedClasses: string[]
-  avatarUrl?: string
-  performanceRating?: number
+  subjectsTaught: string[]
+  performanceRating: number
+  joiningDate: string
+  status: 'Active' | 'On Leave' | 'Inactive'
   createdAt?: string
   updatedAt?: string
 }
 
+export interface TeacherFilterParams {
+  search?: string
+  department?: string
+  status?: string
+}
+
 export interface CreateTeacherPayload {
-  teacherId: string
+  employeeId: string
   firstName: string
   lastName: string
   email: string
   phone: string
   department: string
-  qualification: string
-  specialization?: string
-  hireDate: string
-  weeklyTeachingHours?: number
-  subjects: string[]
-  assignedClasses: string[]
-  status?: 'active' | 'on_leave' | 'inactive'
   position?: string
+  qualifications: string
+  specialization: string
+  weeklyTeachingHours: number
+  assignedClasses: string[]
+  subjectsTaught: string[]
+  status?: 'Active' | 'On Leave' | 'Inactive'
 }
 
 export interface UpdateTeacherPayload extends Partial<CreateTeacherPayload> {
-  performanceRating?: number
+  id?: string
 }
-
-interface ApiTeacher {
-  id: string
-  teacherCode: string
-  user?: {
-    id: string
-    email: string
-    firstName: string
-    lastName: string
-    avatarUrl?: string | null
-  }
-  subjects?: Array<{ subject?: { name?: string } }>
-  classesLed?: Array<{ name?: string; id?: string }>
-}
-
-const normalizeTeacher = (teacher: ApiTeacher): TeacherRecord => ({
-  id: teacher.id,
-  teacherId: teacher.teacherCode,
-  firstName: teacher.user?.firstName ?? '',
-  lastName: teacher.user?.lastName ?? '',
-  email: teacher.user?.email ?? '',
-  phone: '',
-  department: '',
-  qualification: '',
-  hireDate: '',
-  status: 'active',
-  subjects: (teacher.subjects ?? []).map((item) => item.subject?.name ?? '').filter(Boolean),
-  assignedClasses: (teacher.classesLed ?? []).map((item) => item.name ?? item.id ?? '').filter(Boolean),
-  avatarUrl: teacher.user?.avatarUrl ?? undefined,
-})
 
 export const teacherService = {
-  list: async (params?: { department?: string; search?: string; status?: string }): Promise<TeacherRecord[]> => {
+  list: async (params?: TeacherFilterParams): Promise<TeacherRecord[]> => {
     const query = new URLSearchParams()
+    if (params?.search) query.append('search', params.search)
     if (params?.department && params.department !== 'all') query.append('department', params.department)
     if (params?.status && params.status !== 'all') query.append('status', params.status)
-    if (params?.search) query.append('search', params.search)
+
     const qs = query.toString() ? `?${query.toString()}` : ''
-    return apiClient.get<ApiTeacher[]>(`/teachers${qs}`).then((teachers) => teachers.map(normalizeTeacher))
+    return apiClient.get<TeacherRecord[]>(`/teachers${qs}`)
   },
 
-  getById: async (id: string): Promise<TeacherRecord> => {
-    return apiClient.get<ApiTeacher>(`/teachers/${id}`).then(normalizeTeacher)
-  },
+  getById: (id: string) => apiClient.get<TeacherRecord>(`/teachers/${id}`),
 
-  create: async (payload: CreateTeacherPayload): Promise<TeacherRecord> => {
-    return apiClient.post<TeacherRecord>('/teachers', payload)
-  },
+  create: (payload: CreateTeacherPayload) => apiClient.post<TeacherRecord>('/teachers', payload),
 
-  update: async (id: string, payload: UpdateTeacherPayload): Promise<TeacherRecord> => {
-    return apiClient.patch<TeacherRecord>(`/teachers/${id}`, payload)
-  },
+  update: (id: string, payload: UpdateTeacherPayload) =>
+    apiClient.patch<TeacherRecord>(`/teachers/${id}`, payload),
 
-  delete: async (id: string): Promise<void> => {
-    return apiClient.delete<void>(`/teachers/${id}`)
-  },
+  delete: (id: string) => apiClient.delete<void>(`/teachers/${id}`),
 }

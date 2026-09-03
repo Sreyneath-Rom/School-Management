@@ -144,7 +144,7 @@ export default function Login() {
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-linear-to-tr from-teal-600 via-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-xl shadow-teal-500/20 ring-4 ring-white/80 dark:ring-slate-800/80">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-teal-600 via-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-xl shadow-teal-500/20 ring-4 ring-white/80 dark:ring-slate-800/80">
               <School2 size={36} className="sm:size-10" />
             </div>
           </div>

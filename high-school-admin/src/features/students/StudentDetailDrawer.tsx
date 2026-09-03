@@ -195,7 +195,7 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
                   <MapPin className="h-3.5 w-3.5 mt-0.5" />
                   <span>Residential Address</span>
                 </div>
-                <span className="max-w-50 text-right font-medium text-text-main">
+                <span className="max-w-[200px] text-right font-medium text-text-main">
                   {student.address || 'Springfield Campus District'}
                 </span>
               </div>

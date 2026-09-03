@@ -74,7 +74,7 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
   return (
     <div className="space-y-4">
       {/* Search & Filter Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl glass-sm p-4 border border-text-main/10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-[24px] glass-sm p-4 border border-text-main/10">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-48 sm:min-w-64">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-main/40" />

@@ -148,14 +148,14 @@ export default function TeacherProfiles() {
 
         {/* Stats */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-22.5">
+          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-[90px]">
             <div className="text-[10px] text-stone-400 font-bold uppercase">Workload</div>
             <div className="text-lg font-black text-brand-600 dark:text-brand-400">
               {teacher.weeklyTeachingHours}h / wk
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-22.5">
+          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-[90px]">
             <div className="text-[10px] text-stone-400 font-bold uppercase">Rating</div>
             <div className="text-lg font-black text-amber-500 flex items-center justify-center gap-1">
               <Star size={16} fill="currentColor" /> {teacher.performanceRating}

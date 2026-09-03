@@ -11,14 +11,13 @@ interface UserModalProps {
   userToEdit: SystemUser | null
   onClose: () => void
   onSubmit: (data: CreateUserPayload) => void
-  roleIds: Partial<Record<UserRole, string>>
 }
 
 const ROLES: { id: UserRole; label: string; icon: any }[] = [
   { id: 'admin', label: 'Admin / Staff', icon: Shield },
   { id: 'teacher', label: 'Teacher', icon: School },
   { id: 'student', label: 'Student', icon: GraduationCap },
-  { id: 'parent', label: 'Parent', icon: User },
+  { id: 'mazer', label: 'Mazer (Class Rep)', icon: User },
 ]
 
 export const UserModal: React.FC<UserModalProps> = ({
@@ -27,13 +26,11 @@ export const UserModal: React.FC<UserModalProps> = ({
   userToEdit,
   onClose,
   onSubmit,
-  roleIds,
 }) => {
   const [role, setRole] = useState<UserRole>('student')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
   const [status, setStatus] = useState<'active' | 'inactive'>('active')
   const [gender, setGender] = useState<'male' | 'female' | 'other'>('female')
@@ -60,7 +57,6 @@ export const UserModal: React.FC<UserModalProps> = ({
       setFirstName(userToEdit.firstName)
       setLastName(userToEdit.lastName)
       setEmail(userToEdit.email)
-      setPassword('')
       setPhone(userToEdit.phone || '')
       setStatus(userToEdit.status)
       setGender(userToEdit.gender || 'other')
@@ -83,7 +79,6 @@ export const UserModal: React.FC<UserModalProps> = ({
       setFirstName('')
       setLastName('')
       setEmail('')
-      setPassword('')
       setPhone('')
       setStatus('active')
       setGender('female')
@@ -103,13 +98,8 @@ export const UserModal: React.FC<UserModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || (!userToEdit && password.length < 8)) {
-      setError(userToEdit ? 'First name, last name, and email are required' : 'Enter a password with at least 8 characters')
-      return
-    }
-
-    if (!userToEdit && !roleIds[role]) {
-      setError('The selected role is not available from the server')
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      setError('First name, last name, and email are required')
       return
     }
 
@@ -118,8 +108,6 @@ export const UserModal: React.FC<UserModalProps> = ({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim(),
-      password: password || 'unused-on-update',
-      roleId: roleIds[role] || '',
       phone: phone.trim(),
       status,
       gender,
@@ -249,23 +237,6 @@ export const UserModal: React.FC<UserModalProps> = ({
               />
             </div>
           </div>
-
-          {!userToEdit && (
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
-                Initial Password *
-              </label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                className="w-full rounded-2xl border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main outline-none transition focus:border-brand-500"
-              />
-            </div>
-          )}
 
           {/* Role specific fields */}
           {role === 'admin' && (

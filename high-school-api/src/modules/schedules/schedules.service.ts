@@ -97,7 +97,7 @@ export const schedulesService = {
    */
   async create(input: ScheduleInput & { subjectId: string }) {
     return prisma.$transaction(
-      async (tx) => {
+      async (tx: any) => {
         await assertReferencesExist(tx, input)
         await assertNoConflict(tx, input)
         return tx.schedule.create({ data: input, include: scheduleInclude })
@@ -108,7 +108,7 @@ export const schedulesService = {
 
   async update(id: string, input: Partial<ScheduleInput & { subjectId: string }>) {
     return prisma.$transaction(
-      async (tx) => {
+      async (tx: any) => {
         const existing = await tx.schedule.findUnique({ where: { id } })
         if (!existing) throw ApiError.notFound('Schedule entry not found')
 

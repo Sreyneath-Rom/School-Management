@@ -1,88 +1,94 @@
-import { useState, useEffect } from 'react'
-import PageHeading from '@/components/common/PageHeading'
+// src/pages/Teachers/TeacherList.tsx
+import { useEffect, useMemo, useState } from 'react'
 import {
-  GraduationCap,
-  Plus,
+  Users,
   Search,
+  Plus,
   Mail,
   Phone,
   BookOpen,
+  Calendar,
   Award,
-  Edit3,
+  Clock,
   Trash2,
+  Edit,
   Eye,
   X,
-  Loader2,
-  AlertCircle,
-  Briefcase,
-  Clock,
-  CheckCircle2,
-  Star,
-  Layers,
+  LayoutGrid,
+  List,
+  AlertTriangle,
+  GraduationCap,
+  Sparkles,
+  ShieldCheck,
+  Building2,
 } from 'lucide-react'
+import PageHeading from '@/components/common/PageHeading'
 import { useToast } from '@/components/common/ToastProvider'
 import {
   teacherService,
   type TeacherRecord,
   type CreateTeacherPayload,
-  type UpdateTeacherPayload,
 } from '@/services/teacherService'
+
+const DEPARTMENTS = [
+  'All Departments',
+  'Science',
+  'Mathematics',
+  'Social Studies',
+  'Languages',
+  'Technology',
+  'Fine Arts',
+]
+
+const STATUSES = ['All', 'Active', 'On Leave', 'Inactive']
 
 export default function TeacherList() {
   const { showToast } = useToast()
   const [teachers, setTeachers] = useState<TeacherRecord[]>([])
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('')
-  const [departmentFilter, setDepartmentFilter] = useState('All')
+  // Filters & Views
+  const [search, setSearch] = useState('')
+  const [selectedDept, setSelectedDept] = useState('All Departments')
+  const [selectedStatus, setSelectedStatus] = useState('All')
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
 
   // Modals
-  const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [viewModalData, setViewModalData] = useState<TeacherRecord | null>(null)
-  const [editModalData, setEditModalData] = useState<TeacherRecord | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<TeacherRecord | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [detailTeacher, setDetailTeacher] = useState<TeacherRecord | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [editingTeacher, setEditingTeacher] = useState<TeacherRecord | null>(null)
+  const [deleteCandidate, setDeleteCandidate] = useState<TeacherRecord | null>(null)
 
-  // Forms
+  // Form State
   const [formData, setFormData] = useState<CreateTeacherPayload>({
+    employeeId: '',
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     department: 'Science',
     position: 'Faculty Member',
-    qualification: "Master's Degree",
-    specialization: 'Molecular Biology',
-    experienceYears: 4,
-    weeklyTeachingHours: 18,
-    subjects: ['Biology'],
-    assignedClasses: ['Grade 10-A'],
-  })
-
-  const [editForm, setEditForm] = useState<UpdateTeacherPayload>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    department: 'Science',
-    position: 'Faculty Member',
-    qualification: "Master's Degree",
+    qualifications: "Master's Degree",
     specialization: '',
-    experienceYears: 4,
-    weeklyTeachingHours: 18,
-    status: 'active',
+    weeklyTeachingHours: 16,
+    assignedClasses: [],
+    subjectsTaught: [],
+    status: 'Active',
   })
+  const [classInput, setClassInput] = useState('')
+  const [subjectInput, setSubjectInput] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
 
+  // Load Data
   const loadTeachers = async () => {
+    setIsLoading(true)
     try {
-      setLoading(true)
       const data = await teacherService.list()
-      setTeachers(data)
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to load teachers', 'error')
+      setTeachers(Array.isArray(data) ? data : [])
+    } catch {
+      showToast('Failed to load faculty directory', 'error')
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
@@ -90,402 +96,740 @@ export default function TeacherList() {
     loadTeachers()
   }, [])
 
-  // UC-TEACHER-03: Create
-  const handleCreateTeacher = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
-      showToast('Please provide first name, last name, and institutional email', 'error')
-      return
-    }
+  // Filtered list
+  const filteredTeachers = useMemo(() => {
+    return teachers.filter((t) => {
+      const q = search.toLowerCase()
+      const matchesSearch =
+        !q ||
+        t.firstName.toLowerCase().includes(q) ||
+        t.lastName.toLowerCase().includes(q) ||
+        t.email.toLowerCase().includes(q) ||
+        t.employeeId.toLowerCase().includes(q) ||
+        t.specialization.toLowerCase().includes(q)
 
-    try {
-      setSubmitting(true)
-      await teacherService.create(formData)
-      showToast(`Teacher "${formData.firstName} ${formData.lastName}" registered successfully`, 'success')
-      setCreateModalOpen(false)
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        department: 'Science',
-        position: 'Faculty Member',
-        qualification: "Master's Degree",
-        specialization: '',
-        experienceYears: 3,
-        weeklyTeachingHours: 18,
-        subjects: ['General Studies'],
-        assignedClasses: [],
-      })
-      await loadTeachers()
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to create teacher record', 'error')
-    } finally {
-      setSubmitting(false)
-    }
+      const matchesDept =
+        selectedDept === 'All Departments' || t.department === selectedDept
+
+      const matchesStatus =
+        selectedStatus === 'All' || t.status === selectedStatus
+
+      return matchesSearch && matchesDept && matchesStatus
+    })
+  }, [teachers, search, selectedDept, selectedStatus])
+
+  // Stats calculation
+  const stats = useMemo(() => {
+    const total = teachers.length
+    const active = teachers.filter((t) => t.status === 'Active').length
+    const avgHours =
+      total > 0
+        ? Math.round(
+            teachers.reduce((acc, t) => acc + (t.weeklyTeachingHours || 0), 0) /
+              total
+          )
+        : 0
+    const topRated = teachers.filter((t) => (t.performanceRating || 0) >= 4.85).length
+    return { total, active, avgHours, topRated }
+  }, [teachers])
+
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      employeeId: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      department: 'Science',
+      position: 'Faculty Member',
+      qualifications: "Master's Degree",
+      specialization: '',
+      weeklyTeachingHours: 16,
+      assignedClasses: [],
+      subjectsTaught: [],
+      status: 'Active',
+    })
+    setClassInput('')
+    setSubjectInput('')
+    setFormError(null)
+    setEditingTeacher(null)
   }
 
-  // UC-TEACHER-04: Edit
-  const openEditModal = (t: TeacherRecord) => {
-    setEditModalData(t)
-    setEditForm({
+  // Open Create Modal (UC-TEACHER-03)
+  const handleOpenCreate = () => {
+    resetForm()
+    setIsCreateModalOpen(true)
+  }
+
+  // Open Edit Modal (UC-TEACHER-04)
+  const handleOpenEdit = (t: TeacherRecord) => {
+    setEditingTeacher(t)
+    setFormData({
+      employeeId: t.employeeId,
       firstName: t.firstName,
       lastName: t.lastName,
       email: t.email,
       phone: t.phone,
       department: t.department,
-      position: t.position,
-      qualification: t.qualification,
+      position: t.position || 'Faculty Member',
+      qualifications: t.qualifications,
       specialization: t.specialization,
-      experienceYears: t.experienceYears,
       weeklyTeachingHours: t.weeklyTeachingHours,
+      assignedClasses: [...(t.assignedClasses || [])],
+      subjectsTaught: [...(t.subjectsTaught || [])],
       status: t.status,
     })
+    setClassInput('')
+    setSubjectInput('')
+    setFormError(null)
+    setIsCreateModalOpen(true)
   }
 
-  const handleUpdateTeacher = async (e: React.FormEvent) => {
+  // Save (Create or Edit)
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editModalData) return
-    if (!editForm.firstName?.trim() || !editForm.lastName?.trim() || !editForm.email?.trim()) {
-      showToast('Please provide name and email', 'error')
+    setFormError(null)
+
+    // Preconditions & Validation (400 Bad Request prevention)
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
+      setFormError('Please fill in all mandatory fields: First Name, Last Name, and Email.')
       return
     }
 
     try {
-      setSubmitting(true)
-      await teacherService.update(editModalData.id, editForm)
-      showToast(`Teacher record updated successfully`, 'success')
-      setEditModalData(null)
-      await loadTeachers()
+      if (editingTeacher) {
+        // UC-TEACHER-04: Edit Teacher
+        const updated = await teacherService.update(editingTeacher.id, formData)
+        setTeachers((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+        if (detailTeacher?.id === updated.id) setDetailTeacher(updated)
+        showToast(`Teacher "${updated.name || updated.firstName}" updated successfully.`, 'success')
+      } else {
+        // UC-TEACHER-03: Create Teacher
+        const created = await teacherService.create(formData)
+        setTeachers((prev) => [created, ...prev])
+        showToast(`Teacher "${created.name || created.firstName}" created successfully.`, 'success')
+      }
+      setIsCreateModalOpen(false)
+      resetForm()
     } catch (err: any) {
-      showToast(err?.message || 'Failed to update teacher record', 'error')
-    } finally {
-      setSubmitting(false)
+      setFormError(err?.message || 'Operation failed. Please verify input data.')
+      showToast(err?.message || 'Action rejected', 'error')
     }
   }
 
-  // UC-TEACHER-05: Delete
-  const handleDeleteTeacher = async () => {
-    if (!deleteTarget) return
+  // Delete Handler (UC-TEACHER-05) with 409 Conflict check
+  const handleDelete = async () => {
+    if (!deleteCandidate) return
+
+    // Precondition check: If teacher has active assigned classes, prevent deletion
+    if (deleteCandidate.assignedClasses && deleteCandidate.assignedClasses.length > 0) {
+      showToast(
+        `Conflict (409): Cannot delete "${deleteCandidate.name}": has ${deleteCandidate.assignedClasses.length} assigned class(es). Reassign classes before deleting.`,
+        'error'
+      )
+      setDeleteCandidate(null)
+      return
+    }
+
     try {
-      setSubmitting(true)
-      await teacherService.delete(deleteTarget.id)
-      showToast(`Teacher "${deleteTarget.firstName} ${deleteTarget.lastName}" removed successfully`, 'success')
-      setDeleteTarget(null)
-      await loadTeachers()
+      await teacherService.delete(deleteCandidate.id)
+      setTeachers((prev) => prev.filter((t) => t.id !== deleteCandidate.id))
+      if (detailTeacher?.id === deleteCandidate.id) setDetailTeacher(null)
+      showToast(`Teacher "${deleteCandidate.name}" removed from faculty roster.`, 'success')
+      setDeleteCandidate(null)
     } catch (err: any) {
-      showToast(err?.message || 'Failed to delete teacher', 'error')
-    } finally {
-      setSubmitting(false)
+      showToast(err?.message || 'Failed to delete teacher record.', 'error')
+      setDeleteCandidate(null)
     }
   }
 
-  const departments = Array.from(new Set(teachers.map((t) => t.department))).filter(Boolean)
+  const handleAddClass = () => {
+    if (classInput.trim() && !formData.assignedClasses.includes(classInput.trim())) {
+      setFormData({
+        ...formData,
+        assignedClasses: [...formData.assignedClasses, classInput.trim()],
+      })
+      setClassInput('')
+    }
+  }
 
-  const filteredTeachers = teachers.filter((t) => {
-    const fullName = `${t.firstName} ${t.lastName}`.toLowerCase()
-    const matchesSearch =
-      fullName.includes(searchTerm.toLowerCase()) ||
-      t.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.teacherId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.department.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesDept = departmentFilter === 'All' || t.department === departmentFilter
-    return matchesSearch && matchesDept
-  })
+  const handleRemoveClass = (cls: string) => {
+    setFormData({
+      ...formData,
+      assignedClasses: formData.assignedClasses.filter((c) => c !== cls),
+    })
+  }
+
+  const handleAddSubject = () => {
+    if (subjectInput.trim() && !formData.subjectsTaught.includes(subjectInput.trim())) {
+      setFormData({
+        ...formData,
+        subjectsTaught: [...formData.subjectsTaught, subjectInput.trim()],
+      })
+      setSubjectInput('')
+    }
+  }
+
+  const handleRemoveSubject = (sub: string) => {
+    setFormData({
+      ...formData,
+      subjectsTaught: formData.subjectsTaught.filter((s) => s !== sub),
+    })
+  }
 
   return (
-    <div id="teachers-page" className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <PageHeading
-          title="Faculty & Teachers"
-          description="Manage academic faculty personnel, department assignments, qualifications, and teaching loads."
-        />
+    <div className="space-y-6 pb-12">
+      {/* Header with Split CRUD Use Case badges */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <PageHeading
+            title="Teachers & Faculty Management"
+            subtitle="Academic staff records, qualifications, teaching workloads, and course allocations"
+          />
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-800/40">
+              <ShieldCheck size={12} /> Standard: Split CRUD Use Cases
+            </span>
+            <span className="text-xs text-stone-500 font-mono">
+              [UC-TEACHER-01 to 05] • RBAC: teachers.view | create | edit | delete
+            </span>
+          </div>
+        </div>
+
         <button
-          id="btn-create-teacher"
-          onClick={() => setCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-medium shadow-xs transition-all self-start sm:self-auto"
+          id="btn-add-teacher"
+          onClick={handleOpenCreate}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm bg-brand-600 hover:bg-brand-700 text-white shadow-sm hover:shadow transition"
         >
-          <Plus className="w-4 h-4" />
-          <span>New Faculty Member</span>
+          <Plus size={16} />
+          <span>Add Faculty Member</span>
         </button>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-          <input
-            id="input-search-teachers"
-            type="text"
-            placeholder="Search by name, ID, department, or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 text-xs text-surface-900 dark:text-surface-100 placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          />
+      {/* KPI Stats Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
+          <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+            <Users size={20} />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-stone-900 dark:text-white">
+              {stats.total}
+            </div>
+            <div className="text-xs font-medium text-stone-500">Total Faculty</div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <button
-            id="filter-dept-all"
-            onClick={() => setDepartmentFilter('All')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              departmentFilter === 'All'
-                ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 ring-1 ring-brand-200 dark:ring-brand-800'
-                : 'text-surface-500 hover:text-surface-900 hover:bg-surface-100 dark:hover:bg-surface-800'
-            }`}
-          >
-            All Departments
-          </button>
-          {departments.map((dept) => (
-            <button
-              key={dept}
-              id={`filter-dept-${dept.toLowerCase().replace(/\s+/g, '-')}`}
-              onClick={() => setDepartmentFilter(dept)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                departmentFilter === dept
-                  ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 ring-1 ring-brand-200 dark:ring-brand-800'
-                : 'text-surface-500 hover:text-surface-900 hover:bg-surface-100 dark:hover:bg-surface-800'
-              }`}
-            >
-              {dept}
-            </button>
-          ))}
+        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
+          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+            <ShieldCheck size={20} />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-stone-900 dark:text-white">
+              {stats.active}
+            </div>
+            <div className="text-xs font-medium text-stone-500">Active Status</div>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
+          <div className="p-3 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+            <Clock size={20} />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-stone-900 dark:text-white">
+              {stats.avgHours}h
+            </div>
+            <div className="text-xs font-medium text-stone-500">Avg Weekly Hours</div>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
+          <div className="p-3 rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div className="text-2xl font-black text-stone-900 dark:text-white">
+              {stats.topRated}
+            </div>
+            <div className="text-xs font-medium text-stone-500">High Evaluation (≥4.85)</div>
+          </div>
         </div>
       </div>
 
-      {/* UC-TEACHER-01: Teachers Cards Grid */}
-      {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3 text-surface-400">
-          <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
-          <p className="text-xs font-medium">Loading faculty roster...</p>
+      {/* Filter and Search Bar (UC-TEACHER-01) */}
+      <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex flex-1 flex-col sm:flex-row items-center gap-3 w-full">
+          <div className="relative w-full sm:w-80">
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"
+            />
+            <input
+              type="text"
+              placeholder="Search by name, ID, email, specialty..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-2 text-sm rounded-xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          <select
+            value={selectedDept}
+            onChange={(e) => setSelectedDept(e.target.value)}
+            className="w-full sm:w-48 px-3 py-2 text-xs font-medium rounded-xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            {DEPARTMENTS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="w-full sm:w-36 px-3 py-2 text-xs font-medium rounded-xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                Status: {s}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Layout toggle */}
+        <div className="flex items-center gap-1 self-end md:self-auto bg-stone-100 dark:bg-white/5 p-1 rounded-xl border border-stone-200 dark:border-white/10">
+          <button
+            onClick={() => setViewMode('grid')}
+            title="Grid View"
+            className={`p-1.5 rounded-lg text-xs font-medium transition ${
+              viewMode === 'grid'
+                ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-white shadow-xs'
+                : 'text-stone-500 hover:text-stone-900'
+            }`}
+          >
+            <LayoutGrid size={16} />
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            title="Table View"
+            className={`p-1.5 rounded-lg text-xs font-medium transition ${
+              viewMode === 'table'
+                ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-white shadow-xs'
+                : 'text-stone-500 hover:text-stone-900'
+            }`}
+          >
+            <List size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Teachers Content (UC-TEACHER-01) */}
+      {isLoading ? (
+        <div className="p-12 text-center text-stone-400 font-medium animate-pulse">
+          Loading faculty records...
         </div>
       ) : filteredTeachers.length === 0 ? (
-        <div className="py-16 text-center bg-surface-50 dark:bg-surface-900/40 rounded-2xl border border-dashed border-surface-200 dark:border-surface-800 p-8">
-          <GraduationCap className="w-10 h-10 mx-auto text-surface-400 mb-3" />
-          <h3 className="text-sm font-semibold text-surface-800 dark:text-surface-200">No Faculty Found</h3>
-          <p className="text-xs text-surface-500 mt-1 max-w-sm mx-auto">
-            No instructors match the search or department filter. Register a new teacher to assign classes.
+        <div className="p-12 rounded-2xl glass-sm border border-stone-200 dark:border-white/10 text-center">
+          <Building2 size={36} className="mx-auto text-stone-300 mb-2" />
+          <p className="font-semibold text-stone-700 dark:text-stone-300">
+            No faculty members found
+          </p>
+          <p className="text-xs text-stone-500 mt-1">
+            Try adjusting your search filters or add a new faculty member.
           </p>
         </div>
-      ) : (
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredTeachers.map((teacher) => (
+          {filteredTeachers.map((t) => (
             <div
-              key={teacher.id}
-              id={`teacher-card-${teacher.id}`}
-              className="relative bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 hover:border-surface-300 dark:hover:border-surface-600 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between"
+              key={t.id}
+              className="p-5 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 hover:shadow-md transition flex flex-col justify-between group"
             >
               <div>
-                {/* Header Profile Info */}
-                <div className="flex items-start gap-3.5 mb-3">
-                  <img
-                    src={teacher.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop'}
-                    alt={`${teacher.firstName} ${teacher.lastName}`}
-                    className="w-12 h-12 rounded-xl object-cover ring-1 ring-surface-200 dark:ring-surface-700 shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1">
-                      <h3 className="text-base font-bold text-surface-900 dark:text-surface-100 tracking-tight truncate">
-                        {teacher.firstName} {teacher.lastName}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={
+                        t.avatarUrl ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          t.name || t.firstName
+                        )}&background=3b82f6&color=fff`
+                      }
+                      alt={t.name}
+                      className="w-12 h-12 rounded-full object-cover ring-2 ring-brand-500/20"
+                    />
+                    <div>
+                      <h3 className="font-bold text-stone-900 dark:text-white text-base leading-tight">
+                        {t.name || `${t.firstName} ${t.lastName}`}
                       </h3>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                          teacher.status === 'active'
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60'
-                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/60'
-                        }`}
-                      >
-                        {teacher.status}
+                      <p className="text-xs text-stone-500 font-medium mt-0.5">
+                        {t.title || `${t.department} Faculty`}
+                      </p>
+                      <span className="text-[10px] font-mono text-stone-400">
+                        {t.employeeId}
                       </span>
                     </div>
-                    <p className="text-xs text-surface-500 truncate">{teacher.position} • {teacher.department}</p>
-                    <p className="text-[11px] font-mono text-brand-600 dark:text-brand-400 mt-0.5">{teacher.teacherId}</p>
                   </div>
+
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      t.status === 'Active'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40'
+                        : t.status === 'On Leave'
+                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300/40'
+                        : 'bg-stone-100 text-stone-600 dark:bg-white/10 dark:text-stone-300'
+                    }`}
+                  >
+                    {t.status}
+                  </span>
                 </div>
 
-                {/* Contact & Qualifications Box */}
-                <div className="p-3 bg-surface-50 dark:bg-surface-900/50 rounded-xl space-y-1.5 text-xs text-surface-600 dark:text-surface-400 border border-surface-100 dark:border-surface-800">
-                  <div className="flex items-center gap-2 truncate">
-                    <Mail className="w-3.5 h-3.5 text-surface-400 shrink-0" />
-                    <span className="truncate">{teacher.email}</span>
+                <div className="space-y-2 py-3 border-y border-stone-200/50 dark:border-white/10 text-xs">
+                  <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
+                    <span className="text-stone-400">Department:</span>
+                    <span className="font-semibold">{t.department}</span>
                   </div>
-                  <div className="flex items-center gap-2 truncate">
-                    <Award className="w-3.5 h-3.5 text-surface-400 shrink-0" />
-                    <span className="truncate">{teacher.qualification}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-surface-200/50 dark:border-surface-700/50">
-                    <span className="flex items-center gap-1.5 text-surface-500">
-                      <Clock className="w-3.5 h-3.5 text-surface-400" /> Teaching Load:
-                    </span>
-                    <span className="font-semibold text-surface-800 dark:text-surface-200">
-                      {teacher.weeklyTeachingHours} hrs/wk
+                  <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
+                    <span className="text-stone-400">Specialization:</span>
+                    <span className="font-medium truncate max-w-[180px]" title={t.specialization}>
+                      {t.specialization || 'General Education'}
                     </span>
                   </div>
-                </div>
-
-                {/* Classes & Subjects */}
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {teacher.assignedClasses.map((cls) => (
-                    <span
-                      key={cls}
-                      className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300"
-                    >
-                      {cls}
+                  <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
+                    <span className="text-stone-400">Workload:</span>
+                    <span className="font-bold text-brand-600 dark:text-brand-400">
+                      {t.weeklyTeachingHours} hrs / week
                     </span>
-                  ))}
-                  {teacher.subjects.map((sub) => (
-                    <span
-                      key={sub}
-                      className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/50"
-                    >
-                      {sub}
+                  </div>
+                  <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
+                    <span className="text-stone-400">Classes:</span>
+                    <span className="font-medium">
+                      {t.assignedClasses?.length || 0} assigned
                     </span>
-                  ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Action Buttons: Split CRUD operations */}
-              <div className="mt-5 pt-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
+              {/* Action Buttons (UC-TEACHER-02, 04, 05) */}
+              <div className="pt-3.5 flex items-center justify-between gap-2">
+                <button
+                  onClick={() => setDetailTeacher(t)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 dark:bg-white/10 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/40 dark:hover:text-brand-400 transition"
+                  title="View Faculty Dossier (UC-TEACHER-02)"
+                >
+                  <Eye size={13} />
+                  <span>Dossier</span>
+                </button>
+
                 <div className="flex items-center gap-1">
-                  {/* UC-TEACHER-02: View Details */}
                   <button
-                    id={`btn-view-teacher-${teacher.id}`}
-                    onClick={() => setViewModalData(teacher)}
-                    title="View Details"
-                    className="p-2 rounded-lg text-surface-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/40 transition-colors"
+                    onClick={() => handleOpenEdit(t)}
+                    className="p-1.5 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-white/10 transition"
+                    title="Edit Teacher (UC-TEACHER-04)"
                   >
-                    <Eye className="w-4 h-4" />
+                    <Edit size={14} />
                   </button>
-
-                  {/* UC-TEACHER-04: Edit */}
                   <button
-                    id={`btn-edit-teacher-${teacher.id}`}
-                    onClick={() => openEditModal(teacher)}
-                    title="Edit Teacher Record"
-                    className="p-2 rounded-lg text-surface-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
+                    onClick={() => setDeleteCandidate(t)}
+                    className="p-1.5 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
+                    title="Delete Teacher (UC-TEACHER-05)"
                   >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-
-                  {/* UC-TEACHER-05: Delete */}
-                  <button
-                    id={`btn-delete-teacher-${teacher.id}`}
-                    onClick={() => setDeleteTarget(teacher)}
-                    title="Delete Teacher"
-                    className="p-2 rounded-lg text-surface-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 size={14} />
                   </button>
                 </div>
-
-                <span className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200/60">
-                  <Star className="w-3 h-3 fill-current" />
-                  {teacher.performanceRating || 4.8}
-                </span>
               </div>
             </div>
           ))}
         </div>
+      ) : (
+        /* Table View */
+        <div className="rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-stone-100/70 dark:bg-white/5 border-b border-stone-200/80 dark:border-white/10 text-stone-500 uppercase tracking-wider font-semibold">
+                <tr>
+                  <th className="py-3 px-4">Faculty Member</th>
+                  <th className="py-3 px-4">Employee ID</th>
+                  <th className="py-3 px-4">Department</th>
+                  <th className="py-3 px-4">Workload</th>
+                  <th className="py-3 px-4">Assigned Classes</th>
+                  <th className="py-3 px-4">Rating</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-200/60 dark:divide-white/5">
+                {filteredTeachers.map((t) => (
+                  <tr
+                    key={t.id}
+                    className="hover:bg-stone-50/50 dark:hover:bg-white/5 transition"
+                  >
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={
+                            t.avatarUrl ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              t.name || t.firstName
+                            )}&background=3b82f6&color=fff`
+                          }
+                          alt=""
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                        <div>
+                          <div className="font-bold text-stone-900 dark:text-white">
+                            {t.name || `${t.firstName} ${t.lastName}`}
+                          </div>
+                          <div className="text-[11px] text-stone-400">{t.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-mono text-stone-500">
+                      {t.employeeId}
+                    </td>
+                    <td className="py-3 px-4 font-medium text-stone-700 dark:text-stone-300">
+                      {t.department}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-brand-600 dark:text-brand-400">
+                      {t.weeklyTeachingHours} hrs/wk
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex flex-wrap gap-1">
+                        {t.assignedClasses?.slice(0, 2).map((c) => (
+                          <span
+                            key={c}
+                            className="px-1.5 py-0.5 rounded text-[10px] bg-stone-100 dark:bg-white/10 font-medium"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                        {(t.assignedClasses?.length || 0) > 2 && (
+                          <span className="text-[10px] text-stone-400">
+                            +{t.assignedClasses.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-stone-800 dark:text-stone-200">
+                      ★ {t.performanceRating?.toFixed(2) || '4.80'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          t.status === 'Active'
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                        }`}
+                      >
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setDetailTeacher(t)}
+                          className="p-1 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-white/10"
+                          title="View Details"
+                        >
+                          <Eye size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEdit(t)}
+                          className="p-1 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-white/10"
+                          title="Edit"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => setDeleteCandidate(t)}
+                          className="p-1 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
-      {/* UC-TEACHER-02: View Details Modal */}
-      {viewModalData && (
+      {/* ========================================================= */}
+      {/* MODAL: VIEW TEACHER DETAILS (UC-TEACHER-02) */}
+      {/* ========================================================= */}
+      {detailTeacher && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            id="modal-teacher-details"
-            className="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-900/30">
+          <div className="w-full max-w-xl rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <img
-                  src={viewModalData.avatarUrl}
-                  alt={viewModalData.firstName}
-                  className="w-12 h-12 rounded-xl object-cover ring-1 ring-surface-200 dark:ring-surface-700"
+                  src={
+                    detailTeacher.avatarUrl ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      detailTeacher.name || detailTeacher.firstName
+                    )}&background=3b82f6&color=fff`
+                  }
+                  alt=""
+                  className="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-500"
                 />
                 <div>
-                  <h3 className="text-base font-bold text-surface-900 dark:text-surface-100">
-                    {viewModalData.firstName} {viewModalData.lastName}
-                  </h3>
-                  <p className="text-xs text-surface-500">
-                    {viewModalData.teacherId} • {viewModalData.position}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-stone-900 dark:text-white">
+                      {detailTeacher.name ||
+                        `${detailTeacher.firstName} ${detailTeacher.lastName}`}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      {detailTeacher.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-500">{detailTeacher.title}</p>
+                  <div className="flex items-center gap-2 mt-1 text-[11px] font-mono text-brand-600 dark:text-brand-400">
+                    <span>ID: {detailTeacher.employeeId}</span>
+                    <span>•</span>
+                    <span>Joined: {detailTeacher.joiningDate}</span>
+                  </div>
                 </div>
               </div>
+
               <button
-                onClick={() => setViewModalData(null)}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-600 hover:bg-surface-100 dark:hover:bg-surface-700"
+                onClick={() => setDetailTeacher(null)}
+                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white"
               >
-                <X className="w-4 h-4" />
+                <X size={18} />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-3 p-3.5 bg-surface-50 dark:bg-surface-900/50 rounded-xl border border-surface-100 dark:border-surface-800 text-xs">
-                <div>
-                  <span className="text-surface-400">Department:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.department}</p>
-                </div>
-                <div>
-                  <span className="text-surface-400">Status:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5 capitalize">{viewModalData.status}</p>
-                </div>
-                <div>
-                  <span className="text-surface-400">Email Address:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.email}</p>
-                </div>
-                <div>
-                  <span className="text-surface-400">Phone Contact:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.phone}</p>
-                </div>
-                <div>
-                  <span className="text-surface-400">Highest Degree:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.qualification}</p>
-                </div>
-                <div>
-                  <span className="text-surface-400">Specialization:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.specialization || 'General Science'}</p>
-                </div>
-                <div>
-                  <span className="text-surface-400">Experience:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.experienceYears} Years</p>
-                </div>
-                <div>
-                  <span className="text-surface-400">Weekly Teaching:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.weeklyTeachingHours} Hours/Week</p>
-                </div>
+            {/* Use Case & Permission Badge */}
+            <div className="px-3 py-1.5 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-between text-xs">
+              <span className="font-semibold text-brand-700 dark:text-brand-300">
+                Use Case: UC-TEACHER-02 (View Teacher Details)
+              </span>
+              <span className="font-mono text-[11px] text-brand-600 dark:text-brand-400">
+                Permission: teachers.view
+              </span>
+            </div>
+
+            {/* Dossier Grid */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
+                <span className="text-stone-400 flex items-center gap-1">
+                  <Mail size={12} /> Contact Email
+                </span>
+                <span className="font-semibold text-stone-800 dark:text-stone-200 break-all">
+                  {detailTeacher.email}
+                </span>
               </div>
 
+              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
+                <span className="text-stone-400 flex items-center gap-1">
+                  <Phone size={12} /> Phone Number
+                </span>
+                <span className="font-semibold text-stone-800 dark:text-stone-200">
+                  {detailTeacher.phone || 'Not provided'}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
+                <span className="text-stone-400 flex items-center gap-1">
+                  <Building2 size={12} /> Department & Role
+                </span>
+                <span className="font-semibold text-stone-800 dark:text-stone-200">
+                  {detailTeacher.department} ({detailTeacher.position})
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
+                <span className="text-stone-400 flex items-center gap-1">
+                  <Award size={12} /> Performance Rating
+                </span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">
+                  ★ {detailTeacher.performanceRating?.toFixed(2) || '4.85'} / 5.00
+                </span>
+              </div>
+            </div>
+
+            {/* Academic Qualifications & Specialization */}
+            <div className="space-y-2 text-xs">
+              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10">
+                <div className="flex items-center gap-1.5 font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  <GraduationCap size={14} className="text-brand-500" />
+                  <span>Academic Qualifications & Specialization</span>
+                </div>
+                <p className="text-stone-600 dark:text-stone-300 font-medium">
+                  {detailTeacher.qualifications}
+                </p>
+                <p className="text-stone-400 mt-1">
+                  Focus: {detailTeacher.specialization || 'Broad Secondary Curriculum'}
+                </p>
+              </div>
+            </div>
+
+            {/* Assigned Classes & Subjects */}
+            <div className="space-y-3 text-xs">
               <div>
-                <h5 className="text-xs font-bold text-surface-900 dark:text-surface-100 mb-1.5">Assigned Class Sections</h5>
-                <div className="flex flex-wrap gap-2">
-                  {viewModalData.assignedClasses.map((cls) => (
-                    <span key={cls} className="px-2.5 py-1 rounded-lg text-xs bg-surface-100 dark:bg-surface-700 text-surface-800 dark:text-surface-200 font-medium">
-                      {cls}
-                    </span>
-                  ))}
-                  {viewModalData.assignedClasses.length === 0 && (
-                    <span className="text-xs text-surface-400 italic">No assigned classes</span>
+                <span className="font-semibold text-stone-700 dark:text-stone-300 block mb-1.5">
+                  Assigned Classes ({detailTeacher.assignedClasses?.length || 0}):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {detailTeacher.assignedClasses?.length ? (
+                    detailTeacher.assignedClasses.map((cls) => (
+                      <span
+                        key={cls}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-800/40"
+                      >
+                        {cls}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-stone-400 italic">None assigned</span>
                   )}
                 </div>
               </div>
 
               <div>
-                <h5 className="text-xs font-bold text-surface-900 dark:text-surface-100 mb-1.5">Subjects Taught</h5>
-                <div className="flex flex-wrap gap-2">
-                  {viewModalData.subjects.map((sub) => (
-                    <span key={sub} className="px-2.5 py-1 rounded-lg text-xs bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-300 font-medium border border-brand-200 dark:border-brand-800">
-                      {sub}
-                    </span>
-                  ))}
+                <span className="font-semibold text-stone-700 dark:text-stone-300 block mb-1.5">
+                  Subjects Taught ({detailTeacher.subjectsTaught?.length || 0}):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {detailTeacher.subjectsTaught?.length ? (
+                    detailTeacher.subjectsTaught.map((sub) => (
+                      <span
+                        key={sub}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40"
+                      >
+                        {sub}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-stone-400 italic">None registered</span>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="p-4 bg-surface-50/50 dark:bg-surface-900/30 border-t border-surface-200 dark:border-surface-700 flex justify-end">
+            {/* Modal Actions */}
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-200/60 dark:border-white/10">
               <button
-                onClick={() => setViewModalData(null)}
-                className="px-4 py-2 text-xs font-semibold bg-surface-200 dark:bg-surface-700 text-surface-800 dark:text-surface-200 rounded-xl hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors"
+                onClick={() => {
+                  const t = detailTeacher
+                  setDetailTeacher(null)
+                  handleOpenEdit(t)
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
+              >
+                Edit Record
+              </button>
+              <button
+                onClick={() => setDetailTeacher(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition"
               >
                 Close
               </button>
@@ -494,312 +838,304 @@ export default function TeacherList() {
         </div>
       )}
 
-      {/* UC-TEACHER-03: Create Modal */}
-      {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            id="modal-create-teacher"
-            className="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-surface-200 dark:border-surface-700">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400">
-                  <Plus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-surface-900 dark:text-surface-100">Register Faculty Member</h3>
-                  <p className="text-xs text-surface-500">Add teacher credentials to institutional registry</p>
-                </div>
+      {/* ========================================================= */}
+      {/* MODAL: CREATE / EDIT TEACHER (UC-TEACHER-03 & 04) */}
+      {/* ========================================================= */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-200/60 dark:border-white/10">
+              <div>
+                <h3 className="text-base font-bold text-stone-900 dark:text-white">
+                  {editingTeacher ? 'Edit Faculty Record' : 'Register New Faculty Member'}
+                </h3>
+                <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                  {editingTeacher
+                    ? 'UC-TEACHER-04 (Edit Teacher) • teachers.edit'
+                    : 'UC-TEACHER-03 (Create Teacher) • teachers.create'}
+                </span>
               </div>
               <button
-                onClick={() => setCreateModalOpen(false)}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-600 hover:bg-surface-100 dark:hover:bg-surface-700"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white"
               >
-                <X className="w-4 h-4" />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTeacher} className="p-5 space-y-3.5 text-xs max-h-[80vh] overflow-y-auto">
+            {formError && (
+              <div className="mt-3 p-3 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40 text-xs flex items-center gap-2">
+                <AlertTriangle size={14} className="shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSave} className="space-y-3.5 mt-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
                     First Name *
                   </label>
                   <input
-                    id="input-create-teacher-first-name"
                     type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
                     required
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="e.g. Eleanor"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
                     Last Name *
                   </label>
                   <input
-                    id="input-create-teacher-last-name"
                     type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
                     required
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="e.g. Vance"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    Institutional Email *
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Employee ID
                   </label>
                   <input
-                    id="input-create-teacher-email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                    required
+                    type="text"
+                    value={formData.employeeId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, employeeId: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
+                    placeholder="Auto-generated if empty"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Workload (Weekly Hours)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="40"
+                    value={formData.weeklyTeachingHours}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        weeklyTeachingHours: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="teacher@oakridge.edu"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
                     Phone Number
                   </label>
                   <input
-                    id="input-create-teacher-phone"
                     type="text"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="+1 (555) 000-0000"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
                     Department
                   </label>
                   <select
-                    id="select-create-teacher-department"
                     value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
+                    onChange={(e) =>
+                      setFormData({ ...formData, department: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Science">Science</option>
-                    <option value="Humanities">Humanities</option>
-                    <option value="Languages">Languages</option>
-                    <option value="Arts">Arts</option>
-                    <option value="Physical Education">Physical Education</option>
+                    {DEPARTMENTS.filter((d) => d !== 'All Departments').map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    Position Title
-                  </label>
-                  <input
-                    id="input-create-teacher-position"
-                    type="text"
-                    value={formData.position}
-                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    Degree Qualification
-                  </label>
-                  <input
-                    id="input-create-teacher-qualification"
-                    type="text"
-                    placeholder="M.Sc. Mathematics, Ph.D..."
-                    value={formData.qualification}
-                    onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    Weekly Teaching Hours
-                  </label>
-                  <input
-                    id="input-create-teacher-hours"
-                    type="number"
-                    min={4}
-                    max={40}
-                    value={formData.weeklyTeachingHours}
-                    onChange={(e) => setFormData({ ...formData, weeklyTeachingHours: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-surface-200 dark:border-surface-700 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2 font-semibold text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="btn-submit-create-teacher"
-                  type="submit"
-                  disabled={submitting}
-                  className="flex items-center gap-2 px-4 py-2 font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-xs transition-all disabled:opacity-50"
-                >
-                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Save Faculty</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* UC-TEACHER-04: Edit Modal */}
-      {editModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            id="modal-edit-teacher"
-            className="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-surface-200 dark:border-surface-700">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
-                  <Edit3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-surface-900 dark:text-surface-100">Edit Faculty Profile</h3>
-                  <p className="text-xs text-surface-500">Update academic workload or contact info</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setEditModalData(null)}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-600 hover:bg-surface-100 dark:hover:bg-surface-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateTeacher} className="p-5 space-y-3.5 text-xs max-h-[80vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    First Name *
-                  </label>
-                  <input
-                    id="input-edit-teacher-first-name"
-                    type="text"
-                    value={editForm.firstName}
-                    onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    Last Name *
-                  </label>
-                  <input
-                    id="input-edit-teacher-last-name"
-                    type="text"
-                    value={editForm.lastName}
-                    onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    Institutional Email *
-                  </label>
-                  <input
-                    id="input-edit-teacher-email"
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
                     Status
                   </label>
                   <select
-                    id="select-edit-teacher-status"
-                    value={editForm.status}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
+                    value={formData.status}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        status: e.target.value as any,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
-                    <option value="active">Active</option>
-                    <option value="on-leave">On Leave</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="Active">Active</option>
+                    <option value="On Leave">On Leave</option>
+                    <option value="Inactive">Inactive</option>
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Academic Qualifications
+                </label>
+                <input
+                  type="text"
+                  value={formData.qualifications}
+                  onChange={(e) =>
+                    setFormData({ ...formData, qualifications: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="e.g. M.Sc. in Applied Physics (Columbia University)"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Teaching Specialization
+                </label>
+                <input
+                  type="text"
+                  value={formData.specialization}
+                  onChange={(e) =>
+                    setFormData({ ...formData, specialization: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="e.g. Advanced Thermodynamics, Robotics, AP Prep"
+                />
+              </div>
+
+              {/* Tag Adders for Assigned Classes & Subjects */}
+              <div className="space-y-2 pt-2 border-t border-stone-200/50 dark:border-white/10">
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    Department
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Assigned Classes
                   </label>
-                  <select
-                    id="select-edit-teacher-department"
-                    value={editForm.department}
-                    onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Science">Science</option>
-                    <option value="Humanities">Humanities</option>
-                    <option value="Languages">Languages</option>
-                    <option value="Arts">Arts</option>
-                    <option value="Physical Education">Physical Education</option>
-                  </select>
+                  <div className="flex gap-2 mb-1.5">
+                    <input
+                      type="text"
+                      value={classInput}
+                      onChange={(e) => setClassInput(e.target.value)}
+                      placeholder="e.g. Grade 10-A"
+                      className="flex-1 px-3 py-1.5 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddClass}
+                      className="px-3 py-1.5 rounded-xl bg-stone-200 hover:bg-stone-300 dark:bg-white/10 dark:hover:bg-white/20 font-semibold text-xs"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.assignedClasses.map((cls) => (
+                      <span
+                        key={cls}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-800/40"
+                      >
+                        {cls}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveClass(cls)}
+                          className="hover:text-rose-500"
+                        >
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1">
-                    Weekly Teaching Hours
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Subjects Taught
                   </label>
-                  <input
-                    id="input-edit-teacher-hours"
-                    type="number"
-                    min={4}
-                    max={40}
-                    value={editForm.weeklyTeachingHours}
-                    onChange={(e) => setEditForm({ ...editForm, weeklyTeachingHours: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500/20"
-                  />
+                  <div className="flex gap-2 mb-1.5">
+                    <input
+                      type="text"
+                      value={subjectInput}
+                      onChange={(e) => setSubjectInput(e.target.value)}
+                      placeholder="e.g. Advanced Biology"
+                      className="flex-1 px-3 py-1.5 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSubject}
+                      className="px-3 py-1.5 rounded-xl bg-stone-200 hover:bg-stone-300 dark:bg-white/10 dark:hover:bg-white/20 font-semibold text-xs"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.subjectsTaught.map((sub) => (
+                      <span
+                        key={sub}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40"
+                      >
+                        {sub}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSubject(sub)}
+                          className="hover:text-rose-500"
+                        >
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-surface-200 dark:border-surface-700 flex justify-end gap-2">
+              {/* Form Buttons */}
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-stone-200/60 dark:border-white/10">
                 <button
                   type="button"
-                  onClick={() => setEditModalData(null)}
-                  className="px-4 py-2 font-semibold text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
                 >
                   Cancel
                 </button>
                 <button
-                  id="btn-submit-edit-teacher"
                   type="submit"
-                  disabled={submitting}
-                  className="flex items-center gap-2 px-4 py-2 font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-xs transition-all disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition shadow-sm"
                 >
-                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Save Changes</span>
+                  {editingTeacher ? 'Save Changes' : 'Create Teacher'}
                 </button>
               </div>
             </form>
@@ -807,46 +1143,53 @@ export default function TeacherList() {
         </div>
       )}
 
-      {/* UC-TEACHER-05: Delete Confirmation Modal */}
-      {deleteTarget && (
+      {/* ========================================================= */}
+      {/* MODAL: DELETE CONFIRMATION (UC-TEACHER-05) */}
+      {/* ========================================================= */}
+      {deleteCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            id="modal-delete-teacher"
-            className="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 text-center animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mx-auto flex items-center justify-center mb-4">
-              <AlertCircle className="w-6 h-6" />
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-stone-900 dark:text-white">
+                  Delete Faculty Record
+                </h3>
+                <span className="text-xs text-rose-600 font-mono">
+                  UC-TEACHER-05 • teachers.delete
+                </span>
+              </div>
             </div>
 
-            <h3 className="text-base font-bold text-surface-900 dark:text-surface-100">
-              Remove Faculty Member?
-            </h3>
-            <p className="text-xs text-surface-500 mt-2">
-              Are you sure you want to remove <strong className="text-surface-800 dark:text-surface-200">"{deleteTarget.firstName} {deleteTarget.lastName}"</strong>?
-              {deleteTarget.assignedClasses.length > 0 ? (
-                <span className="block mt-2 font-bold text-rose-600 dark:text-rose-400">
-                  Notice: This faculty member is currently assigned as homeroom advisor to {deleteTarget.assignedClasses.join(', ')}. Please reassign active classes first.
-                </span>
-              ) : (
-                ' This action will detach all associated timetable slots.'
-              )}
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              Are you sure you want to permanently remove{' '}
+              <span className="font-bold text-stone-900 dark:text-white">
+                "{deleteCandidate.name || deleteCandidate.firstName}"
+              </span>{' '}
+              ({deleteCandidate.employeeId}) from the faculty directory?
             </p>
 
-            <div className="mt-6 flex items-center justify-center gap-3">
+            {deleteCandidate.assignedClasses?.length > 0 && (
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300">
+                <span className="font-bold block mb-0.5">Precondition Warning (409 Conflict):</span>
+                This teacher is currently assigned to {deleteCandidate.assignedClasses.length} active classes ({deleteCandidate.assignedClasses.join(', ')}). Deletion will be rejected by the server until reassigned.
+              </div>
+            )}
+
+            <div className="pt-2 flex items-center justify-end gap-2">
               <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-xs font-semibold text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl"
+                onClick={() => setDeleteCandidate(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
               >
                 Cancel
               </button>
               <button
-                id="btn-confirm-delete-teacher"
-                onClick={handleDeleteTeacher}
-                disabled={submitting}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition-all disabled:opacity-50"
+                onClick={handleDelete}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition shadow-sm"
               >
-                {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Confirm Removal</span>
+                Confirm Delete
               </button>
             </div>
           </div>

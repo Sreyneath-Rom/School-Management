@@ -45,11 +45,12 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
   }
 
   // Known Prisma errors -> map to sensible HTTP codes instead of leaking a 500
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === 'P2002') {
-      return res.status(409).json({ success: false, message: 'A record with this value already exists', meta: err.meta })
+  const anyErr = err as any
+  if (err instanceof Prisma.PrismaClientKnownRequestError || anyErr?.code?.startsWith?.('P')) {
+    if (anyErr.code === 'P2002') {
+      return res.status(409).json({ success: false, message: 'A record with this value already exists', meta: anyErr.meta })
     }
-    if (err.code === 'P2025') {
+    if (anyErr.code === 'P2025') {
       return res.status(404).json({ success: false, message: 'Record not found' })
     }
   }

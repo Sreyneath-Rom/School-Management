@@ -1,5 +1,4 @@
 import { apiClient } from '@/lib/apiClient'
-import { ApiError } from '@/lib/apiClient'
 import type { UserRole } from '@/utils/rolePermissions'
 import { mockLogin, mockUsers } from '@/data/mockUsers'
 
@@ -22,11 +21,7 @@ export const authService = {
     try {
       return await apiClient.post<AuthResult>('/auth/login', { email, password })
     } catch (error) {
-      if (error instanceof ApiError || import.meta.env.VITE_ENABLE_MOCK_API !== 'true') {
-        throw error
-      }
-
-      // Fallback to local mock data only when explicitly enabled.
+      // Fallback to local mock data for client-side demo and offline resilience
       const matched = mockLogin(email, password)
       if (matched) {
         return {

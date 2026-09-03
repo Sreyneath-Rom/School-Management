@@ -70,4 +70,6 @@ export const studentService = {
 
   delete: (id: string) => apiClient.delete<void>(`/students/${id}`),
 
+  bulkStatus: (ids: string[], status: 'active' | 'inactive') =>
+    apiClient.post<{ updated: number }>('/users/bulk-status', { ids, status }),
 }

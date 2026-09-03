@@ -259,8 +259,14 @@ function mockApiPlugin(): Plugin {
             )
           }
 
-          // Generic catch-all for any other /api/v1 requests
-          return res.end(JSON.stringify({ success: true, data: null }))
+          // Generic fallback: return 404 so apiClient falls back to mockApiHandler
+          res.statusCode = 404
+          return res.end(
+            JSON.stringify({
+              success: false,
+              message: `Endpoint ${url} not handled by Vite dev server mock; delegating to client mockApiHandler`,
+            })
+          )
         })
       })
     },

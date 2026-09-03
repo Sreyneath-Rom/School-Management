@@ -1,573 +1,623 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import PageHeading from '@/components/common/PageHeading'
-import Button from '@/components/common/Button'
-import { useToast } from '@/components/common/ToastProvider'
-import { useAuth } from '@/context/AuthContext'
-import {
-  gradeService,
-  type ClassGradebook,
-  type StudentGradeEntry,
-  type AssessmentDefinition,
-} from '@/services/gradeService'
 import {
   GraduationCap,
-  BookOpen,
   Award,
-  TrendingUp,
-  Download,
+  BookOpen,
+  Search,
   Save,
   CheckCircle2,
+  TrendingUp,
   AlertTriangle,
-  UserCheck,
-  Percent,
-  Search,
+  FileSpreadsheet,
+  Layers,
   Printer,
   Sparkles,
-  Layers,
-  ArrowUpRight,
+  BarChart2,
 } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { academicService, calculateWeightedGrade } from '@/services/academicService'
+import type { GradeRecord, StudentProgress } from '@/types/academic'
+import { useToast } from '@/components/common/ToastProvider'
 
-export default function Grades() {
-  const { user, role: currentRole } = useAuth()
+export default function GradesPage() {
+  const { user } = useAuth()
   const { showToast } = useToast()
+  const isTeacherOrAdmin = user?.role === 'teacher' || user?.role === 'admin'
+  const isStudent = user?.role === 'student'
 
-  const [activePerspective, setActivePerspective] = useState<'teacher' | 'student'>(() => {
-    return currentRole === 'student' ? 'student' : 'teacher'
-  })
+  const currentStudentId = user?.id || '3'
 
-  // Teacher filters
-  const [selectedClass, setSelectedClass] = useState('Grade 10 - A')
-  const [selectedSubject, setSelectedSubject] = useState('Mathematics')
-  const [selectedTerm, setSelectedTerm] = useState('Term 1')
-  const [searchQuery, setSearchQuery] = useState('')
+  // Teacher / Admin selectors
+  const [selectedClass, setSelectedClass] = useState<string>('Grade 10-A')
+  const [selectedSubject, setSelectedSubject] = useState<string>('Mathematics')
+  const [activeTab, setActiveTab] = useState<'grades' | 'progress'>('grades')
 
-  // Teacher gradebook state
-  const [gradebook, setGradebook] = useState<ClassGradebook | null>(null)
-  const [editedScores, setEditedScores] = useState<Record<string, Record<string, number>>>({})
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  // Grades table data
+  const [gradeRecords, setGradeRecords] = useState<GradeRecord[]>([])
+  const [studentRecords, setStudentRecords] = useState<GradeRecord[]>([])
+  const [progressList, setProgressList] = useState<StudentProgress[]>([])
   const [loading, setLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
+  const [search, setSearch] = useState('')
 
-  // Student report state (UC-GRADEBOOK-03)
-  const [studentReport, setStudentReport] = useState<{
-    entries: StudentGradeEntry[]
-    cumulativeGpa: number
-    overallAverage: number
-  } | null>(null)
-
-  // Load teacher gradebook
-  const loadGradebook = useCallback(async () => {
-    setLoading(true)
+  const loadData = async () => {
     try {
-      const data = await gradeService.getClassGradebook(selectedClass, selectedSubject, selectedTerm)
-      setGradebook(data)
-
-      // Initialize local edited scores map
-      const initialMap: Record<string, Record<string, number>> = {}
-      data.entries.forEach((e) => {
-        initialMap[e.studentId] = { ...e.scores }
-      })
-      setEditedScores(initialMap)
-      setHasUnsavedChanges(false)
-    } catch (e) {
-      console.error(e)
-      showToast('Failed to load gradebook', 'error')
+      setLoading(true)
+      if (isStudent) {
+        const myGrades = await academicService.getStudentGrades(currentStudentId)
+        setStudentRecords(myGrades)
+      } else {
+        const [allGrades, progress] = await Promise.all([
+          academicService.getGrades(selectedClass, selectedSubject),
+          academicService.getStudentProgress(selectedClass),
+        ])
+        setGradeRecords(allGrades)
+        setProgressList(progress)
+      }
+    } catch {
+      showToast('Failed to load academic grades', 'error')
     } finally {
       setLoading(false)
     }
-  }, [selectedClass, selectedSubject, selectedTerm, showToast])
-
-  // Load student personal report (UC-GRADEBOOK-03 & BR-09)
-  const loadStudentReport = useCallback(async () => {
-    setLoading(true)
-    try {
-      const studentId = user?.id || 'stu-101'
-      const report = await gradeService.getStudentReport(studentId, selectedTerm)
-      setStudentReport(report)
-    } catch (e) {
-      console.error(e)
-      showToast('Failed to load academic report', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }, [user?.id, selectedTerm, showToast])
+  }
 
   useEffect(() => {
-    if (activePerspective === 'teacher') {
-      loadGradebook()
-    } else {
-      loadStudentReport()
-    }
-  }, [activePerspective, loadGradebook, loadStudentReport])
+    loadData()
+  }, [selectedClass, selectedSubject, isStudent])
 
-  // Handle score change in teacher table (UC-GRADEBOOK-01)
-  const handleScoreChange = (studentId: string, assessmentId: string, value: string) => {
-    const num = Math.max(0, Math.min(100, Number(value) || 0))
-    setEditedScores((prev) => ({
-      ...prev,
-      [studentId]: {
-        ...(prev[studentId] || {}),
-        [assessmentId]: num,
-      },
-    }))
-    setHasUnsavedChanges(true)
-  }
-
-  // Save changes (UC-GRADEBOOK-01)
-  const handleSaveGradebook = async () => {
-    if (!gradebook) return
-    setIsSaving(true)
-    try {
-      for (const entry of gradebook.entries) {
-        const studentChanges = editedScores[entry.studentId]
-        if (studentChanges) {
-          for (const asId of Object.keys(studentChanges)) {
-            await gradeService.updateStudentScore(
-              entry.studentId,
-              selectedClass,
-              selectedSubject,
-              selectedTerm,
-              asId,
-              studentChanges[asId]
-            )
-          }
+  // Live input update for teacher table
+  const handleScoreChange = (
+    recordId: string,
+    field: 'assignmentScore' | 'quizScore' | 'midtermScore' | 'finalScore',
+    value: number
+  ) => {
+    const clamped = Math.max(0, Math.min(100, isNaN(value) ? 0 : value))
+    setGradeRecords((prev) =>
+      prev.map((rec) => {
+        if (rec.id !== recordId) return rec
+        const updated = { ...rec, [field]: clamped }
+        const { totalScore, letterGrade, gpa } = calculateWeightedGrade(
+          updated.assignmentScore,
+          updated.quizScore,
+          updated.midtermScore,
+          updated.finalScore
+        )
+        return {
+          ...updated,
+          totalWeightedScore: totalScore,
+          letterGrade,
+          gpa,
         }
-      }
-      setHasUnsavedChanges(false)
-      showToast('All student grades saved and recalculated successfully!', 'success')
-      loadGradebook()
-    } catch (e) {
-      console.error(e)
-      showToast('Failed to save grades', 'error')
-    } finally {
-      setIsSaving(false)
+      })
+    )
+  }
+
+  const handleRemarkChange = (recordId: string, remarks: string) => {
+    setGradeRecords((prev) =>
+      prev.map((rec) => (rec.id === recordId ? { ...rec, remarks } : rec))
+    )
+  }
+
+  const handleSaveAllGrades = async () => {
+    try {
+      await academicService.saveBatchGrades(gradeRecords)
+      showToast('All grades successfully saved and published!', 'success')
+      loadData()
+    } catch {
+      showToast('Error saving grade updates', 'error')
     }
   }
 
-  // Filter entries
-  const filteredEntries = useMemo(() => {
-    if (!gradebook) return []
-    if (!searchQuery.trim()) return gradebook.entries
-    const query = searchQuery.toLowerCase()
-    return gradebook.entries.filter(
-      (e) =>
-        e.studentName.toLowerCase().includes(query) ||
-        e.studentNumber.toLowerCase().includes(query)
-    )
-  }, [gradebook, searchQuery])
+  // Calculate Student GPA & Statistics
+  const studentTotalWeightedSum = studentRecords.reduce((sum, r) => sum + r.totalWeightedScore, 0)
+  const studentAverageScore = studentRecords.length > 0 ? (studentTotalWeightedSum / studentRecords.length).toFixed(1) : '0.0'
+  const studentCumulativeGpa =
+    studentRecords.length > 0
+      ? (studentRecords.reduce((sum, r) => sum + r.gpa, 0) / studentRecords.length).toFixed(2)
+      : '0.00'
 
-  // Dynamic calculation for a student based on local edited state (UC-GRADEBOOK-02)
-  const getDynamicStudentMetrics = (studentId: string, assessments: AssessmentDefinition[]) => {
-    const scores = editedScores[studentId] || {}
-    let totalWeightedScore = 0
-    let totalWeight = 0
+  // Teacher Class Statistics
+  const classAvg =
+    gradeRecords.length > 0
+      ? (gradeRecords.reduce((sum, r) => sum + r.totalWeightedScore, 0) / gradeRecords.length).toFixed(1)
+      : '0.0'
+  const countA = gradeRecords.filter((r) => r.letterGrade === 'A').length
+  const countB = gradeRecords.filter((r) => r.letterGrade === 'B').length
+  const countC = gradeRecords.filter((r) => r.letterGrade === 'C').length
+  const countDF = gradeRecords.filter((r) => r.letterGrade === 'D' || r.letterGrade === 'F').length
 
-    assessments.forEach((as) => {
-      const raw = scores[as.id]
-      if (raw !== undefined) {
-        const normalized = (raw / as.maxScore) * 100
-        totalWeightedScore += normalized * (as.weightPercentage / 100)
-        totalWeight += as.weightPercentage
-      }
-    })
-
-    const avg = totalWeight > 0 ? Math.round((totalWeightedScore / totalWeight) * 100) : 0
-    let letter = 'F'
-    if (avg >= 93) letter = 'A'
-    else if (avg >= 90) letter = 'A-'
-    else if (avg >= 87) letter = 'B+'
-    else if (avg >= 83) letter = 'B'
-    else if (avg >= 80) letter = 'B-'
-    else if (avg >= 77) letter = 'C+'
-    else if (avg >= 70) letter = 'C'
-    else if (avg >= 60) letter = 'D'
-
-    return { avg, letter }
-  }
+  const filteredTeacherRecords = gradeRecords.filter((r) => {
+    if (!search.trim()) return true
+    const term = search.toLowerCase()
+    return r.studentName.toLowerCase().includes(term) || r.studentCode.toLowerCase().includes(term)
+  })
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Header with Perspective Switcher */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <PageHeading
-            title="Gradebook & Academic Evaluation"
-            subtitle="Enter grades, calculate weighted terms, and generate verified academic records."
-          />
-        </div>
+    <div id="grades-page-container" className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <PageHeading
+          title={isStudent ? 'My Academic Grade Report' : 'Grades & Academic Evaluations'}
+          subtitle={
+            isStudent
+              ? 'View official weighted grades, GPA calculation, assessment breakdowns, and teacher remarks.'
+              : 'Enter marks, manage evaluation formulas (20% Assignments, 20% Quizzes, 25% Midterm, 35% Final), and monitor student progress.'
+          }
+        />
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Role Switcher */}
-          <div className="flex items-center rounded-2xl glass-sm p-1 border border-text-main/10 shadow-sm">
+        <div className="flex items-center gap-2">
+          {isTeacherOrAdmin && (
             <button
-              onClick={() => setActivePerspective('teacher')}
-              className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
-                activePerspective === 'teacher'
-                  ? 'bg-brand-600 text-white shadow-md'
-                  : 'text-text-main/65 hover:text-text-main hover:bg-text-main/5'
-              }`}
+              id="save-grades-btn"
+              onClick={handleSaveAllGrades}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm transition"
             >
-              <GraduationCap className="h-3.5 w-3.5" />
-              Teacher Gradebook
+              <Save className="w-4 h-4" />
+              Save All Grades
             </button>
-            <button
-              onClick={() => setActivePerspective('student')}
-              className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
-                activePerspective === 'student'
-                  ? 'bg-brand-600 text-white shadow-md'
-                  : 'text-text-main/65 hover:text-text-main hover:bg-text-main/5'
-              }`}
-            >
-              <BookOpen className="h-3.5 w-3.5" />
-              Student Report Card
-            </button>
-          </div>
-
-          {activePerspective === 'teacher' && hasUnsavedChanges && (
-            <Button
-              variant="solid"
-              size="md"
-              disabled={isSaving}
-              onClick={handleSaveGradebook}
-              className="flex items-center gap-2 shadow-emerald-600/30 bg-emerald-600 hover:bg-emerald-700 animate-pulse"
-            >
-              <Save className="h-4 w-4" />
-              {isSaving ? 'Saving...' : 'Save Gradebook Changes'}
-            </Button>
           )}
 
-          {activePerspective === 'student' && (
-            <Button
-              variant="solidOutline"
-              size="md"
-              onClick={() => window.print()}
-              className="flex items-center gap-2 text-xs"
-            >
-              <Printer className="h-4 w-4" />
-              Print Report Card
-            </Button>
-          )}
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 transition"
+          >
+            <Printer className="w-4 h-4" />
+            Print Report
+          </button>
         </div>
       </div>
 
-      {/* =========================================================================
-          VIEW A: TEACHER GRADEBOOK VIEW (UC-GRADEBOOK-01 & UC-GRADEBOOK-02)
-         ========================================================================= */}
-      {activePerspective === 'teacher' && (
-        <div className="space-y-6">
-          {/* Summary Metrics */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-3xl glass-sm p-5 border border-white/20 dark:border-white/10 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-medium text-text-main/60">
-                <span>Class Average</span>
-                <Percent className="h-4 w-4 text-brand-600" />
-              </div>
-              <p className="mt-2 text-2xl font-bold text-text-main">
-                {gradebook?.classAverage || 0}%
-              </p>
-              <p className="mt-0.5 text-xs text-text-main/50">Overall weighted average</p>
-            </div>
-
-            <div className="rounded-3xl glass-sm p-5 border border-white/20 dark:border-white/10 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-medium text-text-main/60">
-                <span>Passing Rate</span>
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              </div>
-              <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {gradebook?.passingRate || 100}%
-              </p>
-              <p className="mt-0.5 text-xs text-text-main/50">Score ≥ 70% threshold</p>
-            </div>
-
-            <div className="rounded-3xl glass-sm p-5 border border-white/20 dark:border-white/10 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-medium text-text-main/60">
-                <span>Roster Count</span>
-                <UserCheck className="h-4 w-4 text-sky-600" />
-              </div>
-              <p className="mt-2 text-2xl font-bold text-text-main">
-                {gradebook?.entries.length || 0} Students
-              </p>
-              <p className="mt-0.5 text-xs text-text-main/50">Enrolled in {selectedClass}</p>
-            </div>
-
-            <div className="rounded-3xl glass-sm p-5 border border-white/20 dark:border-white/10 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-medium text-text-main/60">
-                <span>Grading Formula</span>
-                <Sparkles className="h-4 w-4 text-amber-600" />
-              </div>
-              <p className="mt-2 text-sm font-bold text-text-main">HW 20% • QZ 25% • MID 25% • FIN 30%</p>
-              <p className="mt-0.5 text-xs text-text-main/50">Standard High School Formula</p>
-            </div>
-          </div>
-
-          {/* Controls Bar */}
-          <div className="flex flex-col gap-3 rounded-3xl glass-sm p-4 border border-white/20 dark:border-white/10 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-main/40" />
-              <input
-                type="text"
-                placeholder="Find student by name or ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl bg-white/60 dark:bg-black/20 pl-10 pr-4 py-2 text-xs text-text-main placeholder:text-text-main/40 border border-text-main/10 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="rounded-2xl bg-white/60 dark:bg-black/20 px-3.5 py-2 text-xs font-medium text-text-main border border-text-main/10 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-              >
-                <option value="Grade 10 - A" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Grade 10 - A</option>
-                <option value="Grade 10 - B" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Grade 10 - B</option>
-                <option value="Grade 11 - Advanced" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Grade 11 - Advanced</option>
-                <option value="Grade 12 - STEM" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Grade 12 - STEM</option>
-              </select>
-
-              <select
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="rounded-2xl bg-white/60 dark:bg-black/20 px-3.5 py-2 text-xs font-medium text-text-main border border-text-main/10 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-              >
-                <option value="Mathematics" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Mathematics</option>
-                <option value="Physics" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Physics</option>
-                <option value="Chemistry" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Chemistry</option>
-                <option value="Biology" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Biology</option>
-                <option value="English Literature" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">English Literature</option>
-              </select>
-
-              <select
-                value={selectedTerm}
-                onChange={(e) => setSelectedTerm(e.target.value)}
-                className="rounded-2xl bg-white/60 dark:bg-black/20 px-3.5 py-2 text-xs font-medium text-text-main border border-text-main/10 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-              >
-                <option value="Term 1" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Term 1 (Fall)</option>
-                <option value="Term 2" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Term 2 (Spring)</option>
-                <option value="Term 3" className="text-black dark:text-white bg-slate-100 dark:bg-slate-900">Term 3 (Summer)</option>
-              </select>
-
-              <button
-                type="button"
-                onClick={() => showToast('Gradebook data exported to CSV report.', 'success')}
-                className="flex items-center gap-1.5 rounded-2xl bg-text-main/10 px-3 py-2 text-xs font-semibold text-text-main hover:bg-text-main/15 transition"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Export CSV
-              </button>
-            </div>
-          </div>
-
-          {/* Interactive Gradebook Table */}
-          <div className="rounded-3xl glass-sm p-6 border border-white/20 dark:border-white/10 shadow-sm overflow-x-auto">
-            {loading ? (
-              <div className="py-16 text-center text-sm text-text-main/60">
-                Loading class gradebook data...
-              </div>
-            ) : filteredEntries.length === 0 ? (
-              <div className="py-16 text-center text-sm text-text-main/50">
-                No student grades found for {selectedSubject} in {selectedClass}.
-              </div>
-            ) : (
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-text-main/10 text-text-main/60 uppercase tracking-wider text-[11px]">
-                    <th className="pb-3 font-semibold">Student</th>
-                    <th className="pb-3 font-semibold">ID</th>
-                    {gradebook?.assessments.map((as) => (
-                      <th key={as.id} className="pb-3 font-semibold text-center">
-                        <div>{as.name}</div>
-                        <span className="text-[10px] font-normal lowercase opacity-75">
-                          ({as.weightPercentage}% weight)
-                        </span>
-                      </th>
-                    ))}
-                    <th className="pb-3 font-semibold text-center">Weighted Avg</th>
-                    <th className="pb-3 font-semibold text-center">Letter Grade</th>
-                    <th className="pb-3 font-semibold text-center">Standing</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-text-main/5">
-                  {filteredEntries.map((student) => {
-                    const metrics = getDynamicStudentMetrics(student.studentId, gradebook?.assessments || [])
-                    const isPassing = metrics.avg >= 70
-
-                    return (
-                      <tr key={student.studentId} className="hover:bg-text-main/5 transition">
-                        {/* Student Name */}
-                        <td className="py-3.5 font-bold text-text-main flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600/20 text-brand-700 dark:text-brand-300 font-extrabold text-xs">
-                            {student.studentName.charAt(0)}
-                          </div>
-                          <div>
-                            <div>{student.studentName}</div>
-                            <span className="text-[10px] text-text-main/50 font-normal">{student.class}</span>
-                          </div>
-                        </td>
-
-                        {/* Student Number */}
-                        <td className="py-3.5 font-mono text-[11px] text-text-main/60">
-                          {student.studentNumber}
-                        </td>
-
-                        {/* Assessment score inputs (UC-GRADEBOOK-01) */}
-                        {gradebook?.assessments.map((as) => {
-                          const currentScore = editedScores[student.studentId]?.[as.id] ?? student.scores[as.id] ?? 0
-                          return (
-                            <td key={as.id} className="py-3.5 text-center">
-                              <input
-                                type="number"
-                                min={0}
-                                max={100}
-                                value={currentScore}
-                                onChange={(e) => handleScoreChange(student.studentId, as.id, e.target.value)}
-                                className="w-16 rounded-xl bg-white/70 dark:bg-black/40 px-2 py-1 text-center font-bold text-text-main border border-text-main/15 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-                              />
-                            </td>
-                          )
-                        })}
-
-                        {/* Calculated Average (UC-GRADEBOOK-02) */}
-                        <td className="py-3.5 text-center font-extrabold text-sm text-text-main">
-                          {metrics.avg}%
-                        </td>
-
-                        {/* Letter Grade */}
-                        <td className="py-3.5 text-center">
-                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-brand-500/15 font-bold text-brand-700 dark:text-brand-300">
-                            {metrics.letter}
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="py-3.5 text-center">
-                          {isPassing ? (
-                            <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                              Passing
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-rose-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-                              At Risk
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
+      {/* Weighting Formula Banner */}
+      <div className="glass-sm rounded-2xl p-4 border border-brand-200/70 dark:border-brand-900/60 bg-brand-50/40 dark:bg-brand-950/20 flex flex-wrap items-center justify-between gap-4 text-xs">
+        <div className="flex items-center gap-2 text-brand-900 dark:text-brand-200">
+          <Sparkles className="w-4 h-4 text-brand-600 shrink-0" />
+          <span className="font-semibold">Standard High School Assessment Weighting:</span>
+          <span>Assignment (20%) + Quiz (20%) + Midterm (25%) + Final (35%) = 100%</span>
         </div>
-      )}
 
-      {/* =========================================================================
-          VIEW B: STUDENT REPORT CARD VIEW (UC-GRADEBOOK-03 & BR-09)
-         ========================================================================= */}
-      {activePerspective === 'student' && (
+        <div className="flex items-center gap-3 font-medium text-slate-600 dark:text-slate-300">
+          <span>A: 90-100% (4.0)</span>
+          <span>B: 80-89% (3.0)</span>
+          <span>C: 70-79% (2.0)</span>
+          <span>D: 60-69% (1.0)</span>
+          <span>F: &lt;60% (0.0)</span>
+        </div>
+      </div>
+
+      {/* ==================================================== */}
+      {/* STUDENT VIEW                                         */}
+      {/* ==================================================== */}
+      {isStudent ? (
         <div className="space-y-6">
           {/* Student Overview Cards */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-3xl glass-sm p-5 border border-white/20 dark:border-white/10 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-medium text-text-main/60">
-                <span>Cumulative GPA</span>
-                <Award className="h-4 w-4 text-brand-600" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800">
+              <div className="flex items-center justify-between text-slate-500 mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider">Cumulative GPA</span>
+                <Award className="w-4 h-4 text-amber-500" />
               </div>
-              <p className="mt-2 text-3xl font-black text-brand-600">
-                {studentReport?.cumulativeGpa || 3.9} / 4.0
-              </p>
-              <p className="mt-0.5 text-xs text-text-main/50">Honor Roll Standing</p>
+              <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
+                {studentCumulativeGpa} <span className="text-sm font-normal text-slate-400">/ 4.00</span>
+              </div>
+              <span className="inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                Academic Honor Roll
+              </span>
             </div>
 
-            <div className="rounded-3xl glass-sm p-5 border border-white/20 dark:border-white/10 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-medium text-text-main/60">
-                <span>Average Performance</span>
-                <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800">
+              <div className="flex items-center justify-between text-slate-500 mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider">Overall Weighted Average</span>
+                <TrendingUp className="w-4 h-4 text-brand-500" />
               </div>
-              <p className="mt-2 text-3xl font-black text-emerald-600 dark:text-emerald-400">
-                {studentReport?.overallAverage || 92}%
-              </p>
-              <p className="mt-0.5 text-xs text-text-main/50">Across all enrolled subjects</p>
+              <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
+                {studentAverageScore}%
+              </div>
+              <span className="text-xs text-slate-400 mt-2 block">
+                Across {studentRecords.length} enrolled subjects
+              </span>
             </div>
 
-            <div className="rounded-3xl glass-sm p-5 border border-white/20 dark:border-white/10 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-medium text-text-main/60">
-                <span>Enrolled Subjects</span>
-                <BookOpen className="h-4 w-4 text-sky-600" />
+            <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800">
+              <div className="flex items-center justify-between text-slate-500 mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider">Attendance Standing</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               </div>
-              <p className="mt-2 text-3xl font-black text-text-main">
-                {studentReport?.entries.length || 3} Courses
-              </p>
-              <p className="mt-0.5 text-xs text-text-main/50">Full-time Academic Track</p>
-            </div>
-
-            <div className="rounded-3xl glass-sm p-5 border border-white/20 dark:border-white/10 shadow-sm">
-              <div className="flex items-center justify-between text-xs font-medium text-text-main/60">
-                <span>Data Privacy</span>
-                <CheckCircle2 className="h-4 w-4 text-teal-600" />
+              <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
+                96.5%
               </div>
-              <div className="mt-2 flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-teal-500"></span>
-                <p className="text-sm font-semibold text-text-main">BR-09 Verified</p>
-              </div>
-              <p className="mt-0.5 text-xs text-text-main/50">Access restricted to student only</p>
+              <span className="text-xs text-slate-400 mt-2 block">
+                Class Grade 10-A • 0 Unexcused Absences
+              </span>
             </div>
           </div>
 
-          {/* Subject-by-Subject Academic Breakdown Cards */}
-          <div className="space-y-4">
-            <h3 className="text-base font-bold text-text-main">Term Performance by Subject</h3>
+          {/* Student Subject Grades Table */}
+          <div className="glass-sm rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-brand-600" />
+                Semester Grade Breakdown
+              </h3>
+              <span className="text-xs text-slate-400">Term 1 (2026-2027)</span>
+            </div>
 
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {studentReport?.entries.map((entry) => (
-                <div
-                  key={entry.subject}
-                  className="rounded-3xl glass-sm p-6 border border-white/20 dark:border-white/10 shadow-sm space-y-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="rounded-full bg-brand-500/15 px-2.5 py-0.5 text-xs font-semibold text-brand-700 dark:text-brand-300">
-                        {entry.subject}
-                      </span>
-                      <h4 className="mt-2 text-lg font-bold text-text-main">{entry.subject}</h4>
-                    </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 text-[11px] font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 dark:border-slate-700/80">
+                  <tr>
+                    <th className="py-3.5 px-4">Subject</th>
+                    <th className="py-3.5 px-4 text-center">Assignment (20%)</th>
+                    <th className="py-3.5 px-4 text-center">Quiz (20%)</th>
+                    <th className="py-3.5 px-4 text-center">Midterm (25%)</th>
+                    <th className="py-3.5 px-4 text-center">Final (35%)</th>
+                    <th className="py-3.5 px-4 text-center">Total Score</th>
+                    <th className="py-3.5 px-4 text-center">Letter Grade</th>
+                    <th className="py-3.5 px-4 text-center">GPA</th>
+                    <th className="py-3.5 px-4">Instructor Remarks</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {studentRecords.map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                      <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                        {r.subjectName}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">{r.assignmentScore}%</td>
+                      <td className="py-3.5 px-4 text-center">{r.quizScore}%</td>
+                      <td className="py-3.5 px-4 text-center">{r.midtermScore}%</td>
+                      <td className="py-3.5 px-4 text-center">{r.finalScore}%</td>
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-slate-100">
+                        {r.totalWeightedScore}%
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-xs ${
+                            r.letterGrade === 'A'
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                              : r.letterGrade === 'B'
+                              ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                          }`}
+                        >
+                          {r.letterGrade}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center font-semibold text-slate-800 dark:text-slate-200">
+                        {r.gpa.toFixed(1)}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 italic max-w-xs truncate">
+                        {r.remarks || 'Consistent academic performance.'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ==================================================== */
+        /* TEACHER / ADMIN VIEW                                 */
+        /* ==================================================== */
+        <div className="space-y-6">
+          {/* Navigation Tabs (Grade Entry vs Student Progress) */}
+          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+            <button
+              onClick={() => setActiveTab('grades')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+                activeTab === 'grades'
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Grade Roster Entry
+            </button>
+            <button
+              onClick={() => setActiveTab('progress')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+                activeTab === 'progress'
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Student Progress Analytics
+            </button>
+          </div>
 
-                    <div className="flex flex-col items-center justify-center rounded-2xl bg-brand-600 text-white h-12 w-12 shadow-md">
-                      <span className="text-lg font-black">{entry.letterGrade}</span>
-                      <span className="text-[9px] font-bold opacity-80">{entry.calculatedAverage}%</span>
-                    </div>
+          {activeTab === 'grades' ? (
+            <>
+              {/* Class Summary KPIs */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-xs text-slate-500 block">Class Average</span>
+                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+                    {classAvg}%
                   </div>
+                  <span className="text-[11px] text-slate-400">{selectedClass} • {selectedSubject}</span>
+                </div>
 
-                  {/* Components */}
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-text-main/70">
-                      <span>Homework (20%)</span>
-                      <span className="font-bold text-text-main">{entry.scores['as-hw'] || 0}/100</span>
-                    </div>
-                    <div className="flex items-center justify-between text-text-main/70">
-                      <span>Quizzes (25%)</span>
-                      <span className="font-bold text-text-main">{entry.scores['as-quiz'] || 0}/100</span>
-                    </div>
-                    <div className="flex items-center justify-between text-text-main/70">
-                      <span>Midterm Exam (25%)</span>
-                      <span className="font-bold text-text-main">{entry.scores['as-mid'] || 0}/100</span>
-                    </div>
-                    <div className="flex items-center justify-between text-text-main/70">
-                      <span>Final Exam (30%)</span>
-                      <span className="font-bold text-text-main">{entry.scores['as-fin'] || 0}/100</span>
-                    </div>
+                <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-xs text-slate-500 block">Grade 'A' Students</span>
+                  <div className="text-2xl font-bold text-emerald-600 mt-1">{countA}</div>
+                  <span className="text-[11px] text-slate-400">90% - 100% threshold</span>
+                </div>
+
+                <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-xs text-slate-500 block">Grade 'B' Students</span>
+                  <div className="text-2xl font-bold text-sky-600 mt-1">{countB}</div>
+                  <span className="text-[11px] text-slate-400">80% - 89% threshold</span>
+                </div>
+
+                <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-xs text-slate-500 block">Needs Support (C/D/F)</span>
+                  <div className="text-2xl font-bold text-amber-600 mt-1">{countC + countDF}</div>
+                  <span className="text-[11px] text-slate-400">&lt; 80% threshold</span>
+                </div>
+              </div>
+
+              {/* Class & Subject Selector */}
+              <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">
+                <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    <Layers className="w-4 h-4 text-brand-600" />
+                    Class:
                   </div>
+                  <select
+                    id="grade-class-selector"
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    className="text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-medium"
+                  >
+                    <option value="Grade 10-A">Grade 10-A</option>
+                    <option value="Grade 10-B">Grade 10-B</option>
+                    <option value="Grade 11-A">Grade 11-A</option>
+                  </select>
 
-                  <div className="border-t border-text-main/10 pt-3 flex items-center justify-between text-xs">
-                    <span className="text-text-main/50">GPA Equivalent: <strong className="text-text-main">{entry.gpa?.toFixed(1)}</strong></span>
-                    <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                      Good Standing
-                    </span>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 ml-2">
+                    <BookOpen className="w-4 h-4 text-brand-600" />
+                    Subject:
+                  </div>
+                  <select
+                    id="grade-subject-selector"
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    className="text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-medium"
+                  >
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Physics">Physics</option>
+                    <option value="English Literature">English Literature</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Computer Science">Computer Science</option>
+                  </select>
+                </div>
+
+                <div className="relative w-full md:w-64">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search student name or ID..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60"
+                  />
+                </div>
+              </div>
+
+              {/* Editable Grade Matrix Table */}
+              <div className="glass-sm rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                      Roster Grade Entries ({filteredTeacherRecords.length} Students)
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Type scores (0 - 100). Total weighted score and letter grade recalculate in real-time.
+                    </p>
                   </div>
                 </div>
-              ))}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                    <thead className="bg-slate-50 dark:bg-slate-800/50 text-[11px] font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 dark:border-slate-700/80">
+                      <tr>
+                        <th className="py-3 px-4">Student</th>
+                        <th className="py-3 px-3 text-center w-28">Assignment (20%)</th>
+                        <th className="py-3 px-3 text-center w-28">Quiz (20%)</th>
+                        <th className="py-3 px-3 text-center w-28">Midterm (25%)</th>
+                        <th className="py-3 px-3 text-center w-28">Final (35%)</th>
+                        <th className="py-3 px-4 text-center">Total (100%)</th>
+                        <th className="py-3 px-4 text-center">Letter</th>
+                        <th className="py-3 px-4 text-center">GPA</th>
+                        <th className="py-3 px-4">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                      {filteredTeacherRecords.map((rec) => (
+                        <tr key={rec.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">
+                              {rec.studentName}
+                            </div>
+                            <div className="text-[11px] text-slate-400">{rec.studentCode}</div>
+                          </td>
+
+                          {/* Assignment Input */}
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={rec.assignmentScore}
+                              onChange={(e) =>
+                                handleScoreChange(rec.id, 'assignmentScore', Number(e.target.value))
+                              }
+                              className="w-16 px-2 py-1.5 text-center text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-1 focus:ring-brand-500"
+                            />
+                          </td>
+
+                          {/* Quiz Input */}
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={rec.quizScore}
+                              onChange={(e) =>
+                                handleScoreChange(rec.id, 'quizScore', Number(e.target.value))
+                              }
+                              className="w-16 px-2 py-1.5 text-center text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-1 focus:ring-brand-500"
+                            />
+                          </td>
+
+                          {/* Midterm Input */}
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={rec.midtermScore}
+                              onChange={(e) =>
+                                handleScoreChange(rec.id, 'midtermScore', Number(e.target.value))
+                              }
+                              className="w-16 px-2 py-1.5 text-center text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-1 focus:ring-brand-500"
+                            />
+                          </td>
+
+                          {/* Final Input */}
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={rec.finalScore}
+                              onChange={(e) =>
+                                handleScoreChange(rec.id, 'finalScore', Number(e.target.value))
+                              }
+                              className="w-16 px-2 py-1.5 text-center text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-1 focus:ring-brand-500"
+                            />
+                          </td>
+
+                          {/* Computed Total Score */}
+                          <td className="py-3 px-4 text-center font-bold text-slate-900 dark:text-slate-100">
+                            {rec.totalWeightedScore}%
+                          </td>
+
+                          {/* Computed Letter Grade */}
+                          <td className="py-3 px-4 text-center">
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-xs ${
+                                rec.letterGrade === 'A'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : rec.letterGrade === 'B'
+                                  ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+                                  : rec.letterGrade === 'C'
+                                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                              }`}
+                            >
+                              {rec.letterGrade}
+                            </span>
+                          </td>
+
+                          {/* Computed GPA */}
+                          <td className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">
+                            {rec.gpa.toFixed(1)}
+                          </td>
+
+                          {/* Remarks */}
+                          <td className="py-2.5 px-4">
+                            <input
+                              type="text"
+                              placeholder="Add notes..."
+                              value={rec.remarks || ''}
+                              onChange={(e) => handleRemarkChange(rec.id, e.target.value)}
+                              className="w-full px-2.5 py-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Student Progress Tab (UC-PROGRESS-01) */
+            <div className="glass-sm rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4 text-brand-600" />
+                    Student Holistic Academic Progress ({selectedClass})
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Aggregating attendance, homework completion rate, and examination performance.
+                  </p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-[11px] font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 dark:border-slate-700/80">
+                    <tr>
+                      <th className="py-3 px-4">Student</th>
+                      <th className="py-3 px-4 text-center">Attendance</th>
+                      <th className="py-3 px-4 text-center">Homework Completion</th>
+                      <th className="py-3 px-4 text-center">Assignment Avg</th>
+                      <th className="py-3 px-4 text-center">Quiz Avg</th>
+                      <th className="py-3 px-4 text-center">Midterm Avg</th>
+                      <th className="py-3 px-4 text-center">Final Avg</th>
+                      <th className="py-3 px-4 text-center">Overall GPA</th>
+                      <th className="py-3 px-4 text-center">Academic Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {progressList.map((prog) => (
+                      <tr key={prog.studentId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            {prog.studentName}
+                          </div>
+                          <div className="text-[11px] text-slate-400">{prog.studentCode}</div>
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-medium">
+                          {prog.attendanceRate}%
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-medium">
+                          {prog.homeworkCompletionRate}%
+                        </td>
+                        <td className="py-3.5 px-4 text-center">{prog.assignmentAverage}%</td>
+                        <td className="py-3.5 px-4 text-center">{prog.quizAverage}%</td>
+                        <td className="py-3.5 px-4 text-center">{prog.midtermAverage}%</td>
+                        <td className="py-3.5 px-4 text-center">{prog.finalAverage}%</td>
+                        <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-slate-100">
+                          {prog.overallGpa.toFixed(2)}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold ${
+                              prog.academicTrend === 'improving'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : prog.academicTrend === 'stable'
+                                ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
+                                : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                            }`}
+                          >
+                            {prog.academicTrend === 'improving' && <TrendingUp className="w-3 h-3" />}
+                            {prog.academicTrend === 'needs_support' && <AlertTriangle className="w-3 h-3" />}
+                            {prog.academicTrend === 'improving'
+                              ? 'Excelling'
+                              : prog.academicTrend === 'stable'
+                              ? 'Steady'
+                              : 'Needs Support'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

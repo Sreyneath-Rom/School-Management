@@ -12,14 +12,13 @@ import { userService, type CreateUserPayload, type UpdateUserPayload } from '@/s
 import type { SystemUser } from '@/types/user'
 import { useNotification } from '@/hooks/useNotification'
 import { ApiError } from '@/lib/apiClient'
-import { roleService } from '@/services/roleService'
 
 const ROLE_TABS: { id: string; label: string }[] = [
   { id: 'all', label: 'All Users' },
   { id: 'admin', label: 'Admins' },
   { id: 'teacher', label: 'Teachers' },
   { id: 'student', label: 'Students' },
-  { id: 'parent', label: 'Parents' },
+  { id: 'mazer', label: 'Mazers' },
 ]
 
 export default function UsersFeature() {
@@ -32,7 +31,6 @@ export default function UsersFeature() {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table')
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
-  const [roleIds, setRoleIds] = useState<Partial<Record<SystemUser['role'], string>>>({})
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false)
   const [isSubmittingUser, setIsSubmittingUser] = useState(false)
@@ -58,11 +56,6 @@ export default function UsersFeature() {
 
   useEffect(() => {
     loadUsers()
-    roleService.getRoles().then((roles) => {
-      setRoleIds(Object.fromEntries(roles.map((role) => [role.name, role.id])))
-    }).catch(() => {
-      setRoleIds({})
-    })
   }, [])
 
   const filteredUsers = useMemo(() => {
@@ -132,8 +125,8 @@ export default function UsersFeature() {
   const handleConfirmResetPassword = async (userId: string, newPassword?: string) => {
     setIsResettingPassword(true)
     try {
-      await userService.resetPassword(userId, newPassword)
-      success('Password reset successfully')
+      const res = await userService.resetPassword(userId, newPassword)
+      success(res.message || 'Password reset successfully')
       setResetModalUser(null)
     } catch (err) {
       notifyError(err instanceof ApiError ? err.message : 'Failed to reset password')
@@ -145,8 +138,10 @@ export default function UsersFeature() {
   const handleBulkStatus = async (status: 'active' | 'inactive') => {
     if (selectedUserIds.length === 0) return
     try {
-      await Promise.all(selectedUserIds.map((id) => userService.update(id, { status })))
-      setUsers((prev) => prev.map((u) => (selectedUserIds.includes(u.id) ? { ...u, status } : u)))
+      await userService.bulkStatusUpdate(selectedUserIds, status)
+      setUsers((prev) =>
+        prev.map((u) => (selectedUserIds.includes(u.id) ? { ...u, status } : u))
+      )
       success(`Updated status for ${selectedUserIds.length} users`)
       setSelectedUserIds([])
     } catch {
@@ -211,7 +206,7 @@ export default function UsersFeature() {
       <UserStats users={users} />
 
       {/* Filter and View Bar */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-3xl glass-sm p-4 border border-text-main/10">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-[24px] glass-sm p-4 border border-text-main/10">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-48 sm:min-w-64">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-main/40" />
@@ -326,7 +321,7 @@ export default function UsersFeature() {
           <p className="text-sm font-medium text-text-main/60">Loading user accounts...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-3xl bg-error/10 border border-error/20 p-6 text-center text-error">
+        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load users</p>
           <p className="text-xs">{loadError}</p>
         </div>
@@ -367,7 +362,6 @@ export default function UsersFeature() {
           setUserToEdit(null)
         }}
         onSubmit={handleCreateOrUpdateUser}
-        roleIds={roleIds}
       />
 
       {/* Reset Password Modal */}

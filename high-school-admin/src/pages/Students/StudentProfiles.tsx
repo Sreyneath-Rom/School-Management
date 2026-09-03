@@ -156,21 +156,21 @@ export default function StudentProfiles() {
 
         {/* Quick KPI Counters */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-22.5">
+          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-[90px]">
             <div className="text-[10px] text-stone-400 font-bold uppercase">Cum. GPA</div>
             <div className="text-lg font-black text-brand-600 dark:text-brand-400">
               {student.gpa}
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-22.5">
+          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-[90px]">
             <div className="text-[10px] text-stone-400 font-bold uppercase">Attendance</div>
             <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
               {student.attendanceRate}%
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-22.5">
+          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-center min-w-[90px]">
             <div className="text-[10px] text-stone-400 font-bold uppercase">Fee Dues</div>
             <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
               {student.feesStatus}

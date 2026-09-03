@@ -81,7 +81,7 @@ export default function SchoolSetup() {
       return !!form.name.trim();
     }
 
-    if (stepIndex === 2) {
+    if (stepIndex === 1) {
       const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 
       return !!form.address.trim() && !!form.phone.trim() && emailValid;

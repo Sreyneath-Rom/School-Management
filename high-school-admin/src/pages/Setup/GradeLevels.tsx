@@ -1,644 +1,613 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  Layers,
+  GraduationCap,
   Plus,
+  Search,
+  Users,
+  BookOpen,
+  Award,
   Edit3,
   Trash2,
-  Eye,
   X,
-  Loader2,
   AlertCircle,
-  GraduationCap,
-  Users,
-  Award,
-  CheckCircle2,
+  TrendingUp,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
-import {
-  gradeLevelService,
-  type GradeLevelRecord,
-  type CreateGradeLevelPayload,
-  type UpdateGradeLevelPayload,
-} from '@/services/gradeLevelService'
+
+export interface GradeLevel {
+  id: string
+  code: string // e.g. "G-10"
+  name: string // e.g. "Grade 10"
+  alias: string // e.g. "Sophomore"
+  levelOrder: number // e.g. 10
+  minPassingScore: number // e.g. 60
+  headCoordinator: string
+  totalClasses: number
+  enrolledStudents: number
+  maxCapacity: number
+  averageGpa: number
+  status: 'Active' | 'Archived'
+  description: string
+}
+
+const INITIAL_GRADE_LEVELS: GradeLevel[] = [
+  {
+    id: 'gl-9',
+    code: 'G-09',
+    name: 'Grade 9',
+    alias: 'Freshman',
+    levelOrder: 9,
+    minPassingScore: 60,
+    headCoordinator: 'Sarah Parker',
+    totalClasses: 4,
+    enrolledStudents: 124,
+    maxCapacity: 140,
+    averageGpa: 3.35,
+    status: 'Active',
+    description: 'Foundational secondary curriculum focusing on core sciences, algebra, and world civilizations.',
+  },
+  {
+    id: 'gl-10',
+    code: 'G-10',
+    name: 'Grade 10',
+    alias: 'Sophomore',
+    levelOrder: 10,
+    minPassingScore: 60,
+    headCoordinator: 'Dr. John Whitfield',
+    totalClasses: 4,
+    enrolledStudents: 132,
+    maxCapacity: 140,
+    averageGpa: 3.48,
+    status: 'Active',
+    description: 'Intermediate secondary tier with chemistry, world history, geometry, and elective introductions.',
+  },
+  {
+    id: 'gl-11',
+    code: 'G-11',
+    name: 'Grade 11',
+    alias: 'Junior',
+    levelOrder: 11,
+    minPassingScore: 65,
+    headCoordinator: 'Prof. Marcus Kane',
+    totalClasses: 3,
+    enrolledStudents: 110,
+    maxCapacity: 120,
+    averageGpa: 3.52,
+    status: 'Active',
+    description: 'Upper-division track with AP coursework options, advanced calculus, and university preparatory programs.',
+  },
+  {
+    id: 'gl-12',
+    code: 'G-12',
+    name: 'Grade 12',
+    alias: 'Senior',
+    levelOrder: 12,
+    minPassingScore: 65,
+    headCoordinator: 'Elena Vance',
+    totalClasses: 3,
+    enrolledStudents: 98,
+    maxCapacity: 120,
+    averageGpa: 3.65,
+    status: 'Active',
+    description: 'Senior capstone tier preparing for college matriculation, honors thesis research, and national examinations.',
+  },
+]
 
 export default function GradeLevels() {
   const { showToast } = useToast()
-  const [grades, setGrades] = useState<GradeLevelRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [divisionFilter, setDivisionFilter] = useState('All')
+  const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>(INITIAL_GRADE_LEVELS)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Archived'>('All')
 
   // Modals
-  const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [viewModalData, setViewModalData] = useState<GradeLevelRecord | null>(null)
-  const [editModalData, setEditModalData] = useState<GradeLevelRecord | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<GradeLevelRecord | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [editingGradeLevel, setEditingGradeLevel] = useState<GradeLevel | null>(null)
+  const [deleteCandidate, setDeleteCandidate] = useState<GradeLevel | null>(null)
 
-  // Forms
-  const [formData, setFormData] = useState<CreateGradeLevelPayload>({
+  // Form State
+  const [formData, setFormData] = useState({
+    code: '',
     name: '',
-    numericLevel: 9,
-    division: 'High School',
-    minAge: 14,
-    maxAge: 15,
-    requiredCredits: 20,
+    alias: '',
+    levelOrder: 9,
+    minPassingScore: 60,
+    headCoordinator: '',
+    maxCapacity: 140,
     description: '',
+    status: 'Active' as 'Active' | 'Archived',
   })
 
-  const [editForm, setEditForm] = useState<UpdateGradeLevelPayload>({
-    name: '',
-    numericLevel: 9,
-    division: 'High School',
-    minAge: 14,
-    maxAge: 15,
-    requiredCredits: 20,
-    status: 'Active',
-    description: '',
-  })
-
-  const loadGrades = async () => {
-    try {
-      setLoading(true)
-      const data = await gradeLevelService.list()
-      setGrades(data)
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to load grade levels', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadGrades()
-  }, [])
-
-  // UC-GRADE-03: Create
-  const handleCreateGrade = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.name.trim()) {
-      showToast('Please specify grade level name', 'error')
-      return
-    }
-
-    try {
-      setSubmitting(true)
-      await gradeLevelService.create(formData)
-      showToast(`Grade level "${formData.name}" created successfully`, 'success')
-      setCreateModalOpen(false)
-      setFormData({
-        name: '',
-        numericLevel: 9,
-        division: 'High School',
-        minAge: 14,
-        maxAge: 15,
-        requiredCredits: 20,
-        description: '',
-      })
-      await loadGrades()
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to create grade level', 'error')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  // UC-GRADE-04: Edit
-  const openEditModal = (grade: GradeLevelRecord) => {
-    setEditModalData(grade)
-    setEditForm({
-      name: grade.name,
-      numericLevel: grade.numericLevel,
-      division: grade.division,
-      minAge: grade.minAge,
-      maxAge: grade.maxAge,
-      requiredCredits: grade.requiredCredits,
-      status: grade.status,
-      description: grade.description || '',
+  const resetForm = () => {
+    setFormData({
+      code: '',
+      name: '',
+      alias: '',
+      levelOrder: 9,
+      minPassingScore: 60,
+      headCoordinator: '',
+      maxCapacity: 140,
+      description: '',
+      status: 'Active',
     })
+    setEditingGradeLevel(null)
   }
 
-  const handleUpdateGrade = async (e: React.FormEvent) => {
+  const handleOpenCreate = () => {
+    resetForm()
+    setIsCreateModalOpen(true)
+  }
+
+  const handleOpenEdit = (gl: GradeLevel) => {
+    setEditingGradeLevel(gl)
+    setFormData({
+      code: gl.code,
+      name: gl.name,
+      alias: gl.alias,
+      levelOrder: gl.levelOrder,
+      minPassingScore: gl.minPassingScore,
+      headCoordinator: gl.headCoordinator,
+      maxCapacity: gl.maxCapacity,
+      description: gl.description,
+      status: gl.status,
+    })
+    setIsCreateModalOpen(true)
+  }
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editModalData) return
-    if (!editForm.name?.trim()) {
-      showToast('Please provide grade name', 'error')
+    if (!formData.name.trim() || !formData.code.trim()) {
+      showToast('Please provide both a grade code and name', 'error')
       return
     }
 
-    try {
-      setSubmitting(true)
-      await gradeLevelService.update(editModalData.id, editForm)
-      showToast(`Grade level "${editForm.name}" updated successfully`, 'success')
-      setEditModalData(null)
-      await loadGrades()
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to update grade level', 'error')
-    } finally {
-      setSubmitting(false)
+    if (editingGradeLevel) {
+      // Update
+      setGradeLevels((prev) =>
+        prev.map((g) =>
+          g.id === editingGradeLevel.id
+            ? {
+                ...g,
+                ...formData,
+              }
+            : g
+        )
+      )
+      showToast(`Grade level "${formData.name}" updated successfully`, 'success')
+    } else {
+      // Create
+      const newGradeLevel: GradeLevel = {
+        id: `gl-${Date.now()}`,
+        ...formData,
+        totalClasses: 0,
+        enrolledStudents: 0,
+        averageGpa: 3.0,
+      }
+      setGradeLevels((prev) => [...prev, newGradeLevel].sort((a, b) => a.levelOrder - b.levelOrder))
+      showToast(`Grade level "${formData.name}" added to academic structure`, 'success')
     }
+
+    setIsCreateModalOpen(false)
+    resetForm()
   }
 
-  // UC-GRADE-05: Delete
-  const handleDeleteGrade = async () => {
-    if (!deleteTarget) return
-    try {
-      setSubmitting(true)
-      await gradeLevelService.delete(deleteTarget.id)
-      showToast(`Grade level "${deleteTarget.name}" deleted successfully`, 'success')
-      setDeleteTarget(null)
-      await loadGrades()
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to delete grade level', 'error')
-    } finally {
-      setSubmitting(false)
+  const handleDelete = () => {
+    if (!deleteCandidate) return
+
+    // Precondition check: dependency rules
+    if (deleteCandidate.enrolledStudents > 0 || deleteCandidate.totalClasses > 0) {
+      showToast(
+        `Cannot delete "${deleteCandidate.name}": has ${deleteCandidate.totalClasses} active classes and ${deleteCandidate.enrolledStudents} students. Deactivate or reassign first.`,
+        'error'
+      )
+      setDeleteCandidate(null)
+      return
     }
+
+    setGradeLevels((prev) => prev.filter((g) => g.id !== deleteCandidate.id))
+    showToast(`Grade level "${deleteCandidate.name}" removed successfully`, 'success')
+    setDeleteCandidate(null)
   }
 
-  const filteredGrades = grades.filter((g) => {
-    if (divisionFilter === 'All') return true
-    return g.division === divisionFilter
+  const filteredGrades = gradeLevels.filter((g) => {
+    const matchesSearch =
+      g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.alias.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.headCoordinator.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === 'All' || g.status === statusFilter
+    return matchesSearch && matchesStatus
   })
+
+  // Total summary statistics
+  const totalStudents = gradeLevels.reduce((acc, curr) => acc + curr.enrolledStudents, 0)
+  const totalClasses = gradeLevels.reduce((acc, curr) => acc + curr.totalClasses, 0)
+  const avgSystemGpa = (
+    gradeLevels.reduce((acc, curr) => acc + curr.averageGpa, 0) / (gradeLevels.length || 1)
+  ).toFixed(2)
 
   return (
-    <div id="grade-levels-page" className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 pb-12">
+      {/* Page Heading with Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeading
-          title="Grade Levels & Divisions"
-          description="Manage educational stage boundaries, numeric standards, graduation credit thresholds, and age criteria."
+          title="Grade / Level Management"
+          subtitle="Manage academic tiers, grade hierarchies, passing benchmarks, and class enrollment quotas (UC-GRADE-01 / BR-11)."
         />
         <button
           id="btn-create-grade-level"
-          onClick={() => setCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-medium shadow-xs transition-all self-start sm:self-auto"
+          onClick={handleOpenCreate}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm transition"
         >
           <Plus className="w-4 h-4" />
-          <span>New Grade Level</span>
+          Add Grade Level
         </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-surface-200 dark:border-surface-700 pb-3">
-        {(['All', 'High School', 'Middle School'] as const).map((tab) => (
-          <button
-            key={tab}
-            id={`filter-division-${tab.toLowerCase().replace(/\s+/g, '-')}`}
-            onClick={() => setDivisionFilter(tab)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
-              divisionFilter === tab
-                ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 ring-1 ring-brand-200 dark:ring-brand-800'
-                : 'text-surface-500 hover:text-surface-900 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Levels</span>
+            <span className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
+              <GraduationCap className="w-5 h-5" />
+            </span>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{gradeLevels.length}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Active Academic Tiers</p>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Enrolled</span>
+            <span className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+              <Users className="w-5 h-5" />
+            </span>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalStudents}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Across All Grade Levels</p>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Class Sections</span>
+            <span className="p-2 rounded-xl bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400">
+              <BookOpen className="w-5 h-5" />
+            </span>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalClasses}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Assigned Academic Classes</p>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Average GPA</span>
+            <span className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
+              <Award className="w-5 h-5" />
+            </span>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgSystemGpa}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Cumulative Institutional GPA</p>
+          </div>
+        </div>
       </div>
 
-      {/* UC-GRADE-01: List */}
-      {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3 text-surface-400">
-          <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
-          <p className="text-xs font-medium">Loading grade levels...</p>
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search grade level, coordinator, alias..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
         </div>
-      ) : filteredGrades.length === 0 ? (
-        <div className="py-16 text-center bg-surface-50 dark:bg-surface-900/40 rounded-2xl border border-dashed border-surface-200 dark:border-surface-800 p-8">
-          <Layers className="w-10 h-10 mx-auto text-surface-400 mb-3" />
-          <h3 className="text-sm font-semibold text-surface-800 dark:text-surface-200">No Grade Levels</h3>
-          <p className="text-xs text-surface-500 mt-1 max-w-sm mx-auto">
-            Configure grade stages to group cohorts and class sections.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {filteredGrades.map((grade) => (
-            <div
-              key={grade.id}
-              id={`grade-level-card-${grade.id}`}
-              className="relative bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 hover:border-surface-300 dark:hover:border-surface-600 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between"
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-xs font-medium text-slate-500">Status:</span>
+          {(['All', 'Active', 'Archived'] as const).map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                statusFilter === st
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
             >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="w-8 h-8 rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300 flex items-center justify-center font-bold text-sm border border-brand-200/60 dark:border-brand-800/60">
-                    {grade.numericLevel}
-                  </span>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300">
-                    {grade.division}
-                  </span>
-                </div>
+              {st}
+            </button>
+          ))}
+        </div>
+      </div>
 
-                <h3 className="text-base font-bold text-surface-900 dark:text-surface-100 tracking-tight">
-                  {grade.name}
-                </h3>
-                <p className="text-xs text-surface-500 mt-0.5">
-                  Ages {grade.minAge} – {grade.maxAge} yrs
-                </p>
-
-                {grade.description && (
-                  <p className="text-xs text-surface-500 mt-2 line-clamp-2">
-                    {grade.description}
+      {/* Grade Levels Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {filteredGrades.map((gl) => {
+          const capacityPercent = Math.min(100, Math.round((gl.enrolledStudents / gl.maxCapacity) * 100))
+          return (
+            <div
+              key={gl.id}
+              id={`grade-card-${gl.id}`}
+              className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:border-brand-500/40 transition space-y-4"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {gl.code}
+                    </span>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                      {gl.name}
+                    </h3>
+                    <span className="text-xs font-medium text-slate-400">({gl.alias})</span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                    {gl.description}
                   </p>
-                )}
-
-                {/* Metrics */}
-                <div className="mt-4 p-3 bg-surface-50 dark:bg-surface-900/50 rounded-xl space-y-1.5 text-xs text-surface-600 dark:text-surface-400 border border-surface-100 dark:border-surface-800">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-surface-500">
-                      <GraduationCap className="w-3.5 h-3.5" /> Classes:
-                    </span>
-                    <span className="font-semibold text-surface-800 dark:text-surface-200">{grade.classesCount} Sections</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-surface-500">
-                      <Users className="w-3.5 h-3.5" /> Cohort Size:
-                    </span>
-                    <span className="font-semibold text-surface-800 dark:text-surface-200">{grade.studentsCount} Students</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-surface-200/50 dark:border-surface-700/50">
-                    <span className="flex items-center gap-1.5 text-surface-500">
-                      <Award className="w-3.5 h-3.5 text-amber-500" /> Required Credits:
-                    </span>
-                    <span className="font-bold text-surface-800 dark:text-surface-200">{grade.requiredCredits} Cr</span>
-                  </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="mt-5 pt-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  {/* UC-GRADE-02: View Details */}
-                  <button
-                    id={`btn-view-grade-${grade.id}`}
-                    onClick={() => setViewModalData(grade)}
-                    title="View Details"
-                    className="p-2 rounded-lg text-surface-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/40 transition-colors"
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                      gl.status === 'Active'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                    }`}
                   >
-                    <Eye className="w-4 h-4" />
-                  </button>
-
-                  {/* UC-GRADE-04: Edit */}
+                    {gl.status}
+                  </span>
                   <button
-                    id={`btn-edit-grade-${grade.id}`}
-                    onClick={() => openEditModal(grade)}
+                    onClick={() => handleOpenEdit(gl)}
                     title="Edit Grade Level"
-                    className="p-2 rounded-lg text-surface-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
-
-                  {/* UC-GRADE-05: Delete */}
                   <button
-                    id={`btn-delete-grade-${grade.id}`}
-                    onClick={() => setDeleteTarget(grade)}
+                    onClick={() => setDeleteCandidate(gl)}
                     title="Delete Grade Level"
-                    className="p-2 rounded-lg text-surface-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-
-                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  {grade.status}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* UC-GRADE-02: View Details Modal */}
-      {viewModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            id="modal-grade-level-details"
-            className="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-900/30">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-surface-900 dark:text-surface-100">Grade Level Details</h3>
-                  <p className="text-xs text-surface-500">Identifier: {viewModalData.id}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setViewModalData(null)}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-600 hover:bg-surface-100 dark:hover:bg-surface-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-lg font-bold text-surface-900 dark:text-surface-100">{viewModalData.name}</h4>
-                  <p className="text-xs text-surface-500">Numeric Level: {viewModalData.numericLevel}</p>
-                </div>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
-                  {viewModalData.division}
-                </span>
               </div>
 
-              {viewModalData.description && (
-                <p className="text-xs text-surface-600 dark:text-surface-300 p-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl border border-surface-100 dark:border-surface-800">
-                  {viewModalData.description}
-                </p>
-              )}
-
-              <div className="grid grid-cols-2 gap-3 p-3.5 bg-surface-50 dark:bg-surface-900/50 rounded-xl border border-surface-100 dark:border-surface-800 text-xs">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-center">
                 <div>
-                  <span className="text-surface-400">Age Band:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.minAge} - {viewModalData.maxAge} Years</p>
+                  <span className="text-[11px] text-slate-400 block">Classes</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {gl.totalClasses} sections
+                  </span>
                 </div>
                 <div>
-                  <span className="text-surface-400">Graduation Credits:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.requiredCredits} Credits</p>
+                  <span className="text-[11px] text-slate-400 block">Pass Threshold</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {gl.minPassingScore}%
+                  </span>
                 </div>
                 <div>
-                  <span className="text-surface-400">Active Classes:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.classesCount} Sections</p>
-                </div>
-                <div>
-                  <span className="text-surface-400">Enrolled Students:</span>
-                  <p className="font-semibold text-surface-800 dark:text-surface-200 mt-0.5">{viewModalData.studentsCount} Students</p>
+                  <span className="text-[11px] text-slate-400 block">Average GPA</span>
+                  <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    {gl.averageGpa.toFixed(2)}
+                  </span>
                 </div>
               </div>
-            </div>
 
-            <div className="p-4 bg-surface-50/50 dark:bg-surface-900/30 border-t border-surface-200 dark:border-surface-700 flex justify-end">
-              <button
-                onClick={() => setViewModalData(null)}
-                className="px-4 py-2 text-xs font-semibold bg-surface-200 dark:bg-surface-700 text-surface-800 dark:text-surface-200 rounded-xl hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Enrollment Capacity Bar */}
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-slate-500 font-medium">
+                    Enrollment: {gl.enrolledStudents} / {gl.maxCapacity} students
+                  </span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {capacityPercent}% capacity
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      capacityPercent > 90
+                        ? 'bg-rose-500'
+                        : capacityPercent > 75
+                        ? 'bg-amber-500'
+                        : 'bg-brand-600'
+                    }`}
+                    style={{ width: `${capacityPercent}%` }}
+                  />
+                </div>
+              </div>
 
-      {/* UC-GRADE-03: Create Modal */}
-      {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            id="modal-create-grade-level"
-            className="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-surface-200 dark:border-surface-700">
+              {/* Coordinator Footer */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                <span>Head Coordinator: <strong className="text-slate-700 dark:text-slate-300">{gl.headCoordinator}</strong></span>
+                <span>Order: Level {gl.levelOrder}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Modal: Create or Edit Grade Level */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400">
-                  <Plus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-surface-900 dark:text-surface-100">Create Grade Level</h3>
-                  <p className="text-xs text-surface-500">Configure new educational cohort level</p>
-                </div>
+                <span className="p-2 rounded-xl bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400">
+                  <GraduationCap className="w-5 h-5" />
+                </span>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {editingGradeLevel ? 'Edit Grade / Level' : 'Create Grade / Level'}
+                </h3>
               </div>
               <button
-                onClick={() => setCreateModalOpen(false)}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-600 hover:bg-surface-100 dark:hover:bg-surface-700"
+                onClick={() => {
+                  setIsCreateModalOpen(false)
+                  resetForm()
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateGrade} className="p-5 space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                  Grade Level Name *
-                </label>
-                <input
-                  id="input-create-grade-name"
-                  type="text"
-                  placeholder="e.g. Grade 9 (Freshman)"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
-                  required
-                />
-              </div>
-
+            <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                    Numeric Stage *
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Level Code *
                   </label>
                   <input
-                    id="input-create-grade-numeric"
-                    type="number"
-                    min={1}
-                    max={13}
-                    value={formData.numericLevel}
-                    onChange={(e) => setFormData({ ...formData, numericLevel: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                    type="text"
                     required
+                    placeholder="e.g. G-10"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                    School Division
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Level Order (1-12) *
                   </label>
-                  <select
-                    id="select-create-grade-division"
-                    value={formData.division}
-                    onChange={(e) => setFormData({ ...formData, division: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option value="High School">High School</option>
-                    <option value="Middle School">Middle School</option>
-                    <option value="Junior High">Junior High</option>
-                  </select>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    max={12}
+                    value={formData.levelOrder}
+                    onChange={(e) => setFormData({ ...formData, levelOrder: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                    Minimum Age
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Grade Name *
                   </label>
                   <input
-                    id="input-create-grade-min-age"
-                    type="number"
-                    min={10}
-                    max={20}
-                    value={formData.minAge}
-                    onChange={(e) => setFormData({ ...formData, minAge: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                    type="text"
+                    required
+                    placeholder="e.g. Grade 10"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                    Maximum Age
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Alias / Tier Name
                   </label>
                   <input
-                    id="input-create-grade-max-age"
+                    type="text"
+                    placeholder="e.g. Sophomore"
+                    value={formData.alias}
+                    onChange={(e) => setFormData({ ...formData, alias: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Pass Score Cutoff (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={40}
+                    max={100}
+                    value={formData.minPassingScore}
+                    onChange={(e) => setFormData({ ...formData, minPassingScore: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Max Student Capacity
+                  </label>
+                  <input
                     type="number"
                     min={10}
-                    max={21}
-                    value={formData.maxAge}
-                    onChange={(e) => setFormData({ ...formData, maxAge: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                    max={500}
+                    value={formData.maxCapacity}
+                    onChange={(e) => setFormData({ ...formData, maxCapacity: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                  Required Graduation Credits
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Head Coordinator / Dean
                 </label>
                 <input
-                  id="input-create-grade-credits"
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={formData.requiredCredits}
-                  onChange={(e) => setFormData({ ...formData, requiredCredits: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                  type="text"
+                  placeholder="e.g. Dr. John Whitfield"
+                  value={formData.headCoordinator}
+                  onChange={(e) => setFormData({ ...formData, headCoordinator: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                  Description
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Description / Curriculum Notes
                 </label>
                 <textarea
-                  id="input-create-grade-description"
                   rows={2}
+                  placeholder="Describe academic focus, required subjects, or tracks..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
               </div>
 
-              <div className="pt-3 border-t border-surface-200 dark:border-surface-700 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2 font-semibold text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="btn-submit-create-grade"
-                  type="submit"
-                  disabled={submitting}
-                  className="flex items-center gap-2 px-4 py-2 font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-xs transition-all disabled:opacity-50"
-                >
-                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Create Level</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* UC-GRADE-04: Edit Modal */}
-      {editModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            id="modal-edit-grade-level"
-            className="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-surface-200 dark:border-surface-700">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
-                  <Edit3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-surface-900 dark:text-surface-100">Edit Grade Level</h3>
-                  <p className="text-xs text-surface-500">Update cohort requirements and credits</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setEditModalData(null)}
-                className="p-1.5 rounded-lg text-surface-400 hover:text-surface-600 hover:bg-surface-100 dark:hover:bg-surface-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateGrade} className="p-5 space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                  Grade Level Name *
-                </label>
-                <input
-                  id="input-edit-grade-name"
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                    Division
-                  </label>
-                  <select
-                    id="select-edit-grade-division"
-                    value={editForm.division}
-                    onChange={(e) => setEditForm({ ...editForm, division: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option value="High School">High School</option>
-                    <option value="Middle School">Middle School</option>
-                    <option value="Junior High">Junior High</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
-                    Required Credits
-                  </label>
-                  <input
-                    id="input-edit-grade-credits"
-                    type="number"
-                    value={editForm.requiredCredits}
-                    onChange={(e) => setEditForm({ ...editForm, requiredCredits: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-surface-700 dark:text-surface-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Status
                 </label>
                 <select
-                  id="select-edit-grade-status"
-                  value={editForm.status}
-                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                  className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-100 text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 >
                   <option value="Active">Active</option>
                   <option value="Archived">Archived</option>
                 </select>
               </div>
 
-              <div className="pt-3 border-t border-surface-200 dark:border-surface-700 flex justify-end gap-2">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setEditModalData(null)}
-                  className="px-4 py-2 font-semibold text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl"
+                  onClick={() => {
+                    setIsCreateModalOpen(false)
+                    resetForm()
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
                 >
                   Cancel
                 </button>
                 <button
-                  id="btn-submit-edit-grade"
                   type="submit"
-                  disabled={submitting}
-                  className="flex items-center gap-2 px-4 py-2 font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-xs transition-all disabled:opacity-50"
+                  className="px-5 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-xs transition"
                 >
-                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Save Changes</span>
+                  {editingGradeLevel ? 'Save Changes' : 'Create Level'}
                 </button>
               </div>
             </form>
@@ -646,46 +615,42 @@ export default function GradeLevels() {
         </div>
       )}
 
-      {/* UC-GRADE-05: Delete Modal */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div
-            id="modal-delete-grade-level"
-            className="bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 text-center animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mx-auto flex items-center justify-center mb-4">
-              <AlertCircle className="w-6 h-6" />
+      {/* Modal: Delete Confirmation */}
+      {deleteCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
+                <AlertCircle className="w-6 h-6" />
+              </span>
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-slate-100">
+                  Delete Grade Level?
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Are you sure you want to remove <strong>{deleteCandidate.name}</strong>?
+                </p>
+              </div>
             </div>
 
-            <h3 className="text-base font-bold text-surface-900 dark:text-surface-100">
-              Delete Grade Level?
-            </h3>
-            <p className="text-xs text-surface-500 mt-2">
-              Are you sure you want to delete <strong className="text-surface-800 dark:text-surface-200">"{deleteTarget.name}"</strong>?
-              {deleteTarget.classesCount > 0 ? (
-                <span className="block mt-2 font-bold text-rose-600 dark:text-rose-400">
-                  Notice: This grade level has {deleteTarget.classesCount} active class sections assigned. You must remove or reassign these classes first.
-                </span>
-              ) : (
-                ' This action will permanently remove this stage definition.'
-              )}
+            <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              Dependency check: Grade levels with active classes or enrolled students cannot be deleted per business rules (UC-GRADE-01 / BR-11).
             </p>
 
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="flex justify-end gap-2.5 pt-2">
               <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-xs font-semibold text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl"
+                type="button"
+                onClick={() => setDeleteCandidate(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
               >
                 Cancel
               </button>
               <button
-                id="btn-confirm-delete-grade"
-                onClick={handleDeleteGrade}
-                disabled={submitting}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition-all disabled:opacity-50"
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition"
               >
-                {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Confirm Delete</span>
+                Confirm Delete
               </button>
             </div>
           </div>

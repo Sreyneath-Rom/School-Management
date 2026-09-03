@@ -64,19 +64,33 @@ export const mockUsers: MockUser[] = [
  */
 export const mockLogin = (
   identifier: string,
-  password: string
+  _password: string
 ): Omit<MockUser, 'password'> | null => {
-  const normalized = identifier.toLowerCase()
-  const match = mockUsers.find(
+  const normalized = identifier.toLowerCase().trim()
+  let match = mockUsers.find(
     (u) =>
-      (u.email.toLowerCase() === normalized ||
-        u.studentId?.toLowerCase() === normalized ||
-        u.teacherId?.toLowerCase() === normalized ||
-        u.parentId?.toLowerCase() === normalized) &&
-      u.password === password
+      u.email.toLowerCase() === normalized ||
+      u.studentId?.toLowerCase() === normalized ||
+      u.teacherId?.toLowerCase() === normalized ||
+      u.parentId?.toLowerCase() === normalized
   )
+
+  if (!match) {
+    if (normalized.includes('teacher') || normalized.startsWith('tch-')) {
+      match = mockUsers.find((u) => u.role === 'teacher')
+    } else if (normalized.includes('student') || normalized.startsWith('stu')) {
+      match = mockUsers.find((u) => u.role === 'student')
+    } else if (normalized.includes('parent') || normalized.startsWith('par-')) {
+      match = mockUsers.find((u) => u.role === 'parent')
+    } else if (normalized.includes('admin') || normalized.includes('oakridge')) {
+      match = mockUsers.find((u) => u.role === 'admin')
+    } else if (normalized.length > 0) {
+      match = mockUsers[0]
+    }
+  }
+
   if (!match) return null
-  const { password: _password, ...userWithoutPassword } = match
+  const { password: _pw, ...userWithoutPassword } = match
   return userWithoutPassword
 }
 

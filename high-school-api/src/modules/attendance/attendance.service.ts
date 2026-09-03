@@ -117,10 +117,10 @@ export const attendanceService = {
       },
     })
 
-    const present = records.filter((r) => r.status === 'PRESENT').length
-    const absent = records.filter((r) => r.status === 'ABSENT').length
-    const late = records.filter((r) => r.status === 'LATE').length
-    const excused = records.filter((r) => r.status === 'EXCUSED').length
+    const present = records.filter((r: any) => r.status === 'PRESENT').length
+    const absent = records.filter((r: any) => r.status === 'ABSENT').length
+    const late = records.filter((r: any) => r.status === 'LATE').length
+    const excused = records.filter((r: any) => r.status === 'EXCUSED').length
     const total = records.length
     const attendanceRate = total > 0 ? Number(((present + late) / total * 100).toFixed(1)) : 0
 

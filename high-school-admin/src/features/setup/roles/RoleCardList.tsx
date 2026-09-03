@@ -1,20 +1,18 @@
 // src/features/setup/roles/RoleCardList.tsx
 import React from 'react'
-import { Shield, Check, Lock, Trash2 } from 'lucide-react'
+import { Shield, Check, Lock } from 'lucide-react'
 import type { RoleDef } from '@/types/roles'
 
 interface RoleCardListProps {
   roles?: RoleDef[]
   selectedRoleId: string | null
   onSelectRole: (id: string) => void
-  onDeleteRole?: (id: string, name: string) => void
 }
 
 export const RoleCardList: React.FC<RoleCardListProps> = ({
   roles = [],
   selectedRoleId,
   onSelectRole,
-  onDeleteRole,
 }) => {
   const safeRoles = Array.isArray(roles) ? roles : []
   return (
@@ -48,24 +46,9 @@ export const RoleCardList: React.FC<RoleCardListProps> = ({
                       <Lock size={10} /> System
                     </span>
                   ) : (
-                    <div className="flex items-center gap-1">
-                      <span className="flex items-center gap-1 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-600 dark:text-brand-300">
-                        Custom
-                      </span>
-                      {onDeleteRole && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDeleteRole(role.id, role.name)
-                          }}
-                          className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition"
-                          title="Delete Custom Role"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
+                    <span className="flex items-center gap-1 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-600 dark:text-brand-300">
+                      Custom
+                    </span>
                   )}
                 </div>
               </div>
@@ -95,4 +78,3 @@ export const RoleCardList: React.FC<RoleCardListProps> = ({
     </div>
   )
 }
-
