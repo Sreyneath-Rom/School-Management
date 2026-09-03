@@ -56,7 +56,6 @@ export const authService = {
   logout: (refreshToken: string) =>
     apiClient.post<void>('/auth/logout', { refreshToken }).catch(() => {}),
   refreshToken: (refreshToken: string) =>
-    apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh-token', { refreshToken }),
+    apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh', { refreshToken }),
   me: () => apiClient.get<AuthUserPayload>('/auth/me'),
 }
-

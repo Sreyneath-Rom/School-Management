@@ -549,7 +549,7 @@ export const mockApiHandler = {
       return { success: true, data: null }
     }
 
-    if (cleanPath === '/auth/refresh-token' && method === 'POST') {
+    if ((cleanPath === '/auth/refresh' || cleanPath === '/auth/refresh-token') && method === 'POST') {
       return {
         success: true,
         data: {
@@ -1161,4 +1161,3 @@ export const mockApiHandler = {
     return null
   },
 }
-
