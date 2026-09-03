@@ -10,7 +10,6 @@ interface AuthUser {
   lastName: string;
   role: UserRole;
   name: string;
-  permissions?: string[];
 }
 
 export interface AuthContextType {
@@ -159,4 +158,12 @@ export function useAuthInitialization(): boolean {
     throw new Error("useAuthInitialization must be used within AuthProvider");
   }
   return context.isInitialized;
+}
+
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
 }

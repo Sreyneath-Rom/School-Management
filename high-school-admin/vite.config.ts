@@ -64,7 +64,7 @@ function mockApiPlugin(): Plugin {
             return res.end(JSON.stringify({ success: true, data: null }))
           }
 
-          if ((url === '/api/v1/auth/refresh' || url === '/api/v1/auth/refresh-token') && method === 'POST') {
+          if (url === '/api/v1/auth/refresh-token' && method === 'POST') {
             return res.end(
               JSON.stringify({
                 success: true,

@@ -1,5 +1,6 @@
 import { mockLogin, mockUsers } from '@/data/mockUsers'
 import { mockUserDirectory } from '@/data/mockUserDirectory'
+import { LOCAL_STORAGE_KEYS } from '@/utils/constants'
 import type { PermissionAction, PermissionDef, RoleDef } from '@/types/roles'
 import type { LanguageRecord } from '@/services/languagesService'
 import type { SchoolModel } from '@/services/schoolService'
@@ -12,12 +13,20 @@ import { STRINGS } from '@/i18n/strings'
 
 const MODULE_IDS = [
   'dashboard',
+  'school',
+  'academicYears',
+  'terms',
   'users',
+  'teachers',
+  'students',
+  'roles',
+  'grades',
+  'gradeLevels',
   'classes',
   'subjects',
+  'rooms',
   'schedules',
   'attendance',
-  'grades',
   'reports',
 ] as const
 
@@ -511,6 +520,502 @@ const getInitialAttendance = (): MockAttendanceRecord[] => {
 
 let attendanceStore: MockAttendanceRecord[] = getInitialAttendance()
 
+// ==========================================
+// MASTER DATA STORES FOR SPLIT CRUD USE CASES
+// ==========================================
+export interface MockClassItem {
+  id: string
+  name: string
+  gradeLevel: string
+  section: string
+  room: string
+  classTeacher: string
+  studentCount: number
+  maxCapacity: number
+  subjectsCount: number
+  schedulePeriod?: string
+  status?: 'Active' | 'Archived'
+  description?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+let classesStore: MockClassItem[] = [
+  {
+    id: 'cls-1',
+    name: 'Grade 10-A',
+    gradeLevel: 'Grade 10',
+    section: 'A',
+    room: 'Room 101',
+    classTeacher: 'Dr. John Whitfield',
+    studentCount: 32,
+    maxCapacity: 35,
+    subjectsCount: 7,
+    schedulePeriod: '08:00 - 15:30',
+    status: 'Active',
+    description: 'General high school academic section emphasizing core mathematics, natural science, and humanities.',
+  },
+  {
+    id: 'cls-2',
+    name: 'Grade 10-B',
+    gradeLevel: 'Grade 10',
+    section: 'B',
+    room: 'Room 102',
+    classTeacher: 'Sarah Parker',
+    studentCount: 30,
+    maxCapacity: 35,
+    subjectsCount: 7,
+    schedulePeriod: '08:00 - 15:30',
+    status: 'Active',
+    description: 'Standard sophomore track with enriched literature and world history coursework.',
+  },
+  {
+    id: 'cls-3',
+    name: 'Grade 11-A (Advanced STEM)',
+    gradeLevel: 'Grade 11',
+    section: 'A',
+    room: 'Lab 201',
+    classTeacher: 'Prof. Marcus Kane',
+    studentCount: 28,
+    maxCapacity: 30,
+    subjectsCount: 8,
+    schedulePeriod: '08:00 - 16:00',
+    status: 'Active',
+    description: 'Advanced placement preparatory cohort specializing in calculus, biotechnology, and computer science.',
+  },
+  {
+    id: 'cls-4',
+    name: 'Grade 11-B (Humanities)',
+    gradeLevel: 'Grade 11',
+    section: 'B',
+    room: 'Room 203',
+    classTeacher: 'Claire Bennett',
+    studentCount: 29,
+    maxCapacity: 32,
+    subjectsCount: 7,
+    schedulePeriod: '08:00 - 15:30',
+    status: 'Active',
+    description: 'Humanities and international relations cohort with rhetorical studies and modern linguistics.',
+  },
+  {
+    id: 'cls-5',
+    name: 'Grade 12-A (Honors & AP)',
+    gradeLevel: 'Grade 12',
+    section: 'A',
+    room: 'Seminar 301',
+    classTeacher: 'Elena Vance',
+    studentCount: 26,
+    maxCapacity: 30,
+    subjectsCount: 8,
+    schedulePeriod: '08:00 - 16:00',
+    status: 'Active',
+    description: 'Senior capstone section with university dual-enrollment credits and research seminar.',
+  },
+]
+
+export interface MockAcademicYearItem {
+  id: string
+  name: string
+  startDate: string
+  endDate: string
+  status: 'Active' | 'Upcoming' | 'Archived'
+  termsCount: number
+  classesCount: number
+  studentsCount: number
+  isCurrent: boolean
+  description?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+let academicYearsStore: MockAcademicYearItem[] = [
+  {
+    id: 'ay-1',
+    name: '2025 - 2026',
+    startDate: '2025-08-15',
+    endDate: '2026-06-20',
+    status: 'Active',
+    termsCount: 3,
+    classesCount: 48,
+    studentsCount: 1284,
+    isCurrent: true,
+    description: 'Standard academic operational calendar for primary and secondary grade tracks.',
+  },
+  {
+    id: 'ay-2',
+    name: '2026 - 2027',
+    startDate: '2026-08-20',
+    endDate: '2027-06-25',
+    status: 'Upcoming',
+    termsCount: 3,
+    classesCount: 50,
+    studentsCount: 0,
+    isCurrent: false,
+    description: 'Next planned academic school session awaiting cohort rollover and registration.',
+  },
+  {
+    id: 'ay-3',
+    name: '2024 - 2025',
+    startDate: '2024-08-18',
+    endDate: '2025-06-18',
+    status: 'Archived',
+    termsCount: 3,
+    classesCount: 46,
+    studentsCount: 1210,
+    isCurrent: false,
+    description: 'Historical archive of concluded school session, marks, and official diploma issuance.',
+  },
+]
+
+export interface MockTermItem {
+  id: string
+  name: string
+  academicYear: string
+  startDate: string
+  endDate: string
+  gradingDeadline: string
+  status: 'Active' | 'Completed' | 'Upcoming'
+  examCount: number
+  weightPercentage: number
+  description?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+let termsStore: MockTermItem[] = [
+  {
+    id: 'term-1',
+    name: 'Term 1 (Fall Semester)',
+    academicYear: '2025 - 2026',
+    startDate: '2025-08-15',
+    endDate: '2025-11-20',
+    gradingDeadline: '2025-11-28',
+    status: 'Completed',
+    examCount: 4,
+    weightPercentage: 30,
+    description: 'Introductory term focusing on baseline curriculum and midterm examinations.',
+  },
+  {
+    id: 'term-2',
+    name: 'Term 2 (Winter Trimester)',
+    academicYear: '2025 - 2026',
+    startDate: '2025-12-01',
+    endDate: '2026-03-15',
+    gradingDeadline: '2026-03-25',
+    status: 'Active',
+    examCount: 6,
+    weightPercentage: 35,
+    description: 'Core evaluation cycle including practical laboratory assessments and science fairs.',
+  },
+  {
+    id: 'term-3',
+    name: 'Term 3 (Spring Trimester)',
+    academicYear: '2025 - 2026',
+    startDate: '2026-03-20',
+    endDate: '2026-06-20',
+    gradingDeadline: '2026-06-28',
+    status: 'Upcoming',
+    examCount: 5,
+    weightPercentage: 35,
+    description: 'Concluding term with cumulative final evaluations, honors thesis, and commencement.',
+  },
+]
+
+export interface MockGradeLevelItem {
+  id: string
+  name: string
+  numericLevel: number
+  division: 'Freshman' | 'Sophomore' | 'Junior' | 'Senior' | 'High School'
+  minAge: number
+  maxAge: number
+  requiredCredits: number
+  description?: string
+  classesCount: number
+  studentsCount: number
+  status: 'Active' | 'Archived'
+  createdAt?: string
+  updatedAt?: string
+}
+
+let gradeLevelsStore: MockGradeLevelItem[] = [
+  {
+    id: 'gl-9',
+    name: 'Grade 9',
+    numericLevel: 9,
+    division: 'Freshman',
+    minAge: 14,
+    maxAge: 15,
+    requiredCredits: 20,
+    classesCount: 12,
+    studentsCount: 310,
+    status: 'Active',
+    description: 'First year of secondary education focusing on fundamental literacies and science labs.',
+  },
+  {
+    id: 'gl-10',
+    name: 'Grade 10',
+    numericLevel: 10,
+    division: 'Sophomore',
+    minAge: 15,
+    maxAge: 16,
+    requiredCredits: 40,
+    classesCount: 12,
+    studentsCount: 325,
+    status: 'Active',
+    description: 'Sophomore level with core STEM sequences and elective exploratory paths.',
+  },
+  {
+    id: 'gl-11',
+    name: 'Grade 11',
+    numericLevel: 11,
+    division: 'Junior',
+    minAge: 16,
+    maxAge: 17,
+    requiredCredits: 60,
+    classesCount: 12,
+    studentsCount: 330,
+    status: 'Active',
+    description: 'Junior year featuring Advanced Placement (AP) electives and standardized test prep.',
+  },
+  {
+    id: 'gl-12',
+    name: 'Grade 12',
+    numericLevel: 12,
+    division: 'Senior',
+    minAge: 17,
+    maxAge: 19,
+    requiredCredits: 80,
+    classesCount: 12,
+    studentsCount: 319,
+    status: 'Active',
+    description: 'Graduating senior class completing graduation capstones, internships, and university applications.',
+  },
+]
+
+export interface MockRoomItem {
+  id: string
+  name: string
+  code: string
+  building: string
+  floor: string
+  type: 'Classroom' | 'Science Lab' | 'Computer Lab' | 'Auditorium' | 'Library Wing'
+  capacity: number
+  amenities: string[]
+  status: 'Available' | 'Occupied' | 'Maintenance'
+  currentClass?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+let roomsStore: MockRoomItem[] = [
+  {
+    id: 'rm-1',
+    name: 'Room 101 (Humanities)',
+    code: 'R-101',
+    building: 'Main Academic Hall',
+    floor: '1st Floor',
+    type: 'Classroom',
+    capacity: 35,
+    amenities: ['Interactive Smartboard', 'AC', 'Projector'],
+    status: 'Occupied',
+    currentClass: 'Grade 10-A (History)',
+    createdAt: '2025-01-10T08:00:00.000Z',
+    updatedAt: '2025-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'rm-2',
+    name: 'Biology Lab 302',
+    code: 'LAB-BIO',
+    building: 'Science Wing',
+    floor: '3rd Floor',
+    type: 'Science Lab',
+    capacity: 28,
+    amenities: ['Microscopes', 'Fume Hood', 'Chemical Sinks', 'Projector'],
+    status: 'Available',
+    createdAt: '2025-01-10T08:00:00.000Z',
+    updatedAt: '2025-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'rm-3',
+    name: 'Computer Lab Alpha',
+    code: 'LAB-CS1',
+    building: 'Technology Center',
+    floor: '2nd Floor',
+    type: 'Computer Lab',
+    capacity: 32,
+    amenities: ['32 iMac Workstations', 'Gigabit LAN', 'Dual Projectors'],
+    status: 'Occupied',
+    currentClass: 'Grade 11-A (AP Computer Science)',
+    createdAt: '2025-01-10T08:00:00.000Z',
+    updatedAt: '2025-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'rm-4',
+    name: 'Grand Auditorium',
+    code: 'AUD-MAIN',
+    building: 'Arts & Performing Complex',
+    floor: 'Ground Floor',
+    type: 'Auditorium',
+    capacity: 450,
+    amenities: ['Pro Stage Lighting', 'Surround Sound', 'Dual 4K Projectors'],
+    status: 'Available',
+    createdAt: '2025-01-10T08:00:00.000Z',
+    updatedAt: '2025-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'rm-5',
+    name: 'Chemistry Lab 301',
+    code: 'LAB-CHEM',
+    building: 'Science Wing',
+    floor: '3rd Floor',
+    type: 'Science Lab',
+    capacity: 30,
+    amenities: ['Gas Valves', 'Emergency Shower', 'Fume Hoods'],
+    status: 'Maintenance',
+    createdAt: '2025-01-10T08:00:00.000Z',
+    updatedAt: '2025-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'rm-6',
+    name: 'Room 204 (Mathematics)',
+    code: 'R-204',
+    building: 'Main Academic Hall',
+    floor: '2nd Floor',
+    type: 'Classroom',
+    capacity: 35,
+    amenities: ['Interactive Smartboard', 'AC', 'Math Graph Boards'],
+    status: 'Available',
+    createdAt: '2025-01-10T08:00:00.000Z',
+    updatedAt: '2025-01-10T08:00:00.000Z',
+  },
+]
+
+export interface MockTeacherItem {
+  id: string
+  teacherId: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  department: string
+  position?: string
+  qualification: string
+  specialization?: string
+  experienceYears?: number
+  hireDate: string
+  weeklyTeachingHours?: number
+  status: 'active' | 'on_leave' | 'inactive'
+  subjects: string[]
+  assignedClasses: string[]
+  avatarUrl?: string
+  performanceRating?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+let teachersStore: MockTeacherItem[] = [
+  {
+    id: 't1',
+    teacherId: 'TCH-1001',
+    firstName: 'John',
+    lastName: 'Whitfield',
+    email: 'john.whitfield@oakridge.edu',
+    phone: '+1 (555) 019-2834',
+    department: 'Science',
+    position: 'Department Head',
+    qualification: 'Ph.D. in Molecular Biology',
+    specialization: 'Cellular Biochemistry & Genetics',
+    experienceYears: 12,
+    hireDate: '2019-08-15',
+    weeklyTeachingHours: 18,
+    status: 'active',
+    subjects: ['Advanced Biology', 'AP Biology Seminar'],
+    assignedClasses: ['Grade 10-A', 'Grade 10-B', 'Grade 12-A'],
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop',
+    performanceRating: 4.9,
+  },
+  {
+    id: 't3',
+    teacherId: 'TCH-1002',
+    firstName: 'Marcus',
+    lastName: 'Kane',
+    email: 'marcus.kane@oakridge.edu',
+    phone: '+1 (555) 019-9943',
+    department: 'Mathematics',
+    position: 'Senior Lecturer',
+    qualification: 'M.Sc. in Applied Mathematics',
+    specialization: 'Calculus, Differential Equations & Analysis',
+    experienceYears: 9,
+    hireDate: '2020-01-10',
+    weeklyTeachingHours: 20,
+    status: 'active',
+    subjects: ['Calculus BC', 'Linear Algebra'],
+    assignedClasses: ['Grade 10-A', 'Grade 11-A (Advanced STEM)'],
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&h=128&fit=crop',
+    performanceRating: 4.8,
+  },
+  {
+    id: 't6',
+    teacherId: 'TCH-1003',
+    firstName: 'Sarah',
+    lastName: 'Parker',
+    email: 'sarah.parker@oakridge.edu',
+    phone: '+1 (555) 019-8765',
+    department: 'Humanities',
+    position: 'Faculty Member',
+    qualification: 'M.A. in Modern History',
+    specialization: '20th Century Geopolitics',
+    experienceYears: 7,
+    hireDate: '2021-08-20',
+    weeklyTeachingHours: 16,
+    status: 'active',
+    subjects: ['Modern World History'],
+    assignedClasses: ['Grade 10-A', 'Grade 10-B'],
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=128&h=128&fit=crop',
+    performanceRating: 4.7,
+  },
+  {
+    id: 't8',
+    teacherId: 'TCH-1004',
+    firstName: 'Elena',
+    lastName: 'Vance',
+    email: 'elena.vance@oakridge.edu',
+    phone: '+1 (555) 019-4411',
+    department: 'Technology',
+    position: 'Lead Instructor',
+    qualification: 'M.S. in Computer Science',
+    specialization: 'Software Architecture & Algorithms',
+    experienceYears: 6,
+    hireDate: '2022-01-15',
+    weeklyTeachingHours: 17,
+    status: 'active',
+    subjects: ['AP Computer Science A', 'Web Engineering'],
+    assignedClasses: ['Grade 10-A', 'Grade 12-A (Honors & AP)'],
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=128&h=128&fit=crop',
+    performanceRating: 4.95,
+  },
+  {
+    id: 't9',
+    teacherId: 'TCH-1005',
+    firstName: 'Claire',
+    lastName: 'Bennett',
+    email: 'claire.bennett@oakridge.edu',
+    phone: '+1 (555) 019-3322',
+    department: 'Languages',
+    position: 'Faculty Member',
+    qualification: 'M.A. in Comparative Literature',
+    specialization: 'Rhetoric & World Literature',
+    experienceYears: 8,
+    hireDate: '2020-08-15',
+    weeklyTeachingHours: 18,
+    status: 'active',
+    subjects: ['Literature & Composition II'],
+    assignedClasses: ['Grade 10-A', 'Grade 11-B (Humanities)'],
+    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=128&h=128&fit=crop',
+    performanceRating: 4.85,
+  },
+]
+
 
 export const mockApiHandler = {
   handle: async (
@@ -549,7 +1054,7 @@ export const mockApiHandler = {
       return { success: true, data: null }
     }
 
-    if ((cleanPath === '/auth/refresh' || cleanPath === '/auth/refresh-token') && method === 'POST') {
+    if (cleanPath === '/auth/refresh-token' && method === 'POST') {
       return {
         success: true,
         data: {
@@ -560,7 +1065,32 @@ export const mockApiHandler = {
     }
 
     if (cleanPath === '/auth/me' && method === 'GET') {
-      const u = mockUsers[0]
+      let u = mockUsers[0]
+      try {
+        if (typeof window !== 'undefined') {
+          const stored = window.localStorage.getItem(LOCAL_STORAGE_KEYS.USER)
+          if (stored) {
+            const parsed = JSON.parse(stored)
+            const matched = mockUsers.find((item) => item.id === parsed.id || item.email === parsed.email)
+            if (matched) {
+              u = matched
+            } else if (parsed && parsed.email && parsed.role) {
+              return {
+                success: true,
+                data: {
+                  id: parsed.id,
+                  email: parsed.email,
+                  firstName: parsed.firstName,
+                  lastName: parsed.lastName,
+                  role: parsed.role,
+                },
+              }
+            }
+          }
+        }
+      } catch {
+        // fallback to default
+      }
       return {
         success: true,
         data: {
@@ -640,22 +1170,51 @@ export const mockApiHandler = {
     }
 
     if (cleanPath === '/schedules' && method === 'POST') {
+      const dayOfWeek = Number(body?.dayOfWeek) ?? 0
+      const startTime = body?.startTime || '08:00'
+      const endTime = body?.endTime || '09:30'
+      const teacherId = body?.teacherId || 't1'
+      const room = body?.room || 'Room 101'
+
+      // Check collision: same teacher or same room at overlapping time
+      const hasConflict = schedulesStore.find(
+        (s) =>
+          s.dayOfWeek === dayOfWeek &&
+          ((s.teacherId && s.teacherId === teacherId) || (s.room && s.room.toLowerCase() === room.toLowerCase())) &&
+          !(endTime <= s.startTime || startTime >= s.endTime)
+      )
+
+      if (hasConflict) {
+        const conflictReason = hasConflict.teacherId === teacherId ? `Teacher "${hasConflict.teacherName}"` : `Room "${hasConflict.room}"`
+        return {
+          success: false,
+          message: `Schedule conflict: ${conflictReason} is already booked on day ${dayOfWeek} from ${hasConflict.startTime} to ${hasConflict.endTime} for "${hasConflict.subjectName}".`,
+        }
+      }
+
       const newSlot: ScheduleSlot = {
         id: `sch-${Date.now()}`,
         classId: body?.classId || 'cls-10a',
         className: body?.className || 'Grade 10-A',
         subjectId: body?.subjectId || 's1',
         subjectName: body?.subjectName || 'Subject',
-        teacherId: body?.teacherId || 't1',
+        teacherId,
         teacherName: body?.teacherName || 'Faculty',
-        dayOfWeek: Number(body?.dayOfWeek) ?? 0,
-        startTime: body?.startTime || '08:00',
-        endTime: body?.endTime || '09:30',
-        room: body?.room || 'Room 101',
+        dayOfWeek,
+        startTime,
+        endTime,
+        room,
         colorTheme: body?.colorTheme || 'sky',
       }
       schedulesStore.push(newSlot)
       return { success: true, data: newSlot }
+    }
+
+    if (cleanPath.startsWith('/schedules/') && method === 'GET') {
+      const id = cleanPath.split('/')[2]
+      const slot = schedulesStore.find((s) => s.id === id)
+      if (slot) return { success: true, data: slot }
+      return { success: false, message: 'Schedule slot not found' }
     }
 
     if (cleanPath.startsWith('/schedules/') && method === 'PATCH') {
@@ -948,9 +1507,477 @@ export const mockApiHandler = {
       return { success: false, message: 'Role not found' }
     }
 
+    if (cleanPath.startsWith('/roles/') && method === 'GET') {
+      const roleId = cleanPath.split('/')[2]
+      const role = rolesStore.find((r) => r.id === roleId)
+      if (role) return { success: true, data: role }
+      return { success: false, message: 'Role not found' }
+    }
+
+    if (cleanPath.startsWith('/roles/') && !cleanPath.endsWith('/permissions') && method === 'PATCH') {
+      const roleId = cleanPath.split('/')[2]
+      const index = rolesStore.findIndex((r) => r.id === roleId)
+      if (index !== -1) {
+        rolesStore[index] = {
+          ...rolesStore[index],
+          ...body,
+          name: body?.name || rolesStore[index].name,
+          label: body?.label || body?.name || rolesStore[index].label,
+        }
+        return { success: true, data: rolesStore[index] }
+      }
+      return { success: false, message: 'Role not found' }
+    }
+
     if (cleanPath.startsWith('/roles/') && method === 'DELETE') {
       const roleId = cleanPath.split('/')[2]
+      const role = rolesStore.find((r) => r.id === roleId)
+      if (!role) return { success: false, message: 'Role not found' }
+      if (role.isSystem) {
+        return { success: false, message: 'System defined roles cannot be deleted for system safety' }
+      }
       rolesStore = rolesStore.filter((r) => r.id !== roleId)
+      return { success: true, data: null }
+    }
+
+    // ==========================================
+    // CLASSES ENDPOINTS (/classes)
+    // ==========================================
+    if (cleanPath === '/classes' && method === 'GET') {
+      return { success: true, data: [...classesStore] }
+    }
+
+    if (cleanPath === '/classes' && method === 'POST') {
+      const newClass: MockClassItem = {
+        id: `cls-${Date.now()}`,
+        name: body?.name || 'Grade 10-C',
+        gradeLevel: body?.gradeLevel || 'Grade 10',
+        section: body?.section || 'C',
+        room: body?.room || 'Room 105',
+        classTeacher: body?.classTeacher || 'Staff Advisor',
+        studentCount: 0,
+        maxCapacity: Number(body?.maxCapacity) || 35,
+        subjectsCount: Number(body?.subjectsCount) || 6,
+        schedulePeriod: body?.schedulePeriod || '08:00 - 15:30',
+        status: 'Active',
+        description: body?.description || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      classesStore.unshift(newClass)
+      return { success: true, data: newClass }
+    }
+
+    if (cleanPath.startsWith('/classes/') && method === 'GET') {
+      const id = cleanPath.split('/')[2]
+      const cls = classesStore.find((c) => c.id === id)
+      if (cls) return { success: true, data: cls }
+      return { success: false, message: 'Class record not found' }
+    }
+
+    if (cleanPath.startsWith('/classes/') && method === 'PATCH') {
+      const id = cleanPath.split('/')[2]
+      const index = classesStore.findIndex((c) => c.id === id)
+      if (index !== -1) {
+        classesStore[index] = {
+          ...classesStore[index],
+          ...body,
+          updatedAt: new Date().toISOString(),
+        }
+        return { success: true, data: classesStore[index] }
+      }
+      return { success: false, message: 'Class not found' }
+    }
+
+    if (cleanPath.startsWith('/classes/') && method === 'DELETE') {
+      const id = cleanPath.split('/')[2]
+      const cls = classesStore.find((c) => c.id === id)
+      if (!cls) return { success: false, message: 'Class not found' }
+      if (cls.studentCount > 0) {
+        return {
+          success: false,
+          message: `Cannot delete class "${cls.name}" because it currently has ${cls.studentCount} active enrolled students. Reassign students first.`,
+        }
+      }
+      classesStore = classesStore.filter((c) => c.id !== id)
+      return { success: true, data: null }
+    }
+
+    // ==========================================
+    // ACADEMIC YEARS ENDPOINTS (/academic-years)
+    // ==========================================
+    if (cleanPath === '/academic-years' && method === 'GET') {
+      return { success: true, data: [...academicYearsStore] }
+    }
+
+    if (cleanPath === '/academic-years' && method === 'POST') {
+      const newYear: MockAcademicYearItem = {
+        id: `ay-${Date.now()}`,
+        name: body?.name || '2027 - 2028',
+        startDate: body?.startDate || '2027-08-20',
+        endDate: body?.endDate || '2028-06-25',
+        status: 'Upcoming',
+        termsCount: Number(body?.termsCount) || 3,
+        classesCount: 0,
+        studentsCount: 0,
+        isCurrent: false,
+        description: body?.description || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      academicYearsStore.unshift(newYear)
+      return { success: true, data: newYear }
+    }
+
+    if (cleanPath.startsWith('/academic-years/') && cleanPath.endsWith('/set-active') && method === 'POST') {
+      const id = cleanPath.split('/')[2]
+      academicYearsStore = academicYearsStore.map((ay) => {
+        if (ay.id === id) {
+          schoolStore.academicYear = ay.name
+          return { ...ay, isCurrent: true, status: 'Active' as const, updatedAt: new Date().toISOString() }
+        }
+        return { ...ay, isCurrent: false, status: ay.status === 'Active' ? ('Archived' as const) : ay.status }
+      })
+      const current = academicYearsStore.find((ay) => ay.id === id)
+      return { success: true, data: current }
+    }
+
+    if (cleanPath.startsWith('/academic-years/') && method === 'GET') {
+      const id = cleanPath.split('/')[2]
+      const year = academicYearsStore.find((y) => y.id === id)
+      if (year) return { success: true, data: year }
+      return { success: false, message: 'Academic Year not found' }
+    }
+
+    if (cleanPath.startsWith('/academic-years/') && method === 'PATCH') {
+      const id = cleanPath.split('/')[2]
+      const index = academicYearsStore.findIndex((y) => y.id === id)
+      if (index !== -1) {
+        academicYearsStore[index] = {
+          ...academicYearsStore[index],
+          ...body,
+          updatedAt: new Date().toISOString(),
+        }
+        if (academicYearsStore[index].isCurrent) {
+          schoolStore.academicYear = academicYearsStore[index].name
+        }
+        return { success: true, data: academicYearsStore[index] }
+      }
+      return { success: false, message: 'Academic Year not found' }
+    }
+
+    if (cleanPath.startsWith('/academic-years/') && method === 'DELETE') {
+      const id = cleanPath.split('/')[2]
+      const year = academicYearsStore.find((y) => y.id === id)
+      if (!year) return { success: false, message: 'Academic Year not found' }
+      if (year.isCurrent) {
+        return {
+          success: false,
+          message: 'Cannot delete the active academic year. Please activate another academic year before deleting this session.',
+        }
+      }
+      if (year.classesCount > 0 || year.studentsCount > 0) {
+        return {
+          success: false,
+          message: `Cannot delete academic year "${year.name}" with dependent classes (${year.classesCount}) and students (${year.studentsCount}). Please archive it instead.`,
+        }
+      }
+      academicYearsStore = academicYearsStore.filter((y) => y.id !== id)
+      return { success: true, data: null }
+    }
+
+    // ==========================================
+    // TERMS ENDPOINTS (/terms)
+    // ==========================================
+    if (cleanPath === '/terms' && method === 'GET') {
+      return { success: true, data: [...termsStore] }
+    }
+
+    if (cleanPath === '/terms' && method === 'POST') {
+      const newTerm: MockTermItem = {
+        id: `term-${Date.now()}`,
+        name: body?.name || 'Term 4',
+        academicYear: body?.academicYear || schoolStore.academicYear,
+        startDate: body?.startDate || '2026-07-01',
+        endDate: body?.endDate || '2026-08-15',
+        gradingDeadline: body?.gradingDeadline || '2026-08-20',
+        status: 'Upcoming',
+        examCount: 2,
+        weightPercentage: Number(body?.weightPercentage) || 20,
+        description: body?.description || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      termsStore.push(newTerm)
+      return { success: true, data: newTerm }
+    }
+
+    if (cleanPath.startsWith('/terms/') && cleanPath.endsWith('/set-active') && method === 'POST') {
+      const id = cleanPath.split('/')[2]
+      termsStore = termsStore.map((t) => {
+        if (t.id === id) {
+          return { ...t, status: 'Active' as const, updatedAt: new Date().toISOString() }
+        }
+        return { ...t, status: t.status === 'Active' ? ('Completed' as const) : t.status }
+      })
+      const current = termsStore.find((t) => t.id === id)
+      return { success: true, data: current }
+    }
+
+    if (cleanPath.startsWith('/terms/') && method === 'GET') {
+      const id = cleanPath.split('/')[2]
+      const term = termsStore.find((t) => t.id === id)
+      if (term) return { success: true, data: term }
+      return { success: false, message: 'Term not found' }
+    }
+
+    if (cleanPath.startsWith('/terms/') && method === 'PATCH') {
+      const id = cleanPath.split('/')[2]
+      const index = termsStore.findIndex((t) => t.id === id)
+      if (index !== -1) {
+        termsStore[index] = {
+          ...termsStore[index],
+          ...body,
+          updatedAt: new Date().toISOString(),
+        }
+        return { success: true, data: termsStore[index] }
+      }
+      return { success: false, message: 'Term not found' }
+    }
+
+    if (cleanPath.startsWith('/terms/') && method === 'DELETE') {
+      const id = cleanPath.split('/')[2]
+      const term = termsStore.find((t) => t.id === id)
+      if (!term) return { success: false, message: 'Term not found' }
+      if (term.status === 'Active') {
+        return {
+          success: false,
+          message: 'Cannot delete the active evaluation term. Please switch or complete the term before removal.',
+        }
+      }
+      termsStore = termsStore.filter((t) => t.id !== id)
+      return { success: true, data: null }
+    }
+
+    // ==========================================
+    // GRADE LEVELS ENDPOINTS (/grade-levels)
+    // ==========================================
+    if (cleanPath === '/grade-levels' && method === 'GET') {
+      return { success: true, data: [...gradeLevelsStore] }
+    }
+
+    if (cleanPath === '/grade-levels' && method === 'POST') {
+      const newGrade: MockGradeLevelItem = {
+        id: `gl-${Date.now()}`,
+        name: body?.name || 'Grade New',
+        numericLevel: Number(body?.numericLevel) || 9,
+        division: body?.division || 'High School',
+        minAge: Number(body?.minAge) || 14,
+        maxAge: Number(body?.maxAge) || 15,
+        requiredCredits: Number(body?.requiredCredits) || 20,
+        classesCount: 0,
+        studentsCount: 0,
+        status: 'Active',
+        description: body?.description || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      gradeLevelsStore.push(newGrade)
+      return { success: true, data: newGrade }
+    }
+
+    if (cleanPath.startsWith('/grade-levels/') && method === 'GET') {
+      const id = cleanPath.split('/')[2]
+      const grade = gradeLevelsStore.find((g) => g.id === id)
+      if (grade) return { success: true, data: grade }
+      return { success: false, message: 'Grade Level not found' }
+    }
+
+    if (cleanPath.startsWith('/grade-levels/') && method === 'PATCH') {
+      const id = cleanPath.split('/')[2]
+      const index = gradeLevelsStore.findIndex((g) => g.id === id)
+      if (index !== -1) {
+        gradeLevelsStore[index] = {
+          ...gradeLevelsStore[index],
+          ...body,
+          updatedAt: new Date().toISOString(),
+        }
+        return { success: true, data: gradeLevelsStore[index] }
+      }
+      return { success: false, message: 'Grade Level not found' }
+    }
+
+    if (cleanPath.startsWith('/grade-levels/') && method === 'DELETE') {
+      const id = cleanPath.split('/')[2]
+      const grade = gradeLevelsStore.find((g) => g.id === id)
+      if (!grade) return { success: false, message: 'Grade Level not found' }
+      if (grade.classesCount > 0) {
+        return {
+          success: false,
+          message: `Cannot delete grade level "${grade.name}" because it has ${grade.classesCount} active classes assigned.`,
+        }
+      }
+      gradeLevelsStore = gradeLevelsStore.filter((g) => g.id !== id)
+      return { success: true, data: null }
+    }
+
+    // ==========================================
+    // ROOMS & FACILITIES ENDPOINTS (/rooms)
+    // ==========================================
+    if (cleanPath === '/rooms' && method === 'GET') {
+      return { success: true, data: [...roomsStore] }
+    }
+
+    if (cleanPath === '/rooms' && method === 'POST') {
+      const code = body?.code?.trim() || `RM-${Math.floor(Math.random() * 900 + 100)}`
+      if (roomsStore.some((r) => r.code.toLowerCase() === code.toLowerCase())) {
+        return {
+          success: false,
+          message: `A room with code "${code}" already exists in the campus database.`,
+        }
+      }
+      const newRoom: MockRoomItem = {
+        id: `rm-${Date.now()}`,
+        name: body?.name || 'New Facility Room',
+        code,
+        building: body?.building || 'Main Academic Hall',
+        floor: body?.floor || '1st Floor',
+        type: body?.type || 'Classroom',
+        capacity: Number(body?.capacity) || 30,
+        amenities: Array.isArray(body?.amenities) ? body.amenities : [],
+        status: body?.status || 'Available',
+        currentClass: body?.currentClass,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      roomsStore.unshift(newRoom)
+      return { success: true, data: newRoom }
+    }
+
+    if (cleanPath.startsWith('/rooms/') && method === 'GET') {
+      const id = cleanPath.split('/')[2]
+      const room = roomsStore.find((r) => r.id === id || r.code === id)
+      if (room) return { success: true, data: room }
+      return { success: false, message: 'Facility room not found' }
+    }
+
+    if (cleanPath.startsWith('/rooms/') && method === 'PATCH') {
+      const id = cleanPath.split('/')[2]
+      const index = roomsStore.findIndex((r) => r.id === id || r.code === id)
+      if (index !== -1) {
+        if (body?.code && body.code.toLowerCase() !== roomsStore[index].code.toLowerCase()) {
+          const duplicate = roomsStore.some(
+            (r, i) => i !== index && r.code.toLowerCase() === body.code.toLowerCase()
+          )
+          if (duplicate) {
+            return {
+              success: false,
+              message: `Facility room code "${body.code}" is already in use by another room.`,
+            }
+          }
+        }
+        roomsStore[index] = {
+          ...roomsStore[index],
+          ...body,
+          updatedAt: new Date().toISOString(),
+        }
+        return { success: true, data: roomsStore[index] }
+      }
+      return { success: false, message: 'Room not found' }
+    }
+
+    if (cleanPath.startsWith('/rooms/') && method === 'DELETE') {
+      const id = cleanPath.split('/')[2]
+      const room = roomsStore.find((r) => r.id === id || r.code === id)
+      if (!room) return { success: false, message: 'Room not found' }
+      if (room.status === 'Occupied') {
+        return {
+          success: false,
+          message: `Cannot delete room "${room.name}" while it is currently occupied by active class sessions (${room.currentClass || 'In Session'}).`,
+        }
+      }
+      const isRoomInClasses = classesStore.some(
+        (c) => c.room && c.room.toLowerCase() === room.name.toLowerCase()
+      )
+      if (isRoomInClasses) {
+        return {
+          success: false,
+          message: `Cannot delete room "${room.name}" because it is currently designated as the homeroom for registered classes.`,
+        }
+      }
+      roomsStore = roomsStore.filter((r) => r.id !== id && r.code !== id)
+      return { success: true, data: null }
+    }
+
+    // ==========================================
+    // TEACHERS ENDPOINTS (/teachers)
+    // ==========================================
+    if (cleanPath === '/teachers' && method === 'GET') {
+      return { success: true, data: [...teachersStore] }
+    }
+
+    if (cleanPath === '/teachers' && method === 'POST') {
+      const idNum = Math.floor(Math.random() * 9000 + 1000)
+      const firstName = body?.firstName || 'Faculty'
+      const lastName = body?.lastName || 'Member'
+      const newTeacher: MockTeacherItem = {
+        id: `t-${idNum}`,
+        teacherId: body?.teacherId || `TCH-${idNum}`,
+        firstName,
+        lastName,
+        email: body?.email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@oakridge.edu`,
+        phone: body?.phone || '+1 (555) 019-0000',
+        department: body?.department || 'General',
+        position: body?.position || 'Faculty Member',
+        qualification: body?.qualification || "Master's Degree",
+        specialization: body?.specialization || '',
+        experienceYears: Number(body?.experienceYears) || 3,
+        hireDate: body?.hireDate || new Date().toISOString().split('T')[0],
+        weeklyTeachingHours: Number(body?.weeklyTeachingHours) || 18,
+        status: body?.status || 'active',
+        subjects: body?.subjects || ['General Studies'],
+        assignedClasses: body?.assignedClasses || ['Grade 10-A'],
+        avatarUrl: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop`,
+        performanceRating: 4.8,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      teachersStore.unshift(newTeacher)
+      return { success: true, data: newTeacher }
+    }
+
+    if (cleanPath.startsWith('/teachers/') && method === 'GET') {
+      const id = cleanPath.split('/')[2]
+      const teacher = teachersStore.find((t) => t.id === id || t.teacherId === id)
+      if (teacher) return { success: true, data: teacher }
+      return { success: false, message: 'Teacher record not found' }
+    }
+
+    if (cleanPath.startsWith('/teachers/') && method === 'PATCH') {
+      const id = cleanPath.split('/')[2]
+      const index = teachersStore.findIndex((t) => t.id === id || t.teacherId === id)
+      if (index !== -1) {
+        teachersStore[index] = {
+          ...teachersStore[index],
+          ...body,
+          updatedAt: new Date().toISOString(),
+        }
+        return { success: true, data: teachersStore[index] }
+      }
+      return { success: false, message: 'Teacher not found' }
+    }
+
+    if (cleanPath.startsWith('/teachers/') && method === 'DELETE') {
+      const id = cleanPath.split('/')[2]
+      const teacher = teachersStore.find((t) => t.id === id || t.teacherId === id)
+      if (!teacher) return { success: false, message: 'Teacher not found' }
+      if (teacher.assignedClasses && teacher.assignedClasses.length > 0) {
+        return {
+          success: false,
+          message: `Cannot delete teacher "${teacher.firstName} ${teacher.lastName}" while assigned to active classes (${teacher.assignedClasses.join(', ')}). Please reassign homeroom classes first.`,
+        }
+      }
+      teachersStore = teachersStore.filter((t) => t.id !== id && t.teacherId !== id)
       return { success: true, data: null }
     }
 
@@ -1161,3 +2188,4 @@ export const mockApiHandler = {
     return null
   },
 }
+

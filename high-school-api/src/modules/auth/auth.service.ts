@@ -151,13 +151,7 @@ export const authService = {
   async getCurrentUser(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        role: {
-          include: {
-            permissions: { include: { permission: true } },
-          },
-        },
-      },
+      include: { role: true },
     })
 
     if (!user || user.deletedAt || !user.isActive) {
@@ -170,7 +164,6 @@ export const authService = {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role.name,
-      permissions: user.role.permissions.map(({ permission }) => permission.key),
     }
   },
 }

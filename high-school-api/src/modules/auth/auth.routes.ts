@@ -24,9 +24,6 @@ const authLimiter = rateLimit({
 })
 
 router.post('/login', authLimiter, validateBody(loginSchema), asyncHandler(authController.login))
-// Canonical contract name from the use-case document. Keep the legacy
-// /refresh-token alias below for existing clients during the transition.
-router.post('/refresh', validateBody(refreshSchema), asyncHandler(authController.refresh))
 router.post('/refresh-token', validateBody(refreshSchema), asyncHandler(authController.refresh))
 router.post('/logout', validateBody(refreshSchema), asyncHandler(authController.logout))
 router.get('/me', authenticate, asyncHandler(authController.me))

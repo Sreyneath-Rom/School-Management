@@ -5,6 +5,8 @@ import AppLayout from "@/layouts/AppLayout";
 
 import Dashboard from "@/pages/Dashboard/Dashboard";
 import Classes from "@/pages/Academic/Classes";
+import Lessons from "@/pages/Academic/Lessons";
+import Schedules from "@/pages/Setup/Schedules";
 import Homework from "@/pages/Academic/Homework";
 import Quizzes from "@/pages/Academic/Quizzes";
 import Grades from "@/pages/Academic/Grades";
@@ -24,6 +26,8 @@ export const studentRoutes = (): ReactElement => (
   <Route element={<AppLayout />}>
     <Route path="/student/dashboard" element={<Dashboard />} />
     <Route path="/student/classes" element={<Classes />} />
+    <Route path="/student/timetable" element={<Schedules />} />
+    <Route path="/student/lessons" element={<Lessons />} />
     <Route path="/student/homework" element={<Homework />} />
     <Route path="/student/quizzes" element={<Quizzes />} />
     <Route path="/student/grades" element={<Grades />} />

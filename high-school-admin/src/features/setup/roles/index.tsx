@@ -7,6 +7,7 @@ import { RoleStats } from './RoleStats'
 import { RoleCardList } from './RoleCardList'
 import { RoleMatrixTable } from './RoleMatrixTable'
 import { CreateRoleModal } from './CreateRoleModal'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { roleService } from '@/services/roleService'
 import type { RoleDef, PermissionDef } from '@/types/roles'
 import { useNotification } from '@/hooks/useNotification'
@@ -25,6 +26,9 @@ export default function RolesFeature() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isCreatingRole, setIsCreatingRole] = useState(false)
+
+  const [roleToDelete, setRoleToDelete] = useState<{ id: string; name: string } | null>(null)
+  const [isDeletingRole, setIsDeletingRole] = useState(false)
 
   const { success, error: notifyError } = useNotification()
 
@@ -152,6 +156,27 @@ export default function RolesFeature() {
     }
   }
 
+  const handleConfirmDeleteRole = async () => {
+    if (!roleToDelete) return
+    setIsDeletingRole(true)
+    try {
+      await roleService.deleteRole(roleToDelete.id)
+      setRoles((prev) => prev.filter((r) => r.id !== roleToDelete.id))
+      if (selectedRoleId === roleToDelete.id) {
+        const remaining = roles.filter((r) => r.id !== roleToDelete.id)
+        if (remaining.length > 0) {
+          handleSelectRole(remaining[0].id)
+        }
+      }
+      success(`Role "${roleToDelete.name}" deleted successfully`)
+      setRoleToDelete(null)
+    } catch (err) {
+      notifyError(err instanceof ApiError ? err.message : 'Failed to delete role')
+    } finally {
+      setIsDeletingRole(false)
+    }
+  }
+
   const hasChanges =
     JSON.stringify([...draftPermissionIds].sort()) !==
     JSON.stringify([...savedPermissionIds].sort())
@@ -197,6 +222,7 @@ export default function RolesFeature() {
           roles={roles}
           selectedRoleId={selectedRoleId}
           onSelectRole={handleSelectRole}
+          onDeleteRole={(id, name) => setRoleToDelete({ id, name })}
         />
       </div>
 
@@ -243,6 +269,16 @@ export default function RolesFeature() {
         catalog={catalog}
         onClose={() => setIsCreateModalOpen(false)}
         onCreate={handleCreateRole}
+      />
+
+      {/* Delete Role Confirm Dialog */}
+      <ConfirmDialog
+        open={Boolean(roleToDelete)}
+        title="Delete Custom Role"
+        message={`Are you sure you want to delete the role "${roleToDelete?.name}"? Users assigned to this role must be reassigned.`}
+        onConfirm={handleConfirmDeleteRole}
+        onCancel={() => setRoleToDelete(null)}
+        isDeleting={isDeletingRole}
       />
     </div>
   )

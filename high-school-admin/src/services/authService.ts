@@ -8,7 +8,6 @@ export interface AuthUserPayload {
   firstName: string
   lastName: string
   role: UserRole
-  permissions?: string[]
 }
 
 export interface AuthResult {
@@ -57,6 +56,7 @@ export const authService = {
   logout: (refreshToken: string) =>
     apiClient.post<void>('/auth/logout', { refreshToken }).catch(() => {}),
   refreshToken: (refreshToken: string) =>
-    apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh', { refreshToken }),
+    apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh-token', { refreshToken }),
   me: () => apiClient.get<AuthUserPayload>('/auth/me'),
 }
+

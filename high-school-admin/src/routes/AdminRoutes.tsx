@@ -12,6 +12,7 @@ import Subjects from "@/pages/Setup/Subjects";
 import Rooms from "@/pages/Setup/Rooms";
 import Roles from "@/pages/Setup/Roles";
 import Users from "@/pages/Setup/Users";
+import GradeLevels from "@/pages/Setup/GradeLevels";
 import TranslationManager from "@/pages/Setup/TranslationManager";
 
 // Academic
@@ -75,25 +76,43 @@ import ResponsiveScreenStudio from "@/pages/System/ResponsiveScreenStudio";
 export const adminRoutes = (): ReactElement => (
   <Route element={<AppLayout />}>
     <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/admin/dashboard" element={<Dashboard />} />
 
     {/* Setup */}
     <Route path="/setup/school" element={<SchoolSetup />} />
+    <Route path="/admin/school" element={<SchoolSetup />} />
     <Route path="/setup/academic-years" element={<AcademicYears />} />
+    <Route path="/admin/school/academic-years" element={<AcademicYears />} />
     <Route path="/setup/terms" element={<Terms />} />
+    <Route path="/admin/school/terms" element={<Terms />} />
     <Route path="/setup/subjects" element={<Subjects />} />
+    <Route path="/admin/subjects" element={<Subjects />} />
     <Route path="/setup/rooms" element={<Rooms />} />
     <Route path="/setup/roles" element={<Roles />} />
+    <Route path="/admin/roles" element={<Roles />} />
+    <Route path="/admin/roles/permissions" element={<Roles />} />
     <Route path="/setup/users" element={<Users />} />
+    <Route path="/setup/users/:id" element={<Users />} />
+    <Route path="/admin/users" element={<Users />} />
+    <Route path="/admin/users/:id" element={<Users />} />
+    <Route path="/setup/grade-levels" element={<GradeLevels />} />
+    <Route path="/setup/grades" element={<GradeLevels />} />
+    <Route path="/admin/grade-levels" element={<GradeLevels />} />
     <Route path="/setup/translations" element={<TranslationManager />} />
 
     {/* Academic */}
     <Route path="/academic/classes" element={<Classes />} />
+    <Route path="/academic/classes/:id" element={<Classes />} />
+    <Route path="/admin/classes" element={<Classes />} />
+    <Route path="/admin/classes/:id" element={<Classes />} />
     <Route path="/academic/class-subjects" element={<ClassSubjects />} />
     <Route path="/academic/schedules" element={<Schedules />} />
+    <Route path="/admin/schedules" element={<Schedules />} />
     <Route path="/academic/lessons" element={<Lessons />} />
     <Route path="/academic/homework" element={<Homework />} />
     <Route path="/academic/quizzes" element={<Quizzes />} />
     <Route path="/academic/grades" element={<Grades />} />
+    <Route path="/admin/grades" element={<Grades />} />
 
     {/* Exams */}
     <Route path="/academic/exams" element={<ExamList />} />
@@ -106,17 +125,23 @@ export const adminRoutes = (): ReactElement => (
 
     {/* Students */}
     <Route path="/students" element={<StudentList />} />
+    <Route path="/students/:id" element={<StudentProfiles />} />
+    <Route path="/admin/students" element={<StudentList />} />
+    <Route path="/admin/students/:id" element={<StudentProfiles />} />
     <Route path="/students/profiles" element={<StudentProfiles />} />
     <Route path="/students/attendance" element={<Attendance />} />
+    <Route path="/admin/attendance" element={<Attendance />} />
+    <Route path="/admin/attendance/reports" element={<AttendanceReport />} />
     <Route path="/students/leave-requests" element={<LeaveRequests />} />
 
     {/* Teachers */}
     <Route path="/teachers" element={<TeacherList />} />
+    <Route path="/teachers/:id" element={<TeacherProfiles />} />
+    <Route path="/admin/teachers" element={<TeacherList />} />
+    <Route path="/admin/teachers/:id" element={<TeacherProfiles />} />
     <Route path="/teachers/profiles" element={<TeacherProfiles />} />
     <Route path="/teachers/assignments" element={<TeacherAssignments />} />
     <Route path="/teachers/attendance" element={<TeacherAttendance />} />
-
-    
 
     {/* Library */}
     <Route path="/library/books" element={<BookList />} />
@@ -138,13 +163,17 @@ export const adminRoutes = (): ReactElement => (
 
     {/* Communication */}
     <Route path="/communication/announcements" element={<AnnouncementsPage />} />
+    <Route path="/admin/communication/announcements" element={<AnnouncementsPage />} />
     <Route path="/communication/notifications" element={<Notifications />} />
+    <Route path="/admin/communication/notifications" element={<Notifications />} />
 
     {/* Reports */}
     <Route path="/reports/attendance" element={<AttendanceReport />} />
     <Route path="/reports/academic" element={<GradeReport />} />
+    <Route path="/admin/reports/academic" element={<GradeReport />} />
     <Route path="/reports/grades" element={<GradeReport />} />
     <Route path="/reports/students" element={<StudentReport />} />
+    <Route path="/admin/reports/students" element={<StudentReport />} />
     <Route path="/reports/teachers" element={<TeacherReport />} />
     <Route path="/reports/library" element={<BookList />} />
 

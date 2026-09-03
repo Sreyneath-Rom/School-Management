@@ -44,7 +44,7 @@ async function performRefresh(): Promise<string | null> {
   const refreshToken = window.localStorage.getItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN)
   if (!refreshToken) return null
 
-  const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+  const res = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),

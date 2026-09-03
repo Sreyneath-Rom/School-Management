@@ -46,6 +46,7 @@ import {
   Bell,
   Activity,
   Sliders,
+  Layers,
   X,
   Search,
   PanelLeftClose,
@@ -60,7 +61,6 @@ import { useSchool } from "@/context/SchoolContext";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
 import { useTranslations, type TranslationKey } from "@/i18n";
-import { canAccessPath } from "@/utils/rolePermissions";
 
 type Section =
   | "DASHBOARD"
@@ -105,6 +105,7 @@ const roleMenus: Record<string, MenuSection[]> = {
         { translationKey: "sidebar.schoolSetup", icon: Settings, path: "/setup/school" },
         { translationKey: "sidebar.academicYears", icon: CalendarRange, path: "/setup/academic-years" },
         { translationKey: "sidebar.terms", icon: Clock, path: "/setup/terms" },
+        { translationKey: "sidebar.gradeLevels", icon: Layers, path: "/setup/grade-levels" },
         { translationKey: "sidebar.subjects", icon: BookMarked, path: "/setup/subjects" },
         { translationKey: "sidebar.rooms", icon: DoorOpen, path: "/setup/rooms" },
         { translationKey: "sidebar.rolesPermissions", icon: ShieldCheck, path: "/setup/roles" },
@@ -232,10 +233,12 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.classes", icon: BookOpenCheck, path: "/teacher/classes" },
+        { translationKey: "sidebar.classSchedules", icon: CalendarDays, path: "/teacher/timetable" },
         { translationKey: "sidebar.lessons", icon: NotebookText, path: "/teacher/lessons" },
         { translationKey: "sidebar.homework", icon: PenLine, path: "/teacher/homework" },
         { translationKey: "sidebar.quizTests", icon: FileQuestion, path: "/teacher/quizzes" },
         { translationKey: "sidebar.grades", icon: Award, path: "/teacher/grades" },
+        { translationKey: "sidebar.academicPerformanceReport", icon: LineChart, path: "/teacher/progress" },
       ],
     },
     {
@@ -295,6 +298,8 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "academic",
       items: [
         { translationKey: "sidebar.classes", icon: BookOpenCheck, path: "/student/classes" },
+        { translationKey: "sidebar.classSchedules", icon: CalendarDays, path: "/student/timetable" },
+        { translationKey: "sidebar.lessons", icon: NotebookText, path: "/student/lessons" },
         { translationKey: "sidebar.homework", icon: PenLine, path: "/student/homework" },
         { translationKey: "sidebar.quizTests", icon: FileQuestion, path: "/student/quizzes" },
         { translationKey: "sidebar.grades", icon: Award, path: "/student/grades" },
@@ -462,15 +467,8 @@ export default function Sidebar({
 
   // Active role's menu sections
   const baseMenu = useMemo(() => {
-    const menu = roleMenus[activeRole] || roleMenus.admin;
-    const role = (activeRole in roleMenus ? activeRole : "admin") as "admin" | "teacher" | "student" | "parent";
-    return menu
-      .map((section) => ({
-        ...section,
-        items: section.items.filter((item) => canAccessPath(role, item.path, user?.permissions)),
-      }))
-      .filter((section) => section.items.length > 0);
-  }, [activeRole, user?.permissions]);
+    return roleMenus[activeRole] || roleMenus.admin;
+  }, [activeRole]);
 
   // Keyboard shortcut listener: Cmd/Ctrl+K to focus search, Esc to close
   useEffect(() => {
