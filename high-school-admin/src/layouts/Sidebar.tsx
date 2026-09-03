@@ -60,6 +60,7 @@ import { useSchool } from "@/context/SchoolContext";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
 import { useTranslations, type TranslationKey } from "@/i18n";
+import { canAccessPath } from "@/utils/rolePermissions";
 
 type Section =
   | "DASHBOARD"
@@ -461,8 +462,15 @@ export default function Sidebar({
 
   // Active role's menu sections
   const baseMenu = useMemo(() => {
-    return roleMenus[activeRole] || roleMenus.admin;
-  }, [activeRole]);
+    const menu = roleMenus[activeRole] || roleMenus.admin;
+    const role = (activeRole in roleMenus ? activeRole : "admin") as "admin" | "teacher" | "student" | "parent";
+    return menu
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => canAccessPath(role, item.path, user?.permissions)),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [activeRole, user?.permissions]);
 
   // Keyboard shortcut listener: Cmd/Ctrl+K to focus search, Esc to close
   useEffect(() => {

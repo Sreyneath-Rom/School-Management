@@ -7,6 +7,7 @@ import Footer from "./Footer";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 import { SchoolProvider } from "@/context/SchoolContext";
 import { useAuth } from "@/hooks/useAuth"; // <-- to get role
+import RouteAccessGuard from "@/routes/RouteAccessGuard";
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,7 +30,9 @@ export default function AppLayout() {
           {/* === MAIN CONTENT – WITH RESPONSIVE GLASS CONTAINER & BREADCRUMBS === */}
           <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8">
             <Breadcrumbs />
-            <Outlet />
+            <RouteAccessGuard>
+              <Outlet />
+            </RouteAccessGuard>
           </main>
 
           <Footer />

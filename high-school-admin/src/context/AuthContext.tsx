@@ -10,6 +10,7 @@ interface AuthUser {
   lastName: string;
   role: UserRole;
   name: string;
+  permissions?: string[];
 }
 
 export interface AuthContextType {
