@@ -6,6 +6,7 @@ import UpcomingEvents from '@/features/dashboard/UpcomingEvents'
 import RecentActivities from '@/features/dashboard/RecentActivities'
 import RecentLeaveRequests from '@/features/dashboard/RecentLeaveRequests'
 import Announcements from '@/features/dashboard/Announcements'
+import QuickActions from '@/features/dashboard/QuickActions'
 import { useAuth } from '@/hooks/useAuth'
 import { getGreetingForUser } from '@/data/mockUsers'
 import { useFetch } from '@/hooks/useFetch'
@@ -31,6 +32,8 @@ export default function Dashboard() {
         )}
 
         <StatsGrid stats={stats} loading={loading} />
+
+        <QuickActions />
 
         <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           <div className="lg:col-span-2 xl:col-span-2">
