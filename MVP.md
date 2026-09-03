@@ -1,6 +1,6 @@
 # High School Management System — MVP
 
-The repository now includes a usable admin MVP for the core school operations workflow described in the use-case document.
+The repository now includes a usable admin MVP for the core school operations workflow described in the use-case document. The requirements are maintained in [`docs/USE_CASES.md`](docs/USE_CASES.md), including explicit CRUD use cases, preconditions, postconditions, permission mapping, and core security rules.
 
 ## Included workflow
 
@@ -32,7 +32,7 @@ The frontend is served at `http://localhost:3000`.
 npm run build
 ```
 
-The frontend build passes with TypeScript and Vite. A normal workspace install may attempt to download Prisma engines for the API; in restricted network environments, `--ignore-scripts` allows the frontend MVP to be built and verified independently.
+The frontend build passes with TypeScript and Vite, and the backend TypeScript/Prisma build passes after generating the Prisma client. A normal workspace install may attempt to download Prisma engines for the API; in restricted network environments, `--ignore-scripts` allows dependencies to install before running `npx prisma generate` with a configured `DATABASE_URL`.
 
 ## Production follow-up
 
