@@ -125,10 +125,10 @@ export const adminRoutes = (): ReactElement => (
 
     {/* Students */}
     <Route path="/students" element={<StudentList />} />
+    <Route path="/students/profiles" element={<StudentProfiles />} />
     <Route path="/students/:id" element={<StudentProfiles />} />
     <Route path="/admin/students" element={<StudentList />} />
     <Route path="/admin/students/:id" element={<StudentProfiles />} />
-    <Route path="/students/profiles" element={<StudentProfiles />} />
     <Route path="/students/attendance" element={<Attendance />} />
     <Route path="/admin/attendance" element={<Attendance />} />
     <Route path="/admin/attendance/reports" element={<AttendanceReport />} />
@@ -136,10 +136,10 @@ export const adminRoutes = (): ReactElement => (
 
     {/* Teachers */}
     <Route path="/teachers" element={<TeacherList />} />
+    <Route path="/teachers/profiles" element={<TeacherProfiles />} />
     <Route path="/teachers/:id" element={<TeacherProfiles />} />
     <Route path="/admin/teachers" element={<TeacherList />} />
     <Route path="/admin/teachers/:id" element={<TeacherProfiles />} />
-    <Route path="/teachers/profiles" element={<TeacherProfiles />} />
     <Route path="/teachers/assignments" element={<TeacherAssignments />} />
     <Route path="/teachers/attendance" element={<TeacherAttendance />} />
 

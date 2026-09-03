@@ -61,7 +61,7 @@ export default function AcademicYears() {
     try {
       setLoading(true)
       const data = await academicYearService.list()
-      setYears(data)
+      setYears(Array.isArray(data) ? data : [])
     } catch (err: any) {
       showToast(err?.message || 'Failed to load academic years', 'error')
     } finally {

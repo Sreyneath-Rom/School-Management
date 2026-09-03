@@ -212,7 +212,7 @@ export default function Classes() {
         />
         <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
           <Link
-            to="/schedule"
+            to="/academic/schedules"
             className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-surface-700 dark:text-surface-300 bg-surface-100 hover:bg-surface-200 dark:bg-surface-800 dark:hover:bg-surface-700 transition"
           >
             <CalendarDays className="w-4 h-4 text-surface-500" />

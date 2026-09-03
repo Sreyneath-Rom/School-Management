@@ -44,7 +44,7 @@ export default function AuthHeader({ activeRole = 'all', onRoleSelect }: Props) 
           onClick={() => handleRoleClick('all')}
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-teal-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-linear-to-tr from-teal-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
             <School2 size={22} className="sm:size-6" />
           </div>
           <div>

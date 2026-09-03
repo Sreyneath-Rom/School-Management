@@ -1,6 +1,6 @@
 // Suggested path: @/types/user.ts
 
-export type UserRole = 'admin' | 'teacher' | 'student' | 'mazer'
+export type UserRole = 'admin' | 'teacher' | 'student' | 'parent' | 'mazer'
 export type UserStatus = 'active' | 'inactive'
 export type Gender = 'male' | 'female' | 'other'
 export type ParentRelationship = 'father' | 'mother' | 'guardian' | 'other'
@@ -74,7 +74,11 @@ export interface MazerUser extends BaseUser, StudentCoreFields {
   endDate?: string // ISO date string, optional
 }
 
-export type SystemUser = AdminUser | TeacherUser | StudentUser | MazerUser
+export interface ParentUser extends BaseUser {
+  role: 'parent'
+}
+
+export type SystemUser = AdminUser | TeacherUser | StudentUser | ParentUser | MazerUser
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -109,6 +113,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Admin',
   teacher: 'Teacher',
   student: 'Student',
+  parent: 'Parent',
   mazer: 'Mazer',
 }
 
@@ -117,5 +122,6 @@ export const ROLE_COLORS: Record<UserRole, { bg: string; text: string; ring: str
   admin: { bg: 'bg-teal-100', text: 'text-teal-700', ring: 'ring-teal-600/20' },
   teacher: { bg: 'bg-sky-100', text: 'text-sky-700', ring: 'ring-sky-600/20' },
   student: { bg: 'bg-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-600/20' },
+  parent: { bg: 'bg-orange-100', text: 'text-orange-700', ring: 'ring-orange-600/20' },
   mazer: { bg: 'bg-amber-100', text: 'text-amber-700', ring: 'ring-amber-600/20' },
 }

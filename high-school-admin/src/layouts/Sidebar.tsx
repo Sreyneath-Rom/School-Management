@@ -30,7 +30,6 @@ import {
   Megaphone,
   BarChart3,
   LineChart,
-  DollarSign,
   Library,
   Calendar as CalendarIcon,
   MessageSquare,
@@ -53,7 +52,6 @@ import {
   PanelLeft,
   LogOut,
   Sparkles,
-  Layers,
   Check,
   type LucideIcon,
 } from "lucide-react";
@@ -430,6 +428,7 @@ export default function Sidebar({
   const { t } = useTranslations();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
 
   const activeRole = (propRole || authRole || "admin").toLowerCase();
   const schoolName = school?.name || "High School Admin";
@@ -490,6 +489,12 @@ export default function Sidebar({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [mobileOpen, onClose]);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      mobileDrawerRef.current?.querySelector<HTMLElement>('button, a')?.focus();
+    }
+  }, [mobileOpen]);
 
   // Filtered menu based on search query & active category filter
   const filteredMenu = useMemo(() => {
@@ -606,7 +611,7 @@ export default function Sidebar({
           title={t("sidebar.dashboard")}
           className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition duration-200 shrink-0 ${
             isDashboardActive
-              ? "bg-gradient-to-tr from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/25 font-semibold"
+              ? "bg-linear-to-tr from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/25 font-semibold"
               : "text-stone-600 hover:bg-stone-500/10 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
           }`}
         >
@@ -684,7 +689,7 @@ export default function Sidebar({
                             onClick={handleLinkClick}
                             className={`flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium transition duration-150 ${
                               isItemActive
-                                ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold shadow-xs"
+                                ? "bg-linear-to-r from-brand-600 to-brand-500 text-white font-semibold shadow-xs"
                                 : "text-stone-600 hover:bg-stone-500/10 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-white/10 dark:hover:text-white"
                             }`}
                           >
@@ -723,7 +728,7 @@ export default function Sidebar({
 
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs cursor-default select-none ring-2 ring-white dark:ring-stone-800"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs cursor-default select-none ring-2 ring-white dark:ring-stone-800"
         >
           {userInitials}
         </div>
@@ -793,9 +798,9 @@ export default function Sidebar({
           <NavLink
             to={dashboardPath}
             onClick={handleLinkClick}
-            className={`group relative flex min-h-[42px] items-center justify-between gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
+            className={`group relative flex min-h-10.5 items-center justify-between gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
               isDashboardActive
-                ? "bg-gradient-to-r from-brand-600 via-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20"
+                ? "bg-linear-to-r from-brand-600 via-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20"
                 : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:hover:bg-white/10 dark:text-stone-300 dark:hover:text-white"
             }`}
           >
@@ -898,7 +903,7 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => toggle(section.key)}
-                    className={`flex min-h-[38px] w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-all duration-150 ${
+                    className={`flex min-h-9.5 w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-all duration-150 ${
                       hasActiveChild
                         ? "text-brand-700 dark:text-brand-300 bg-brand-500/10 dark:bg-brand-500/15 border border-brand-500/20"
                         : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:text-stone-400 dark:hover:text-stone-200 dark:hover:bg-white/10"
@@ -936,9 +941,9 @@ export default function Sidebar({
                             key={item.path}
                             to={item.path}
                             onClick={handleLinkClick}
-                            className={`group relative flex min-h-[36px] items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-150 ${
+                            className={`group relative flex min-h-9 items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-150 ${
                               isItemActive
-                                ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold shadow-xs"
+                                ? "bg-linear-to-r from-brand-600 to-brand-500 text-white font-semibold shadow-xs"
                                 : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
                             }`}
                           >
@@ -969,7 +974,7 @@ export default function Sidebar({
       <div className="shrink-0 p-2.5 sm:p-3 pt-1">
         <div className="p-3 rounded-2xl glass-sm border border-stone-200/60 dark:border-white/10 flex items-center justify-between gap-2 shadow-xs">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs select-none ring-2 ring-white dark:ring-stone-800">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs select-none ring-2 ring-white dark:ring-stone-800">
               {userInitials}
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-stone-900" />
             </div>
@@ -1013,11 +1018,14 @@ export default function Sidebar({
 
       {/* Mobile Drawer (Touch Optimized for Phones & Tablets < 1024px) */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform glass-strong text-stone-900 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-in-out lg:hidden dark:text-stone-100 border-r border-stone-200/60 dark:border-white/10 ${
+        ref={mobileDrawerRef}
+        className={`fixed left-0 top-0 z-50 h-full w-77.5 max-w-[85vw] transform glass-strong text-stone-900 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-in-out lg:hidden dark:text-stone-100 border-r border-stone-200/60 dark:border-white/10 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
         aria-modal="true"
+        aria-hidden={!mobileOpen}
+        inert={!mobileOpen}
         aria-label="Mobile Navigation"
       >
         <div className="h-full overflow-hidden">{renderExpandedMenu(true)}</div>

@@ -303,7 +303,7 @@ export default function ResponsiveScreenStudio() {
                   onClick={() => setSelectedDevice(preset)}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all duration-150 shrink-0 ${
                     isSelected
-                      ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/25 scale-[1.02]'
+                      ? 'bg-linear-to-r from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/25 scale-[1.02]'
                       : 'bg-stone-100 dark:bg-stone-800/80 hover:bg-stone-200/70 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200/60 dark:border-stone-700/60'
                   }`}
                 >
@@ -350,7 +350,7 @@ export default function ResponsiveScreenStudio() {
           </div>
 
           {/* Viewport Canvas Stage Area */}
-          <div className="relative min-h-[560px] bg-stone-950/90 rounded-3xl p-6 flex items-center justify-center overflow-x-auto overflow-y-hidden border border-stone-800/80 shadow-inner">
+          <div className="relative min-h-140 bg-stone-950/90 rounded-3xl p-6 flex items-center justify-center overflow-x-auto overflow-y-hidden border border-stone-800/80 shadow-inner">
             {/* Dimensions Calibration Watermark */}
             <div className="absolute top-3 left-4 text-[11px] font-mono text-stone-500 flex items-center gap-2">
               <span>CANVAS: {effectiveWidth}px width × {effectiveHeight}px height</span>

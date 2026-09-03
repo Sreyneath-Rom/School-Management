@@ -453,7 +453,7 @@ export default function Lessons() {
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3 flex-1">
           {/* Search bar */}
-          <div className="relative min-w-[240px] flex-1 max-w-sm">
+          <div className="relative min-w-60 flex-1 max-w-sm">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -717,7 +717,7 @@ export default function Lessons() {
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition-colors border border-slate-200/60"
                             >
                               {renderAttachmentIcon(att.type)}
-                              <span className="font-medium truncate max-w-[180px]">{att.name}</span>
+                              <span className="font-medium truncate max-w-45">{att.name}</span>
                               <Download className="w-3 h-3 text-slate-400" />
                             </button>
                           ))}

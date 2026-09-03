@@ -335,7 +335,15 @@ export const lessonService = {
   }): Lesson[] => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_LESSONS)
-      let lessons: Lesson[] = stored ? JSON.parse(stored) : INITIAL_LESSONS
+      const parsedLessons = stored ? JSON.parse(stored) : INITIAL_LESSONS
+      let lessons: Lesson[] = Array.isArray(parsedLessons)
+        ? parsedLessons.map((lesson) => ({
+            ...lesson,
+            reviewedByStudents: Array.isArray(lesson.reviewedByStudents)
+              ? lesson.reviewedByStudents
+              : [],
+          }))
+        : INITIAL_LESSONS
 
       if (!stored) {
         localStorage.setItem(STORAGE_KEY_LESSONS, JSON.stringify(INITIAL_LESSONS))

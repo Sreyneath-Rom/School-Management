@@ -233,7 +233,7 @@ export default function RolesFeature() {
           <p className="text-sm font-medium text-text-main/60">Loading permission catalog...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
+        <div className="rounded-3xl bg-error/10 border border-error/20 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load permissions</p>
           <p className="text-xs">{loadError}</p>
         </div>

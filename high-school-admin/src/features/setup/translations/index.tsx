@@ -191,7 +191,7 @@ export default function TranslationsFeature() {
       />
 
       {/* Language Selector Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] glass-sm p-4 border border-text-main/10">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl glass-sm p-4 border border-text-main/10">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-text-main/50 mr-1">Installed Locales:</span>
           {languages.map((lang) => {
@@ -245,7 +245,7 @@ export default function TranslationsFeature() {
           <p className="text-sm font-medium text-text-main/60">Loading translation dictionary...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
+        <div className="rounded-3xl bg-error/10 border border-error/20 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load translation keys</p>
           <p className="text-xs">{loadError}</p>
         </div>

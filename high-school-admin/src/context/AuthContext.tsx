@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import type { UserRole } from "@/utils/rolePermissions";
 import { authService, type AuthResult } from "@/services/authService";
 import { LOCAL_STORAGE_KEYS } from "@/utils/constants";
+import { ApiError } from "@/lib/apiClient";
 
 interface AuthUser {
   id: string;
@@ -79,9 +80,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               name: `${freshUser.firstName} ${freshUser.lastName}`,
             });
           } catch (error) {
-            // Keep the user logged in even if validation fails
+            if (error instanceof ApiError && error.status === 401) {
+              clearSession();
+              return;
+            }
+
+            // Keep the cached session only when the API is temporarily unavailable.
             console.log(
-              "Session validation request failed, but keeping user session:",
+              "Session validation request failed; keeping cached session:",
               error,
             );
           }

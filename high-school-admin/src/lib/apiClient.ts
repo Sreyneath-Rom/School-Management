@@ -8,6 +8,7 @@ import { LOCAL_STORAGE_KEYS } from '@/utils/constants'
 import { mockApiHandler } from '@/lib/mockApiHandler'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
+const USE_MOCK_API = import.meta.env.VITE_ENABLE_MOCK_API === 'true'
 
 export class ApiError extends Error {
   status: number
@@ -124,7 +125,9 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
 
     return await handleResponse<T>(res, path)
   } catch (err) {
-    // If remote endpoint is unreachable, fallback to client-side mockApiHandler
+    if (!USE_MOCK_API || err instanceof ApiError) throw err
+
+    // Mock responses are opt-in and only apply to unavailable remote endpoints.
     const method = options.method || 'GET'
     let parsedBody: any
     try {
@@ -172,6 +175,8 @@ async function requestUpload<T>(path: string, formData: FormData, retry = true):
 
     return await handleResponse<T>(res, path)
   } catch (err) {
+    if (!USE_MOCK_API || err instanceof ApiError) throw err
+
     const mockRes = await mockApiHandler.handle(path, 'POST', formData)
     if (mockRes) {
       if (!mockRes.success) {

@@ -134,7 +134,7 @@ export default function SchedulesFeature() {
       <ScheduleStats slots={slots} />
 
       {/* Control Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-[24px] glass-sm p-4 border border-text-main/10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl glass-sm p-4 border border-text-main/10">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-xs font-semibold text-text-main/50">Viewing Class:</span>
           <div className="flex flex-wrap gap-1.5">
@@ -204,7 +204,7 @@ export default function SchedulesFeature() {
           <p className="text-sm font-medium text-text-main/60">Loading timetable matrix...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
+        <div className="rounded-3xl bg-error/10 border border-error/20 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load schedule</p>
           <p className="text-xs">{loadError}</p>
         </div>

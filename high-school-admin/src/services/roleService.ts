@@ -33,8 +33,6 @@ export const roleService = {
 
   getRoles: () => apiClient.get<RoleDef[]>('/roles'),
 
-  getRoleById: (roleId: string) => apiClient.get<RoleDef>(`/roles/${roleId}`),
-
   createRole: (payload: CreateRolePayload) => apiClient.post<RoleDef>('/roles', payload),
 
   updateRole: (roleId: string, payload: Partial<CreateRolePayload>) =>

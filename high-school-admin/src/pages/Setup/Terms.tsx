@@ -65,14 +65,15 @@ export default function Terms() {
   const loadInitialData = async () => {
     try {
       setLoading(true)
-      const years = await academicYearService.list()
+      const yearsResponse = await academicYearService.list()
+      const years = Array.isArray(yearsResponse) ? yearsResponse : []
       setAcademicYears(years)
       const currentYear = years.find((y) => y.isCurrent)?.name || years[0]?.name || '2025 - 2026'
       setSelectedYear(currentYear)
       setFormData((prev) => ({ ...prev, academicYear: currentYear }))
 
-      const termList = await termService.list(currentYear)
-      setTerms(termList)
+      const termResponse = await termService.list(currentYear)
+      setTerms(Array.isArray(termResponse) ? termResponse : [])
     } catch (err: any) {
       showToast(err?.message || 'Failed to load term configurations', 'error')
     } finally {
@@ -84,7 +85,7 @@ export default function Terms() {
     try {
       setLoading(true)
       const data = await termService.list(year)
-      setTerms(data)
+      setTerms(Array.isArray(data) ? data : [])
     } catch (err: any) {
       showToast(err?.message || 'Failed to fetch terms', 'error')
     } finally {

@@ -205,7 +205,7 @@ export default function StudentsFeature() {
   const handleBulkStatus = async (status: 'active' | 'inactive') => {
     if (selectedStudentIds.length === 0) return
     try {
-      await studentService.bulkStatus(selectedStudentIds, status)
+      await Promise.all(selectedStudentIds.map((id) => studentService.update(id, { status })))
       setStudents((prev) =>
         prev.map((s) => (selectedStudentIds.includes(s.id) ? { ...s, status } : s))
       )

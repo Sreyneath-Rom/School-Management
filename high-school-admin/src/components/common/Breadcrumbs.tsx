@@ -353,7 +353,7 @@ export default function Breadcrumbs({
                   {isLast ? (
                     <span
                       aria-current="page"
-                      className="flex items-center gap-1.5 font-semibold text-stone-900 dark:text-stone-100 truncate max-w-[200px] sm:max-w-[320px] md:max-w-none"
+                      className="flex items-center gap-1.5 font-semibold text-stone-900 dark:text-stone-100 truncate max-w-50 sm:max-w-80 md:max-w-none"
                     >
                       {Icon && <Icon size={14} className="shrink-0 text-brand-600 dark:text-brand-400" />}
                       <span className="truncate">{item.label}</span>
@@ -439,7 +439,7 @@ export default function Breadcrumbs({
               <li className="flex items-center gap-1.5 whitespace-nowrap min-w-0">
                 <span
                   aria-current="page"
-                  className="flex items-center gap-1.5 font-semibold text-stone-900 dark:text-stone-100 truncate max-w-[200px] sm:max-w-[320px] md:max-w-none"
+                  className="flex items-center gap-1.5 font-semibold text-stone-900 dark:text-stone-100 truncate max-w-50 sm:max-w-80 md:max-w-none"
                 >
                   {lastItem.icon && <lastItem.icon size={14} className="shrink-0 text-brand-600 dark:text-brand-400" />}
                   <span className="truncate">{lastItem.label}</span>
