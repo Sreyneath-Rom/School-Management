@@ -8,6 +8,7 @@ export interface AuthUserPayload {
   firstName: string
   lastName: string
   role: UserRole
+  permissions?: string[]
 }
 
 export interface AuthResult {
