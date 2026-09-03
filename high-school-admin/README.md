@@ -1,456 +1,303 @@
 # High School Management System — Frontend
 
-A modern role-based **High School Management System** frontend built for **Varin High School**.
+A modern web-based High School Management System frontend built with React, TypeScript, Vite, Tailwind CSS, and React Router.
 
-The application provides separate workflows for **Administrators, Teachers, and Students**, with centralized authentication, school configuration, academic management, attendance, schedules, homework, quizzes, grades, reports, and communication.
-
----
-
-## 1. Technology Stack
-
-| Technology      | Purpose                                |
-| --------------- | -------------------------------------- |
-| React 19        | Frontend UI                            |
-| TypeScript      | Type-safe development                  |
-| Vite            | Development server and build tool      |
-| Tailwind CSS 4  | Styling and responsive UI              |
-| React Router    | Application routing                    |
-| Context API     | Authentication and theme state         |
-| Redux Toolkit   | Global state management where required |
-| Lucide React    | Icons                                  |
-| Fetch API       | Backend communication                  |
-| Express.js      | Backend REST API                       |
-| MySQL / MariaDB | Database                               |
+The system provides separate interfaces for **Administrators, Teachers, and Students**, with role-based navigation, permissions, authentication, academic management, attendance, lessons, homework, quizzes, and grades.
 
 ---
 
-## 2. System Architecture
+## Tech Stack
+
+| Technology      | Purpose                               |
+| --------------- | ------------------------------------- |
+| React 19        | UI framework                          |
+| TypeScript      | Type safety                           |
+| Vite            | Development/build tool                |
+| Tailwind CSS 4  | Styling                               |
+| React Router    | Routing                               |
+| Context API     | Authentication and application state  |
+| Redux Toolkit   | Complex global UI state when required |
+| Lucide React    | Icons                                 |
+| Fetch API       | HTTP communication                    |
+| React Hook Form | Form management                       |
+| Zod             | Validation                            |
+
+---
+
+## Architecture
 
 ```text
-┌──────────────────────────────────────────────┐
-│                  Browser                     │
-│                                              │
-│            React + TypeScript                │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│                 AppRoutes                    │
-│                                              │
-│  Public Routes       Protected Routes        │
-│  └── Login           ├── Admin               │
-│                      ├── Teacher             │
-│                      └── Student             │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│                   Layouts                    │
-│                                              │
-│ AdminLayout | TeacherLayout | StudentLayout  │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│                    Pages                     │
-│                                              │
-│ Dashboard | Users | Classes | Subjects       │
-│ Schedule | Attendance | Lessons | Homework   │
-│ Quiz | Grades | Reports | Communication      │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│                  Services                    │
-│                                              │
-│ authService | userService | classService     │
-│ subjectService | scheduleService             │
-│ attendanceService | gradeService             │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│                  apiClient                   │
-│                                              │
-│ Authorization | Refresh Token | Error Handle │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│              Express REST API                │
-│                  /api/v1                     │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│                MySQL / MariaDB               │
-└──────────────────────────────────────────────┘
+Browser
+   │
+   ▼
+AppRoutes
+   │
+   ├── Login
+   │
+   ├── AdminRoutes
+   │      └── AdminLayout
+   │
+   ├── TeacherRoutes
+   │      └── TeacherLayout
+   │
+   └── StudentRoutes
+          └── StudentLayout
+                │
+                ▼
+              Pages
+                │
+                ▼
+             Services
+                │
+                ▼
+             apiClient
+                │
+                ▼
+        Express REST API
+                │
+                ▼
+             Prisma 7
+                │
+                ▼
+           PostgreSQL
 ```
 
 ---
 
-## 3. User Roles
-
-### Administrator
-
-The administrator manages the entire school system.
+## Project Structure
 
 ```text
-Admin
-├── Dashboard
-├── School Setup
-├── Roles & Permissions
+high-school-admin/
+│
+├── public/
+│
+├── src/
+│   │
+│   ├── app/
+│   │   └── App.tsx
+│   │
+│   ├── components/
+│   │   ├── common/
+│   │   ├── tables/
+│   │   ├── forms/
+│   │   ├── charts/
+│   │   └── users/
+│   │
+│   ├── context/
+│   │   ├── AuthContext.tsx
+│   │   └── ThemeContext.tsx
+│   │
+│   ├── hooks/
+│   │
+│   ├── layouts/
+│   │   ├── AdminLayout.tsx
+│   │   ├── TeacherLayout.tsx
+│   │   └── StudentLayout.tsx
+│   │
+│   ├── lib/
+│   │   └── apiClient.ts
+│   │
+│   ├── pages/
+│   │   ├── auth/
+│   │   │   └── Login.tsx
+│   │   │
+│   │   ├── admin/
+│   │   │   ├── Dashboard/
+│   │   │   ├── School/
+│   │   │   ├── People/
+│   │   │   ├── Academics/
+│   │   │   ├── Attendance/
+│   │   │   ├── Reports/
+│   │   │   └── Communication/
+│   │   │
+│   │   ├── teacher/
+│   │   │   ├── Dashboard/
+│   │   │   ├── Classes/
+│   │   │   ├── Lessons/
+│   │   │   ├── Homework/
+│   │   │   ├── Quizzes/
+│   │   │   ├── Attendance/
+│   │   │   └── Grades/
+│   │   │
+│   │   └── student/
+│   │       ├── Dashboard/
+│   │       ├── Classes/
+│   │       ├── Timetable/
+│   │       ├── Lessons/
+│   │       ├── Homework/
+│   │       ├── Quizzes/
+│   │       ├── Grades/
+│   │       └── Attendance/
+│   │
+│   ├── routes/
+│   │   ├── AppRoutes.tsx
+│   │   ├── AdminRoutes.tsx
+│   │   ├── TeacherRoutes.tsx
+│   │   └── StudentRoutes.tsx
+│   │
+│   ├── services/
+│   │   ├── auth.service.ts
+│   │   ├── user.service.ts
+│   │   ├── role.service.ts
+│   │   ├── school.service.ts
+│   │   ├── academicYear.service.ts
+│   │   ├── term.service.ts
+│   │   ├── grade.service.ts
+│   │   ├── class.service.ts
+│   │   ├── subject.service.ts
+│   │   ├── schedule.service.ts
+│   │   ├── attendance.service.ts
+│   │   ├── lesson.service.ts
+│   │   ├── homework.service.ts
+│   │   ├── quiz.service.ts
+│   │   └── gradebook.service.ts
+│   │
+│   ├── store/
+│   │
+│   ├── styles/
+│   │
+│   ├── types/
+│   │   ├── auth.ts
+│   │   ├── user.ts
+│   │   ├── school.ts
+│   │   ├── academic.ts
+│   │   ├── attendance.ts
+│   │   ├── homework.ts
+│   │   ├── quiz.ts
+│   │   └── grade.ts
+│   │
+│   └── utils/
+│       ├── rolePermissions.ts
+│       ├── errors.ts
+│       └── validation.ts
+│
+├── .env.example
+├── .gitignore
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
+```
+
+---
+
+# User Roles
+
+## Administrator
+
+Administrators manage the entire school system.
+
+```text
+Dashboard
+
+School
+├── School Profile
+├── Academic Years
+└── Terms
+
+People
 ├── Users
 ├── Teachers
 ├── Students
+└── Roles & Permissions
+
+Academics
+├── Grades / Levels
 ├── Classes
 ├── Subjects
-├── Schedules
+└── Schedules
+
+Attendance
 ├── Attendance
-├── Academic Management
-├── Reports
-└── Communication
+└── Attendance Reports
+
+Reports
+├── Academic Reports
+└── Student Reports
+
+Communication
+├── Announcements
+└── Notifications
+
+Settings
 ```
 
-### Teacher
+---
 
-Teachers manage academic activities and students assigned to their classes.
+## Teacher
+
+Teachers manage classroom activities and student assessment.
 
 ```text
-Teacher
-├── Dashboard
+Dashboard
+
+Teaching
 ├── My Classes
 ├── Lessons
 ├── Homework
-├── Quiz & Tests
+└── Quizzes & Tests
+
+Assessment
 ├── Attendance
 ├── Grades
 └── Student Progress
 ```
 
-### Student
+---
 
-Students can access their academic information and assigned activities.
+## Student
+
+Students access their academic information and learning activities.
 
 ```text
-Student
-├── Dashboard
+Dashboard
+
+Learning
 ├── My Classes
 ├── Timetable
 ├── Lessons
 ├── Homework
-├── Quiz & Tests
+└── Quizzes & Tests
+
+Academic
 ├── Grades
 └── Attendance
 ```
 
 ---
 
-## 4. Project Structure
+# Authentication
+
+Authentication is handled through the backend API.
 
 ```text
-src/
-│
-├── app/
-│   ├── App.tsx
-│   └── providers/
-│
-├── components/
-│   ├── common/
-│   ├── forms/
-│   ├── tables/
-│   ├── modals/
-│   ├── charts/
-│   └── ui/
-│
-├── context/
-│   ├── AuthContext.tsx
-│   └── ThemeContext.tsx
-│
-├── data/
-│   └── mock/
-│
-├── features/
-│   ├── dashboard/
-│   └── attendance/
-│
-├── hooks/
-│   ├── useAuth.ts
-│   ├── useFetch.ts
-│   ├── useForm.ts
-│   └── usePagination.ts
-│
-├── layouts/
-│   ├── AdminLayout.tsx
-│   ├── TeacherLayout.tsx
-│   ├── StudentLayout.tsx
-│   ├── Sidebar.tsx
-│   ├── Header.tsx
-│   └── Footer.tsx
-│
-├── lib/
-│   └── apiClient.ts
-│
-├── pages/
-│   ├── auth/
-│   │   └── Login.tsx
-│   │
-│   ├── admin/
-│   │   ├── dashboard/
-│   │   ├── school/
-│   │   ├── users/
-│   │   ├── roles/
-│   │   ├── subjects/
-│   │   ├── classes/
-│   │   ├── schedules/
-│   │   ├── attendance/
-│   │   └── reports/
-│   │
-│   ├── teacher/
-│   │   ├── dashboard/
-│   │   ├── classes/
-│   │   ├── lessons/
-│   │   ├── homework/
-│   │   ├── quizzes/
-│   │   ├── attendance/
-│   │   └── grades/
-│   │
-│   └── student/
-│       ├── dashboard/
-│       ├── classes/
-│       ├── timetable/
-│       ├── lessons/
-│       ├── homework/
-│       ├── quizzes/
-│       ├── grades/
-│       └── attendance/
-│
-├── routes/
-│   ├── AppRoutes.tsx
-│   ├── AdminRoutes.tsx
-│   ├── TeacherRoutes.tsx
-│   └── StudentRoutes.tsx
-│
-├── services/
-│   ├── auth.service.ts
-│   ├── user.service.ts
-│   ├── school.service.ts
-│   ├── role.service.ts
-│   ├── subject.service.ts
-│   ├── class.service.ts
-│   ├── schedule.service.ts
-│   ├── attendance.service.ts
-│   ├── lesson.service.ts
-│   ├── homework.service.ts
-│   ├── quiz.service.ts
-│   └── grade.service.ts
-│
-├── store/
-│   └── slices/
-│
-├── styles/
-│   └── globals.css
-│
-├── types/
-│   ├── auth.ts
-│   ├── user.ts
-│   ├── role.ts
-│   ├── class.ts
-│   ├── subject.ts
-│   ├── schedule.ts
-│   ├── attendance.ts
-│   ├── homework.ts
-│   ├── quiz.ts
-│   └── grade.ts
-│
-└── utils/
-    ├── constants.ts
-    ├── validators.ts
-    ├── formatters.ts
-    └── rolePermissions.ts
+Login
+  │
+  ▼
+POST /api/v1/auth/login
+  │
+  ├── accessToken
+  └── refreshToken
+        │
+        ▼
+   AuthContext
+        │
+        ▼
+GET /api/v1/auth/me
+        │
+        ▼
+User + Role + Permissions
+        │
+        ▼
+Role-specific application
 ```
+
+The frontend stores the authentication state and sends the access token with API requests.
 
 ---
 
-## 5. Route Architecture
-
-### Public Routes
-
-```text
-/login
-```
-
-### Admin Routes
-
-```text
-/dashboard
-
-/school
-/school/setup
-
-/roles
-/roles/permissions
-
-/users
-/users/:id
-
-/teachers
-/teachers/:id
-
-/students
-/students/:id
-
-/classes
-/classes/:id
-
-/subjects
-
-/schedules
-
-/attendance
-
-/reports
-```
-
-### Teacher Routes
-
-```text
-/teacher/dashboard
-
-/teacher/classes
-/teacher/classes/:id
-
-/teacher/lessons
-/teacher/lessons/create
-
-/teacher/homework
-/teacher/homework/create
-
-/teacher/quizzes
-/teacher/quizzes/create
-
-/teacher/attendance
-
-/teacher/grades
-```
-
-### Student Routes
-
-```text
-/student/dashboard
-
-/student/classes
-
-/student/timetable
-
-/student/lessons
-
-/student/homework
-
-/student/quizzes
-
-/student/grades
-
-/student/attendance
-```
-
----
-
-## 6. Authentication Flow
-
-```text
-User
- │
- ▼
-Login Page
- │
- ▼
-POST /auth/login
- │
- ▼
-Backend validates credentials
- │
- ▼
-Access Token + Refresh Token
- │
- ▼
-AuthContext
- │
- ▼
-localStorage
- │
- ▼
-GET /auth/me
- │
- ▼
-Identify User Role
- │
- ├── admin   → AdminRoutes
- ├── teacher → TeacherRoutes
- └── student → StudentRoutes
-```
-
-### Token Flow
-
-```text
-Request
-   │
-   ▼
-apiClient
-   │
-   ├── Access Token exists
-   │
-   ▼
-Authorization: Bearer <token>
-   │
-   ▼
-API
-   │
-   ├── 200 → return data
-   │
-   └── 401
-        │
-        ▼
-POST /auth/refresh-token
-        │
-        ▼
-New Access Token
-        │
-        ▼
-Retry Original Request
-```
-
----
-
-## 7. API Configuration
-
-The frontend communicates with the backend through:
-
-```text
-/api/v1
-```
-
-Development proxy:
-
-```text
-Frontend
-http://localhost:5173
-
-        │
-        ▼
-
-Vite Proxy
-
-        │
-        ▼
-
-Backend
-http://localhost:5000
-```
-
----
-
-## 8. Environment Variables
+# API Configuration
 
 Create a `.env` file:
 
@@ -458,500 +305,282 @@ Create a `.env` file:
 VITE_API_URL=/api/v1
 ```
 
-If the backend runs on another server:
+During development, Vite proxies API requests to:
 
-```env
-VITE_API_URL=https://api.example.com/api/v1
+```text
+http://localhost:5000
 ```
 
-Do not commit secrets or private credentials to `.env`.
+Example:
 
-Use `.env.example` for safe default configuration.
+```text
+Frontend
+http://localhost:5173
+
+API
+http://localhost:5000
+
+API Base
+http://localhost:5000/api/v1
+```
 
 ---
 
-## 9. API Client
+# API Client
 
-All API requests should go through:
+All API communication should go through:
 
 ```text
 src/lib/apiClient.ts
 ```
 
-Responsibilities:
-
-```text
-apiClient
-├── Base URL
-├── Authorization Header
-├── JSON Request
-├── JSON Response
-├── API Error Handling
-├── 401 Detection
-├── Token Refresh
-└── Request Retry
-```
-
-Pages should not directly implement authentication headers or token-refresh logic.
+Services should use the API client instead of calling `fetch()` directly inside pages.
 
 Example:
 
 ```text
 Page
   ↓
-Service
-  ↓
-apiClient
-  ↓
-Express API
-```
-
----
-
-## 10. Service Architecture
-
-Each business domain should have its own service.
-
-Example:
-
-```text
-pages/classes/
-       │
-       ▼
-class.service.ts
-       │
-       ▼
-apiClient
-       │
-       ▼
-GET /classes
-```
-
-Recommended services:
-
-```text
-auth.service.ts
 user.service.ts
-school.service.ts
-role.service.ts
-subject.service.ts
-class.service.ts
-schedule.service.ts
-attendance.service.ts
-lesson.service.ts
-homework.service.ts
-quiz.service.ts
-grade.service.ts
+  ↓
+apiClient.ts
+  ↓
+GET /api/v1/users
 ```
 
-This keeps API logic outside UI components.
+This keeps API communication centralized and maintainable.
 
 ---
 
-## 11. Feature Status
+# Role-Based Permissions
 
-| Feature              | Status                   |
-| -------------------- | ------------------------ |
-| Authentication       | ✅ Implemented            |
-| Role-based routing   | ✅ Implemented            |
-| Admin Dashboard      | ✅ Implemented            |
-| Dashboard statistics | ✅ API-backed             |
-| Dashboard charts     | 🟡 Mock data             |
-| School Setup         | ✅ Implemented            |
-| Roles & Permissions  | ✅ Implemented            |
-| User Management      | 🟡 Partially implemented |
-| Subjects             | 🟡 Mock data             |
-| Classes              | 🚧 Planned               |
-| Schedules            | 🟡 Local state           |
-| Attendance           | 🟡 Mock service          |
-| Lessons              | 🚧 Planned               |
-| Homework             | 🚧 Planned               |
-| Quiz & Tests         | 🚧 Planned               |
-| Grades               | 🚧 Planned               |
-| Reports              | 🚧 Planned               |
-| Communication        | 🚧 Planned               |
-| Student Portal       | 🚧 Planned               |
-| Teacher Portal       | 🚧 Planned               |
-
-Legend:
+Permissions use the following format:
 
 ```text
-✅ Implemented
-🟡 Partially implemented / Mock
-🚧 Planned
+<module>.<action>
 ```
+
+Examples:
+
+```text
+users.view
+users.create
+users.edit
+users.delete
+
+classes.view
+classes.create
+classes.edit
+classes.delete
+
+grades.view
+grades.create
+grades.edit
+```
+
+The frontend uses permissions to control UI visibility.
+
+The backend remains the final authority for authorization.
 
 ---
 
-## 12. School Academic Flow
+# Academic Structure
 
-The core academic workflow should follow this structure:
+The academic workflow follows:
 
 ```text
 School
- │
- ▼
+   │
+   ▼
 Academic Year
- │
- ▼
+   │
+   ▼
+Term
+   │
+   ▼
 Grade / Level
- │
- ▼
+   │
+   ▼
 Class
- │
- ├── Students
- └── Teacher
-       │
-       ▼
-    Subjects
-       │
-       ▼
-    Schedule
-       │
-       ▼
-    Lessons
-       │
-       ├── Homework
-       │
-       └── Quiz / Tests
-              │
-              ▼
-            Grades
+   │
+   ├── Students
+   ├── Teachers
+   └── Subjects
+          │
+          ▼
+       Schedule
+          │
+          ▼
+       Lessons
+          │
+          ├── Homework
+          └── Quizzes
+                 │
+                 ▼
+               Grades
 ```
 
 ---
 
-## 13. Attendance Flow
+# Main Features
+
+## Authentication
+
+* Login
+* Logout
+* Session validation
+* Access token handling
+* Refresh token handling
+* Role detection
+* Permission-based UI
+
+## School Management
+
+* School profile
+* Academic years
+* Terms
+* School configuration
+
+## User Management
+
+* Users
+* Teachers
+* Students
+* Roles
+* Permissions
+
+## Academic Management
+
+* Grades / levels
+* Classes
+* Subjects
+* Schedules
+
+## Attendance
+
+* View attendance
+* Mark attendance
+* Present
+* Absent
+* Late
+* Permission
+
+## Lessons
+
+* Create lessons
+* View lessons
+* Lesson materials
+
+## Homework
+
+* Create homework
+* Publish homework
+* View assignments
+* Submit homework
+* Review submissions
+* Grade submissions
+
+## Quizzes & Tests
+
+* Create quizzes
+* Add questions
+* Schedule quizzes
+* Publish quizzes
+* Student submissions
+* Results
+
+> Quiz answers must never expose `correctAnswer` to students.
+
+## Grades
+
+Supported assessments:
 
 ```text
-Teacher
-   │
-   ▼
-Select Class
-   │
-   ▼
-Select Date
-   │
-   ▼
-Load Students
-   │
-   ▼
-Mark Attendance
-   │
-   ├── Present
-   ├── Absent
-   ├── Late
-   └── Permission
-   │
-   ▼
-Submit
-   │
-   ▼
-Attendance API
-   │
-   ▼
-Database
+Assignment
+Quiz
+Midterm
+Final
 ```
 
 ---
 
-## 14. Homework Flow
+# Routes
+
+## Public
 
 ```text
-Teacher
-   │
-   ▼
-Select Class
-   │
-   ▼
-Select Subject
-   │
-   ▼
-Create Homework
-   │
-   ├── Title
-   ├── Description
-   ├── Materials
-   ├── Due Date
-   └── Status
-   │
-   ▼
-Publish
-   │
-   ▼
-Students
-   │
-   ▼
-View Homework
-   │
-   ▼
-Submit Assignment
-   │
-   ▼
-Teacher Reviews
-   │
-   ▼
-Grade / Feedback
+/login
+```
+
+## Admin
+
+```text
+/admin/dashboard
+/admin/school
+/admin/school/academic-years
+/admin/school/terms
+
+/admin/users
+/admin/users/:id
+
+/admin/teachers
+/admin/teachers/:id
+
+/admin/students
+/admin/students/:id
+
+/admin/roles
+/admin/roles/permissions
+
+/admin/grades
+/admin/classes
+/admin/classes/:id
+/admin/subjects
+/admin/schedules
+
+/admin/attendance
+/admin/attendance/reports
+
+/admin/reports/academic
+/admin/reports/students
+
+/admin/communication/announcements
+/admin/communication/notifications
+```
+
+## Teacher
+
+```text
+/teacher/dashboard
+/teacher/classes
+/teacher/classes/:id
+/teacher/lessons
+/teacher/lessons/create
+/teacher/homework
+/teacher/homework/create
+/teacher/quizzes
+/teacher/quizzes/create
+/teacher/attendance
+/teacher/grades
+/teacher/progress
+```
+
+## Student
+
+```text
+/student/dashboard
+/student/classes
+/student/timetable
+/student/lessons
+/student/homework
+/student/quizzes
+/student/grades
+/student/attendance
 ```
 
 ---
 
-## 15. Quiz & Test Flow
-
-```text
-Teacher
-   │
-   ▼
-Create Quiz
-   │
-   ├── Title
-   ├── Subject
-   ├── Class
-   ├── Questions
-   ├── Duration
-   └── Schedule
-   │
-   ▼
-Publish
-   │
-   ▼
-Student
-   │
-   ▼
-Take Quiz
-   │
-   ▼
-Submit
-   │
-   ▼
-Evaluate
-   │
-   ▼
-Result
-   │
-   ▼
-Grade
-```
-
----
-
-## 16. Grade Flow
-
-```text
-Teacher
-   │
-   ▼
-Select Class
-   │
-   ▼
-Select Subject
-   │
-   ▼
-Select Assessment
-   │
-   ├── Assignment
-   ├── Quiz
-   ├── Midterm
-   └── Final
-   │
-   ▼
-Enter Grades
-   │
-   ▼
-Calculate Result
-   │
-   ▼
-Save
-   │
-   ▼
-Student Portal
-   │
-   ▼
-View Grades
-```
-
----
-
-## 17. Role-Based Permissions
-
-Permissions should be centralized instead of being hardcoded throughout components.
-
-Example:
-
-```text
-Admin
-├── school.manage
-├── users.manage
-├── roles.manage
-├── classes.manage
-├── subjects.manage
-├── schedules.manage
-├── attendance.view
-└── reports.view
-
-Teacher
-├── classes.view
-├── lessons.manage
-├── homework.manage
-├── quizzes.manage
-├── attendance.manage
-└── grades.manage
-
-Student
-├── classes.view
-├── timetable.view
-├── lessons.view
-├── homework.view
-├── homework.submit
-├── quizzes.take
-├── grades.view
-└── attendance.view
-```
-
-Recommended location:
-
-```text
-src/utils/rolePermissions.ts
-```
-
----
-
-## 18. UI Architecture
-
-Shared UI components should be reusable across all roles.
-
-```text
-components/
-├── common/
-│   ├── Button
-│   ├── Input
-│   ├── Select
-│   ├── Modal
-│   ├── Badge
-│   └── EmptyState
-│
-├── tables/
-│   ├── DataTable
-│   ├── Pagination
-│   └── TableActions
-│
-├── forms/
-│   ├── FormInput
-│   ├── FormSelect
-│   └── FormDatePicker
-│
-├── charts/
-│   ├── AttendanceChart
-│   ├── GradeChart
-│   └── StudentChart
-│
-└── users/
-    ├── UserList
-    ├── UserForm
-    └── UserDetail
-```
-
----
-
-## 19. Layout Architecture
-
-Each role should have its own navigation configuration.
-
-```text
-AdminLayout
-├── Header
-├── AdminSidebar
-├── Main Content
-└── Footer
-
-TeacherLayout
-├── Header
-├── TeacherSidebar
-├── Main Content
-└── Footer
-
-StudentLayout
-├── Header
-├── StudentSidebar
-├── Main Content
-└── Footer
-```
-
-Do not expose administrator navigation items to teachers or students.
-
----
-
-## 20. State Management
-
-Authentication currently uses:
-
-```text
-AuthContext
-```
-
-Theme management uses:
-
-```text
-ThemeContext
-```
-
-Redux Toolkit is available for application-wide state where necessary.
-
-Avoid maintaining the same state in both Context and Redux.
-
-Recommended rule:
-
-```text
-Authentication
-      ↓
-AuthContext
-
-Theme
-      ↓
-ThemeContext
-
-Server/API Data
-      ↓
-Services + local component state
-
-Complex Global UI State
-      ↓
-Redux Toolkit
-```
-
-If Redux is adopted for authentication later, remove the unused authentication implementation from Context rather than maintaining two sources of truth.
-
----
-
-## 21. Path Alias
-
-The project uses:
-
-```text
-@/*
-```
-
-for:
-
-```text
-src/*
-```
-
-Example:
-
-```typescript
-import { Button } from "@/components/common/Button";
-```
-
-instead of:
-
-```typescript
-import { Button } from "../../../components/common/Button";
-```
-
----
-
-## 22. Development
+# Development
 
 Install dependencies:
 
@@ -959,53 +588,25 @@ Install dependencies:
 npm install
 ```
 
-Create environment configuration:
+Create environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Start the development server:
+Start development server:
 
 ```bash
 npm run dev
 ```
 
-Frontend:
-
-```text
-http://localhost:5173
-```
-
-Backend:
-
-```text
-http://localhost:5000
-```
-
-The backend should be running before testing API-dependent features.
-
----
-
-## 23. Production Build
-
-Build the application:
+Build production version:
 
 ```bash
 npm run build
 ```
 
-The build performs:
-
-```text
-TypeScript Check
-      ↓
-Vite Build
-      ↓
-Production Bundle
-```
-
-Preview the production build:
+Preview production build:
 
 ```bash
 npm run preview
@@ -1019,41 +620,57 @@ npm run lint
 
 ---
 
-## 24. Recommended Development Rules
+# Frontend Development Rules
 
-### Components
+### 1. Keep pages focused on UI
 
-Keep components small and reusable.
+Do not put API requests directly into large page components.
 
-Avoid putting API requests directly inside large UI components.
+Use:
 
-### Services
+```text
+Page
+ ↓
+Service
+ ↓
+apiClient
+```
 
-Keep API calls inside domain-specific services.
+### 2. Reuse components
 
-### Types
+Use shared components for:
 
-Every API response and important entity should have a TypeScript type.
+```text
+Button
+Input
+Select
+Modal
+Badge
+Table
+Pagination
+Form
+Loading
+EmptyState
+ErrorState
+```
 
-### Forms
+### 3. Type API responses
 
-Use shared validation and reusable form components.
+Avoid:
 
-### Tables
+```ts
+const data: any = ...
+```
 
-Use one reusable table component for common list pages.
+Prefer:
 
-### Permissions
+```ts
+const data: User[] = ...
+```
 
-Always check permissions before rendering restricted actions.
+### 4. Handle all UI states
 
-### API Errors
-
-Show user-friendly error messages instead of raw backend errors.
-
-### Loading States
-
-Every API-dependent page should handle:
+Every API-driven page should support:
 
 ```text
 Loading
@@ -1062,50 +679,11 @@ Empty
 Error
 ```
 
----
+### 5. Do not duplicate authentication state
 
-## 25. Known Gaps
+Use `AuthContext` as the primary authentication source.
 
-### Teacher and Student Sidebars
-
-Teacher and Student layouts must not use the full Admin sidebar.
-
-Recommended solution:
-
-```text
-Sidebar
-├── AdminSidebar
-├── TeacherSidebar
-└── StudentSidebar
-```
-
-or dynamically filter menu items using the authenticated role.
-
----
-
-### Login Identifier
-
-If the UI says:
-
-```text
-Student ID or Email
-```
-
-the backend and validation should support both formats.
-
-If only email is supported, change the UI label to:
-
-```text
-Email
-```
-
----
-
-### Duplicate Authentication State
-
-The application should have one authentication source of truth.
-
-Current:
+Avoid maintaining separate authentication state in both:
 
 ```text
 AuthContext
@@ -1113,183 +691,92 @@ AuthContext
 Redux authSlice
 ```
 
-Recommended:
-
-```text
-AuthContext
-```
-
-or migrate completely to Redux.
-
-Do not maintain both.
+unless there is a specific architectural reason.
 
 ---
 
-### Mock Data
+# Security
 
-The following areas still require API integration:
-
-```text
-Subjects
-Attendance
-Users
-Schedules
-Dashboard Charts
-```
-
-Replace mock services gradually as backend endpoints become available.
-
----
-
-## 26. Development Roadmap
-
-### Phase 1 — Foundation
-
-```text
-[x] Authentication
-[x] Role-based routing
-[x] Admin layout
-[x] Dashboard
-[x] School setup
-[x] Roles & permissions
-```
-
-### Phase 2 — Administration
-
-```text
-[ ] User management
-[ ] Teacher management
-[ ] Student management
-[ ] Class management
-[ ] Subject management
-[ ] Schedule management
-```
-
-### Phase 3 — Academic Management
-
-```text
-[ ] Lessons
-[ ] Homework
-[ ] Quiz & Tests
-[ ] Grades
-[ ] Student progress
-```
-
-### Phase 4 — Student & Teacher Portals
-
-```text
-[ ] Teacher dashboard
-[ ] Teacher class management
-[ ] Student dashboard
-[ ] Student timetable
-[ ] Student assignments
-[ ] Student grades
-```
-
-### Phase 5 — Reports & Communication
-
-```text
-[ ] Attendance reports
-[ ] Grade reports
-[ ] Student performance reports
-[ ] Announcements
-[ ] Notifications
-[ ] Communication
-```
-
----
-
-## 27. Recommended Final Architecture
-
-The final application should follow:
-
-```text
-                    HIGH SCHOOL MANAGEMENT SYSTEM
-                               │
-             ┌─────────────────┼─────────────────┐
-             │                 │                 │
-             ▼                 ▼                 ▼
-           ADMIN            TEACHER           STUDENT
-             │                 │                 │
-             ▼                 ▼                 ▼
-        Management         Academic          Learning
-             │                 │                 │
-             └─────────────────┼─────────────────┘
-                               │
-                               ▼
-                         REST API /v1
-                               │
-                               ▼
-                         Express Backend
-                               │
-                               ▼
-                          MySQL Database
-```
-
-The frontend should remain responsible for:
-
-```text
-UI
-Routing
-Role Permissions
-Form Validation
-User Interaction
-API Communication
-Loading / Error States
-```
-
-The backend should remain responsible for:
-
-```text
-Authentication
-Authorization
-Business Rules
-Data Validation
-Database Operations
-File Management
-Reports
-Security
-```
-
----
-
-## 28. Important Security Notes
-
-Never commit:
+Do not commit:
 
 ```text
 .env
+.env.local
 API secrets
-Database passwords
-Private keys
-Production credentials
-Real user passwords
+JWT secrets
+private keys
+production credentials
+passwords
 ```
 
-Development credentials should only be used for local development.
+Use `.env.example` for safe configuration templates.
 
-If seed credentials are documented, use a development-only account and change the password before deployment.
+The frontend must never be trusted for security-sensitive authorization decisions.
 
 ---
 
-## 29. Project Goal
+# Backend Dependency
 
-The goal of this project is to provide a centralized digital platform for managing high school operations and academic activities.
-
-The system will allow:
+The frontend requires the High School Management API to be running.
 
 ```text
-Administrators
-    ↓
-Manage School
-
-Teachers
-    ↓
-Manage Teaching & Assessment
-
-Students
-    ↓
-Access Learning & Academic Information
+high-school-admin
+        │
+        │ HTTP
+        ▼
+high-school-api
+        │
+        ▼
+    PostgreSQL
 ```
 
-The final system should provide a clear, secure, maintainable, and scalable architecture that can support additional school modules in the future.
+Start the backend first:
+
+```bash
+npm run dev
+```
+
+Then start the frontend:
+
+```bash
+npm run dev
+```
+
+---
+
+# Project Status
+
+## Completed
+
+* Authentication
+* Role-based routing
+* Admin dashboard
+* Dashboard API integration
+* School setup
+* Roles & permissions
+
+## In Progress
+
+* User management
+* Subjects
+* Schedules
+* Attendance
+* Dashboard charts
+
+## Planned
+
+* Classes
+* Lessons
+* Homework
+* Quizzes & Tests
+* Grades
+* Reports
+* Communication
+* Teacher Portal
+* Student Portal
+
+---
+
+# License
+
+This project is developed for school management and educational administration.
