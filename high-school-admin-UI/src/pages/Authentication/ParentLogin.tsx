@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '@/hooks';
+import { isValidEmail } from '@/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/services/authService';
 import { getUserGreeting } from '@/data/mockUsers';
@@ -24,7 +25,7 @@ import {
 } from 'lucide-react';
 
 interface ParentLoginForm {
-  parentId: string;
+  email: string;
   password: string;
   rememberDevice: boolean;
 }
@@ -39,12 +40,12 @@ export default function ParentLogin() {
 
   const { values, errors, handleChange, handleBlur, handleSubmit, setFieldValue } =
     useForm<ParentLoginForm>(
-      { parentId: '', password: '', rememberDevice: false },
+      { email: '', password: '', rememberDevice: false },
       async (formValues: ParentLoginForm) => {
         setIsLoading(true);
         setError('');
         try {
-          const result = await authService.login(formValues.parentId.trim(), formValues.password);
+          const result = await authService.login(formValues.email.trim(), formValues.password);
           if (result.user.role !== 'parent') {
             setError('This account is not registered as a parent/guardian account');
             return;
@@ -60,8 +61,10 @@ export default function ParentLogin() {
       },
       (formValues) => {
         const validationErrors: Record<string, string> = {};
-        if (!formValues.parentId.trim()) {
-          validationErrors.parentId = 'Parent ID or Email is required';
+        if (!formValues.email.trim()) {
+          validationErrors.email = 'Email is required';
+        } else if (!isValidEmail(formValues.email)) {
+          validationErrors.email = 'Please enter a valid email address';
         }
         if (!formValues.password) {
           validationErrors.password = 'Password is required';
@@ -70,10 +73,10 @@ export default function ParentLogin() {
       }
     );
 
-  const displayName = getUserGreeting(values.parentId);
+  const displayName = getUserGreeting(values.email);
 
   const handleQuickFill = () => {
-    setFieldValue('parentId', 'parent@example.com');
+    setFieldValue('email', 'parent@example.com');
     setFieldValue('password', 'password');
   };
 
@@ -155,7 +158,7 @@ export default function ParentLogin() {
                 </button>
               </div>
               <div className="text-xs font-mono text-slate-700 dark:text-slate-300 space-y-0.5">
-                <p>Email / ID: <strong className="text-slate-900 dark:text-white">parent@example.com</strong> or <strong className="text-slate-900 dark:text-white">PAR-123456</strong></p>
+                <p>Email: <strong className="text-slate-900 dark:text-white">parent@example.com</strong></p>
                 <p>Password: <strong className="text-slate-900 dark:text-white">password</strong></p>
               </div>
             </div>
@@ -181,7 +184,7 @@ export default function ParentLogin() {
                           Welcome back, {displayName}!
                         </span>
                       ) : (
-                        'Enter your Parent ID (PAR...) or email address.'
+                        'Enter your registered email address.'
                       )}
                     </p>
                   </div>
@@ -202,10 +205,10 @@ export default function ParentLogin() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                {/* Parent ID / Email Field */}
+                {/* Email Field */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                    Parent ID or Registered Email
+                    Registered Email
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500">
@@ -213,16 +216,17 @@ export default function ParentLogin() {
                     </span>
                     <input
                       type="text"
-                      name="parentId"
-                      placeholder="parent@example.com or PAR-123456"
-                      value={values.parentId}
+                      type="email"
+                      name="email"
+                      placeholder="parent@example.com"
+                      value={values.email}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       autoComplete="username"
                       className="w-full pl-11 pr-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
                     />
                   </div>
-                  {errors.parentId && <p className="text-red-500 text-xs mt-1.5 pl-1">{errors.parentId}</p>}
+                  {errors.email && <p className="text-red-500 text-xs mt-1.5 pl-1">{errors.email}</p>}
                 </div>
 
                 {/* Password Field */}
@@ -336,7 +340,7 @@ export default function ParentLogin() {
         isOpen={isForgotModalOpen}
         onClose={() => setIsForgotModalOpen(false)}
         roleName="Parent"
-        defaultIdentifier={values.parentId}
+        defaultIdentifier={values.email}
       />
     </div>
   );
