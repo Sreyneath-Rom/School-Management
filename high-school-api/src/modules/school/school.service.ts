@@ -9,7 +9,7 @@ export const schoolService = {
   // producing two School rows despite this being meant as a singleton.
   async create(input: Record<string, unknown>) {
     return prisma.$transaction(
-      async (tx) => {
+      async (tx: any) => {
         const existing = await tx.school.findFirst()
         if (existing) throw ApiError.conflict('School is already configured')
         return tx.school.create({ data: input as never })
@@ -38,7 +38,7 @@ export const schoolService = {
   // UPSERT (used by setup page)
   async upsert(input: Record<string, unknown>) {
     return prisma.$transaction(
-      async (tx) => {
+      async (tx: any) => {
         const existing = await tx.school.findFirst()
         if (existing) {
           return tx.school.update({ where: { id: existing.id }, data: input })

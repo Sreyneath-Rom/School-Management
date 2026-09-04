@@ -341,7 +341,6 @@ export default function ParentLogin() {
         onClose={() => setIsForgotModalOpen(false)}
         roleName="Parent"
         defaultIdentifier={values.email}
-        defaultIdentifier={values.email}
       />
     </div>
   );

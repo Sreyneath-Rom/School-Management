@@ -1,5 +1,69 @@
-import PlaceholderPage from '@/components/common/PlaceholderPage'
+import { Link } from "react-router-dom";
+import PageHeading from "@/components/common/PageHeading";
+import { Megaphone, Mail, Bell, MessageSquare, ArrowRight } from "lucide-react";
 
 export default function CommunicationFeature() {
-  return <PlaceholderPage title="Communication" description="Announcements and notifications." />
+  const cards = [
+    {
+      title: "Announcements & Bulletins",
+      desc: "School-wide broadcasts, emergency alerts, and circulars for students and parents.",
+      link: "/communication/announcements",
+      icon: Megaphone,
+      stats: "5 Active Bulletins",
+    },
+    {
+      title: "Direct Messages & Inbox",
+      desc: "Secure 1-on-1 and group messaging between parents, faculty, and administration.",
+      link: "/messages",
+      icon: Mail,
+      stats: "Unread Messages",
+    },
+    {
+      title: "Notification Alerts",
+      desc: "Real-time system events, leave status changes, and academic reminders.",
+      link: "/communication/notifications",
+      icon: Bell,
+      stats: "Live Alerts",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeading
+        title="Communication & Engagement Hub"
+        subtitle="Manage messaging, public bulletins, and administrative alerts across the school community."
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {cards.map((c, i) => (
+          <Link
+            key={i}
+            to={c.link}
+            className="p-6 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 hover:border-brand-500/40 transition group bg-white/40 dark:bg-stone-900/40 space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                <c.icon size={22} />
+              </div>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-300">
+                {c.stats}
+              </span>
+            </div>
+
+            <h3 className="text-base font-bold text-stone-900 dark:text-white group-hover:text-brand-600 transition">
+              {c.title}
+            </h3>
+            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+              {c.desc}
+            </p>
+
+            <div className="pt-2 flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400">
+              <span>Open Channel</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }

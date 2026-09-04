@@ -47,7 +47,7 @@ router.delete(
 router.post(
   '/logo',
   requirePermission('school', 'edit'),
-  upload.single('logo'),
+  upload.single('logo') as any,
   asyncHandler(schoolController.uploadLogo)
 )
 

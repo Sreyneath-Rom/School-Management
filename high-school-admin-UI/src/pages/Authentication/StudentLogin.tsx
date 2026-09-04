@@ -215,7 +215,6 @@ export default function StudentLogin() {
                       <User size={18} />
                     </span>
                     <input
-                      type="text"
                       type="email"
                       name="email"
                       placeholder="student@example.com"

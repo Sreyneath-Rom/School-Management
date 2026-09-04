@@ -65,7 +65,7 @@ export const teachersService = {
     // Wrapped in a transaction so a bad subjectId (or any failure mid-way)
     // can't leave the teacher with its old subject links deleted and no
     // new ones in place.
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: any) => {
       if (subjectIds) {
         await tx.teacherSubject.deleteMany({ where: { teacherId: id } })
         if (subjectIds.length > 0) {

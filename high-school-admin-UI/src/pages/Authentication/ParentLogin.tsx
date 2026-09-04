@@ -215,7 +215,6 @@ export default function ParentLogin() {
                       <User size={18} />
                     </span>
                     <input
-                      type="text"
                       type="email"
                       name="email"
                       placeholder="parent@example.com"

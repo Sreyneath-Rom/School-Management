@@ -38,10 +38,10 @@ export default function AppRoutes() {
       <Route path="/login/student" element={<Navigate to={homeRoute} replace />} />
       <Route path="/login/parent" element={<Navigate to={homeRoute} replace />} />
 
-      {role === "admin" && adminRoutes()}
-      {role === "teacher" && teacherRoutes()}
-      {role === "student" && studentRoutes()}
-      {role === "parent" && parentRoutes()}
+      {(role as string) === "admin" && adminRoutes()}
+      {(role as string) === "teacher" && teacherRoutes()}
+      {(role as string) === "student" && studentRoutes()}
+      {(role as string) === "parent" && parentRoutes()}
 
       <Route path="/" element={<Navigate to={homeRoute} replace />} />
       <Route path="*" element={<Navigate to={homeRoute} replace />} />

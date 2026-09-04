@@ -8,7 +8,7 @@ export interface CreateUserPayload {
   email: string
   username?: string
   phone?: string
-  role: 'admin' | 'teacher' | 'student' | 'parent'
+  role: 'admin' | 'teacher' | 'student' | 'parent' | 'mazer'
   status?: 'active' | 'inactive'
   gender?: 'male' | 'female' | 'other'
   dateOfBirth?: string

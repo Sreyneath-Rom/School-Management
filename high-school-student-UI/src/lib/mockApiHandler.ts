@@ -620,7 +620,9 @@ export const mockApiHandler = {
   ): Promise<{ success: boolean; data?: any; message?: string } | null> => {
     // Subtle realistic network latency simulation for mock API
     await new Promise((resolve) => setTimeout(resolve, 150))
-    const cleanPath = path.replace(/^\/api\/v\d+/, '').replace(/\/$/, '') || '/'
+    const [rawPath, queryString] = path.split('?')
+    const cleanPath = (rawPath || '').replace(/^\/api\/v\d+/, '').replace(/\/$/, '') || '/'
+    const queryParams = new URLSearchParams(queryString || '')
 
     // Auth endpoints
     if (cleanPath === '/auth/login' && method === 'POST') {
@@ -1142,8 +1144,7 @@ export const mockApiHandler = {
     // ATTENDANCE ENDPOINTS (/api/v1/attendance)
     // ==========================================
     if (cleanPath === '/attendance/stats' && method === 'GET') {
-      const url = new URL(`http://localhost${path}`)
-      const dateParam = url.searchParams.get('date') || new Date().toISOString().split('T')[0]
+      const dateParam = queryParams.get('date') || new Date().toISOString().split('T')[0]
       const recordsForDate = attendanceStore.filter((r) => r.date === dateParam)
       const students = usersStore.filter((u) => u.role === 'student' || u.role === 'mazer')
       const total = students.length || recordsForDate.length || 1
@@ -1174,13 +1175,12 @@ export const mockApiHandler = {
     }
 
     if (cleanPath === '/attendance' && method === 'GET') {
-      const url = new URL(`http://localhost${path}`)
-      const date = url.searchParams.get('date')
-      const studentId = url.searchParams.get('studentId')
-      const classParam = url.searchParams.get('class')
-      const gradeParam = url.searchParams.get('grade')
-      const from = url.searchParams.get('from')
-      const to = url.searchParams.get('to')
+      const date = queryParams.get('date')
+      const studentId = queryParams.get('studentId')
+      const classParam = queryParams.get('class')
+      const gradeParam = queryParams.get('grade')
+      const from = queryParams.get('from')
+      const to = queryParams.get('to')
 
       let filtered = [...attendanceStore]
 

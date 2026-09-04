@@ -341,7 +341,6 @@ export default function StudentLogin() {
         onClose={() => setIsForgotModalOpen(false)}
         roleName="Student"
         defaultIdentifier={values.email}
-        defaultIdentifier={values.email}
       />
     </div>
   );

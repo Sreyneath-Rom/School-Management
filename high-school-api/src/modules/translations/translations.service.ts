@@ -44,7 +44,7 @@ export const translationsService = {
     await assertLanguageExists(normalized)
 
     const rows = await prisma.translation.findMany({ where: { languageCode: normalized } })
-    return Object.fromEntries(rows.map((row) => [row.key, row.value]))
+    return Object.fromEntries(rows.map((row: any) => [row.key, row.value]))
   },
 
   /**

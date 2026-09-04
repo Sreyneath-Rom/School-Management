@@ -124,9 +124,10 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
 
     return await handleResponse<T>(res, path)
   } catch (err) {
-    // Use mocks only when the API cannot be reached, never when the API returns
-    // an HTTP or application error that the caller needs to handle.
-    if (err instanceof ApiError) throw err
+    // Only bypass mocks for client validation/business errors (400-403, 409)
+    if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 404) {
+      throw err
+    }
 
     const method = options.method || 'GET'
     let parsedBody: any
@@ -175,7 +176,9 @@ async function requestUpload<T>(path: string, formData: FormData, retry = true):
 
     return await handleResponse<T>(res, path)
   } catch (err) {
-    if (err instanceof ApiError) throw err
+    if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 404) {
+      throw err
+    }
 
     const mockRes = await mockApiHandler.handle(path, 'POST', formData)
     if (mockRes) {

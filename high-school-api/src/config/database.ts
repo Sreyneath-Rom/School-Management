@@ -19,15 +19,37 @@ try {
   prismaInstance.$on('error' as never, (e: unknown) => logger.error('Prisma error', { e }))
 } catch {
   logger.warn('[AI Studio] Database not connected — using mock')
-  const noOp = {
+  const noOp: any = {
     findMany: async () => [],
     findFirst: async () => null,
     findUnique: async () => null,
-    create: async (d: any) => d?.data ?? {},
-    update: async (d: any) => d?.data ?? {},
+    findUniqueOrThrow: async () => ({ id: 'mock-id' }),
+    create: async (d: any) => d?.data ?? { id: 'mock-id' },
+    createMany: async () => ({ count: 0 }),
+    update: async (d: any) => d?.data ?? { id: 'mock-id' },
     delete: async () => ({}),
+    deleteMany: async () => ({ count: 0 }),
   }
-  prismaInstance = new Proxy({}, { get: () => noOp })
+  const handler: any = {
+    get: (_target: any, prop: string) => {
+      if (prop === '$transaction') {
+        return async (cb: any) => {
+          if (typeof cb === 'function') {
+            return cb(new Proxy({}, handler))
+          }
+          if (Array.isArray(cb)) {
+            return Promise.all(cb)
+          }
+          return []
+        }
+      }
+      if (prop === '$connect' || prop === '$disconnect' || prop === '$on') {
+        return async () => {}
+      }
+      return noOp
+    },
+  }
+  prismaInstance = new Proxy({}, handler)
 }
 
 export const prisma = prismaInstance
