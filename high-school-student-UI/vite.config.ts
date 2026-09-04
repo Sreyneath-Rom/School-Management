@@ -65,27 +65,30 @@ function mockApiPlugin(): Plugin {
           }
 
           if (url === '/api/v1/auth/refresh-token' && method === 'POST') {
+            const refreshToken = parsedBody.refreshToken || ''
+            const role = /mock-refresh-(admin|teacher|student|parent)-/.exec(refreshToken)?.[1] || 'admin'
             return res.end(
               JSON.stringify({
                 success: true,
                 data: {
-                  accessToken: `mock-token-${Date.now()}`,
-                  refreshToken: `mock-refresh-${Date.now()}`,
+                  accessToken: `mock-token-${role}-${Date.now()}`,
+                  refreshToken: `mock-refresh-${role}-${Date.now()}`,
                 },
               })
             )
           }
 
           if (url === '/api/v1/auth/me' && method === 'GET') {
+            const role = /Bearer mock-token-(admin|teacher|student|parent)-/.exec(req.headers.authorization || '')?.[1] || 'admin'
             return res.end(
               JSON.stringify({
                 success: true,
                 data: {
-                  id: '1',
-                  email: 'admin@example.com',
-                  firstName: 'Sarah',
-                  lastName: 'Admin',
-                  role: 'admin',
+                  id: `user-${role}`,
+                  email: `${role}@example.com`,
+                  firstName: role.charAt(0).toUpperCase() + role.slice(1),
+                  lastName: 'User',
+                  role,
                 },
               })
             )
@@ -296,7 +299,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../dist',
+    outDir: '../dist/student',
     emptyOutDir: true,
   },
 })

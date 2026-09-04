@@ -159,28 +159,26 @@ async function main() {
     create: { name: "Sample High School", academicYear: "2026-2027" },
   });
 
-  console.log("Seeding admin user...");
-  const adminEmail = "admin@school.local";
-  const existingAdmin = await prisma.user.findUnique({
-    where: { email: adminEmail },
-  });
-  if (!existingAdmin) {
-    const passwordHash = await bcrypt.hash("ChangeMe123!", 12);
-    await prisma.user.create({
-      data: {
-        email: adminEmail,
-        passwordHash,
-        firstName: "System",
-        lastName: "Admin",
-        roleId: adminRole.id,
-      },
+  console.log("Seeding demo users...");
+  const demoPasswordHash = await bcrypt.hash("password", 12);
+  const demoUsers = [
+    { email: "admin@example.com", firstName: "Sarah", lastName: "Admin", roleId: adminRole.id },
+    { email: "teacher@example.com", firstName: "John", lastName: "Teacher", roleId: teacherRole.id },
+    { email: "student@example.com", firstName: "Emily", lastName: "Student", roleId: studentRole.id },
+    { email: "parent@example.com", firstName: "Robert", lastName: "Parent", roleId: parentRole?.id },
+  ];
+
+  for (const demoUser of demoUsers) {
+    if (!demoUser.roleId) continue;
+    await prisma.user.upsert({
+      where: { email: demoUser.email },
+      update: {},
+      create: { ...demoUser, passwordHash: demoPasswordHash },
     });
-    console.log(
-      `  Created admin user: ${adminEmail} / ChangeMe123!  <-- change this immediately`,
-    );
-  } else {
-    console.log("  Admin user already exists, skipping");
   }
+
+  console.log("  Demo accounts use password: password");
+  console.log("  Change demo passwords before deploying to production");
 
   console.log("Seed complete.");
 }

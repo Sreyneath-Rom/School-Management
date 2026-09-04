@@ -9,6 +9,7 @@ import { Login, AdminLogin, StudentLogin, TeacherLogin, ParentLogin } from "@/pa
 
 export default function AppRoutes() {
   const { isAuthenticated, role } = useAuth();
+  const portalRole = "admin";
 
   if (!isAuthenticated || !role) {
     return (
@@ -23,14 +24,11 @@ export default function AppRoutes() {
     );
   }
 
-  const homeRoute =
-    role === "admin"
-      ? "/dashboard"
-      : role === "teacher"
-      ? "/teacher/dashboard"
-      : role === "student"
-      ? "/student/dashboard"
-      : "/parent/dashboard";
+  if (role !== portalRole) {
+    return <Login />;
+  }
+
+  const homeRoute = "/dashboard";
 
   return (
     <Routes>
