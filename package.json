@@ -4,13 +4,19 @@
   "version": "1.0.0",
   "type": "module",
   "workspaces": [
-    "high-school-admin",
+    "high-school-admin-UI",
+    "high-school-student-UI",
+    "high-school-teacher-UI",
     "high-school-api"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=high-school-admin",
-    "build": "npm run build --workspace=high-school-admin",
-    "lint": "npm run lint --workspace=high-school-admin",
-    "preview": "npm run preview --workspace=high-school-admin"
+    "dev": "npm run dev:admin",
+    "dev:admin": "npm run dev --workspace=high-school-admin",
+    "dev:student": "npm run dev --workspace=high-school-student",
+    "dev:teacher": "npm run dev --workspace=high-school-teacher",
+    "dev:api": "npm run dev --workspace=high-school-api",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspace=high-school-api"
   }
 }
