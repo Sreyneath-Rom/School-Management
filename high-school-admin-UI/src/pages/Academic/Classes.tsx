@@ -39,81 +39,107 @@ export interface ClassItem {
 
 const INITIAL_CLASSES: ClassItem[] = [
   {
-    id: 'cls-1',
-    name: 'Grade 10-A',
-    gradeLevel: 'Grade 10',
+    id: 'cls-7a',
+    name: 'Grade 7-A (អនុវិទ្យាល័យ)',
+    gradeLevel: 'Grade 7',
     section: 'A',
     room: 'Room 101',
+    classTeacher: 'Sokha Chea',
+    studentCount: 35,
+    maxCapacity: 40,
+    subjectsCount: 7,
+    schedulePeriod: '07:30 - 16:30',
+    status: 'Active',
+  },
+  {
+    id: 'cls-8a',
+    name: 'Grade 8-A (អនុវិទ្យាល័យ)',
+    gradeLevel: 'Grade 8',
+    section: 'A',
+    room: 'Room 102',
+    classTeacher: 'Rithy Chan',
+    studentCount: 34,
+    maxCapacity: 40,
+    subjectsCount: 7,
+    schedulePeriod: '07:30 - 16:30',
+    status: 'Active',
+  },
+  {
+    id: 'cls-9a',
+    name: 'Grade 9-A (ត្រៀមប្រឡងឌីប្លូម Dip. 9)',
+    gradeLevel: 'Grade 9',
+    section: 'A',
+    room: 'Room 103',
+    classTeacher: 'Vannak Yin',
+    studentCount: 35,
+    maxCapacity: 40,
+    subjectsCount: 7,
+    schedulePeriod: '07:30 - 16:30',
+    status: 'Active',
+  },
+  {
+    id: 'cls-10a',
+    name: 'Grade 10-A (មូលដ្ឋានវិទ្យាល័យ)',
+    gradeLevel: 'Grade 10',
+    section: 'A',
+    room: 'Room 201',
     classTeacher: 'Dr. John Whitfield',
     studentCount: 32,
     maxCapacity: 35,
-    subjectsCount: 7,
-    schedulePeriod: '08:00 - 15:30',
+    subjectsCount: 9,
+    schedulePeriod: '07:30 - 16:30',
     status: 'Active',
   },
   {
-    id: 'cls-2',
-    name: 'Grade 10-B',
-    gradeLevel: 'Grade 10',
-    section: 'B',
-    room: 'Room 102',
-    classTeacher: 'Sarah Parker',
-    studentCount: 30,
-    maxCapacity: 35,
-    subjectsCount: 7,
-    schedulePeriod: '08:00 - 15:30',
-    status: 'Active',
-  },
-  {
-    id: 'cls-3',
-    name: 'Grade 11-A (Advanced STEM)',
+    id: 'cls-11a',
+    name: 'Grade 11-A (ថ្នាក់វិទ្យាសាស្ត្រ Science Track)',
     gradeLevel: 'Grade 11',
     section: 'A',
     room: 'Lab 201',
-    classTeacher: 'Prof. Marcus Kane',
-    studentCount: 28,
-    maxCapacity: 30,
+    classTeacher: 'Dr. Vicheth Keo',
+    studentCount: 30,
+    maxCapacity: 35,
     subjectsCount: 8,
-    schedulePeriod: '08:00 - 16:00',
+    schedulePeriod: '07:30 - 16:30',
     status: 'Active',
   },
   {
-    id: 'cls-4',
-    name: 'Grade 11-B (Humanities)',
+    id: 'cls-11b',
+    name: 'Grade 11-B (ថ្នាក់វិទ្យាសាស្ត្រសង្គម Social Science)',
     gradeLevel: 'Grade 11',
     section: 'B',
     room: 'Room 203',
-    classTeacher: 'David Miller',
+    classTeacher: 'Vicheka Nhem',
     studentCount: 29,
-    maxCapacity: 32,
-    subjectsCount: 6,
-    schedulePeriod: '08:00 - 15:30',
+    maxCapacity: 35,
+    subjectsCount: 7,
+    schedulePeriod: '07:30 - 16:30',
     status: 'Active',
   },
   {
-    id: 'cls-5',
-    name: 'Grade 12-A (Honors)',
+    id: 'cls-12a',
+    name: 'Grade 12-A (ត្រៀមបាក់ឌុប Bac II - Science)',
     gradeLevel: 'Grade 12',
     section: 'A',
     room: 'Room 301',
-    classTeacher: 'Elena Vance',
-    studentCount: 26,
-    maxCapacity: 30,
+    classTeacher: 'Prof. Marcus Kane',
+    studentCount: 28,
+    maxCapacity: 32,
     subjectsCount: 8,
-    schedulePeriod: '08:00 - 16:00',
+    schedulePeriod: '07:30 - 16:30',
     status: 'Active',
   },
   {
-    id: 'cls-6',
-    name: 'Grade 9-A',
-    gradeLevel: 'Grade 9',
-    section: 'A',
-    room: 'Room 001',
-    classTeacher: 'Claire Bennett',
-    studentCount: 34,
-    maxCapacity: 35,
-    subjectsCount: 6,
-    schedulePeriod: '08:00 - 15:00',
+    id: 'cls-12b',
+    name: 'Grade 12-B (ត្រៀមបាក់ឌុប Bac II - Social Science)',
+    gradeLevel: 'Grade 12',
+    section: 'B',
+    room: 'Room 302',
+    classTeacher: 'Elena Vance',
+    studentCount: 27,
+    maxCapacity: 32,
+    subjectsCount: 7,
+    schedulePeriod: '07:30 - 16:30',
     status: 'Active',
   },
 ]
@@ -371,10 +397,12 @@ export default function Classes() {
             className="px-3 py-2 text-xs font-medium rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500 text-stone-800 dark:text-stone-200 cursor-pointer w-full sm:w-44"
           >
             <option value="All">All Grade Levels</option>
-            <option value="Grade 9">Grade 9</option>
-            <option value="Grade 10">Grade 10</option>
-            <option value="Grade 11">Grade 11</option>
-            <option value="Grade 12">Grade 12</option>
+            <option value="Grade 7">Grade 7 (អនុវិទ្យាល័យ)</option>
+            <option value="Grade 8">Grade 8 (អនុវិទ្យាល័យ)</option>
+            <option value="Grade 9">Grade 9 (ត្រៀមឌីប្លូម)</option>
+            <option value="Grade 10">Grade 10 (មូលដ្ឋាន)</option>
+            <option value="Grade 11">Grade 11 (បំបែកថ្នាក់)</option>
+            <option value="Grade 12">Grade 12 (ត្រៀមបាក់ឌុប)</option>
           </select>
         </div>
       </div>
@@ -679,10 +707,12 @@ export default function Classes() {
                     onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
-                    <option value="Grade 9">Grade 9</option>
-                    <option value="Grade 10">Grade 10</option>
-                    <option value="Grade 11">Grade 11</option>
-                    <option value="Grade 12">Grade 12</option>
+                    <option value="Grade 7">Grade 7 (Lower Secondary)</option>
+                    <option value="Grade 8">Grade 8 (Lower Secondary)</option>
+                    <option value="Grade 9">Grade 9 (Dip. 9 Prep)</option>
+                    <option value="Grade 10">Grade 10 (Foundation)</option>
+                    <option value="Grade 11">Grade 11 (Streams)</option>
+                    <option value="Grade 12">Grade 12 (Bac II Prep)</option>
                   </select>
                 </div>
                 <div>

@@ -54,6 +54,8 @@ import {
   Sparkles,
   Layers,
   Check,
+  ChevronsDown,
+  ChevronsUp,
   type LucideIcon,
 } from "lucide-react";
 import { useSchool } from "@/context/SchoolContext";
@@ -68,6 +70,7 @@ type Section =
   | "EXAMS"
   | "STUDENTS"
   | "TEACHERS"
+  | "FEES"
   | "LIBRARY"
   | "CALENDAR"
   | "COMMUNICATION"
@@ -331,6 +334,15 @@ const roleMenus: Record<string, MenuSection[]> = {
       ],
     },
     {
+      key: "FEES",
+      titleKey: "sidebar.fees",
+      icon: DollarSign,
+      categoryGroup: "management",
+      items: [
+        { translationKey: "sidebar.invoices", icon: FileText, path: "/student/fees" },
+      ],
+    },
+    {
       key: "LIBRARY",
       titleKey: "sidebar.library",
       icon: Library,
@@ -348,7 +360,6 @@ const roleMenus: Record<string, MenuSection[]> = {
         { translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/student/calendar" },
       ],
     },
-   
     {
       key: "COMMUNICATION",
       titleKey: "sidebar.communication",
@@ -382,7 +393,6 @@ const roleMenus: Record<string, MenuSection[]> = {
         { translationKey: "sidebar.inbox", icon: MessageSquare, path: "/parent/messages", badge: "3", badgeColor: "bg-teal-500 text-white" },
       ],
     },
-
   ],
 };
 
@@ -437,8 +447,8 @@ export default function Sidebar({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const activeRole = (propRole || authRole || "admin").toLowerCase();
-  const schoolName = school?.name || "High School Admin";
-  const schoolMotto = school?.settings?.motto || "Academic Management OS";
+  const schoolName = school?.name || "High School Academic OS";
+  const schoolMotto = school?.settings?.motto || "MoEYS Curriculum • 2025–2026";
   const logoUrl = resolveAssetUrl(school?.logoUrl);
 
   // --- Collapsed State with LocalStorage Persistence ---
@@ -474,6 +484,40 @@ export default function Sidebar({
   const baseMenu = useMemo(() => {
     return roleMenus[activeRole] || roleMenus.admin;
   }, [activeRole]);
+
+  // Section expansion state (supports expanding/collapsing individual sections or all at once)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    const active = sectionForPath(location.pathname, baseMenu);
+    if (active) {
+      initial[active] = true;
+    } else if (baseMenu.length > 0) {
+      initial[baseMenu[0].key] = true;
+    }
+    return initial;
+  });
+
+  // Automatically expand section when current route changes
+  useEffect(() => {
+    const active = sectionForPath(location.pathname, baseMenu);
+    if (active) {
+      setOpenSections((prev) => ({
+        ...prev,
+        [active]: true,
+      }));
+    }
+  }, [location.pathname, baseMenu]);
+
+  // Body scroll lock on mobile when drawer is active
+  useEffect(() => {
+    if (mobileOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [mobileOpen]);
 
   // Keyboard shortcut listener: Cmd/Ctrl+K to focus search, Esc to close
   useEffect(() => {
@@ -535,20 +579,27 @@ export default function Sidebar({
       .filter((s): s is MenuSection => s !== null);
   }, [baseMenu, searchQuery, activeCategoryFilter, t]);
 
-  // Open section management
-  const [openSection, setOpenSection] = useState<Section | null>(() =>
-    sectionForPath(location.pathname, baseMenu)
-  );
+  const toggleSection = (sectionKey: Section) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
+  };
 
-  useEffect(() => {
-    const active = sectionForPath(location.pathname, baseMenu);
-    if (active) {
-      setOpenSection(active);
-    }
-  }, [location.pathname, baseMenu]);
+  const allSectionsOpen = useMemo(() => {
+    return filteredMenu.length > 0 && filteredMenu.every((s) => !!openSections[s.key]);
+  }, [filteredMenu, openSections]);
 
-  const toggle = (section: Section) => {
-    setOpenSection((prev) => (prev === section ? null : section));
+  const toggleAllSections = () => {
+    const nextState = !allSectionsOpen;
+    const updated: Record<string, boolean> = {};
+    filteredMenu.forEach((s) => {
+      updated[s.key] = nextState;
+    });
+    setOpenSections((prev) => ({
+      ...prev,
+      ...updated,
+    }));
   };
 
   const handleLinkClick = useCallback(() => {
@@ -569,7 +620,7 @@ export default function Sidebar({
     if (isCollapsed) {
       hoverTimeoutRef.current = setTimeout(() => {
         setHoveredSection(null);
-      }, 150);
+      }, 200);
     }
   };
 
@@ -585,24 +636,28 @@ export default function Sidebar({
     { key: "ALL", label: "All" },
     { key: "ACADEMIC", label: "Academic" },
     { key: "MANAGEMENT", label: "People & Fees" },
+    { key: "CORE", label: "Setup" },
     { key: "SYSTEM", label: "System" },
   ];
 
   // --- Render Compact Rail Mode for Desktop ---
   const renderCompactMenu = () => (
     <div className="flex h-full flex-col justify-between p-2 select-none overflow-hidden">
-      <div className="flex flex-col items-center space-y-3 overflow-y-auto no-scrollbar flex-1 py-1">
+      <div className="flex flex-col items-center space-y-2 overflow-y-auto no-scrollbar flex-1 py-1">
         {/* Brand / Logo */}
-        <div
-          title={schoolName}
-          className="group relative my-1 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl glass-sm text-stone-700 dark:text-stone-200 border border-stone-200/60 dark:border-white/10 shadow-xs cursor-pointer"
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          title={`${schoolName} (Click to expand sidebar)`}
+          className="group relative my-1 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl glass-sm text-stone-700 dark:text-stone-200 border border-stone-200/80 dark:border-white/10 shadow-xs cursor-pointer hover:border-brand-500/50 transition-all duration-200"
         >
           {logoUrl ? (
             <img src={logoUrl} alt={schoolName} className="h-full w-full object-cover" />
           ) : (
             <GraduationCap size={22} className="text-brand-600 dark:text-brand-400 group-hover:scale-110 transition-transform duration-200" />
           )}
-        </div>
+          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-stone-900" />
+        </button>
 
         {/* Dashboard quick icon */}
         <NavLink
@@ -642,11 +697,11 @@ export default function Sidebar({
               >
                 <button
                   type="button"
-                  onClick={() => toggle(section.key)}
+                  onClick={() => toggleSection(section.key)}
                   aria-label={t(section.titleKey)}
                   className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-200 ${
                     isSectionActive
-                      ? "bg-brand-500/15 text-brand-700 dark:text-brand-300 font-semibold shadow-xs"
+                      ? "bg-brand-500/15 text-brand-700 dark:text-brand-300 font-semibold shadow-xs ring-1 ring-brand-500/30"
                       : "text-stone-600 hover:bg-stone-500/10 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
                   }`}
                 >
@@ -662,20 +717,20 @@ export default function Sidebar({
                 {/* Popover Flyout for Compact Mode */}
                 {isHovered && (
                   <div
-                    className="absolute left-full top-0 z-50 ml-3 w-60 rounded-2xl glass-strong p-3 shadow-2xl backdrop-blur-2xl border border-stone-200/80 dark:border-white/15 animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute left-full top-0 z-50 ml-3.5 w-64 rounded-2xl glass-strong p-3.5 shadow-2xl backdrop-blur-2xl border border-stone-200/80 dark:border-white/15 animate-in fade-in zoom-in-95 duration-150"
                     onMouseEnter={() => handleMouseEnter(section.key)}
                     onMouseLeave={handleMouseLeave}
                   >
                     <div className="mb-2.5 flex items-center justify-between border-b border-stone-200/50 pb-2 px-1 dark:border-white/10">
                       <span className="text-xs font-bold uppercase tracking-wider text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-                        <SectionIcon size={14} className="text-brand-600 dark:text-brand-400" />
+                        <SectionIcon size={15} className="text-brand-600 dark:text-brand-400" />
                         {t(section.titleKey)}
                       </span>
-                      <span className="text-[10px] text-stone-400 font-semibold px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-white/5">
+                      <span className="text-[10px] text-stone-500 dark:text-stone-400 font-semibold px-2 py-0.5 rounded-md bg-stone-100 dark:bg-white/10">
                         {section.items.length} items
                       </span>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
                       {section.items.map((item) => {
                         const Icon = item.icon;
                         const isItemActive =
@@ -694,7 +749,7 @@ export default function Sidebar({
                             }`}
                           >
                             <span className="flex items-center gap-2 truncate">
-                              <Icon size={14} className="shrink-0" />
+                              <Icon size={15} className="shrink-0" />
                               <span className="truncate">{t(item.translationKey)}</span>
                             </span>
                             {item.badge && (
@@ -739,12 +794,16 @@ export default function Sidebar({
   // --- Render Standard Expanded Menu ---
   const renderExpandedMenu = (isMobile = false) => (
     <div className="flex h-full flex-col justify-between select-none overflow-hidden">
-      {/* Top Fixed Area: School Branding */}
-      <div className="shrink-0 p-2.5 sm:p-3 pb-1">
-        <div className="glass-sm p-3 sm:p-3.5 rounded-2xl border border-stone-200/60 dark:border-white/10 shadow-xs">
-          <div className="flex items-center justify-between gap-2">
+      {/* Top Fixed Area: School Branding & Quick Controls */}
+      <div className="shrink-0 p-3 pb-2 space-y-2.5">
+        {/* School Crest & System Identity Card */}
+        <div className="glass-sm p-3.5 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs relative overflow-hidden group">
+          {/* Subtle decorative gradient background glow */}
+          <div className="absolute -top-12 -right-12 h-24 w-24 rounded-full bg-brand-500/10 dark:bg-brand-400/10 blur-xl pointer-events-none group-hover:scale-150 transition-transform duration-500" />
+
+          <div className="flex items-center justify-between gap-2.5 relative z-10">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl glass-sm text-stone-700 dark:text-stone-200 border border-stone-200/60 dark:border-white/10 shadow-xs">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl glass-sm text-stone-700 dark:text-stone-200 border border-stone-200/80 dark:border-white/10 shadow-xs">
                 {logoUrl ? (
                   <img src={logoUrl} alt={schoolName} className="h-full w-full object-cover" />
                 ) : (
@@ -770,48 +829,60 @@ export default function Sidebar({
                 <button
                   type="button"
                   onClick={toggleCollapsed}
-                  className="hidden lg:flex h-8 w-8 items-center justify-center rounded-xl text-stone-400 hover:bg-stone-500/10 hover:text-stone-700 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-white transition"
-                  title="Collapse sidebar"
+                  className="hidden lg:flex h-8.5 w-8.5 items-center justify-center rounded-xl text-stone-400 hover:bg-stone-500/10 hover:text-stone-700 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-white transition"
+                  title="Collapse sidebar to rail mode"
                   aria-label="Collapse sidebar"
                 >
                   <PanelLeftClose size={17} />
                 </button>
               )}
 
-              {/* Mobile close button */}
+              {/* Mobile close button with minimum 44px touch area */}
               {isMobile && (
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-200/60 hover:text-stone-800 lg:hidden dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-white transition"
-                  aria-label="Close navigation"
+                  className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl text-stone-500 hover:bg-stone-200/60 hover:text-stone-800 lg:hidden dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-white transition"
+                  aria-label="Close navigation drawer"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               )}
             </div>
           </div>
+
+          {/* Academic Context Badge */}
+          <div className="mt-2.5 pt-2 border-t border-stone-200/40 dark:border-white/5 flex items-center justify-between text-[10px] text-stone-500 dark:text-stone-400">
+            <span className="inline-flex items-center gap-1 font-medium">
+              <Clock size={11} className="text-brand-600 dark:text-brand-400" />
+              Semester 2 • 2025–2026
+            </span>
+            <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Online
+            </span>
+          </div>
         </div>
 
         {/* Dashboard Link with Modern Glow */}
-        <div className="pt-2">
+        <div>
           <NavLink
             to={dashboardPath}
             onClick={handleLinkClick}
-            className={`group relative flex min-h-[42px] items-center justify-between gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
+            className={`group relative flex min-h-[44px] items-center justify-between gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
               isDashboardActive
-                ? "bg-gradient-to-r from-brand-600 via-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20"
+                ? "bg-gradient-to-r from-brand-600 via-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/25"
                 : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:hover:bg-white/10 dark:text-stone-300 dark:hover:text-white"
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className={`flex h-7 w-7 items-center justify-center rounded-xl transition-colors ${isDashboardActive ? 'bg-white/20 text-white' : 'text-brand-600 dark:text-brand-400'}`}>
-                <LayoutDashboard size={17} />
+              <div className={`flex h-7.5 w-7.5 items-center justify-center rounded-xl transition-colors ${isDashboardActive ? 'bg-white/20 text-white' : 'text-brand-600 dark:text-brand-400 bg-brand-500/10'}`}>
+                <LayoutDashboard size={18} />
               </div>
-              <span>{t("sidebar.dashboard")}</span>
+              <span className="font-bold">{t("sidebar.dashboard")}</span>
             </div>
             {isDashboardActive ? (
-              <span className="flex h-2 w-2 rounded-full bg-white shadow-xs" />
+              <span className="flex h-2 w-2 rounded-full bg-white shadow-xs ring-2 ring-white/30" />
             ) : (
               <span className="text-[10px] text-stone-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                 ↵
@@ -820,8 +891,8 @@ export default function Sidebar({
           </NavLink>
         </div>
 
-        {/* Quick Menu Filter Input & Category Tabs */}
-        <div className="pt-2 space-y-1.5">
+        {/* Search & Filter Header with Quick Actions */}
+        <div className="space-y-2">
           <div className="relative flex items-center">
             <Search size={14} className="absolute left-3 text-stone-400 pointer-events-none" />
             <input
@@ -830,7 +901,7 @@ export default function Sidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search features (⌘K)..."
-              className="w-full rounded-xl bg-stone-100/80 dark:bg-white/5 pl-8.5 pr-8 py-2 text-xs text-stone-800 dark:text-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-1.5 focus:ring-brand-500/50 transition border border-stone-200/50 dark:border-white/5"
+              className="w-full rounded-xl bg-stone-100/90 dark:bg-white/5 pl-8.5 pr-8 py-2 text-xs text-stone-800 dark:text-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 transition border border-stone-200/60 dark:border-white/10"
             />
             {searchQuery ? (
               <button
@@ -839,7 +910,7 @@ export default function Sidebar({
                 className="absolute right-2.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
                 aria-label="Clear search"
               >
-                <X size={13} />
+                <X size={14} />
               </button>
             ) : (
               <span className="absolute right-2.5 hidden sm:inline-block rounded px-1.5 py-0.5 text-[9px] font-bold text-stone-400 bg-stone-200/60 dark:bg-white/10">
@@ -848,9 +919,9 @@ export default function Sidebar({
             )}
           </div>
 
-          {/* Category Pills (Filter) */}
-          {!searchQuery && (
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 px-0.5">
+          {/* Category Tabs & Expand/Collapse All */}
+          <div className="flex items-center justify-between gap-1 pt-0.5">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 px-0.5 flex-1">
               {categoryFilters.map((cat) => (
                 <button
                   key={cat.key}
@@ -858,7 +929,7 @@ export default function Sidebar({
                   onClick={() => setActiveCategoryFilter(cat.key)}
                   className={`rounded-lg px-2 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap transition-all ${
                     activeCategoryFilter === cat.key
-                      ? "bg-brand-500/15 text-brand-700 dark:text-brand-300 font-bold border border-brand-500/20"
+                      ? "bg-brand-500/15 text-brand-700 dark:text-brand-300 font-bold border border-brand-500/30 shadow-2xs"
                       : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200 hover:bg-stone-500/5 dark:hover:bg-white/5"
                   }`}
                 >
@@ -866,12 +937,25 @@ export default function Sidebar({
                 </button>
               ))}
             </div>
-          )}
+
+            {/* Toggle All Accordions Button */}
+            {!searchQuery && (
+              <button
+                type="button"
+                onClick={toggleAllSections}
+                title={allSectionsOpen ? "Collapse all sections" : "Expand all sections"}
+                className="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 dark:hover:bg-white/10 dark:hover:text-stone-200 transition"
+                aria-label={allSectionsOpen ? "Collapse all" : "Expand all"}
+              >
+                {allSectionsOpen ? <ChevronsUp size={14} /> : <ChevronsDown size={14} />}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Middle Scrollable Navigation List (Self-contained scroll) */}
-      <div className="flex-1 overflow-y-auto px-2.5 sm:px-3 py-1 space-y-1">
+      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scroll-smooth">
         <nav aria-label="Sidebar Sections">
           {filteredMenu.length === 0 ? (
             <div className="px-4 py-8 text-center rounded-2xl glass-sm border border-dashed border-stone-200 dark:border-white/10 my-2">
@@ -893,7 +977,7 @@ export default function Sidebar({
           ) : (
             filteredMenu.map((section) => {
               const SectionIcon = section.icon;
-              const isSectionOpen = searchQuery ? true : openSection === section.key;
+              const isSectionOpen = searchQuery ? true : !!openSections[section.key];
               const hasActiveChild = section.items.some((item) =>
                 location.pathname === item.path || location.pathname.startsWith(item.path + "/")
               );
@@ -902,34 +986,36 @@ export default function Sidebar({
                 <div key={section.key} className="pt-0.5">
                   <button
                     type="button"
-                    onClick={() => toggle(section.key)}
-                    className={`flex min-h-[38px] w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-all duration-150 ${
+                    onClick={() => toggleSection(section.key)}
+                    className={`flex min-h-[40px] w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-all duration-150 ${
                       hasActiveChild
-                        ? "text-brand-700 dark:text-brand-300 bg-brand-500/10 dark:bg-brand-500/15 border border-brand-500/20"
+                        ? "text-brand-700 dark:text-brand-300 bg-brand-500/10 dark:bg-brand-500/15 border border-brand-500/25 shadow-2xs"
                         : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:text-stone-400 dark:hover:text-stone-200 dark:hover:bg-white/10"
                     }`}
                   >
                     <span className="flex items-center gap-2.5 truncate">
-                      <SectionIcon size={16} className={hasActiveChild ? "text-brand-600 dark:text-brand-400" : "text-stone-500"} />
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-lg transition-colors ${hasActiveChild ? 'bg-brand-500/20 text-brand-600 dark:text-brand-400' : 'text-stone-500'}`}>
+                        <SectionIcon size={15} />
+                      </div>
                       <span className="truncate">{t(section.titleKey)}</span>
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-semibold text-stone-400 dark:text-stone-500 font-mono">
+                      <span className="text-[10px] font-semibold text-stone-400 dark:text-stone-500 font-mono px-1.5 py-0.5 rounded bg-stone-100 dark:bg-white/5">
                         {section.items.length}
                       </span>
                       {hasActiveChild && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-brand-600 dark:bg-brand-400" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand-600 dark:bg-brand-400 ring-2 ring-brand-500/30" />
                       )}
                       {isSectionOpen ? (
-                        <ChevronDown size={14} className="transition-transform duration-200" />
+                        <ChevronDown size={14} className="transition-transform duration-200 text-stone-400" />
                       ) : (
-                        <ChevronRight size={14} className="transition-transform duration-200" />
+                        <ChevronRight size={14} className="transition-transform duration-200 text-stone-400" />
                       )}
                     </div>
                   </button>
 
                   {isSectionOpen && (
-                    <div className="mt-1 space-y-0.5 pl-3 sm:pl-3.5 border-l-2 border-stone-200/70 dark:border-white/10 ml-3.5 my-1">
+                    <div className="mt-1 space-y-0.5 pl-3 border-l-2 border-stone-200/80 dark:border-white/10 ml-4 my-1">
                       {section.items.map((item) => {
                         const Icon = item.icon;
                         const isItemActive =
@@ -941,12 +1027,16 @@ export default function Sidebar({
                             key={item.path}
                             to={item.path}
                             onClick={handleLinkClick}
-                            className={`group relative flex min-h-[36px] items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-150 ${
+                            className={`group relative flex min-h-[38px] lg:min-h-[36px] items-center justify-between gap-2 rounded-xl px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
                               isItemActive
                                 ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold shadow-xs"
                                 : "text-stone-600 hover:text-stone-900 hover:bg-stone-500/10 dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
                             }`}
                           >
+                            {/* Active item left glowing accent bar */}
+                            {isItemActive && (
+                              <span className="absolute -left-3.5 top-2 bottom-2 w-1 rounded-r-full bg-brand-500" />
+                            )}
                             <span className="flex items-center gap-2.5 truncate">
                               <Icon size={15} className={`shrink-0 transition-transform duration-150 ${isItemActive ? 'scale-110' : 'group-hover:scale-105'}`} />
                               <span className="truncate">{t(item.translationKey)}</span>
@@ -971,8 +1061,8 @@ export default function Sidebar({
       </div>
 
       {/* User Profile Bottom Footer Card (Always visible at bottom) */}
-      <div className="shrink-0 p-2.5 sm:p-3 pt-1">
-        <div className="p-3 rounded-2xl glass-sm border border-stone-200/60 dark:border-white/10 flex items-center justify-between gap-2 shadow-xs">
+      <div className="shrink-0 p-3 pt-2">
+        <div className="p-3 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center justify-between gap-2 shadow-xs">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs select-none ring-2 ring-white dark:ring-stone-800">
               {userInitials}
@@ -994,7 +1084,7 @@ export default function Sidebar({
               type="button"
               onClick={() => logout()}
               title="Sign out"
-              className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl text-stone-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors"
+              className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-xl text-stone-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors"
               aria-label="Sign out"
             >
               <LogOut size={16} />
@@ -1016,9 +1106,9 @@ export default function Sidebar({
         aria-hidden={!mobileOpen}
       />
 
-      {/* Mobile Drawer (Touch Optimized for Phones & Tablets < 1024px) */}
+      {/* Mobile Drawer (Touch-Optimized for Phones & Tablets < 1024px) */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform glass-strong text-stone-900 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-in-out lg:hidden dark:text-stone-100 border-r border-stone-200/60 dark:border-white/10 ${
+        className={`fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform glass-strong text-stone-900 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out lg:hidden dark:text-stone-100 border-r border-stone-200/80 dark:border-white/10 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -1030,8 +1120,8 @@ export default function Sidebar({
 
       {/* Desktop / Laptop Sidebar (Fixed viewport height, completely independent of main view scroll) */}
       <aside
-        className={`hidden h-full shrink-0 flex-col lg:flex glass-sm overflow-hidden transition-all duration-300 ease-in-out border-r border-stone-200/50 dark:border-white/10 ${
-          isCollapsed ? "w-19" : "w-72 xl:w-76"
+        className={`hidden h-full shrink-0 flex-col lg:flex glass-sm overflow-hidden transition-all duration-300 ease-in-out border-r border-stone-200/60 dark:border-white/10 ${
+          isCollapsed ? "w-[76px]" : "w-72 xl:w-76"
         }`}
       >
         {isCollapsed ? renderCompactMenu() : renderExpandedMenu(false)}
