@@ -115,6 +115,17 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
   const mobileSearchWrapRef = useRef<HTMLDivElement>(null)
   const searchRequestId = useRef(0)
 
+  // Below `lg` the persistent search box is too narrow for the full
+  // placeholder string, so swap to a shorter one instead of letting it clip.
+  const [isCompactSearch, setIsCompactSearch] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 1023px)')
+    setIsCompactSearch(mql.matches)
+    const handleChange = (e: MediaQueryListEvent) => setIsCompactSearch(e.matches)
+    mql.addEventListener('change', handleChange)
+    return () => mql.removeEventListener('change', handleChange)
+  }, [])
+
   const roleLabel = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : ''
   const avatarUrl = (user as { avatarUrl?: string } | null)?.avatarUrl
     ? resolveAssetUrl((user as { avatarUrl?: string }).avatarUrl!)
@@ -291,12 +302,12 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
             <Menu size={19} />
           </button>
           <div ref={searchWrapRef} className="relative hidden sm:block">
-            <div className="flex min-w-72 lg:min-w-90 items-center gap-3 rounded-full glass-sm px-4 py-2.5 sm:py-3">
+            <div className="flex min-w-64 md:min-w-72 lg:min-w-80 xl:min-w-90 items-center gap-3 rounded-full glass-sm px-4 py-2.5 sm:py-3">
               <Search size={17} className="shrink-0 text-stone-600 dark:text-stone-400" />
               <input
                 type="text"
                 aria-label={t('header.searchPlaceholder')}
-                placeholder={t('header.searchPlaceholder')}
+                placeholder={isCompactSearch ? 'Search…' : t('header.searchPlaceholder')}
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value)

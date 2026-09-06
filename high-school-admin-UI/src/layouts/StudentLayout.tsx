@@ -1,11 +1,16 @@
-import { Outlet } from 'react-router-dom';
-import { useState } from 'react';
-import Header from '@/layouts/Header';
-import Sidebar from '@/layouts/Sidebar';
-import Footer from '@/layouts/Footer';
-import Breadcrumbs from '@/components/common/Breadcrumbs';
-import { SchoolProvider } from '@/context/SchoolContext';
-import { useAuth } from '@/hooks/useAuth';
+// src/layouts/StudentLayout.tsx
+
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+
+import Header from "@/layouts/Header";
+import Sidebar from "@/layouts/Sidebar";
+import Footer from "@/layouts/Footer";
+
+import Breadcrumbs from "@/components/common/Breadcrumbs";
+
+import { SchoolProvider } from "@/context/SchoolContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function StudentLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -13,22 +18,71 @@ export default function StudentLayout() {
 
   return (
     <SchoolProvider>
-      <div className="h-screen w-full flex overflow-hidden text-stone-900 dark:text-stone-100">
+      <div className="flex h-screen w-full overflow-hidden">
+
+        {/* ============================================================
+            SIDEBAR
+        ============================================================ */}
         <Sidebar
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}
-          role={role ?? 'student'}
+          role={role ?? "student"}
         />
 
-        <div className="flex-1 h-full flex flex-col min-w-0 overflow-y-auto overflow-x-hidden">
-          <Header onOpenSidebar={() => setMobileOpen(true)} />
+        {/* ============================================================
+            APPLICATION AREA
+        ============================================================ */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 
-          <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8">
-            <Breadcrumbs />
-            <Outlet />
-          </main>
+          {/* ==========================================================
+              HEADER
+          ========================================================== */}
+          <Header
+            onOpenSidebar={() => setMobileOpen(true)}
+          />
 
-          <Footer />
+          {/* ==========================================================
+              SCROLLABLE CONTENT
+          ========================================================== */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+
+            <main className="flex-1 p-2 sm:p-4 lg:p-5">
+
+              {/* ======================================================
+                  PAGE CONTAINER
+              ====================================================== */}
+              <div
+                className="
+                  min-h-full
+                  rounded-2xl
+                  bg-white/75
+                  p-4
+                  shadow-sm
+                  backdrop-blur-xl
+                  sm:rounded-3xl
+                  sm:p-6
+                  lg:p-8
+                  dark:bg-stone-900/65
+                "
+              >
+
+                {/* Breadcrumb */}
+                <Breadcrumbs />
+
+                {/* Page Content */}
+                <div className="mt-5">
+                  <Outlet />
+                </div>
+
+              </div>
+            </main>
+
+            {/* ========================================================
+                FOOTER
+            ======================================================== */}
+            <Footer />
+
+          </div>
         </div>
       </div>
     </SchoolProvider>
