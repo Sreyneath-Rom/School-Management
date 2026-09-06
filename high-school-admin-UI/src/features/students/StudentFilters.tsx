@@ -2,17 +2,14 @@
 import React from 'react'
 import {
   Search,
-  Filter,
   X,
   LayoutGrid,
   List,
   Download,
-  CheckSquare,
-  ShieldCheck,
-  UserX,
-  UserCheck,
+  Filter,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react'
-import Button from '@/components/common/Button'
 
 interface StudentFiltersProps {
   search: string
@@ -60,24 +57,25 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
   classes,
 }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Top Filter Bar */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border-card/60 bg-surface-card p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-stone-200/80 dark:border-white/10 bg-white/70 dark:bg-stone-900/60 backdrop-blur-md p-4 shadow-xs lg:flex-row lg:items-center lg:justify-between">
         {/* Left: Search Input */}
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-main/40" />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
           <input
             id="student-search-input"
             type="text"
-            placeholder="Search by student name, ID, email..."
+            placeholder="Search student name, ID, email, or guardian..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full rounded-xl border border-border-card bg-surface-base py-2 pl-9 pr-8 text-sm text-text-main placeholder-text-main/40 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-xl border border-stone-200 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 py-2 pl-9 pr-9 text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 focus:border-brand-500 focus:bg-white dark:focus:bg-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
           />
           {search && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-text-main/40 hover:bg-surface-card hover:text-text-main"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-400 hover:bg-stone-200/50 hover:text-stone-700 dark:hover:text-white transition"
+              title="Clear search"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -85,7 +83,7 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
         </div>
 
         {/* Center: Dropdown Filters */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Grade Selector */}
           <div className="relative">
             <select
@@ -93,7 +91,7 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
               value={selectedGrade}
               onChange={(e) => onGradeChange(e.target.value)}
               aria-label="Filter by grade"
-              className="appearance-none rounded-xl border border-border-card bg-surface-base py-2 pl-3 pr-8 text-xs font-medium text-text-main focus:border-brand-500 focus:outline-none"
+              className="h-9 rounded-xl border border-stone-200 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 px-3 text-xs font-semibold text-stone-800 dark:text-stone-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             >
               <option value="all">All Grades</option>
               {grades.map((g) => (
@@ -102,26 +100,24 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
                 </option>
               ))}
             </select>
-            <Filter className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-text-main/40" />
           </div>
 
-          {/* Class Section Selector */}
+          {/* Class Selector */}
           <div className="relative">
             <select
               id="student-class-filter"
               value={selectedClass}
               onChange={(e) => onClassChange(e.target.value)}
-              aria-label="Filter by class"
-              className="appearance-none rounded-xl border border-border-card bg-surface-base py-2 pl-3 pr-8 text-xs font-medium text-text-main focus:border-brand-500 focus:outline-none"
+              aria-label="Filter by class section"
+              className="h-9 rounded-xl border border-stone-200 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 px-3 text-xs font-semibold text-stone-800 dark:text-stone-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             >
-              <option value="all">All Classes</option>
+              <option value="all">All Sections</option>
               {classes.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
               ))}
             </select>
-            <Filter className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-text-main/40" />
           </div>
 
           {/* Status Selector */}
@@ -131,13 +127,12 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
               value={selectedStatus}
               onChange={(e) => onStatusChange(e.target.value)}
               aria-label="Filter by status"
-              className="appearance-none rounded-xl border border-border-card bg-surface-base py-2 pl-3 pr-8 text-xs font-medium text-text-main focus:border-brand-500 focus:outline-none"
+              className="h-9 rounded-xl border border-stone-200 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 px-3 text-xs font-semibold text-stone-800 dark:text-stone-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             >
-              <option value="all">All Status</option>
+              <option value="all">Status: All</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
-            <Filter className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-text-main/40" />
           </div>
 
           {/* Gender Selector */}
@@ -147,105 +142,102 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
               value={selectedGender}
               onChange={(e) => onGenderChange(e.target.value)}
               aria-label="Filter by gender"
-              className="appearance-none rounded-xl border border-border-card bg-surface-base py-2 pl-3 pr-8 text-xs font-medium text-text-main focus:border-brand-500 focus:outline-none"
+              className="h-9 rounded-xl border border-stone-200 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 px-3 text-xs font-semibold text-stone-800 dark:text-stone-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             >
-              <option value="all">All Genders</option>
+              <option value="all">Gender: All</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
             </select>
-            <Filter className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-text-main/40" />
           </div>
 
-          {/* Clear Filters */}
+          {/* Reset Filters */}
           {hasActiveFilters && (
             <button
-              id="student-clear-filters-btn"
               onClick={onClearFilters}
-              className="inline-flex items-center gap-1 rounded-xl border border-dashed border-border-card px-2.5 py-1.5 text-xs font-medium text-text-main/60 hover:border-red-400 hover:text-red-500"
+              className="inline-flex h-9 items-center gap-1 rounded-xl px-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition cursor-pointer"
+              title="Reset all filters"
             >
-              <X className="h-3 w-3" />
-              Reset
+              <X className="h-3.5 w-3.5" />
+              <span>Reset</span>
             </button>
           )}
         </div>
 
-        {/* Right: View Switcher & Export */}
-        <div className="flex items-center gap-2 self-end lg:self-auto">
-          {/* Table / Grid Toggle */}
-          <div className="flex items-center rounded-xl border border-border-card bg-surface-base p-0.5">
-            <button
-              id="student-view-table-btn"
-              onClick={() => onViewModeChange('table')}
-              className={`rounded-lg p-1.5 transition ${
-                viewMode === 'table'
-                  ? 'bg-surface-card text-brand-600 shadow-sm dark:text-brand-400'
-                  : 'text-text-main/50 hover:text-text-main'
-              }`}
-              title="Table View"
-            >
-              <List className="h-4 w-4" />
-            </button>
-            <button
-              id="student-view-grid-btn"
-              onClick={() => onViewModeChange('grid')}
-              className={`rounded-lg p-1.5 transition ${
-                viewMode === 'grid'
-                  ? 'bg-surface-card text-brand-600 shadow-sm dark:text-brand-400'
-                  : 'text-text-main/50 hover:text-text-main'
-              }`}
-              title="Grid Cards View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-          </div>
-
+        {/* Right: Export & View Toggles */}
+        <div className="flex items-center gap-2">
           {/* Export CSV */}
           <button
-            id="student-export-csv-btn"
             onClick={onExport}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border-card bg-surface-base px-3 py-2 text-xs font-medium text-text-main transition hover:bg-surface-card hover:text-brand-600"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-stone-200 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 px-3 text-xs font-semibold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/10 transition cursor-pointer"
+            title="Export student records to CSV"
           >
-            <Download className="h-3.5 w-3.5" />
-            Export
+            <Download className="h-3.5 w-3.5 text-stone-500" />
+            <span className="hidden sm:inline">Export</span>
           </button>
+
+          {/* View Toggle */}
+          <div className="flex h-9 items-center rounded-xl border border-stone-200 dark:border-white/10 bg-stone-100/70 dark:bg-white/5 p-0.5">
+            <button
+              onClick={() => onViewModeChange('table')}
+              className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition ${
+                viewMode === 'table'
+                  ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-white shadow-xs'
+                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-white'
+              }`}
+              title="Table view"
+            >
+              <List className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Table</span>
+            </button>
+            <button
+              onClick={() => onViewModeChange('grid')}
+              className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition ${
+                viewMode === 'grid'
+                  ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-white shadow-xs'
+                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-white'
+              }`}
+              title="Grid view"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Cards</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Bulk Selection Action Bar */}
+      {/* Bulk Action Bar (Visible when students are selected) */}
       {selectedCount > 0 && (
-        <div className="flex items-center justify-between rounded-xl border border-brand-500/30 bg-brand-500/5 px-4 py-2.5 text-sm text-text-main animate-fadeIn">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-500/30 bg-brand-500/10 px-4 py-2.5 text-xs">
           <div className="flex items-center gap-2">
-            <CheckSquare className="h-4 w-4 text-brand-600 dark:text-brand-400" />
-            <span className="font-semibold text-brand-600 dark:text-brand-400">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[11px] font-bold text-white">
               {selectedCount}
             </span>
-            <span>student{selectedCount > 1 ? 's' : ''} selected</span>
+            <span className="font-semibold text-brand-900 dark:text-brand-200">
+              {selectedCount} student{selectedCount > 1 ? 's' : ''} selected
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              id="bulk-active-btn"
               onClick={() => onBulkStatus('active')}
-              className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 transition hover:bg-emerald-500/20 dark:text-emerald-400"
+              className="inline-flex items-center gap-1 rounded-lg bg-white dark:bg-stone-800 px-3 py-1.5 font-semibold text-emerald-700 dark:text-emerald-400 shadow-xs hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
             >
-              <UserCheck className="h-3.5 w-3.5" />
-              Set Active
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Mark Active</span>
             </button>
             <button
-              id="bulk-inactive-btn"
               onClick={() => onBulkStatus('inactive')}
-              className="inline-flex items-center gap-1 rounded-lg bg-zinc-500/10 px-2.5 py-1 text-xs font-medium text-zinc-600 transition hover:bg-zinc-500/20 dark:text-zinc-400"
+              className="inline-flex items-center gap-1 rounded-lg bg-white dark:bg-stone-800 px-3 py-1.5 font-semibold text-stone-700 dark:text-stone-300 shadow-xs hover:bg-stone-100 dark:hover:bg-white/10 transition"
             >
-              <UserX className="h-3.5 w-3.5" />
-              Set Inactive
+              <XCircle className="h-3.5 w-3.5" />
+              <span>Mark Inactive</span>
             </button>
             <button
-              id="bulk-clear-btn"
               onClick={onClearSelection}
-              className="text-xs text-text-main/50 underline hover:text-text-main"
+              className="rounded-lg px-2.5 py-1.5 font-medium text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
             >
-              Deselect all
+              Clear Selection
             </button>
           </div>
         </div>
