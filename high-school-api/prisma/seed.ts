@@ -1,6 +1,6 @@
 import { prisma } from "../src/config/database";
 import type { Role, Permission } from "../src/generated/prisma/client";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 const MODULES = [
   "dashboard",
