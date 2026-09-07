@@ -20,3 +20,8 @@ export const updateUserSchema = z.object({
 export const resetUserPasswordSchema = z.object({
   newPassword: z.string().min(8),
 })
+
+export const bulkStatusSchema = z.object({
+  ids: z.array(z.string().cuid()).min(1),
+  status: z.enum(['active', 'inactive']),
+})

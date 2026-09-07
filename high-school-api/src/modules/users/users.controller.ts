@@ -31,4 +31,8 @@ export const usersController = {
     await usersService.resetPassword(req.params.id, req.body.newPassword)
     res.status(204).send()
   },
+
+  async bulkUpdateStatus(req: Request, res: Response) {
+    sendSuccess(res, await usersService.bulkUpdateStatus(req.body.ids, req.body.status))
+  },
 }

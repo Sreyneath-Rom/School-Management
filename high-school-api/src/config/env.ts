@@ -7,6 +7,11 @@ import { z } from 'zod'
 // would be read as a literal string containing "${POSTGRES_USER}".
 expand(dotenv.config())
 
+const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -20,7 +25,7 @@ const envSchema = z.object({
   UPLOAD_PATH: z.string().default('uploads'),
   MAX_UPLOAD_MB: z.coerce.number().default(10),
 
-  CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  CORS_ORIGIN: z.array(z.string()).default(['http://localhost:3000']),
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().default(300),
@@ -33,7 +38,10 @@ const envSchema = z.object({
   REDIS_URL: z.string().optional(),
 })
 
-const parsed = envSchema.safeParse(process.env)
+const parsed = envSchema.safeParse({
+  ...process.env,
+  CORS_ORIGIN: corsOrigins,
+})
 
 if (!parsed.success) {
   // Fail fast and loud — a misconfigured env is worse than a crash at boot.

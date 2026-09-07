@@ -1,42 +1,31 @@
+
 import {
   useState,
   useRef,
   useEffect,
   useMemo,
 } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
-  Search,
   Bell,
   Calendar,
   Menu,
-  X,
   LogOut,
   ChevronDown,
   Check,
-  Loader2,
-  Users2,
-  UserCog,
-  FileText,
   UserCircle,
   Settings,
+  GraduationCap,
+  ShieldCheck,
+  CircleHelp,
 } from 'lucide-react'
 
 import { useAuth } from '@/hooks/useAuth'
+import { useSchool } from '@/context/SchoolContext'
 import ThemeToggle from '@/components/common/ThemeToggle'
 import { resolveAssetUrl } from '@/utils/resolveAssetUrl'
 import { useTranslations } from '@/i18n'
 
-// ============================================================================
-// TYPES (unchanged)
-// ============================================================================
-type SearchResultType = 'student' | 'staff' | 'record'
-interface SearchResult {
-  id: string
-  type: SearchResultType
-  title: string
-  subtitle: string
-}
 interface NotificationItem {
   id: string
   title: string
@@ -44,370 +33,411 @@ interface NotificationItem {
   time: string
   read: boolean
 }
+const INITIAL_NOTIFICATIONS: NotificationItem[] = []
 
-// ============================================================================
-// MISSING CONSTANTS (these should be imported from separate files)
-// ============================================================================
-// These are referenced below but not defined in this file.
-// In a real project, they would be imported from e.g. '@/constants/search'
-// and '@/constants/notifications'.
-const MOCK_SEARCH_INDEX: SearchResult[] = [
-  // Example structure:
-  // { id: '1', type: 'student', title: 'John Doe', subtitle: 'Grade 10-A' },
-  // { id: '2', type: 'staff', title: 'Jane Smith', subtitle: 'Mathematics Teacher' },
-  // { id: '3', type: 'record', title: 'Attendance Report', subtitle: 'May 2026' },
-]
-
-const SEARCH_TYPE_PATH: Record<SearchResultType, string> = {
-  student: '/students',
-  staff: '/staff',
-  record: '/records',
-}
-
-const SEARCH_TYPE_ICON: Record<SearchResultType, any> = {
-  student: Users2,
-  staff: UserCog,
-  record: FileText,
-}
-
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  // Example:
-  // { id: 'n1', title: 'New student enrolled', message: '...', time: '2h ago', read: false },
-]
-
-// ============================================================================
-// UTILITY (unchanged)
-// ============================================================================
 function getInitials(name?: string | null): string {
   if (!name) return '?'
+
   const parts = name.trim().split(/\s+/).filter(Boolean)
+
   if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
-
-// ============================================================================
-// SEARCH FETCH (mock)
-// ============================================================================
-async function fetchSearchResults(query: string): Promise<SearchResult[]> {
-  await new Promise((resolve) => setTimeout(resolve, 250))
-  const q = query.trim().toLowerCase()
-  if (!q) return []
-  return MOCK_SEARCH_INDEX.filter(
-    (item) => item.title.toLowerCase().includes(q) || item.subtitle.toLowerCase().includes(q)
-  )
-}
-
-// ============================================================================
-// HEADER COMPONENT
-// ============================================================================
-export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
-  const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [notifOpen, setNotifOpen] = useState(false)
-  const [langOpen, setLangOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const notifRef = useRef<HTMLDivElement>(null)
-  const langRef = useRef<HTMLDivElement>(null)
-  const searchWrapRef = useRef<HTMLDivElement>(null)
-  const mobileSearchWrapRef = useRef<HTMLDivElement>(null)
-  const searchRequestId = useRef(0)
-
-  // Below `lg` the persistent search box is too narrow for the full
-  // placeholder string, so swap to a shorter one instead of letting it clip.
-  const [isCompactSearch, setIsCompactSearch] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 1023px)')
-    setIsCompactSearch(mql.matches)
-    const handleChange = (e: MediaQueryListEvent) => setIsCompactSearch(e.matches)
-    mql.addEventListener('change', handleChange)
-    return () => mql.removeEventListener('change', handleChange)
-  }, [])
-
-  const roleLabel = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : ''
-  const avatarUrl = (user as { avatarUrl?: string } | null)?.avatarUrl
-    ? resolveAssetUrl((user as { avatarUrl?: string }).avatarUrl!)
-    : null
-  const initials = getInitials(user?.name)
-
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [activeIndex, setActiveIndex] = useState(-1)
-
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
-  const unreadCount = notifications.filter((n) => !n.read).length
-
-  const { language, setLanguage, languages, activeLanguage, t } = useTranslations()
-  const today = useMemo(() => {
-    return new Date().toLocaleDateString(activeLanguage.locale, {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    })
-  }, [activeLanguage.locale])
-
-  // ==========================================================================
-  // SEARCH EFFECT
-  // ==========================================================================
-  useEffect(() => {
-    const q = query.trim()
-    if (!q) {
-      setResults([])
-      setIsSearching(false)
-      setActiveIndex(-1)
-      return
-    }
-    setIsSearching(true)
-    const requestId = ++searchRequestId.current
-    const timer = setTimeout(async () => {
-      const found = await fetchSearchResults(q)
-      if (requestId === searchRequestId.current) {
-        setResults(found)
-        setIsSearching(false)
-        setActiveIndex(-1)
-      }
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [query])
-
-  const handleSelectResult = (result: SearchResult) => {
-    setQuery('')
-    setResults([])
-    setSearchOpen(false)
-    setMobileSearchOpen(false)
-    navigate(SEARCH_TYPE_PATH[result.type])
-  }
-
-  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!results.length) {
-      if (event.key === 'Escape') {
-        setSearchOpen(false);
-        (event.target as HTMLInputElement).blur()
-      }
-      return
-    }
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      setActiveIndex((prev) => (prev + 1) % results.length)
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      setActiveIndex((prev) => (prev <= 0 ? results.length - 1 : prev - 1))
-    } else if (event.key === 'Enter' && activeIndex >= 0) {
-      event.preventDefault()
-      handleSelectResult(results[activeIndex])
-    } else if (event.key === 'Escape') {
-      setSearchOpen(false);
-      (event.target as HTMLInputElement).blur()
-    }
-  }
-
-  const markOneRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    )
-  }
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
-
-  // ==========================================================================
-  // OUTSIDE CLICK
-  // ==========================================================================
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node
-      if (menuRef.current && !menuRef.current.contains(target)) setMenuOpen(false)
-      if (notifRef.current && !notifRef.current.contains(target)) setNotifOpen(false)
-      if (langRef.current && !langRef.current.contains(target)) setLangOpen(false)
-      if (
-        searchWrapRef.current &&
-        !searchWrapRef.current.contains(target) &&
-        mobileSearchWrapRef.current &&
-        !mobileSearchWrapRef.current.contains(target)
-      ) {
-        setSearchOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const renderSearchDropdown = () => {
-    if (isSearching) {
-      return (
-        <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl glass-sm p-4 shadow-xl">
-          <div className="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
-            <Loader2 size={15} className="animate-spin" />
-            {t('header.searching')}
-          </div>
-        </div>
-      )
-    }
-    if (!query.trim() || !searchOpen) return null
-    if (!results.length) {
-      return (
-        <div className="absolute left-0 right-0 top-full z-40 mt-2 rounded-2xl glass-sm p-4 shadow-xl">
-          <div className="text-sm text-stone-500 dark:text-stone-400">{t('header.noResults')}</div>
-        </div>
-      )
-    }
-    return (
-      <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl glass-sm p-2 shadow-xl">
-        {results.map((result, index) => {
-          const Icon = SEARCH_TYPE_ICON[result.type]
-          return (
-            <button
-              key={result.id}
-              type="button"
-              onClick={() => handleSelectResult(result)}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${
-                index === activeIndex
-                  ? 'bg-stone-100 dark:bg-white/10'
-                  : 'hover:bg-stone-50 dark:hover:bg-white/5'
-              }`}
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-stone-100 dark:bg-stone-800">
-                <Icon size={16} className="text-stone-600 dark:text-stone-300" />
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-stone-800 dark:text-stone-100">
-                  {result.title}
-                </span>
-                <span className="block truncate text-xs text-stone-500 dark:text-stone-400">
-                  {result.subtitle}
-                </span>
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    )
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase()
   }
 
   return (
-    <header className="sticky top-0 z-30 ">
-      <div className="flex h-16 sm:h-20 items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 lg:px-8">
+    parts[0][0] +
+    parts[parts.length - 1][0]
+  ).toUpperCase()
+}
+
+export default function Header({
+  onOpenSidebar,
+}: {
+  onOpenSidebar?: () => void
+}) {
+  const navigate = useNavigate()
+  const { user, logout, role } = useAuth()
+  const { school } = useSchool()
+
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
+
+  const menuRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
+  const langRef = useRef<HTMLDivElement>(null)
+
+  // ---------------------------------------------------------------------------
+  // SCHOOL IDENTITY
+  // ---------------------------------------------------------------------------
+
+  const activeRole = (role || 'admin').toLowerCase()
+
+  const dashboardPath =
+    activeRole === 'admin'
+      ? '/dashboard'
+      : `/${activeRole}/dashboard`
+
+  const schoolName =
+    school?.name || 'High School Academic OS'
+
+  const schoolMotto =
+    school?.settings?.motto ||
+    'MoEYS Curriculum • 2025–2026'
+
+  const logoUrl = resolveAssetUrl(school?.logoUrl)
+
+  const [logoLoadFailed, setLogoLoadFailed] =
+    useState(false)
+
+  useEffect(() => {
+    setLogoLoadFailed(false)
+  }, [logoUrl])
+
+  // ---------------------------------------------------------------------------
+  // USER
+  // ---------------------------------------------------------------------------
+
+  const roleLabel = user?.role
+    ? user.role.charAt(0).toUpperCase() +
+      user.role.slice(1)
+    : ''
+
+  const avatarUrl = (
+    user as { avatarUrl?: string } | null
+  )?.avatarUrl
+    ? resolveAssetUrl(
+        (user as { avatarUrl?: string }).avatarUrl!,
+      )
+    : null
+
+  const initials = getInitials(user?.name)
+
+  // ---------------------------------------------------------------------------
+  // NOTIFICATIONS
+  // ---------------------------------------------------------------------------
+
+  const [notifications, setNotifications] =
+    useState<NotificationItem[]>(
+      INITIAL_NOTIFICATIONS,
+    )
+
+  const unreadCount = notifications.filter(
+    (notification) => !notification.read,
+  ).length
+
+  // ---------------------------------------------------------------------------
+  // LANGUAGE
+  // ---------------------------------------------------------------------------
+
+  const {
+    language,
+    setLanguage,
+    languages,
+    activeLanguage,
+    t,
+  } = useTranslations()
+
+  const today = useMemo(() => {
+    return new Date().toLocaleDateString(
+      activeLanguage.locale,
+      {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      },
+    )
+  }, [activeLanguage.locale])
+
+  // ---------------------------------------------------------------------------
+  // ACTIONS
+  // ---------------------------------------------------------------------------
+
+  const markOneRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((notification) =>
+        notification.id === id
+          ? { ...notification, read: true }
+          : notification,
+      ),
+    )
+  }
+
+  const markAllRead = () => {
+    setNotifications((prev) =>
+      prev.map((notification) => ({
+        ...notification,
+        read: true,
+      })),
+    )
+  }
+
+  const openUserMenu = () => {
+    setMenuOpen((open) => !open)
+    setNotifOpen(false)
+    setLangOpen(false)
+  }
+
+  const openNotifications = () => {
+    setNotifOpen((open) => !open)
+    setMenuOpen(false)
+    setLangOpen(false)
+  }
+
+  const openLanguage = () => {
+    setLangOpen((open) => !open)
+    setMenuOpen(false)
+    setNotifOpen(false)
+  }
+
+  // ---------------------------------------------------------------------------
+  // OUTSIDE CLICK + ESC
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node
+
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
+        setMenuOpen(false)
+      }
+
+      if (
+        notifRef.current &&
+        !notifRef.current.contains(target)
+      ) {
+        setNotifOpen(false)
+      }
+
+      if (
+        langRef.current &&
+        !langRef.current.contains(target)
+      ) {
+        setLangOpen(false)
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+
+      setMenuOpen(false)
+      setNotifOpen(false)
+      setLangOpen(false)
+    }
+
+    document.addEventListener(
+      'mousedown',
+      handleClickOutside,
+    )
+
+    document.addEventListener(
+      'keydown',
+      handleEscape,
+    )
+
+    return () => {
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside,
+      )
+
+      document.removeEventListener(
+        'keydown',
+        handleEscape,
+      )
+    }
+  }, [])
+
+  // ---------------------------------------------------------------------------
+  // MENU ITEM
+  // ---------------------------------------------------------------------------
+
+  const menuItemClass =
+    'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-stone-700 transition-all duration-150 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-white/[0.06] dark:hover:text-white'
+
+  return (
+    <header className="app-header sticky top-0 z-30">
+      <div className="app-header-inner flex h-16 items-center justify-between gap-2 px-3 sm:h-20 sm:gap-3 sm:px-6 lg:px-8">
+
+        {/* ================================================================= */}
         {/* LEFT */}
+        {/* ================================================================= */}
+
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+
+          {/* MOBILE SIDEBAR */}
           <button
             type="button"
             onClick={onOpenSidebar}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full glass-sm text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white lg:hidden"
             aria-label="Open menu"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full glass-sm text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white lg:hidden"
           >
             <Menu size={19} />
           </button>
-          <div ref={searchWrapRef} className="relative hidden sm:block">
-            <div className="flex min-w-64 md:min-w-72 lg:min-w-80 xl:min-w-90 items-center gap-3 rounded-full glass-sm px-4 py-2.5 sm:py-3">
-              <Search size={17} className="shrink-0 text-stone-600 dark:text-stone-400" />
-              <input
-                type="text"
-                aria-label={t('header.searchPlaceholder')}
-                placeholder={isCompactSearch ? 'Search…' : t('header.searchPlaceholder')}
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value)
-                  setSearchOpen(true)
-                }}
-                onFocus={() => setSearchOpen(true)}
-                onKeyDown={handleSearchKeyDown}
-                className="w-full border-0 bg-transparent px-3 text-sm text-stone-900 outline-none placeholder:text-stone-600 dark:text-stone-100 dark:placeholder:text-stone-400"
-              />
-              {query && (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => {
-                    setQuery('')
-                    setResults([])
-                  }}
-                  className="shrink-0 text-stone-400 transition hover:text-stone-700 dark:hover:text-stone-200"
-                >
-                  <X size={15} />
-                </button>
+
+          {/* SCHOOL IDENTITY */}
+          <Link
+            to={dashboardPath}
+            title={`${schoolName} — Dashboard`}
+            className="group flex min-w-0 items-center gap-2.5 rounded-full py-1.5 pl-1 pr-3 transition-colors hover:bg-stone-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 dark:hover:bg-white/5 sm:py-2"
+          >
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 text-white shadow-sm shadow-brand-600/30 ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105 sm:h-10 sm:w-10">
+              {logoUrl && !logoLoadFailed ? (
+                <img
+                  src={logoUrl}
+                  alt={schoolName}
+                  className="h-full w-full object-cover"
+                  onError={() =>
+                    setLogoLoadFailed(true)
+                  }
+                />
+              ) : (
+                <GraduationCap size={18} />
               )}
             </div>
-            {renderSearchDropdown()}
-          </div>
-          <button
-            type="button"
-            onClick={() => setMobileSearchOpen((prev) => !prev)}
-            className="flex h-10 w-10 items-center justify-center rounded-full glass-sm text-stone-600 sm:hidden dark:text-stone-300"
-            aria-label="Search"
-          >
-            <Search size={18} />
-          </button>
+
+            <div className="hidden min-w-0 sm:block">
+              <span className="block max-w-40 truncate text-[13px] font-bold tracking-tight text-stone-900 dark:text-stone-100 lg:max-w-56">
+                {schoolName}
+              </span>
+
+              <span className="block max-w-40 truncate text-[10.5px] font-medium text-stone-500 dark:text-stone-400 lg:max-w-56">
+                {schoolMotto}
+              </span>
+            </div>
+          </Link>
         </div>
 
+        {/* ================================================================= */}
         {/* RIGHT */}
+        {/* ================================================================= */}
+
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+
+          {/* DATE */}
           <div className="hidden items-center gap-2 text-sm text-stone-500 xl:flex dark:text-stone-400">
             <Calendar size={16} />
             <span>{today}</span>
           </div>
 
-          {/* LANGUAGE SWITCHER */}
+          {/* ================================================================= */}
+          {/* LANGUAGE */}
+          {/* ================================================================= */}
+
           {(() => {
-            const safeLanguages = Array.isArray(languages) ? languages : []
-            const safeActiveLang = activeLanguage || { code: 'en', name: 'English', flag: '🇬🇧' }
-            const hasAdditionalLanguages = safeLanguages.length > 1
-            if (!hasAdditionalLanguages) {
+            const safeLanguages = Array.isArray(
+              languages,
+            )
+              ? languages
+              : []
+
+            const safeActiveLang =
+              activeLanguage || {
+                code: 'en',
+                name: 'English',
+                flag: '🇬🇧',
+              }
+
+            if (safeLanguages.length <= 1) {
               return (
                 <div className="inline-flex h-10 items-center gap-1.5 rounded-full glass-sm px-3 text-stone-600 dark:text-stone-300">
-                  <span className="text-base leading-none">{safeActiveLang.flag}</span>
-                  <span className="hidden text-xs font-semibold uppercase sm:inline">
+                  <span className="text-base">
+                    {safeActiveLang.flag}
+                  </span>
+
+                  <span className="hidden text-[10px] font-bold uppercase tracking-[0.12em] sm:inline">
                     {safeActiveLang.code}
+                  </span>
+
+                  <span className="hidden text-xs font-semibold sm:inline">
+                    {safeActiveLang.name}
                   </span>
                 </div>
               )
             }
+
             return (
-              <div className="relative" ref={langRef}>
+              <div
+                className="relative"
+                ref={langRef}
+              >
                 <button
                   type="button"
-                  aria-label={`${t('header.changeLanguage')}: ${safeActiveLang.name}`}
+                  aria-label={`${t(
+                    'header.changeLanguage',
+                  )}: ${safeActiveLang.name}`}
                   aria-expanded={langOpen}
-                  onClick={() => setLangOpen((open) => !open)}
+                  aria-haspopup="menu"
+                  onClick={openLanguage}
                   className="inline-flex h-10 items-center gap-1.5 rounded-full glass-sm px-3 text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white"
                 >
-                  <span className="text-base leading-none">{safeActiveLang.flag}</span>
-                  <span className="hidden text-xs font-semibold uppercase sm:inline">
+                  <span className="text-base">
+                    {safeActiveLang.flag}
+                  </span>
+
+                  <span className="hidden text-[10px] font-bold uppercase tracking-[0.12em] sm:inline">
                     {safeActiveLang.code}
                   </span>
+
+                  <span className="hidden text-xs font-semibold sm:inline">
+                    {safeActiveLang.name}
+                  </span>
+
                   <ChevronDown
                     size={13}
-                    className={`transition-transform ${langOpen ? 'rotate-180' : ''}`}
+                    className={`transition-transform duration-200 ${
+                      langOpen
+                        ? 'rotate-180'
+                        : ''
+                    }`}
                   />
                 </button>
+
                 {langOpen && (
-                  <div className="absolute right-0 top-full z-40 mt-2 w-52 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl glass-sm p-2 shadow-xl">
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full z-40 mt-2 w-56 overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 p-2 shadow-2xl backdrop-blur-xl dark:border-stone-700/60 dark:bg-stone-900/95"
+                  >
                     <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">
-                      {t('header.changeLanguage')}
+                      {t(
+                        'header.changeLanguage',
+                      )}
                     </div>
+
                     <div className="space-y-0.5">
                       {safeLanguages.map((lang) => (
                         <button
                           key={lang.code}
                           type="button"
+                          role="menuitem"
                           onClick={() => {
                             setLanguage(lang.code)
                             setLangOpen(false)
                           }}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition hover:bg-stone-50 dark:hover:bg-white/5 ${
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition ${
                             lang.code === language
-                              ? 'text-brand-700 dark:text-brand-300'
-                              : 'text-stone-700 dark:text-stone-300'
+                              ? 'bg-brand-50 font-semibold text-brand-700 dark:bg-brand-950/30 dark:text-brand-300'
+                              : 'text-stone-700 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-white/5'
                           }`}
                         >
                           <span className="flex items-center gap-2.5">
-                            <span className="text-base leading-none">{lang.flag}</span>
-                            <span>{lang.name}</span>
+                            <span className="text-base">
+                              {lang.flag}
+                            </span>
+
+                            <span>
+                              {lang.name}
+                            </span>
                           </span>
-                          {lang.code === language && <Check size={15} />}
+
+                          {lang.code ===
+                            language && (
+                            <Check size={15} />
+                          )}
                         </button>
                       ))}
                     </div>
@@ -417,182 +447,355 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
             )
           })()}
 
+          {/* ================================================================= */}
           {/* NOTIFICATIONS */}
-          <div className="relative" ref={notifRef}>
+          {/* ================================================================= */}
+
+          <div
+            className="relative"
+            ref={notifRef}
+          >
             <button
               type="button"
-              aria-label={t('header.notifications')}
-              onClick={() => setNotifOpen((open) => !open)}
+              aria-label={t(
+                'header.notifications',
+              )}
+              aria-expanded={notifOpen}
+              aria-haspopup="menu"
+              onClick={openNotifications}
               className="relative flex h-10 w-10 items-center justify-center rounded-full glass-sm text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white"
             >
               <Bell size={18} />
+
               {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-bold text-white">
+                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-bold text-white ring-2 ring-white dark:ring-stone-900">
                   {unreadCount}
                 </span>
               )}
             </button>
+
             {notifOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl glass-sm shadow-xl">
+              <div className="absolute right-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-stone-700/60 dark:bg-stone-900/95">
                 <div className="flex items-center justify-between border-b border-stone-200/60 px-4 py-3 dark:border-stone-700/60">
                   <div className="text-sm font-bold text-stone-800 dark:text-stone-100">
-                    {t('header.notifications')}
+                    {t(
+                      'header.notifications',
+                    )}
                   </div>
+
                   {unreadCount > 0 && (
                     <button
                       type="button"
                       onClick={markAllRead}
                       className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400"
                     >
-                      {t('header.markAllRead')}
+                      {t(
+                        'header.markAllRead',
+                      )}
                     </button>
                   )}
                 </div>
+
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <div className="p-6 text-center text-sm text-stone-500 dark:text-stone-400">
-                      {t('header.allCaughtUp')}
+                    <div className="p-8 text-center">
+                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800">
+                        <Bell
+                          size={17}
+                          className="text-stone-400"
+                        />
+                      </div>
+
+                      <p className="text-sm font-medium text-stone-600 dark:text-stone-300">
+                        {t(
+                          'header.allCaughtUp',
+                        )}
+                      </p>
                     </div>
                   ) : (
-                    notifications.map((notification) => (
-                      <button
-                        key={notification.id}
-                        type="button"
-                        onClick={() => markOneRead(notification.id)}
-                        className={`flex w-full gap-3 border-b border-stone-200/50 px-4 py-3 text-left transition last:border-0 hover:bg-stone-50 dark:border-stone-800/50 dark:hover:bg-white/5 ${
-                          notification.read
-                            ? ''
-                            : 'bg-brand-50/40 dark:bg-brand-950/10'
-                        }`}
-                      >
-                        <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800">
-                          <Bell size={14} className="text-stone-600 dark:text-stone-300" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-start justify-between gap-2">
-                            <span className="text-sm font-semibold text-stone-800 dark:text-stone-100">
-                              {notification.title}
+                    notifications.map(
+                      (notification) => (
+                        <button
+                          key={notification.id}
+                          type="button"
+                          onClick={() =>
+                            markOneRead(
+                              notification.id,
+                            )
+                          }
+                          className={`flex w-full gap-3 border-b border-stone-200/50 px-4 py-3 text-left transition last:border-0 hover:bg-stone-50 dark:border-stone-800/50 dark:hover:bg-white/5 ${
+                            notification.read
+                              ? ''
+                              : 'bg-brand-50/40 dark:bg-brand-950/10'
+                          }`}
+                        >
+                          <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800">
+                            <Bell
+                              size={14}
+                              className="text-stone-600 dark:text-stone-300"
+                            />
+                          </span>
+
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-start justify-between gap-2">
+                              <span className="text-sm font-semibold text-stone-800 dark:text-stone-100">
+                                {
+                                  notification.title
+                                }
+                              </span>
+
+                              {!notification.read && (
+                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" />
+                              )}
                             </span>
-                            {!notification.read && (
-                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" />
-                            )}
+
+                            <span className="mt-0.5 block text-xs leading-5 text-stone-500 dark:text-stone-400">
+                              {
+                                notification.message
+                              }
+                            </span>
+
+                            <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500">
+                              {notification.time}
+                            </span>
                           </span>
-                          <span className="mt-0.5 block text-xs leading-5 text-stone-500 dark:text-stone-400">
-                            {notification.message}
-                          </span>
-                          <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500">
-                            {notification.time}
-                          </span>
-                        </span>
-                      </button>
-                    ))
+                        </button>
+                      ),
+                    )
                   )}
                 </div>
               </div>
             )}
           </div>
 
-          {/* THEME TOGGLE */}
+          {/* THEME */}
           <ThemeToggle />
 
+          {/* ================================================================= */}
           {/* USER MENU */}
-          <div className="relative" ref={menuRef}>
+          {/* ================================================================= */}
+
+          <div
+            className="relative"
+            ref={menuRef}
+          >
             <button
               type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              className="flex items-center gap-2 rounded-full glass-sm p-1.5 pr-3 transition hover:bg-stone-100 dark:hover:bg-white/5"
+              aria-label="Open account menu"
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              onClick={openUserMenu}
+              className={`group flex items-center gap-2 rounded-full p-1.5 pr-2.5 transition-all duration-200 sm:pr-3 ${
+                menuOpen
+                  ? 'bg-stone-100 shadow-sm dark:bg-white/10'
+                  : 'glass-sm hover:bg-stone-100 dark:hover:bg-white/5'
+              }`}
             >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={user?.name ?? 'User'} className="h-8 w-8 rounded-full object-cover" />
-              ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700 dark:bg-brand-950 dark:text-brand-300">
-                  {initials}
-                </span>
-              )}
+              {/* AVATAR */}
+              <div className="relative">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={user?.name ?? 'User'}
+                    className="h-8 w-8 rounded-full object-cover ring-2 ring-white/60 dark:ring-stone-700/60"
+                  />
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-100 to-brand-200 text-xs font-bold text-brand-700 ring-2 ring-white/60 dark:from-brand-950 dark:to-brand-900 dark:text-brand-300 dark:ring-stone-700/60">
+                    {initials}
+                  </span>
+                )}
+
+                {/* ONLINE INDICATOR */}
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-stone-900" />
+              </div>
+
+              {/* NAME + ROLE */}
               <span className="hidden text-left md:block">
                 <span className="block max-w-28 truncate text-xs font-bold text-stone-800 dark:text-stone-100">
                   {user?.name ?? 'User'}
                 </span>
-                <span className="block text-[10px] text-stone-500 dark:text-stone-400">{roleLabel}</span>
+
+                <span className="block text-[10px] font-medium text-stone-500 dark:text-stone-400">
+                  {roleLabel}
+                </span>
               </span>
-              <ChevronDown size={14} className="hidden text-stone-400 md:block" />
+
+              <ChevronDown
+                size={14}
+                className={`hidden text-stone-400 transition-transform duration-200 md:block ${
+                  menuOpen
+                    ? 'rotate-180'
+                    : ''
+                }`}
+              />
             </button>
+
+            {/* USER DROPDOWN */}
             {menuOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl glass-sm p-2 shadow-xl">
+              <div
+                role="menu"
+                className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-stone-200/70 bg-white/95 p-2 shadow-2xl backdrop-blur-xl dark:border-stone-700/70 dark:bg-stone-900/95"
+              >
+                {/* ========================================================= */}
+                {/* PROFILE HEADER */}
+                {/* ========================================================= */}
+
+                <div className="mb-1 rounded-xl bg-stone-50/80 p-3 dark:bg-white/[0.04]">
+                  <div className="flex items-center gap-3">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={
+                          user?.name ?? 'User'
+                        }
+                        className="h-11 w-11 rounded-xl object-cover ring-1 ring-stone-200 dark:ring-stone-700"
+                      />
+                    ) : (
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-100 to-brand-200 text-sm font-bold text-brand-700 dark:from-brand-950 dark:to-brand-900 dark:text-brand-300">
+                        {initials}
+                      </span>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-stone-900 dark:text-white">
+                        {user?.name ?? 'User'}
+                      </p>
+
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <ShieldCheck
+                          size={12}
+                          className="text-brand-600 dark:text-brand-400"
+                        />
+
+                        <p className="truncate text-[11px] font-medium text-stone-500 dark:text-stone-400">
+                          {roleLabel ||
+                            'User'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ========================================================= */}
+                {/* ACCOUNT */}
+                {/* ========================================================= */}
+
+                <div className="px-2 pb-1 pt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">
+                  Account
+                </div>
+
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={() => {
                     setMenuOpen(false)
                     navigate('/profile')
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-stone-700 transition hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-white/5"
+                  className={menuItemClass}
                 >
-                  <UserCircle size={17} />
-                  <span>{t('header.myProfile')}</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-600 transition group-hover:bg-brand-100 group-hover:text-brand-700 dark:bg-stone-800 dark:text-stone-300 dark:group-hover:bg-brand-950 dark:group-hover:text-brand-300">
+                    <UserCircle size={17} />
+                  </span>
+
+                  <span className="flex-1">
+                    <span className="block">
+                      {t(
+                        'header.myProfile',
+                      )}
+                    </span>
+
+                    <span className="block text-[10px] font-normal text-stone-400 dark:text-stone-500">
+                      View and edit your profile
+                    </span>
+                  </span>
                 </button>
+
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={() => {
                     setMenuOpen(false)
                     navigate('/settings')
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-stone-700 transition hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-white/5"
+                  className={menuItemClass}
                 >
-                  <Settings size={17} />
-                  <span>{t('header.settings')}</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-600 transition group-hover:bg-brand-100 group-hover:text-brand-700 dark:bg-stone-800 dark:text-stone-300 dark:group-hover:bg-brand-950 dark:group-hover:text-brand-300">
+                    <Settings size={17} />
+                  </span>
+
+                  <span className="flex-1">
+                    <span className="block">
+                      {t(
+                        'header.settings',
+                      )}
+                    </span>
+
+                    <span className="block text-[10px] font-normal text-stone-400 dark:text-stone-500">
+                      Preferences and system settings
+                    </span>
+                  </span>
                 </button>
-                <div className="my-1 border-t border-stone-200/60 dark:border-stone-700/60" />
+
+                {/* HELP */}
                 <button
                   type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    navigate('/help')
+                  }}
+                  className={menuItemClass}
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-600 transition group-hover:bg-brand-100 group-hover:text-brand-700 dark:bg-stone-800 dark:text-stone-300 dark:group-hover:bg-brand-950 dark:group-hover:text-brand-300">
+                    <CircleHelp size={17} />
+                  </span>
+
+                  <span className="flex-1">
+                    <span className="block">
+                      Help & Support
+                    </span>
+
+                    <span className="block text-[10px] font-normal text-stone-400 dark:text-stone-500">
+                      Get help using the system
+                    </span>
+                  </span>
+                </button>
+
+                {/* ========================================================= */}
+                {/* LOGOUT */}
+                {/* ========================================================= */}
+
+                <div className="my-2 border-t border-stone-200/70 dark:border-stone-700/70" />
+
+                <button
+                  type="button"
+                  role="menuitem"
                   onClick={() => {
                     setMenuOpen(false)
                     logout()
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20"
+                  className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/20 dark:hover:text-rose-300"
                 >
-                  <LogOut size={17} />
-                  <span>{t('header.logOut')}</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 transition group-hover:bg-rose-100 dark:bg-rose-950/30 dark:group-hover:bg-rose-950/50">
+                    <LogOut size={17} />
+                  </span>
+
+                  <span className="flex-1">
+                    <span className="block">
+                      {t('header.logOut')}
+                    </span>
+
+                    <span className="block text-[10px] font-normal text-rose-400 dark:text-rose-500">
+                      Sign out of your account
+                    </span>
+                  </span>
                 </button>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* MOBILE SEARCH */}
-      {mobileSearchOpen && (
-        <div ref={mobileSearchWrapRef} className="border-t border-stone-200/60 px-4 py-3 sm:hidden dark:border-stone-800/60">
-          <div className="relative">
-            <div className="flex items-center gap-3 rounded-full glass-sm px-4 py-3">
-              <Search size={17} className="shrink-0 text-stone-500" />
-              <input
-                autoFocus
-                type="text"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value)
-                  setSearchOpen(true)
-                }}
-                onKeyDown={handleSearchKeyDown}
-                placeholder={t('header.searchPlaceholder')}
-                className="w-full border-0 bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-500 dark:text-stone-100"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery('')
-                  setResults([])
-                  setMobileSearchOpen(false)
-                }}
-                className="text-stone-400"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            {renderSearchDropdown()}
-          </div>
-        </div>
-      )}
     </header>
   )
 }
+

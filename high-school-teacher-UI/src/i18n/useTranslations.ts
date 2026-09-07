@@ -239,8 +239,12 @@ export function useTranslations(): UseTranslationsResult {
   // --------------------------------------------------------------------------
 
   const setLanguage = useCallback((code: string) => {
-    setLanguageState(code)
-    saveActiveLanguageCode(code)
+    const nextCode = (code || 'en').trim().toLowerCase()
+    const available = withDefaultLanguage(loadLanguages())
+    const resolved = available.some((lang) => lang.code === nextCode) ? nextCode : 'en'
+
+    setLanguageState(resolved)
+    saveActiveLanguageCode(resolved)
   }, [])
 
   // --------------------------------------------------------------------------

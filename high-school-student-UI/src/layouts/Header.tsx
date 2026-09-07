@@ -278,8 +278,8 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
   }
 
   return (
-    <header className="sticky top-0 z-30 ">
-      <div className="flex h-16 sm:h-20 items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 lg:px-8">
+    <header className="app-header sticky top-0 z-30">
+      <div className="app-header-inner flex h-16 sm:h-20 items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 lg:px-8">
         {/* LEFT */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
@@ -351,6 +351,10 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                   <span className="hidden text-xs font-semibold uppercase sm:inline">
                     {safeActiveLang.code}
                   </span>
+
+                  <span className="hidden text-xs font-semibold sm:inline">
+                    {safeActiveLang.name}
+                  </span>
                 </div>
               )
             }
@@ -366,6 +370,10 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                   <span className="text-base leading-none">{safeActiveLang.flag}</span>
                   <span className="hidden text-xs font-semibold uppercase sm:inline">
                     {safeActiveLang.code}
+                  </span>
+
+                  <span className="hidden text-xs font-semibold sm:inline">
+                    {safeActiveLang.name}
                   </span>
                   <ChevronDown
                     size={13}

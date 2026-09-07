@@ -63,7 +63,7 @@ export const userService = {
   delete: (id: string) => apiClient.delete<void>(`/users/${id}`),
 
   resetPassword: (id: string, newPassword?: string) =>
-    apiClient.post<{ success: boolean; message: string }>(`/users/${id}/reset-password`, {
+    apiClient.post<void>(`/users/${id}/reset-password`, {
       newPassword: newPassword || 'Password@123',
     }),
 

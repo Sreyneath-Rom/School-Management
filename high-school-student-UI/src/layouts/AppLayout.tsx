@@ -14,7 +14,7 @@ export default function AppLayout() {
 
   return (
     <SchoolProvider>
-      <div className="h-screen w-full flex overflow-hidden text-stone-900 dark:text-stone-100 ">
+      <div className="page-theme h-screen w-full flex overflow-hidden text-text-main">
         {/* Fixed Desktop Sidebar & Mobile Drawer (self-contained scrolling, independent of main container) */}
         <Sidebar
           mobileOpen={mobileOpen}
@@ -27,7 +27,7 @@ export default function AppLayout() {
           <Header onOpenSidebar={() => setMobileOpen(true)} />
 
           {/* === MAIN CONTENT – WITH RESPONSIVE GLASS CONTAINER & BREADCRUMBS === */}
-          <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8">
+          <main className="page-surface flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8">
             <Breadcrumbs />
             <Outlet />
           </main>

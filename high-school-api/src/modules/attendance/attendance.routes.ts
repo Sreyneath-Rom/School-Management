@@ -4,7 +4,7 @@ import { authenticate } from '@/middleware/auth.middleware'
 import { requirePermission } from '@/middleware/role.middleware'
 import { validateBody } from '@/middleware/validation.middleware'
 import { asyncHandler } from '@/utils/asyncHandler'
-import { checkInSchema, checkOutSchema, bulkMarkSchema } from './attendance.validation'
+import { checkInSchema, checkOutSchema, bulkMarkSchema, updateAttendanceSchema } from './attendance.validation'
 
 const router = Router()
 router.use(authenticate)
@@ -34,6 +34,13 @@ router.post(
   requirePermission('attendance', 'edit'),
   validateBody(checkOutSchema),
   asyncHandler(attendanceController.checkOut)
+)
+
+router.patch(
+  '/:id',
+  requirePermission('attendance', 'edit'),
+  validateBody(updateAttendanceSchema),
+  asyncHandler(attendanceController.update)
 )
 
 router.delete('/:id', requirePermission('attendance', 'delete'), asyncHandler(attendanceController.remove))

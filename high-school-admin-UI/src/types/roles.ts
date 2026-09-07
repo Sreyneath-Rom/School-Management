@@ -32,6 +32,11 @@ export interface CreateRolePayload {
   label: string
 }
 
+export interface UpdateRolePayload {
+  name?: string
+  label?: string
+}
+
 export interface UpdateRolePermissionsPayload {
   permissionIds: string[] // full replacement set for the role
 }

@@ -111,6 +111,10 @@ export const attendanceService = {
     return apiClient.post<AttendanceRecord>('/attendance/check-out', { studentId, date, checkOut })
   },
 
+  async update(id: string, payload: Partial<Pick<AttendanceRecord, 'status' | 'checkIn' | 'checkOut' | 'note'>>): Promise<AttendanceRecord> {
+    return apiClient.patch<AttendanceRecord>(`/attendance/${id}`, payload)
+  },
+
   async delete(id: string): Promise<void> {
     return apiClient.delete<void>(`/attendance/${id}`)
   },

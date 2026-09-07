@@ -1,10 +1,16 @@
-// src/layouts/Sidebar.tsx
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   GraduationCap,
-  ChevronDown,
   ChevronRight,
   Settings,
   Languages,
@@ -50,13 +56,9 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
-  Layers,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { useSchool } from "@/context/SchoolContext";
 import { useAuth } from "@/hooks/useAuth";
-import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
 import { useTranslations, type TranslationKey } from "@/i18n";
 
 type Section =
@@ -766,14 +768,16 @@ export default function Sidebar({
   role?: "admin" | "teacher" | "student" | "parent";
 }) {
   const location = useLocation();
-  const { school } = useSchool();
   const { role: authRole, user, logout } = useAuth();
   const { t } = useTranslations();
 
   const activeRole = (propRole || authRole || "admin").toLowerCase();
-  const schoolName = school?.name || "High School Academic OS";
-  const schoolMotto = school?.settings?.motto || "MoEYS Curriculum • 2025–2026";
-  const logoUrl = resolveAssetUrl(school?.logoUrl);
+
+  const dashboardPath =
+    activeRole === "admin" ? "/dashboard" : `/${activeRole}/dashboard`;
+  const isDashboardActive =
+    location.pathname === dashboardPath ||
+    (activeRole === "admin" && location.pathname === "/");
 
   // --- Collapsed State with LocalStorage Persistence ---
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -807,23 +811,64 @@ export default function Sidebar({
 
   // Single Accordion State: Only 1 section expanded at a time ("flow 1 expand other collapse")
   const [openSection, setOpenSection] = useState<Section | null>(() => {
+    if (isDashboardActive) return null;
     return (
       sectionForPath(location.pathname, baseMenu) ||
       (baseMenu.length > 0 ? baseMenu[0].key : null)
     );
   });
 
-  // Automatically keep current route's section expanded and others collapsed
+  // Automatically keep current route's section expanded and others collapsed.
+  // On the Dashboard, no section owns the route, so collapse them all too.
   useEffect(() => {
+    if (isDashboardActive) {
+      setOpenSection(null);
+      return;
+    }
     const active = sectionForPath(location.pathname, baseMenu);
     if (active) {
       setOpenSection(active);
     }
-  }, [location.pathname, baseMenu]);
+  }, [location.pathname, baseMenu, isDashboardActive]);
 
   // Toggle section: opens target section and collapses all others
   const toggleSection = (sectionKey: Section) => {
     setOpenSection((current) => (current === sectionKey ? null : sectionKey));
+  };
+
+  // Refs for the scrollable nav list: keep the open section in view and
+  // support arrow-key navigation between section headers
+  const sectionPanelRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sectionTriggerRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  useEffect(() => {
+    if (openSection) {
+      sectionPanelRefs.current[openSection]?.scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [openSection]);
+
+  const handleSectionKeyDown = (
+    e: ReactKeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    const triggers = sectionTriggerRefs.current;
+    if (!triggers.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      triggers[(index + 1) % triggers.length]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      triggers[(index - 1 + triggers.length) % triggers.length]?.focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      triggers[0]?.focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      triggers[triggers.length - 1]?.focus();
+    }
   };
 
   // Body scroll lock on mobile when drawer is active
@@ -873,12 +918,6 @@ export default function Sidebar({
     }
   };
 
-  const dashboardPath =
-    activeRole === "admin" ? "/dashboard" : `/${activeRole}/dashboard`;
-  const isDashboardActive =
-    location.pathname === dashboardPath ||
-    (activeRole === "admin" && location.pathname === "/");
-
   const userDisplayName =
     user?.name ||
     (user?.firstName
@@ -896,28 +935,20 @@ export default function Sidebar({
 
   // --- Render Compact Rail Mode for Desktop ---
   const renderCompactMenu = () => (
-    <div className="flex h-full flex-col justify-between bg-white/95 dark:bg-[#0b1329]/95 backdrop-blur-xl p-2.5 select-none overflow-hidden border-r border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
+    <div className="app-sidebar flex h-full flex-col justify-between p-2.5 select-none overflow-hidden">
       <div className="flex flex-col items-center space-y-2.5 overflow-y-auto no-scrollbar flex-1 py-1">
-        {/* Brand / Logo */}
+        {/* Expand sidebar trigger (branding now lives in the header) */}
         <button
           type="button"
           onClick={toggleCollapsed}
-          title={`${schoolName} (Click to expand sidebar)`}
-          className="group relative my-0.5 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 text-white shadow-sm shadow-brand-600/30 ring-1 ring-white/20 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+          title="Expand sidebar"
+          className="group relative my-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer transition-all duration-200 active:scale-95"
+          aria-label="Expand sidebar"
         >
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={schoolName}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <GraduationCap
-              size={20}
-              className="group-hover:scale-110 transition-transform duration-200"
-            />
-          )}
-          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+          <PanelLeft
+            size={18}
+            className="group-hover:scale-110 transition-transform duration-200"
+          />
         </button>
 
         {/* Dashboard quick icon */}
@@ -965,7 +996,7 @@ export default function Sidebar({
                   type="button"
                   onClick={() => toggleSection(section.key)}
                   aria-label={t(section.titleKey)}
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                     isSectionActive
                       ? "bg-brand-500/15 text-brand-700 font-semibold ring-1 ring-brand-500/30 dark:bg-brand-500/25 dark:text-teal-300 dark:ring-teal-400/30"
                       : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
@@ -983,7 +1014,7 @@ export default function Sidebar({
                 {/* Popover Flyout for Compact Mode */}
                 {isHovered && (
                   <div
-                    className="absolute left-full top-0 z-50 ml-3 w-64 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-xl border border-slate-200/80 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute left-full top-0 z-50 ml-3 w-72 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-2xl shadow-slate-900/10 dark:shadow-black/30 border border-slate-200/80 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150"
                     onMouseEnter={() => handleMouseEnter(section.key)}
                     onMouseLeave={handleMouseLeave}
                   >
@@ -1044,16 +1075,6 @@ export default function Sidebar({
 
       {/* Compact Mode Footer with Expand Button & User Avatar */}
       <div className="flex flex-col items-center space-y-2 pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80 shrink-0">
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          title="Expand sidebar"
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200 transition cursor-pointer"
-          aria-label="Expand sidebar"
-        >
-          <PanelLeft size={17} />
-        </button>
-
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
           className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-white/20"
@@ -1066,36 +1087,11 @@ export default function Sidebar({
 
   // --- Render Standard Expanded Menu ---
   const renderExpandedMenu = (isMobile = false) => (
-    <div className="flex h-full flex-col justify-between bg-white/95 dark:bg-[#0b1329]/95 backdrop-blur-xl select-none overflow-hidden border-r border-slate-200/70 dark:border-slate-800/70">
-      {/* Top Fixed Area: School Branding & Dashboard Action */}
+    <div className="flex h-full flex-col justify-between select-none overflow-hidden  ">
+      {/* Top Fixed Area: Sidebar Controls & Dashboard Action */}
       <div className="shrink-0 p-3 pb-2 space-y-2.5">
-        {/* School Crest & System Identity Card */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 text-white shadow-sm shadow-brand-600/30 ring-1 ring-white/20">
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={schoolName}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <GraduationCap size={20} />
-              )}
-              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="truncate text-[13px] font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                {schoolName}
-              </h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="inline-flex items-center rounded-full bg-brand-500/10 px-2 py-0.5 text-[9.5px] font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-teal-300 truncate max-w-full">
-                  {schoolMotto}
-                </span>
-              </div>
-            </div>
-          </div>
-
+        {/* Sidebar controls (branding now lives in the header) */}
+        <div className="flex items-center justify-end gap-2">
           {/* Desktop collapse toggle */}
           {!isMobile && (
             <button
@@ -1122,38 +1118,33 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Dashboard Link - Featured top row */}
+        {/* Dashboard quick link */}
         <NavLink
           to={dashboardPath}
           onClick={handleLinkClick}
-          className={`group relative flex min-h-[38px] items-center justify-between gap-2.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
+          className={`group flex min-h-[38px] w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
             isDashboardActive
-              ? "bg-brand-500/10 text-brand-700 ring-1 ring-brand-500/25 shadow-2xs dark:bg-brand-500/20 dark:text-teal-300 dark:ring-teal-400/30"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-300 dark:hover:bg-white/[0.04] dark:hover:text-white"
+              ? "bg-brand-600 text-white shadow-xs"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50 dark:text-slate-300 dark:hover:text-slate-200 dark:hover:bg-white/3"
           }`}
         >
-          <div className="flex items-center gap-2.5">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
-                isDashboardActive
-                  ? "bg-brand-600 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-500 group-hover:text-slate-800 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:text-slate-200"
-              }`}
-            >
-              <LayoutDashboard size={15} />
-            </div>
-            <span className="font-semibold text-[12px]">{t("sidebar.dashboard")}</span>
+          <div
+            className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
+              isDashboardActive
+                ? "bg-white/15 text-white"
+                : "glass-sm text-slate-600 group-hover:text-slate-700 dark:glass-sm dark:text-slate-300 dark:group-hover:text-slate-200"
+            }`}
+          >
+            <LayoutDashboard size={14} />
           </div>
-          {isDashboardActive && (
-            <span className="h-2 w-2 rounded-full bg-brand-600 dark:bg-teal-400" />
-          )}
+          <span className="truncate text-[12px]">{t("sidebar.dashboard")}</span>
         </NavLink>
       </div>
 
       {/* Middle Scrollable Navigation List (Single-accordion flow: 1 expand, others collapse) */}
-      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scroll-smooth">
+      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700/60 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600/80">
         <nav aria-label="Sidebar Sections">
-          {baseMenu.map((section) => {
+          {baseMenu.map((section, index) => {
             const SectionIcon = section.icon;
             const isSectionOpen = openSection === section.key;
             const hasActiveChild = section.items.some(
@@ -1161,18 +1152,33 @@ export default function Sidebar({
                 location.pathname === item.path ||
                 location.pathname.startsWith(item.path + "/"),
             );
+            const triggerId = `sidebar-trigger-${section.key}`;
+            const panelId = `sidebar-panel-${section.key}`;
 
             return (
-              <div key={section.key} className="py-0.5">
+              <div
+                key={section.key}
+                ref={(el) => {
+                  sectionPanelRefs.current[section.key] = el;
+                }}
+                className="py-0.5 scroll-mt-2"
+              >
                 <button
                   type="button"
+                  id={triggerId}
+                  ref={(el) => {
+                    sectionTriggerRefs.current[index] = el;
+                  }}
                   onClick={() => toggleSection(section.key)}
-                  className={`group flex min-h-[38px] w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                  onKeyDown={(e) => handleSectionKeyDown(e, index)}
+                  aria-expanded={isSectionOpen}
+                  aria-controls={panelId}
+                  className={`group flex min-h-10 w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                     isSectionOpen
-                      ? "bg-slate-100/90 text-slate-900 shadow-2xs dark:bg-slate-800/60 dark:text-slate-100"
+                      ? "glass-sm text-slate-600 dark:glass-sm dark:text-slate-300"
                       : hasActiveChild
                         ? "text-brand-700 bg-brand-500/5 dark:text-teal-300 dark:bg-brand-500/10"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.03]"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50 dark:text-slate-300 dark:hover:text-slate-200 dark:hover:bg-white/3"
                   }`}
                 >
                   <span className="flex items-center gap-2.5 truncate">
@@ -1180,7 +1186,7 @@ export default function Sidebar({
                       className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
                         isSectionOpen || hasActiveChild
                           ? "bg-brand-600 text-white shadow-xs"
-                          : "bg-slate-100 text-slate-500 group-hover:text-slate-700 dark:bg-slate-800/80 dark:text-slate-400 dark:group-hover:text-slate-200"
+                          : "glass-sm text-slate-600 group-hover:text-slate-700 dark:glass-sm dark:text-slate-300 dark:group-hover:text-slate-200"
                       }`}
                     >
                       <SectionIcon size={14} />
@@ -1188,70 +1194,85 @@ export default function Sidebar({
                     <span className="truncate text-[12px]">{t(section.titleKey)}</span>
                   </span>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-slate-200/60 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                      {section.items.length}
-                    </span>
+                    {!isSectionOpen && hasActiveChild && (
+                      <span
+                        className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600 dark:bg-teal-400"
+                        aria-hidden="true"
+                      />
+                    )}
                     <ChevronRight
                       size={14}
-                      className={`transition-transform duration-200 text-slate-400 ${
-                        isSectionOpen ? "rotate-90 text-slate-600 dark:text-slate-300" : "rotate-0"
+                      className={`transition-transform duration-200 text-slate-600 ${
+                        isSectionOpen ? "rotate-90 text-slate-700 dark:text-slate-200" : "rotate-0"
                       }`}
                     />
                   </div>
                 </button>
 
-                {/* Sub-item Accordion Panel */}
-                {isSectionOpen && (
-                  <div className="relative mt-1 mb-1 ml-5 pl-3.5 space-y-0.5 border-l-2 border-slate-200/80 dark:border-slate-800 animate-in fade-in slide-in-from-top-1 duration-150">
-                    {section.items.map((item) => {
-                      const Icon = item.icon;
-                      const isItemActive =
-                        location.pathname === item.path ||
-                        location.pathname.startsWith(item.path + "/");
+                {/* Sub-item Accordion Panel — animated with grid-rows so it expands
+                    AND collapses smoothly (the old conditional-render only faded in) */}
+                <div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={triggerId}
+                  aria-hidden={!isSectionOpen}
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                    isSectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="overflow-hidden min-h-0">
+                    <div className="relative mt-1 mb-1 ml-5 pl-3.5 space-y-0.5 border-l-2 border-slate-200/80 dark:border-slate-800">
+                      {section.items.map((item) => {
+                        const Icon = item.icon;
+                        const isItemActive =
+                          location.pathname === item.path ||
+                          location.pathname.startsWith(item.path + "/");
 
-                      return (
-                        <NavLink
-                          key={item.path}
-                          to={item.path}
-                          onClick={handleLinkClick}
-                          className={`group relative flex min-h-[34px] items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 ${
-                            isItemActive
-                              ? "font-semibold bg-brand-600 text-white shadow-xs shadow-brand-600/25"
-                              : "font-medium text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.05] dark:hover:text-slate-100"
-                          }`}
-                        >
-                          {isItemActive && (
-                            <span className="absolute -left-[19px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-slate-900" />
-                          )}
-                          <span className="flex items-center gap-2 truncate">
-                            <Icon
-                              size={14}
-                              className={`shrink-0 ${
-                                isItemActive
-                                  ? "text-white"
-                                  : "text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-200"
-                              }`}
-                            />
-                            <span className="truncate text-[12px]">
-                              {t(item.translationKey)}
+                        return (
+                          <NavLink
+                            key={item.path}
+                            to={item.path}
+                            onClick={handleLinkClick}
+                            tabIndex={isSectionOpen ? 0 : -1}
+                            className={`group relative flex min-h-9 items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
+                              isItemActive
+                                ? "font-semibold bg-brand-600 text-white"
+                                : "font-medium text-slate-600 hover:bg-brand-200 hover:text-slate-700 dark:text-slate-200 dark:hover:bg-brand-600/10 dark:hover:text-slate-600"
+                            }`}
+                          >
+                            {isItemActive && (
+                              <span className="absolute -left-[19px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-slate-900" />
+                            )}
+                            <span className="flex items-center gap-2 truncate">
+                              <Icon
+                                size={14}
+                                className={`shrink-0 ${
+                                  isItemActive
+                                    ? "text-slate-700 dark:text-slate-200"
+                                    : "text-slate-600 group-hover:text-slate-700 dark:text-slate-200 dark:group-hover:text-slate-600"
+                                }`}
+                              />
+                              <span className="truncate text-[12px]">
+                                {t(item.translationKey)}
+                              </span>
                             </span>
-                          </span>
-                          {item.badge && (
-                            <span
-                              className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                                isItemActive
-                                  ? "bg-white/20 text-white"
-                                  : item.badgeColor || "bg-brand-600 text-white"
-                              } ${item.badgePulse ? "animate-pulse" : ""}`}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
-                        </NavLink>
-                      );
-                    })}
+                            {item.badge && (
+                              <span
+                                className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                                  isItemActive
+                                    ? "glass-sm dark:glass-sm text-slate-700 dark:text-slate-200"
+                                    : item.badgeColor || "bg-brand-600 text-slate-700 dark:text-slate-200"
+                                } ${item.badgePulse ? "animate-pulse" : ""}`}
+                              >
+                                {item.badge}
+                              </span>
+                            )}
+                          </NavLink>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -1259,19 +1280,19 @@ export default function Sidebar({
       </div>
 
       {/* User Profile Bottom Footer */}
-      <div className="shrink-0 border-t border-slate-200/70 p-2.5 dark:border-slate-800/70">
-        <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200/70 bg-slate-50/70 p-2 shadow-2xs dark:border-slate-800/70 dark:bg-white/[0.03]">
+      <div className="shrink-0  p-2.5">
+        <div className="flex items-center justify-between gap-2 rounded-2xl glass-sm dark:glass-sm p-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-brand-700 text-white font-bold text-xs select-none shadow-xs">
+            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-700 text-white font-bold text-xs select-none shadow-xs">
               {userInitials}
               <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xs font-bold text-slate-900 dark:text-slate-100 leading-tight">
+              <p className="truncate text-xs font-bold text-slate-900 dark:text-white leading-tight">
                 {userDisplayName}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <span className="text-[9.5px] font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-200">
                   {roleConfig.label}
                 </span>
               </div>
@@ -1283,7 +1304,7 @@ export default function Sidebar({
               type="button"
               onClick={() => logout()}
               title="Sign out"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors cursor-pointer"
               aria-label="Sign out"
             >
               <LogOut size={15} />
@@ -1309,7 +1330,7 @@ export default function Sidebar({
 
       {/* Mobile Drawer (Touch-Optimized for Phones & Tablets < 1024px) */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden bg-white dark:bg-[#0b1329] shadow-2xl border-r border-slate-200/90 dark:border-slate-800/80 ${
+        className={`fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -1321,7 +1342,7 @@ export default function Sidebar({
 
       {/* Desktop / Laptop Sidebar (Fixed viewport height, completely independent of main view scroll) */}
       <aside
-        className={`hidden h-full shrink-0 flex-col lg:flex overflow-hidden transition-all duration-300 ease-in-out border-r border-slate-200/80 bg-white/95 dark:bg-[#0b1329]/95 backdrop-blur-xl dark:border-slate-800/80 shadow-2xs ${
+        className={`app-sidebar hidden h-full shrink-0 flex-col lg:flex overflow-hidden transition-all duration-300 ease-in-out ${
           isCollapsed ? "w-[72px]" : "w-72 xl:w-[19rem]"
         }`}
       >

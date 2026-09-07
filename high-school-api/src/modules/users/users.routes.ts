@@ -6,6 +6,7 @@ import { validateBody } from "@/middleware/validation.middleware";
 import { asyncHandler } from "@/utils/asyncHandler";
 import {
   createUserSchema,
+  bulkStatusSchema,
   resetUserPasswordSchema,
   updateUserSchema,
 } from "./users.validation";
@@ -39,6 +40,12 @@ router.delete(
   "/:id",
   requirePermission("users", "delete"),
   asyncHandler(usersController.remove),
+);
+router.post(
+  "/bulk-status",
+  requirePermission("users", "edit"),
+  validateBody(bulkStatusSchema),
+  asyncHandler(usersController.bulkUpdateStatus),
 );
 router.post(
   "/:id/reset-password",

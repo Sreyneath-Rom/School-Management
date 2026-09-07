@@ -5,6 +5,7 @@ import type {
   ModuleDef,
   PermissionDef,
   RoleDef,
+  UpdateRolePayload,
   UpdateRolePermissionsPayload,
 } from '@/types/roles'
 
@@ -35,6 +36,11 @@ export const roleService = {
   getRoles: () => apiClient.get<RoleDef[]>('/roles'),
 
   createRole: (payload: CreateRolePayload) => apiClient.post<RoleDef>('/roles', payload),
+
+  updateRole: (roleId: string, payload: UpdateRolePayload) =>
+    apiClient.patch<RoleDef>(`/roles/${roleId}`, payload),
+
+  deleteRole: (roleId: string) => apiClient.delete<void>(`/roles/${roleId}`),
 
   updateRolePermissions: (roleId: string, payload: UpdateRolePermissionsPayload) =>
     apiClient.patch<RoleDef>(`/roles/${roleId}/permissions`, payload),

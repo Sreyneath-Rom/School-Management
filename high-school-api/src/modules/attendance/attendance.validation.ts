@@ -27,3 +27,14 @@ export const bulkMarkSchema = z.object({
     })
   ),
 })
+
+export const updateAttendanceSchema = z
+  .object({
+    status: z.enum(['PRESENT', 'ABSENT', 'LATE', 'EXCUSED']).optional(),
+    checkIn: z.coerce.date().nullable().optional(),
+    checkOut: z.coerce.date().nullable().optional(),
+    note: z.string().nullable().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  })

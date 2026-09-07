@@ -87,4 +87,12 @@ export const usersService = {
     // Force re-login everywhere after an admin-triggered reset.
     await prisma.refreshToken.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } })
   },
+
+  async bulkUpdateStatus(ids: string[], status: 'active' | 'inactive') {
+    const result = await prisma.user.updateMany({
+      where: { id: { in: ids }, deletedAt: null },
+      data: { isActive: status === 'active' },
+    })
+    return { updated: result.count }
+  },
 }

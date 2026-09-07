@@ -100,7 +100,12 @@ export function loadActiveLanguageCode(): string {
     return 'en'
   }
 
-  return window.localStorage.getItem(LANGUAGE_STORAGE_KEY) ?? 'en'
+  const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  if (!stored || !stored.trim()) {
+    return 'en'
+  }
+
+  return stored.trim().toLowerCase() || 'en'
 }
 
 // ============================================================================

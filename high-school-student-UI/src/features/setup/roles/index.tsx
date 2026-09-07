@@ -11,6 +11,7 @@ import { roleService } from '@/services/roleService'
 import type { RoleDef, PermissionDef } from '@/types/roles'
 import { useNotification } from '@/hooks/useNotification'
 import { ApiError } from '@/lib/apiClient'
+import { useTranslations } from '@/i18n'
 
 export default function RolesFeature() {
   const [roles, setRoles] = useState<RoleDef[]>([])
@@ -27,6 +28,7 @@ export default function RolesFeature() {
   const [isCreatingRole, setIsCreatingRole] = useState(false)
 
   const { success, error: notifyError } = useNotification()
+  const { t } = useTranslations()
 
   const loadData = async () => {
     setIsLoading(true)
@@ -161,7 +163,7 @@ export default function RolesFeature() {
       {/* Page Heading */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeading
-          title="Roles & Capability Permissions"
+          title={t('sidebar.rolesPermissions')}
           subtitle="Configure system user access tiers, role security policies, and granular operational permissions."
         />
         <div className="flex items-center gap-2">
@@ -179,7 +181,7 @@ export default function RolesFeature() {
             onClick={() => setIsCreateModalOpen(true)}
             className="inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
           >
-            <Plus size={16} /> Create Role
+            <Plus size={16} /> {t('common.add')} Role
           </Button>
         </div>
       </div>

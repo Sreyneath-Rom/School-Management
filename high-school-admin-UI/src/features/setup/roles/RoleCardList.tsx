@@ -1,18 +1,22 @@
 // src/features/setup/roles/RoleCardList.tsx
 import React from 'react'
-import { Shield, Check, Lock } from 'lucide-react'
+import { Shield, Check, Lock, Pencil, Trash2 } from 'lucide-react'
 import type { RoleDef } from '@/types/roles'
 
 interface RoleCardListProps {
   roles?: RoleDef[]
   selectedRoleId: string | null
   onSelectRole: (id: string) => void
+  onEditRole: (role: RoleDef) => void
+  onDeleteRole: (role: RoleDef) => void
 }
 
 export const RoleCardList: React.FC<RoleCardListProps> = ({
   roles = [],
   selectedRoleId,
   onSelectRole,
+  onEditRole,
+  onDeleteRole,
 }) => {
   const safeRoles = Array.isArray(roles) ? roles : []
   return (
@@ -49,6 +53,16 @@ export const RoleCardList: React.FC<RoleCardListProps> = ({
                     <span className="flex items-center gap-1 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-600 dark:text-brand-300">
                       Custom
                     </span>
+                  )}
+                  {!role.isSystem && (
+                    <>
+                      <button type="button" aria-label={`Edit ${role.name}`} onClick={(event) => { event.stopPropagation(); onEditRole(role) }} className="rounded-full p-1 text-text-main/50 hover:bg-text-main/10 hover:text-text-main">
+                        <Pencil size={13} />
+                      </button>
+                      <button type="button" aria-label={`Delete ${role.name}`} onClick={(event) => { event.stopPropagation(); onDeleteRole(role) }} className="rounded-full p-1 text-text-main/50 hover:bg-error/10 hover:text-error">
+                        <Trash2 size={13} />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

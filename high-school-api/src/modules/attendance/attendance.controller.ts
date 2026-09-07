@@ -35,6 +35,10 @@ export const attendanceController = {
     sendSuccess(res, await attendanceService.checkOut(req.body.studentId, req.body.date, req.body.checkOut))
   },
 
+  async update(req: Request, res: Response) {
+    sendSuccess(res, await attendanceService.update(req.params.id, req.body))
+  },
+
   async remove(req: Request, res: Response) {
     await attendanceService.remove(req.params.id)
     res.status(204).end()

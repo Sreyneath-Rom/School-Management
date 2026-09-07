@@ -145,6 +145,19 @@ export const attendanceService = {
     })
   },
 
+  async update(
+    attendanceId: string,
+    input: {
+      status?: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED'
+      checkIn?: Date | null
+      checkOut?: Date | null
+      note?: string | null
+    },
+  ) {
+    await attendanceService.getById(attendanceId)
+    return prisma.attendance.update({ where: { id: attendanceId }, data: input })
+  },
+
   async remove(attendanceId: string) {
     const record = await prisma.attendance.findUnique({ where: { id: attendanceId } })
     if (!record) throw ApiError.notFound('Attendance record not found')

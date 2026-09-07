@@ -1106,7 +1106,7 @@ export default function Sidebar({
 
       {/* Mobile Drawer (Touch-Optimized for Phones & Tablets < 1024px) */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform glass-strong text-stone-900 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out lg:hidden dark:text-stone-100 border-r border-stone-200/80 dark:border-white/10 ${
+        className={`app-sidebar fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform glass-strong text-text-main shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out lg:hidden border-r border-stone-200/80 dark:border-white/10 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -1118,7 +1118,7 @@ export default function Sidebar({
 
       {/* Desktop / Laptop Sidebar (Fixed viewport height, completely independent of main view scroll) */}
       <aside
-        className={`hidden h-full shrink-0 flex-col lg:flex glass-sm overflow-hidden transition-all duration-300 ease-in-out border-r border-stone-200/60 dark:border-white/10 ${
+        className={`app-sidebar hidden h-full shrink-0 flex-col lg:flex glass-sm overflow-hidden transition-all duration-300 ease-in-out border-r border-stone-200/60 dark:border-white/10 ${
           isCollapsed ? "w-[76px]" : "w-72 xl:w-76"
         }`}
       >

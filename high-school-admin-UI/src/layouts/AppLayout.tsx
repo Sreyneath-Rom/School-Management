@@ -17,8 +17,7 @@ export default function AppLayout() {
 
   return (
     <SchoolProvider>
-      <div className="flex h-screen w-full overflow-hidden">
-
+      <div className="page-theme flex h-screen w-full overflow-hidden text-text-main">
         {/* ============================================================
             SIDEBAR
         ============================================================ */}
@@ -32,21 +31,16 @@ export default function AppLayout() {
             APPLICATION AREA
         ============================================================ */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-
           {/* ==========================================================
               HEADER
           ========================================================== */}
-          <Header
-            onOpenSidebar={() => setMobileOpen(true)}
-          />
+          <Header onOpenSidebar={() => setMobileOpen(true)} />
 
           {/* ==========================================================
               SCROLLABLE CONTENT
           ========================================================== */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
-
-            <main className="flex-1 p-2 sm:p-4 lg:p-5">
-
+            <main className="page-surface flex-1 p-2 sm:p-4 lg:p-5">
               {/* ======================================================
                   PAGE CONTAINER
               ====================================================== */}
@@ -54,17 +48,16 @@ export default function AppLayout() {
                 className="
                   min-h-full
                   rounded-2xl
-                  bg-white/75
+                
                   p-4
                   shadow-sm
-                  backdrop-blur-xl
+                 glass-sm
                   sm:rounded-3xl
                   sm:p-6
                   lg:p-8
-                  dark:bg-stone-900/65
+                  dark:glass-sm
                 "
               >
-
                 {/* Breadcrumb */}
                 <Breadcrumbs />
 
@@ -72,7 +65,6 @@ export default function AppLayout() {
                 <div className="mt-5">
                   <Outlet />
                 </div>
-
               </div>
             </main>
 
@@ -80,7 +72,6 @@ export default function AppLayout() {
                 FOOTER
             ======================================================== */}
             <Footer />
-
           </div>
         </div>
       </div>

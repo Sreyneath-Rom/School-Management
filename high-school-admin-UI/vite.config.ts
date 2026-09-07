@@ -280,7 +280,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    ...(process.env.VITE_USE_MOCK_API !== 'false' ? [mockApiPlugin()] : []),
+    ...(process.env.VITE_USE_MOCK_API === 'true' ? [mockApiPlugin()] : []),
   ],
   resolve: {
     alias: {
@@ -291,16 +291,12 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     allowedHosts: true,
-    ...(process.env.VITE_API_PROXY_TARGET
-      ? {
-          proxy: {
-            '/api': {
-              target: process.env.VITE_API_PROXY_TARGET,
-              changeOrigin: true,
-            },
-          },
-        }
-      : {}),
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: '../dist',

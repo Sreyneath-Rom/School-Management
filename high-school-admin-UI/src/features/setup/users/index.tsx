@@ -125,8 +125,8 @@ export default function UsersFeature() {
   const handleConfirmResetPassword = async (userId: string, newPassword?: string) => {
     setIsResettingPassword(true)
     try {
-      const res = await userService.resetPassword(userId, newPassword)
-      success(res.message || 'Password reset successfully')
+      await userService.resetPassword(userId, newPassword)
+      success('Password reset successfully')
       setResetModalUser(null)
     } catch (err) {
       notifyError(err instanceof ApiError ? err.message : 'Failed to reset password')
