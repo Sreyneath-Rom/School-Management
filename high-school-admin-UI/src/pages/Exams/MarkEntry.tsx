@@ -1,5 +1,7 @@
 import { useState } from "react";
 import PageHeading from "@/components/common/PageHeading";
+import StatsGrid from "@/components/cards/StatsGrid";
+import type { StatCard } from "@/types";
 import { 
   FileSpreadsheet, 
   Save, 
@@ -159,6 +161,13 @@ export default function MarkEntry() {
       m.studentId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const kpiCards: StatCard[] = [
+    { id: "total-students", label: "Total Students", value: marks.length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "enrolled", icon: "Users", tint: "blue" },
+    { id: "completed-marks", label: "Completed Marks", value: `${gradedCount} / ${marks.length}`, delta: "-", deltaDirection: "neutral", deltaLabel: "graded", icon: "CheckCircle2", tint: "green" },
+    { id: "class-average", label: "Class Average", value: `${averageScore} / 100`, delta: "-", deltaDirection: "neutral", deltaLabel: "current average", icon: "TrendingUp", tint: "sky" },
+    { id: "highest-mark", label: "Highest Mark", value: `${gradedScores.length > 0 ? Math.max(...gradedScores) : 0} pts`, delta: "-", deltaDirection: "neutral", deltaLabel: "top score", icon: "Award", tint: "amber" },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -233,7 +242,8 @@ export default function MarkEntry() {
         </div>
       </div>
 
-      {/* KPI Stats */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {/* Legacy KPI markup retained below only as migration reference.
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="p-3.5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
           <div className="text-xs text-stone-500 font-medium">Total Students</div>
@@ -259,7 +269,7 @@ export default function MarkEntry() {
             {gradedScores.length > 0 ? Math.max(...gradedScores) : 0} pts
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Marks Table */}
       <div className="overflow-hidden rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">

@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
 import PageHeading from '@/components/common/PageHeading'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 import {
   ClipboardCheck,
   Filter,
@@ -222,6 +224,13 @@ export default function AttendanceReport() {
     window.print()
   }
 
+  const kpiCards: StatCard[] = [
+    { id: 'avg-attendance', label: 'Average Attendance Rate', value: `${avgAttendanceRate}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'filtered students', icon: 'UserCheck', tint: 'green' },
+    { id: 'filtered-students', label: 'Total Filtered Students', value: totalStudents.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'enrolled', icon: 'Users', tint: 'blue' },
+    { id: 'unexcused-absences', label: 'Unexcused Absences', value: totalAbsences.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'days lost', icon: 'CalendarDays', tint: 'amber' },
+    { id: 'chronic-alerts', label: 'Chronic Absenteeism Alerts', value: chronicCount.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'requires intervention', icon: 'AlertCircle', tint: 'red' },
+  ]
+
   return (
     <div className="space-y-6 pb-12 print:p-0 print:m-0">
       {/* Page Header */}
@@ -311,7 +320,8 @@ export default function AttendanceReport() {
         </div>
       </div>
 
-      {/* Summary KPI Cards */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {/* Legacy KPI markup retained below only as migration reference.
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Average Attendance Rate</span>
@@ -350,7 +360,7 @@ export default function AttendanceReport() {
           </div>
           <p className="text-[11px] text-rose-500 font-medium mt-1">Requires pastoral intervention</p>
         </div>
-      </div>
+      </div> */}
 
       {/* Attendance Summary Roster Table */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">

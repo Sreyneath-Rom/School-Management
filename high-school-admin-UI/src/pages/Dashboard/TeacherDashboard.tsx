@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import PageHeading from '@/components/common/PageHeading'
+import StatsGrid from '@/components/cards/StatsGrid'
 import {
   Users,
   BookOpen,
@@ -17,6 +18,14 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { academicService } from '@/services/academicService'
 import type { Homework, Quiz, GradeRecord } from '@/types/academic'
+import type { StatCard } from '@/types'
+
+const teacherStatCards: StatCard[] = [
+  { id: 'assigned-classes', label: 'Assigned Classes', value: '2 Classes', delta: '-', deltaDirection: 'neutral', deltaLabel: 'Grade 10-A, Grade 11-A', icon: 'Users', tint: 'blue' },
+  { id: 'total-students', label: 'Total Students', value: '62 Students', delta: '-', deltaDirection: 'neutral', deltaLabel: '94.8% Attendance Avg', icon: 'BookOpen', tint: 'green' },
+  { id: 'pending-reviews', label: 'Pending Reviews', value: '14 To Grade', delta: '-', deltaDirection: 'neutral', deltaLabel: 'Homework & Lab Reports', icon: 'FileCheck2', tint: 'amber' },
+  { id: 'active-quizzes', label: 'Active Quizzes', value: '2 Published', delta: '-', deltaDirection: 'neutral', deltaLabel: '50 Total Attempts', icon: 'HelpCircle', tint: 'sky' },
+]
 
 export default function TeacherDashboard() {
   const { user } = useAuth()
@@ -75,44 +84,7 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      {/* KPI Stats Grid for Teacher */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Assigned Classes</span>
-            <Users className="w-4 h-4 text-brand-600" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">2 Classes</div>
-          <span className="text-[11px] text-slate-400">Grade 10-A, Grade 11-A</span>
-        </div>
-
-        <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Total Students</span>
-            <BookOpen className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">62 Students</div>
-          <span className="text-[11px] text-slate-400">94.8% Attendance Avg</span>
-        </div>
-
-        <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Pending Reviews</span>
-            <FileCheck2 className="w-4 h-4 text-amber-600" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">14 To Grade</div>
-          <span className="text-[11px] text-amber-600">Homework & Lab Reports</span>
-        </div>
-
-        <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Active Quizzes</span>
-            <HelpCircle className="w-4 h-4 text-sky-600" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">2 Published</div>
-          <span className="text-[11px] text-slate-400">50 Total Attempts</span>
-        </div>
-      </div>
+      <StatsGrid cards={teacherStatCards} loading={loading} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Teaching Schedule */}

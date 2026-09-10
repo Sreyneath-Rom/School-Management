@@ -168,6 +168,9 @@ cp .env.example .env
 
 Configure the database and application secrets in `.env`.
 
+When the API is started from this directory, it also reads the repository-root
+`.env` as a fallback. An API-local `.env` takes priority when both files exist.
+
 Generate Prisma Client:
 
 ```bash

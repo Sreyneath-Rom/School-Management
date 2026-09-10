@@ -4,9 +4,6 @@ import {
   GraduationCap,
   Plus,
   Search,
-  Users,
-  BookOpen,
-  Award,
   Edit3,
   Trash2,
   X,
@@ -14,6 +11,8 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 
 export interface GradeLevel {
   id: string
@@ -256,6 +255,13 @@ export default function GradeLevels() {
     gradeLevels.reduce((acc, curr) => acc + curr.averageGpa, 0) / (gradeLevels.length || 1)
   ).toFixed(2)
 
+  const kpiCards: StatCard[] = [
+    { id: 'total-levels', label: 'Total Levels', value: gradeLevels.length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'active academic tiers', icon: 'GraduationCap', tint: 'blue' },
+    { id: 'total-enrolled', label: 'Total Enrolled', value: totalStudents.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across all levels', icon: 'Users', tint: 'green' },
+    { id: 'class-sections', label: 'Class Sections', value: totalClasses.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'assigned classes', icon: 'BookOpen', tint: 'violet' },
+    { id: 'average-gpa', label: 'Average GPA', value: avgSystemGpa, delta: '-', deltaDirection: 'neutral', deltaLabel: 'institutional average', icon: 'Award', tint: 'amber' },
+  ]
+
   return (
     <div className="space-y-6 pb-12">
       {/* Page Heading with Action */}
@@ -274,60 +280,7 @@ export default function GradeLevels() {
         </button>
       </div>
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Levels</span>
-            <span className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
-              <GraduationCap className="w-5 h-5" />
-            </span>
-          </div>
-          <div className="mt-3">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{gradeLevels.length}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Active Academic Tiers</p>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Enrolled</span>
-            <span className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-              <Users className="w-5 h-5" />
-            </span>
-          </div>
-          <div className="mt-3">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalStudents}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Across All Grade Levels</p>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Class Sections</span>
-            <span className="p-2 rounded-xl bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400">
-              <BookOpen className="w-5 h-5" />
-            </span>
-          </div>
-          <div className="mt-3">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalClasses}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Assigned Academic Classes</p>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Average GPA</span>
-            <span className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
-              <Award className="w-5 h-5" />
-            </span>
-          </div>
-          <div className="mt-3">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgSystemGpa}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Cumulative Institutional GPA</p>
-          </div>
-        </div>
-      </div>
+      <StatsGrid cards={kpiCards} columns={4} />
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">

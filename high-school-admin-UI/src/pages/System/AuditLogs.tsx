@@ -1,3 +1,5 @@
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 import { useState } from "react";
 import PageHeading from "@/components/common/PageHeading";
 import { 
@@ -157,6 +159,13 @@ export default function AuditLogs() {
     showToast("Audit logs JSON exported successfully", "success");
   };
 
+  const kpiCards: StatCard[] = [
+    { id: 'total-events', label: 'Total Events Logged', value: '14,892', delta: '-', deltaDirection: 'neutral', deltaLabel: 'audit events', icon: 'Database', tint: 'blue' },
+    { id: 'security-anomalies', label: 'Security Anomalies', value: '1 Warning', delta: '-', deltaDirection: 'neutral', deltaLabel: 'requires attention', icon: 'AlertTriangle', tint: 'amber' },
+    { id: 'compliance', label: 'FERPA / GDPR Compliant', value: '100%', delta: '-', deltaDirection: 'neutral', deltaLabel: 'compliance status', icon: 'ShieldCheck', tint: 'green' },
+    { id: 'retention-window', label: 'Retention Window', value: '90 Days', delta: '-', deltaDirection: 'neutral', deltaLabel: 'log retention', icon: 'Clock', tint: 'sky' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -174,7 +183,8 @@ export default function AuditLogs() {
         </button>
       </div>
 
-      {/* Metric Cards */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {/* Legacy metric markup retained below only as migration reference.
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
@@ -215,7 +225,7 @@ export default function AuditLogs() {
             <div className="text-xs text-stone-500 dark:text-stone-400">Retention Window</div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">

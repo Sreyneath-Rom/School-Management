@@ -1,11 +1,23 @@
 import dotenv from 'dotenv'
 import { expand } from 'dotenv-expand'
+import fs from 'node:fs'
+import path from 'node:path'
 import { z } from 'zod'
 
 // Plain `dotenv` does NOT expand "${VAR}" references inside .env values —
 // that requires dotenv-expand. Without this, DATABASE_URL="...${POSTGRES_USER}..."
 // would be read as a literal string containing "${POSTGRES_USER}".
-expand(dotenv.config())
+// Load the API-local file first, then fill any missing values from the
+// repository root so both `cd high-school-api && npm run dev` and monorepo
+// root workflows use the same configuration.
+const envPaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '../.env'),
+].filter((filePath) => fs.existsSync(filePath))
+
+for (const filePath of envPaths) {
+  expand(dotenv.config({ path: filePath }))
+}
 
 const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
   .split(',')

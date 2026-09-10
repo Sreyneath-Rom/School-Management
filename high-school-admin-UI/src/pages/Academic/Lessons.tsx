@@ -21,6 +21,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { academicService } from '@/services/academicService'
 import type { Lesson, LessonMaterial } from '@/types/academic'
 import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 
 export default function Lessons() {
   const { user } = useAuth()
@@ -89,6 +91,13 @@ export default function Lessons() {
     }
     return true
   })
+
+  const lessonKpiCards: StatCard[] = [
+    { id: 'available-lessons', label: 'Available Lessons', value: filteredLessons.length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'matching filters', icon: 'BookOpen', tint: 'blue' },
+    { id: 'scheduled-lessons', label: 'Scheduled Lessons', value: filteredLessons.filter((lesson) => lesson.status === 'Scheduled').length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'upcoming sessions', icon: 'Calendar', tint: 'green' },
+    { id: 'completed-lessons', label: 'Completed Lessons', value: filteredLessons.filter((lesson) => lesson.status === 'Completed').length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'finished sessions', icon: 'CheckCircle2', tint: 'amber' },
+    { id: 'lesson-materials', label: 'Learning Materials', value: filteredLessons.reduce((total, lesson) => total + lesson.materials.length, 0).toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'attached resources', icon: 'FileText', tint: 'violet' },
+  ]
 
   const handleOpenCreate = () => {
     setEditingLessonId(null)
@@ -225,6 +234,8 @@ export default function Lessons() {
           </button>
         )}
       </div>
+
+      <StatsGrid cards={lessonKpiCards} columns={4} />
 
       {/* Filter and Search Bar */}
       <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">

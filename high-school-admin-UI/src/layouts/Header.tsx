@@ -285,7 +285,7 @@ export default function Header({
             title={`${schoolName} — Dashboard`}
             className="group flex min-w-0 items-center gap-2.5 rounded-full py-1.5 pl-1 pr-3 transition-colors hover:bg-stone-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 dark:hover:bg-white/5 sm:py-2"
           >
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 text-white shadow-sm shadow-brand-600/30 ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105 sm:h-10 sm:w-10">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-br from-brand-500 via-brand-600 to-brand-700 text-white shadow-sm shadow-brand-600/30 ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105 sm:h-10 sm:w-10">
               {logoUrl && !logoLoadFailed ? (
                 <img
                   src={logoUrl}
@@ -600,7 +600,7 @@ export default function Header({
                     className="h-8 w-8 rounded-full object-cover ring-2 ring-white/60 dark:ring-stone-700/60"
                   />
                 ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-100 to-brand-200 text-xs font-bold text-brand-700 ring-2 ring-white/60 dark:from-brand-950 dark:to-brand-900 dark:text-brand-300 dark:ring-stone-700/60">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-brand-100 to-brand-200 text-xs font-bold text-brand-700 ring-2 ring-white/60 dark:from-brand-950 dark:to-brand-900 dark:text-brand-300 dark:ring-stone-700/60">
                     {initials}
                   </span>
                 )}
@@ -640,7 +640,7 @@ export default function Header({
                 {/* PROFILE HEADER */}
                 {/* ========================================================= */}
 
-                <div className="mb-1 rounded-xl bg-stone-50/80 p-3 dark:bg-white/[0.04]">
+                <div className="mb-1 rounded-xl bg-stone-50/80 p-3 dark:bg-white/4">
                   <div className="flex items-center gap-3">
                     {avatarUrl ? (
                       <img
@@ -651,7 +651,7 @@ export default function Header({
                         className="h-11 w-11 rounded-xl object-cover ring-1 ring-stone-200 dark:ring-stone-700"
                       />
                     ) : (
-                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-100 to-brand-200 text-sm font-bold text-brand-700 dark:from-brand-950 dark:to-brand-900 dark:text-brand-300">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br from-brand-100 to-brand-200 text-sm font-bold text-brand-700 dark:from-brand-950 dark:to-brand-900 dark:text-brand-300">
                         {initials}
                       </span>
                     )}

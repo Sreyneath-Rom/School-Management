@@ -19,6 +19,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { useToast } from "@/components/common/ToastProvider";
+import StatsGrid from "@/components/cards/StatsGrid";
+import type { StatCard } from "@/types";
 
 interface Announcement {
   id: string;
@@ -212,6 +214,13 @@ export default function Announcements() {
     setIsModalOpen(false);
   };
 
+  const kpiCards: StatCard[] = [
+    { id: "active-bulletins", label: "Active Bulletins", value: totalPublished.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "published", icon: "Megaphone", tint: "blue" },
+    { id: "urgent-alerts", label: "Urgent Alerts", value: urgentCount.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "requires attention", icon: "AlertTriangle", tint: "red" },
+    { id: "pinned-bulletins", label: "Pinned to Top", value: announcements.filter((a) => a.isPinned).length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "priority posts", icon: "Pin", tint: "violet" },
+    { id: "community-reach", label: "Community Reach", value: "98.4%", delta: "-", deltaDirection: "neutral", deltaLabel: "audience reached", icon: "CheckCircle2", tint: "green" },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Top Bar */}
@@ -229,7 +238,8 @@ export default function Announcements() {
         </button>
       </div>
 
-      {/* Metrics Row */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {/* Legacy metrics markup retained below only as migration reference.
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
@@ -272,7 +282,7 @@ export default function Announcements() {
             <div className="text-xs text-stone-500 dark:text-stone-400">Community Reach</div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Filter and Search */}
       <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">

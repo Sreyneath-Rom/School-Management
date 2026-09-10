@@ -1,3 +1,5 @@
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 import { useState } from "react";
 import PageHeading from "@/components/common/PageHeading";
 import { 
@@ -228,6 +230,13 @@ export default function LeaveRequests() {
     });
   };
 
+  const kpiCards: StatCard[] = [
+    { id: 'pending-approvals', label: 'Pending Approvals', value: pendingCount.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'needs review', icon: 'Clock', tint: 'amber' },
+    { id: 'approved-term', label: 'Approved This Term', value: approvedCount.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'approved', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'on-leave-today', label: 'On Leave Active', value: onLeaveToday.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'today', icon: 'CalendarDays', tint: 'blue' },
+    { id: 'total-applications', label: 'Total Applications', value: requests.length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'submitted', icon: 'FileText', tint: 'violet' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Heading */}
@@ -245,7 +254,8 @@ export default function LeaveRequests() {
         </button>
       </div>
 
-      {/* Stats Summary */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {/* Legacy stats markup retained below only as migration reference.
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
@@ -286,7 +296,7 @@ export default function LeaveRequests() {
             <div className="text-xs text-stone-500 dark:text-stone-400">Total Applications</div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Tabs & Search */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">

@@ -19,7 +19,7 @@ import Inbox from "@/pages/Messages/Inbox";
 import Conversation from "@/pages/Messages/Conversation";
 import CalendarView from "@/pages/Calendar/CalendarView";
 import BookList from "@/pages/Library/BookList";
-import FeeInvoices from "@/pages/Fees/Invoices";
+
 
 export const studentRoutes = (): ReactElement => (
   <Route element={<AppLayout />}>
@@ -39,6 +39,6 @@ export const studentRoutes = (): ReactElement => (
     <Route path="/student/messages/:id" element={<Conversation />} />
     <Route path="/student/calendar" element={<CalendarView />} />
     <Route path="/student/library" element={<BookList />} />
-    <Route path="/student/fees" element={<FeeInvoices />} />
+
   </Route>
 );

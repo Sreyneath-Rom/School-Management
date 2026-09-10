@@ -33,166 +33,17 @@ import {
 import { useToast } from "@/components/common/ToastProvider";
 import { studentService } from "@/services/studentService";
 import type { StudentUser } from "@/types/user";
-
-interface ExtendedStudentProfile {
-  id: string;
-  name: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl?: string;
-  rollNo: string;
-  studentId: string;
-  gradeLevel: string;
-  grade: string;
-  class: string;
-  dateOfBirth: string;
-  gender: string;
-  email: string;
-  phone: string;
-  address: string;
-  nationality: string;
-  parentName: string;
-  parentPhone: string;
-  parentEmail: string;
-  emergencyContact: string;
-  relationship: string;
-  enrollmentDate: string;
-  bloodGroup: string;
-  gpa: number;
-  attendanceRate: number;
-  feesStatus: "Paid" | "Pending" | "Partial";
-  status: "active" | "inactive";
-  busRoute?: string;
-  courses?: Array<{
-    code: string;
-    name: string;
-    teacher: string;
-    grade: string;
-    score: number;
-    credits: number;
-  }>;
-}
-
-const RICH_FALLBACK_STUDENTS: ExtendedStudentProfile[] = [
-  {
-    id: "stu-1",
-    name: "Ethan Walker",
-    firstName: "Ethan",
-    lastName: "Walker",
-    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop",
-    rollNo: "10A-01",
-    studentId: "STU-2025-001",
-    gradeLevel: "Grade 10-A",
-    grade: "Grade 10",
-    class: "A",
-    dateOfBirth: "2009-04-12",
-    gender: "Male",
-    email: "ethan.walker@student.oakridge.edu",
-    phone: "+1 (555) 234-5678",
-    address: "742 Evergreen Terrace, Springfield, OR",
-    nationality: "American",
-    parentName: "Arthur Walker & Clara Walker",
-    parentPhone: "+1 (555) 876-5432",
-    parentEmail: "arthur.walker@gmail.com",
-    emergencyContact: "+1 (555) 999-1122 (Dr. David Walker - Uncle)",
-    relationship: "Parents",
-    enrollmentDate: "2023-08-20",
-    bloodGroup: "O+",
-    gpa: 3.92,
-    attendanceRate: 98.2,
-    feesStatus: "Paid",
-    status: "active",
-    busRoute: "Route 14 - Elm Street Stop",
-    courses: [
-      { code: "BIO-201", name: "Advanced Biology", teacher: "Dr. John Whitfield", grade: "A+", score: 94, credits: 4 },
-      { code: "MTH-302", name: "Calculus BC", teacher: "Prof. Marcus Kane", grade: "A+", score: 96, credits: 4 },
-      { code: "CS-105", name: "AP Computer Science", teacher: "Elena Vance", grade: "A+", score: 98, credits: 4 },
-      { code: "ENG-204", name: "World Literature", teacher: "Sarah Chen", grade: "A", score: 92, credits: 3 },
-      { code: "HIS-102", name: "Modern World History", teacher: "Robert Lang", grade: "A", score: 91, credits: 3 },
-    ],
-  },
-  {
-    id: "stu-2",
-    name: "Sophia Martinez",
-    firstName: "Sophia",
-    lastName: "Martinez",
-    avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=256&h=256&fit=crop",
-    rollNo: "10A-02",
-    studentId: "STU-2025-002",
-    gradeLevel: "Grade 10-A",
-    grade: "Grade 10",
-    class: "A",
-    dateOfBirth: "2009-08-19",
-    gender: "Female",
-    email: "sophia.martinez@student.oakridge.edu",
-    phone: "+1 (555) 345-6789",
-    address: "128 Beacon Hill Ave, Springfield, OR",
-    nationality: "American",
-    parentName: "Carlos & Elena Martinez",
-    parentPhone: "+1 (555) 987-6543",
-    parentEmail: "carlos.martinez@corp.com",
-    emergencyContact: "+1 (555) 444-2211 (Grandmother)",
-    relationship: "Parents",
-    enrollmentDate: "2023-08-20",
-    bloodGroup: "A+",
-    gpa: 3.88,
-    attendanceRate: 96.5,
-    feesStatus: "Paid",
-    status: "active",
-    busRoute: "Route 08 - Beacon Plaza",
-    courses: [
-      { code: "CHM-201", name: "Organic Chemistry", teacher: "Dr. John Whitfield", grade: "A", score: 93, credits: 4 },
-      { code: "MTH-302", name: "Calculus BC", teacher: "Prof. Marcus Kane", grade: "A", score: 91, credits: 4 },
-      { code: "ART-101", name: "Studio Arts & Digital Design", teacher: "Maya Lin", grade: "A+", score: 97, credits: 3 },
-      { code: "ENG-204", name: "World Literature", teacher: "Sarah Chen", grade: "A+", score: 95, credits: 3 },
-      { code: "PHY-202", name: "Physics Mechanics", teacher: "David Miller", grade: "A-", score: 89, credits: 4 },
-    ],
-  },
-  {
-    id: "stu-3",
-    name: "Liam Nguyen",
-    firstName: "Liam",
-    lastName: "Nguyen",
-    avatarUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=256&h=256&fit=crop",
-    rollNo: "11B-05",
-    studentId: "STU-2025-003",
-    gradeLevel: "Grade 11-B",
-    grade: "Grade 11",
-    class: "B",
-    dateOfBirth: "2008-11-03",
-    gender: "Male",
-    email: "liam.nguyen@student.oakridge.edu",
-    phone: "+1 (555) 456-7890",
-    address: "45 Riverfront Way, Springfield, OR",
-    nationality: "American",
-    parentName: "Bao & Mai Nguyen",
-    parentPhone: "+1 (555) 876-1234",
-    parentEmail: "mai.nguyen@health.org",
-    emergencyContact: "+1 (555) 777-3344",
-    relationship: "Parents",
-    enrollmentDate: "2022-08-15",
-    bloodGroup: "B+",
-    gpa: 3.95,
-    attendanceRate: 99.1,
-    feesStatus: "Paid",
-    status: "active",
-    busRoute: "Route 12 - Riverfront Station",
-    courses: [
-      { code: "PHY-301", name: "Quantum Physics Fundamentals", teacher: "David Miller", grade: "A+", score: 98, credits: 4 },
-      { code: "MTH-401", name: "Linear Algebra", teacher: "Prof. Marcus Kane", grade: "A+", score: 97, credits: 4 },
-      { code: "CS-202", name: "Data Structures & Algorithms", teacher: "Elena Vance", grade: "A+", score: 99, credits: 4 },
-      { code: "ENG-301", name: "Rhetoric & Composition", teacher: "Sarah Chen", grade: "A", score: 93, credits: 3 },
-    ],
-  },
-];
+import type { ExtendedStudentProfile } from "@/types/studentProfile";
+import StatsGrid from "@/components/cards/StatsGrid";
+import type { StatCard } from "@/types";
 
 export default function StudentProfiles() {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<"overview" | "academic" | "attendance" | "finance" | "badge">("overview");
-  const [students, setStudents] = useState<ExtendedStudentProfile[]>(RICH_FALLBACK_STUDENTS);
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("stu-1");
+  const [students, setStudents] = useState<ExtendedStudentProfile[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Load students from API and merge
@@ -202,43 +53,42 @@ export default function StudentProfiles() {
         const apiStudents = await studentService.list();
         if (Array.isArray(apiStudents) && apiStudents.length > 0) {
           const merged: ExtendedStudentProfile[] = apiStudents.map((s, idx) => {
-            const fallback = RICH_FALLBACK_STUDENTS[idx % RICH_FALLBACK_STUDENTS.length];
             return {
               id: s.id,
               name: `${s.firstName} ${s.lastName}`,
               firstName: s.firstName,
               lastName: s.lastName,
-              avatarUrl: s.profilePhoto || fallback.avatarUrl,
+              avatarUrl: s.profilePhoto,
               rollNo: (s as any).rollNo || `${s.grade.replace('Grade ', '')}${s.class}-${String(idx + 1).padStart(2, '0')}`,
               studentId: s.studentId || `STU-2025-${String(idx + 1).padStart(3, '0')}`,
               gradeLevel: `${s.grade}-${s.class}`,
               grade: s.grade,
               class: s.class,
-              dateOfBirth: s.dateOfBirth || "2009-05-15",
+              dateOfBirth: s.dateOfBirth || "",
               gender: s.gender || "Not specified",
               email: s.email,
-              phone: s.phone || "+1 (555) 234-5678",
-              address: s.address || "Oakridge Campus Zone",
-              nationality: s.nationality || "American",
-              parentName: s.fatherName || s.motherName || s.guardianName || fallback.parentName,
-              parentPhone: s.parentPhone || fallback.parentPhone,
-              parentEmail: s.parentEmail || fallback.parentEmail,
-              emergencyContact: s.emergencyContact || fallback.emergencyContact,
+              phone: s.phone || "",
+              address: s.address || "",
+              nationality: s.nationality || "",
+              parentName: s.fatherName || s.motherName || s.guardianName || "",
+              parentPhone: s.parentPhone || "",
+              parentEmail: s.parentEmail || "",
+              emergencyContact: "",
               relationship: s.relationship || "Guardian",
-              enrollmentDate: s.enrollmentDate || "2023-08-20",
-              bloodGroup: fallback.bloodGroup,
-              gpa: (s as any).gpa || fallback.gpa,
-              attendanceRate: (s as any).attendanceRate || fallback.attendanceRate,
-              feesStatus: fallback.feesStatus,
+              enrollmentDate: s.enrollmentDate || "",
+              bloodGroup: "",
+              gpa: (s as any).gpa || 0,
+              attendanceRate: (s as any).attendanceRate || 0,
+              feesStatus: "Pending",
               status: s.status || "active",
-              busRoute: fallback.busRoute,
-              courses: fallback.courses,
+              courses: [],
             };
           });
           setStudents(merged);
+          setSelectedStudentId((current) => current || merged[0]?.id || "");
         }
       } catch {
-        // use RICH_FALLBACK_STUDENTS
+        setStudents([]);
       }
     }
     loadData();
@@ -258,7 +108,18 @@ export default function StudentProfiles() {
   };
 
   const currentIndex = students.findIndex((s) => s.id === selectedStudentId);
-  const student = students[currentIndex >= 0 ? currentIndex : 0] || RICH_FALLBACK_STUDENTS[0];
+  const student = students[currentIndex >= 0 ? currentIndex : 0];
+
+  if (!student) {
+    return (
+      <div className="flex min-h-64 items-center justify-center rounded-3xl border border-stone-200 bg-white p-8 text-center dark:border-white/10 dark:bg-white/3">
+        <div>
+          <h2 className="text-lg font-semibold text-stone-900 dark:text-white">No student profiles found</h2>
+          <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Student profile data will appear here after it is added to the database.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handlePrevStudent = () => {
     if (currentIndex > 0) {
@@ -273,6 +134,12 @@ export default function StudentProfiles() {
   };
 
   const initials = `${(student.firstName || '').charAt(0)}${(student.lastName || '').charAt(0)}`.toUpperCase() || 'ST';
+
+  const kpiCards: StatCard[] = [
+    { id: "student-gpa", label: "Cumulative GPA", value: Number(student.gpa).toFixed(2), delta: "-", deltaDirection: "neutral", deltaLabel: "Top 5% rank", icon: "Sparkles", tint: "amber" },
+    { id: "student-attendance", label: "Attendance Rate", value: `${student.attendanceRate}%`, delta: "-", deltaDirection: "neutral", deltaLabel: "177 / 180 days", icon: "Clock", tint: "green" },
+    { id: "student-tuition", label: "Tuition Status", value: student.feesStatus, delta: "-", deltaDirection: "neutral", deltaLabel: "Zero balance", icon: "CreditCard", tint: "blue" },
+  ];
 
   const filteredStudents = students.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -361,7 +228,7 @@ export default function StudentProfiles() {
                 className="h-24 w-24 rounded-2xl object-cover ring-4 ring-brand-500/20 shadow-md"
               />
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500/20 to-brand-600/10 text-3xl font-black text-brand-700 dark:text-brand-300 ring-4 ring-brand-500/20 shadow-md">
+              <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500/20 to-brand-600/10 text-3xl font-black text-brand-700 dark:text-brand-300 ring-4 ring-brand-500/20 shadow-md">
                 {initials}
               </div>
             )}
@@ -408,43 +275,15 @@ export default function StudentProfiles() {
               </a>
               <span className="flex items-center gap-1.5 text-stone-500">
                 <MapPin className="h-3.5 w-3.5 text-stone-400" />
-                <span className="truncate max-w-[220px]">{student.address}</span>
+                <span className="truncate max-w-55">{student.address}</span>
               </span>
             </div>
           </div>
 
-          {/* Quick Metric KPI Badges */}
-          <div className="grid grid-cols-3 gap-2.5 shrink-0 w-full sm:w-auto">
-            {/* GPA */}
-            <div className="rounded-2xl border border-stone-200/60 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 p-3 text-center min-w-[95px]">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Cum. GPA</div>
-              <div className="mt-1 inline-flex items-center gap-1 text-xl font-black text-amber-700 dark:text-amber-400">
-                <Sparkles className="h-4 w-4" />
-                <span>{Number(student.gpa).toFixed(2)}</span>
-              </div>
-              <div className="text-[10px] font-semibold text-stone-500">Rank: Top 5%</div>
-            </div>
-
-            {/* Attendance */}
-            <div className="rounded-2xl border border-stone-200/60 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 p-3 text-center min-w-[95px]">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Attendance</div>
-              <div className="mt-1 text-xl font-black text-emerald-700 dark:text-emerald-400">
-                {student.attendanceRate}%
-              </div>
-              <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">177 / 180 Days</div>
-            </div>
-
-            {/* Fee Status */}
-            <div className="rounded-2xl border border-stone-200/60 dark:border-white/10 bg-stone-50/80 dark:bg-white/5 p-3 text-center min-w-[95px]">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Tuition</div>
-              <div className="mt-1 text-xl font-black text-blue-700 dark:text-blue-400">
-                {student.feesStatus}
-              </div>
-              <div className="text-[10px] font-semibold text-stone-500">Zero Balance</div>
-            </div>
-          </div>
         </div>
       </div>
+
+      <StatsGrid cards={kpiCards} columns={3} />
 
       {/* Tabs Menu Strip */}
       <div className="flex items-center gap-2 border-b border-stone-200/80 dark:border-white/10 pb-2 overflow-x-auto text-xs font-bold">
@@ -870,7 +709,7 @@ export default function StudentProfiles() {
           </div>
 
           {/* Realistic High-Craft ID Card */}
-          <div className="relative w-full max-w-sm rounded-3xl border-2 border-stone-300 dark:border-stone-700 bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 text-white p-6 shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-sm rounded-3xl border-2 border-stone-300 dark:border-stone-700 bg-linear-to-b from-stone-900 via-stone-800 to-stone-900 text-white p-6 shadow-2xl overflow-hidden">
             {/* Hologram / Ribbon Accent */}
             <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-brand-500/20 blur-2xl" />
             <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-amber-500/20 blur-2xl" />

@@ -228,6 +228,8 @@ model Subject {
   id          String @id @default(cuid())
   name        String @unique
   code        String @unique
+  department  String @default("General")
+  category    String @default("Core")
   description String?
 
   teachers  TeacherSubject[]

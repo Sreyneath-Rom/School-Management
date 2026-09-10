@@ -1,6 +1,7 @@
 // src/features/setup/schedules/ScheduleStats.tsx
 import React from 'react'
-import { Calendar, Clock, MapPin } from 'lucide-react'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 import type { ScheduleSlot } from '@/services/scheduleService'
 
 interface ScheduleStatsProps {
@@ -14,7 +15,15 @@ export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ slots = [] }) => {
   const uniqueClasses = new Set(safeSlots.map((s) => s && s.className).filter(Boolean)).size
   const uniqueTeachers = new Set(safeSlots.map((s) => s && s.teacherName).filter(Boolean)).size
 
-  return (
+  const cards: StatCard[] = [
+    { id: 'scheduled-periods', label: 'Scheduled Class Periods', value: totalPeriods.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'weekly', icon: 'Calendar', tint: 'blue' },
+    { id: 'class-cohorts', label: 'Enrolled Class Cohorts', value: uniqueClasses.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'active', icon: 'Clock', tint: 'violet' },
+    { id: 'allocated-rooms', label: 'Allocated Rooms & Labs', value: uniqueRooms.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'facilities', icon: 'MapPin', tint: 'green' },
+    { id: 'teaching-staff', label: 'Active Teaching Staff', value: uniqueTeachers.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'faculty', icon: 'Users', tint: 'amber' },
+  ]
+
+  return <StatsGrid cards={cards} columns={4} />
+  /* return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div className="rounded-[26px] glass-sm p-5 border border-text-main/10 transition-all hover:shadow-md">
         <div className="flex items-center justify-between">
@@ -68,5 +77,5 @@ export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ slots = [] }) => {
         <p className="mt-1 text-2xl font-bold tracking-tight text-text-main">{uniqueTeachers}</p>
       </div>
     </div>
-  )
+  ) */
 }

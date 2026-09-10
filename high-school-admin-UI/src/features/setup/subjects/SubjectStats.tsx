@@ -1,6 +1,7 @@
 // src/features/setup/subjects/SubjectStats.tsx
 import React from 'react'
-import { BookOpen, Layers, Award, UserCheck } from 'lucide-react'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 import type { SubjectItem } from '@/services/subjectService'
 
 interface SubjectStatsProps {
@@ -16,7 +17,15 @@ export const SubjectStats: React.FC<SubjectStatsProps> = ({ subjects = [] }) => 
     safeSubjects.flatMap((s) => (s && s.teachers ? s.teachers.map((t) => t && (t.id || t.name)).filter(Boolean) : []))
   ).size
 
-  return (
+  const cards: StatCard[] = [
+    { id: 'total-subjects', label: 'Total Subjects Offered', value: total.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'active', icon: 'BookOpen', tint: 'blue' },
+    { id: 'academic-departments', label: 'Academic Departments', value: departments.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'academic', icon: 'Layers', tint: 'violet' },
+    { id: 'curriculum-units', label: 'Total Curriculum Units', value: totalCredits.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'credits', icon: 'Award', tint: 'amber' },
+    { id: 'instructors', label: 'Instructors Teaching', value: totalTeachers.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'staff', icon: 'UserCheck', tint: 'green' },
+  ]
+
+  return <StatsGrid cards={cards} columns={4} />
+  /* return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div className="rounded-[26px] glass-sm p-5 border border-text-main/10 transition-all hover:shadow-md">
         <div className="flex items-center justify-between">
@@ -70,5 +79,5 @@ export const SubjectStats: React.FC<SubjectStatsProps> = ({ subjects = [] }) => 
         <p className="mt-1 text-2xl font-bold tracking-tight text-text-main">{totalTeachers}</p>
       </div>
     </div>
-  )
+  ) */
 }

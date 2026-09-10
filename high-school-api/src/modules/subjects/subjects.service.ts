@@ -12,14 +12,29 @@ export const subjectsService = {
     return subject
   },
 
-  async create(input: { name: string; code: string; description?: string }) {
+  async create(input: {
+    name: string
+    code: string
+    department: string
+    category: string
+    description?: string
+  }) {
     const existing = await prisma.subject.findUnique({ where: { code: input.code } })
     if (existing) throw ApiError.conflict(`Subject code "${input.code}" already exists`)
 
     return prisma.subject.create({ data: input })
   },
 
-  async update(id: string, input: Partial<{ name: string; code: string; description: string }>) {
+  async update(
+    id: string,
+    input: Partial<{
+      name: string
+      code: string
+      department: string
+      category: string
+      description: string
+    }>
+  ) {
     await subjectsService.getById(id) // 404s if missing
 
     if (input.code) {

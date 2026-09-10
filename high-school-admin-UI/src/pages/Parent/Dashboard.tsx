@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageHeading from "@/components/common/PageHeading";
+import StatsGrid from "@/components/cards/StatsGrid";
+import type { StatCard } from "@/types";
 import { 
   GraduationCap, 
   Calendar, 
@@ -65,6 +67,12 @@ export default function ParentDashboard() {
   const [selectedChildId, setSelectedChildId] = useState(CHILDREN[0].id);
 
   const activeChild = CHILDREN.find(c => c.id === selectedChildId) || CHILDREN[0];
+  const parentStatCards: StatCard[] = [
+    { id: 'child-gpa', label: 'Term 2 GPA', value: `${activeChild.gpa} / 4.0`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Top 5% of class', icon: 'Award', tint: 'blue' },
+    { id: 'child-attendance', label: 'Attendance Rate', value: `${activeChild.attendancePct}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Current term', icon: 'UserCheck', tint: 'green' },
+    { id: 'pending-tasks', label: 'Pending Tasks', value: `${activeChild.pendingTasks} Tasks`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Due this week', icon: 'Clock', tint: 'amber' },
+    { id: 'fee-status', label: 'Tuition Fees', value: 'Up to Date', delta: '-', deltaDirection: 'neutral', deltaLabel: 'School account', icon: 'CreditCard', tint: 'sky' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -101,47 +109,7 @@ export default function ParentDashboard() {
       </div>
 
       {/* Quick Metrics of Active Child */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
-            <Award size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">{activeChild.gpa} <span className="text-xs text-stone-400 font-normal">/ 4.0</span></div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Term 2 GPA (Top 5%)</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <UserCheck size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">{activeChild.attendancePct}%</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Attendance Rate</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <Clock size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">{activeChild.pendingTasks} Tasks</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Due This Week</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <CreditCard size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">Up to Date</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">School Tuition Fees</div>
-          </div>
-        </div>
-      </div>
+        <StatsGrid cards={parentStatCards} />
 
       {/* Main Grid: Subjects & Upcoming Schedule */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

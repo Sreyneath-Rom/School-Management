@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
 import PageHeading from '@/components/common/PageHeading'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 import {
   LineChart as LineChartIcon,
   Filter,
@@ -231,6 +233,13 @@ export default function GradeReport() {
     window.print()
   }
 
+  const kpiCards: StatCard[] = [
+    { id: 'avg-gpa', label: 'Average Cumulative GPA', value: avgGpa, delta: '-', deltaDirection: 'neutral', deltaLabel: 'weighted evaluation', icon: 'Award', tint: 'blue' },
+    { id: 'avg-score', label: 'Average Total Score', value: `${avgTotalScore}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'assignments and exams', icon: 'TrendingUp', tint: 'green' },
+    { id: 'pass-rate', label: 'Institutional Pass Rate', value: `${passRate}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: `${passCount}/${totalStudents} passing`, icon: 'CheckCircle2', tint: 'amber' },
+    { id: 'honor-roll', label: 'Honor Roll Candidates', value: filteredStudents.filter((s) => s.status === 'Honor Roll').length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'GPA >= 3.8', icon: 'GraduationCap', tint: 'violet' },
+  ]
+
   return (
     <div className="space-y-6 pb-12 print:p-0 print:m-0">
       {/* Page Header */}
@@ -338,7 +347,8 @@ export default function GradeReport() {
         </div>
       </div>
 
-      {/* KPI Metrics Summary */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {/* Legacy KPI markup retained below only as migration reference.
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Average Cumulative GPA</span>
@@ -377,7 +387,7 @@ export default function GradeReport() {
           </div>
           <p className="text-[11px] text-violet-600 font-medium mt-1">GPA &ge; 3.8 Distinction</p>
         </div>
-      </div>
+      </div> */}
 
       {/* Grade Bracket Distribution & Weighted Engine Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

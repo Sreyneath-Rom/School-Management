@@ -22,6 +22,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { academicService } from '@/services/academicService'
 import type { Quiz, QuizQuestion, QuizSubmission } from '@/types/academic'
 import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 
 export default function QuizzesPage() {
   const { user } = useAuth()
@@ -146,6 +148,13 @@ export default function QuizzesPage() {
     }
     return true
   })
+
+  const quizKpiCards: StatCard[] = [
+    { id: 'available-quizzes', label: 'Available Quizzes', value: filteredQuizzes.length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'matching filters', icon: 'HelpCircle', tint: 'blue' },
+    { id: 'completed-quizzes', label: 'Completed Attempts', value: submissions.filter((submission) => isStudent && filteredQuizzes.some((quiz) => quiz.id === submission.quizId) && submission.studentId === currentStudentId).length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: isStudent ? 'your submissions' : 'student attempts', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'quiz-questions', label: 'Total Questions', value: filteredQuizzes.reduce((total, quiz) => total + quiz.questions.length, 0).toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across quizzes', icon: 'Layers', tint: 'violet' },
+    { id: 'quiz-points', label: 'Assessment Points', value: filteredQuizzes.reduce((total, quiz) => total + quiz.totalPoints, 0).toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'available points', icon: 'Award', tint: 'amber' },
+  ]
 
   // Start taking a quiz (Securely: strips answers!)
   const handleStartQuiz = async (quizId: string) => {
@@ -311,6 +320,8 @@ export default function QuizzesPage() {
           </button>
         )}
       </div>
+
+      <StatsGrid cards={quizKpiCards} columns={4} />
 
       {/* Filter and Search Bar */}
       <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">

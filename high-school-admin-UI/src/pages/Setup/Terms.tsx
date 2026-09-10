@@ -8,15 +8,14 @@ import {
   Calendar,
   Edit3,
   Trash2,
-  FileText,
-  Award,
   AlertTriangle,
   Eye,
   X,
   ShieldCheck,
-  Layers,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 
 export interface TermItem {
   id: string
@@ -105,6 +104,13 @@ export default function Terms() {
     const totalExams = filteredTerms.reduce((sum, t) => sum + t.examCount, 0)
     return { total, active, totalWeight, totalExams }
   }, [filteredTerms])
+
+  const kpiCards: StatCard[] = [
+    { id: 'configured-terms', label: 'Configured Terms', value: stats.total.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'selected year', icon: 'Layers', tint: 'blue' },
+    { id: 'active-term', label: 'Active Term', value: stats.active, delta: '-', deltaDirection: 'neutral', deltaLabel: 'current cycle', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'aggregate-weight', label: 'Aggregate Weight', value: `${stats.totalWeight}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'final GPA', icon: 'Award', tint: 'amber' },
+    { id: 'examinations', label: 'Examinations', value: stats.totalExams.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'registered', icon: 'FileText', tint: 'violet' },
+  ]
 
   const resetForm = () => {
     setFormData({
@@ -268,56 +274,7 @@ export default function Terms() {
         </div>
       </div>
 
-      {/* KPI Stats Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-            <Layers size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.total}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Configured Terms</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-            <CheckCircle2 size={20} />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-stone-900 dark:text-white truncate max-w-[150px]">
-              {stats.active}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Active Term</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-            <Award size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.totalWeight}%
-            </div>
-            <div className="text-xs font-medium text-stone-500">Aggregate Weight</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
-            <FileText size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.totalExams}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Examinations</div>
-          </div>
-        </div>
-      </div>
+      <StatsGrid cards={kpiCards} columns={4} />
 
       {/* Grid of Terms (UC-TERM-01) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

@@ -17,6 +17,8 @@ import {
   X
 } from "lucide-react";
 import { useToast } from "@/components/common/ToastProvider";
+import StatsGrid from "@/components/cards/StatsGrid";
+import type { StatCard } from "@/types";
 
 interface Assignment {
   id: string;
@@ -265,6 +267,13 @@ export default function TeacherAssignments() {
     setIsModalOpen(false);
   };
 
+  const kpiCards: StatCard[] = [
+    { id: "assigned-faculty", label: "Assigned Faculty", value: totalTeachers.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "faculty", icon: "Users", tint: "blue" },
+    { id: "active-allocations", label: "Active Allocations", value: assignments.length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "subject assignments", icon: "BookOpen", tint: "violet" },
+    { id: "weekly-scheduled", label: "Weekly Scheduled", value: `${totalHours}h`, delta: "-", deltaDirection: "neutral", deltaLabel: "teaching hours", icon: "Clock", tint: "amber" },
+    { id: "subject-coverage", label: "Core Subject Coverage", value: "100%", delta: "-", deltaDirection: "neutral", deltaLabel: "fully staffed", icon: "CheckCircle2", tint: "green" },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -282,7 +291,8 @@ export default function TeacherAssignments() {
         </button>
       </div>
 
-      {/* Metrics Row */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {/* Legacy metrics markup retained below only as migration reference.
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
@@ -323,7 +333,7 @@ export default function TeacherAssignments() {
             <div className="text-xs text-stone-500 dark:text-stone-400">Core Subject Coverage</div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">

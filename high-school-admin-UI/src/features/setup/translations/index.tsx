@@ -1,5 +1,5 @@
 // src/features/setup/translations/index.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Plus, Trash2, RefreshCw } from 'lucide-react'
 import PageHeading from '@/components/common/PageHeading'
 import Button from '@/components/common/Button'
@@ -9,8 +9,11 @@ import { AddLanguageModal } from './AddLanguageModal'
 import { languagesService, type LanguageRecord } from '@/services/languagesService'
 import { translationsService } from '@/services/translationsService'
 import { STRINGS } from '@/i18n/strings'
+import { saveLanguages } from '@/i18n/storage'
 import { useNotification } from '@/hooks/useNotification'
 import { ApiError } from '@/lib/apiClient'
+
+const normalizeLanguageCode = (code?: string) => (code || '').trim().toLowerCase()
 
 export default function TranslationsFeature() {
   const [languages, setLanguages] = useState<LanguageRecord[]>([])
@@ -27,14 +30,31 @@ export default function TranslationsFeature() {
 
   const { success, error: notifyError } = useNotification()
 
-  const loadLanguages = async () => {
+  const loadTranslationsForLang = useCallback(
+    async (langCode: string) => {
+      try {
+        const trans = await translationsService.get(langCode)
+        setTranslations(trans && typeof trans === 'object' ? trans : {})
+      } catch {
+        notifyError('Failed to fetch translations for ' + langCode)
+      }
+    },
+    [notifyError],
+  )
+
+  const loadLanguages = useCallback(async () => {
     setIsLoading(true)
     setLoadError(null)
     try {
       const langs = await languagesService.list()
       const safeLangs = Array.isArray(langs) ? langs : []
       setLanguages(safeLangs)
-      const current = safeLangs.find((l: LanguageRecord) => l && l.code === activeLangCode) ? activeLangCode : safeLangs[0]?.code || 'en'
+
+      const selectedCode = normalizeLanguageCode(activeLangCode)
+      const current = safeLangs.some((language) => normalizeLanguageCode(language.code) === selectedCode)
+        ? selectedCode
+        : safeLangs[0]?.code || 'en'
+
       setActiveLangCode(current)
       await loadTranslationsForLang(current)
     } catch (err) {
@@ -42,20 +62,11 @@ export default function TranslationsFeature() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const loadTranslationsForLang = async (langCode: string) => {
-    try {
-      const trans = await translationsService.get(langCode)
-      setTranslations(trans && typeof trans === 'object' ? trans : {})
-    } catch (err) {
-      notifyError('Failed to fetch translations for ' + langCode)
-    }
-  }
+  }, [activeLangCode, loadTranslationsForLang])
 
   useEffect(() => {
-    loadLanguages()
-  }, [])
+    void loadLanguages()
+  }, [loadLanguages])
 
   const handleSelectLanguage = async (code: string) => {
     setActiveLangCode(code)
@@ -127,10 +138,30 @@ export default function TranslationsFeature() {
   }
 
   const handleAddLanguage = async (data: { code: string; name: string }) => {
+    const safeCode = normalizeLanguageCode(data.code)
+    const safeName = data.name.trim()
+
+    if (!safeCode || !safeName) {
+      notifyError('Language code and name are required.')
+      return
+    }
+
+    if (languages.some((language) => normalizeLanguageCode(language.code) === safeCode)) {
+      notifyError(`The language "${safeCode}" is already installed.`)
+      return
+    }
+
     setIsAddingLanguage(true)
     try {
-      const created = await languagesService.create(data)
+      const created = await languagesService.create({ code: safeCode, name: safeName })
+      const nextLanguages = [...languages, created].map((language) => ({
+        code: normalizeLanguageCode(language.code),
+        name: language.name,
+        flag: language.code === 'en' ? '🇬🇧' : '🌐',
+      }))
+
       setLanguages((prev) => [...prev, created])
+      saveLanguages(nextLanguages)
       setActiveLangCode(created.code)
       await loadTranslationsForLang(created.code)
       setIsAddModalOpen(false)
@@ -151,7 +182,16 @@ export default function TranslationsFeature() {
 
     try {
       await languagesService.remove(code)
-      setLanguages((prev) => prev.filter((l) => l.code !== code))
+      const nextLanguages = languages
+        .filter((language) => normalizeLanguageCode(language.code) !== normalizeLanguageCode(code))
+        .map((language) => ({
+          code: normalizeLanguageCode(language.code),
+          name: language.name,
+          flag: language.code === 'en' ? '🇬🇧' : '🌐',
+        }))
+
+      setLanguages((prev) => prev.filter((l) => normalizeLanguageCode(l.code) !== normalizeLanguageCode(code)))
+      saveLanguages(nextLanguages)
       setActiveLangCode('en')
       await loadTranslationsForLang('en')
       success(`Removed language ${code}`)
@@ -191,7 +231,7 @@ export default function TranslationsFeature() {
       />
 
       {/* Language Selector Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] glass-sm p-4 border border-text-main/10">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl glass-sm p-4 border border-text-main/10">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-text-main/50 mr-1">Installed Locales:</span>
           {languages.map((lang) => {
@@ -245,7 +285,7 @@ export default function TranslationsFeature() {
           <p className="text-sm font-medium text-text-main/60">Loading translation dictionary...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
+        <div className="rounded-3xl bg-error/10 border border-error/20 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load translation keys</p>
           <p className="text-xs">{loadError}</p>
         </div>

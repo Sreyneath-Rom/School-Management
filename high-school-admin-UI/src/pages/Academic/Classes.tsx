@@ -1,5 +1,5 @@
 // src/pages/Academic/Classes.tsx
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   School,
@@ -20,7 +20,10 @@ import {
   GraduationCap,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 import { Link } from 'react-router-dom'
+import { classService, type ClassRecord } from '@/services/classService'
 
 export interface ClassItem {
   id: string
@@ -147,6 +150,7 @@ const INITIAL_CLASSES: ClassItem[] = [
 export default function Classes() {
   const { showToast } = useToast()
   const [classes, setClasses] = useState<ClassItem[]>(INITIAL_CLASSES)
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [gradeFilter, setGradeFilter] = useState('All')
 
@@ -167,6 +171,37 @@ export default function Classes() {
     schedulePeriod: '08:00 - 15:30',
     status: 'Active' as 'Active' | 'Archived',
   })
+
+  useEffect(() => {
+    let mounted = true
+    classService.list()
+      .then((records) => {
+        if (!mounted) return
+        setClasses(records.map((record: ClassRecord): ClassItem => ({
+          id: record.id,
+          name: record.name,
+          gradeLevel: `Grade ${record.gradeLevel}`,
+          section: record.name.split('-').pop()?.trim() || 'A',
+          room: '—',
+          classTeacher: record.homeroomTeacher?.user
+            ? `${record.homeroomTeacher.user.firstName || ''} ${record.homeroomTeacher.user.lastName || ''}`.trim()
+            : 'Unassigned',
+          studentCount: record.studentCount || 0,
+          maxCapacity: record.maxCapacity || 0,
+          subjectsCount: record.subjectsCount || 0,
+          schedulePeriod: record.schedulePeriod || '—',
+          status: record.status || 'Active',
+        })))
+      })
+      .catch(() => showToast('Could not load classes from the API. Showing local data.', 'error'))
+      .finally(() => {
+        if (mounted) setLoading(false)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [showToast])
 
   // Filtered classes (UC-CLASS-01)
   const filteredClasses = useMemo(() => {
@@ -190,6 +225,13 @@ export default function Classes() {
       totalCapacity > 0 ? Math.round((totalStudents / totalCapacity) * 100) : 0
     return { total, totalStudents, totalCapacity, fillRate }
   }, [classes])
+
+  const kpiCards: StatCard[] = [
+    { id: 'active-classes', label: 'Active Classes', value: stats.total.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'sections', icon: 'School', tint: 'blue' },
+    { id: 'enrolled-students', label: 'Enrolled Students', value: stats.totalStudents.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'enrolled', icon: 'Users', tint: 'green' },
+    { id: 'desk-capacity', label: 'Total Desk Capacity', value: stats.totalCapacity.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'available seats', icon: 'DoorOpen', tint: 'amber' },
+    { id: 'fill-rate', label: 'Average Fill Rate', value: `${stats.fillRate}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'capacity used', icon: 'GraduationCap', tint: 'violet' },
+  ]
 
   // Reset form
   const resetForm = () => {
@@ -229,7 +271,7 @@ export default function Classes() {
   }
 
   // Submit Create or Edit
-  const handleSaveClass = (e: React.FormEvent) => {
+  const handleSaveClass = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // 400 Bad Request prevention
@@ -251,7 +293,16 @@ export default function Classes() {
         schedulePeriod: formData.schedulePeriod,
         status: formData.status,
       }
-      setClasses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+      try {
+        await classService.update(updated.id, {
+          name: updated.name,
+          gradeLevel: Number(updated.gradeLevel.replace(/\D/g, '')) || 10,
+        })
+        setClasses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+      } catch {
+        showToast('Could not update the class on the server.', 'error')
+        return
+      }
       if (detailClass?.id === updated.id) setDetailClass(updated)
       showToast(`Class "${updated.name}" updated successfully`, 'success')
     } else {
@@ -269,7 +320,16 @@ export default function Classes() {
         schedulePeriod: formData.schedulePeriod,
         status: 'Active',
       }
-      setClasses((prev) => [newCls, ...prev])
+      try {
+        const created = await classService.create({
+          name: newCls.name,
+          gradeLevel: Number(newCls.gradeLevel.replace(/\D/g, '')) || 10,
+        })
+        setClasses((prev) => [{ ...newCls, id: created.id }, ...prev])
+      } catch {
+        showToast('Could not create the class on the server.', 'error')
+        return
+      }
       showToast(`Class "${newCls.name}" created successfully`, 'success')
     }
 
@@ -278,7 +338,7 @@ export default function Classes() {
   }
 
   // Delete Handler (UC-CLASS-05) with 409 Conflict check
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteCandidate) return
 
     // Precondition check: If class has enrolled students, reject deletion (409 Conflict)
@@ -291,7 +351,14 @@ export default function Classes() {
       return
     }
 
-    setClasses((prev) => prev.filter((c) => c.id !== deleteCandidate.id))
+    try {
+      await classService.delete(deleteCandidate.id)
+      setClasses((prev) => prev.filter((c) => c.id !== deleteCandidate.id))
+    } catch {
+      showToast('Could not delete the class on the server.', 'error')
+      setDeleteCandidate(null)
+      return
+    }
     if (detailClass?.id === deleteCandidate.id) setDetailClass(null)
     showToast(`Class "${deleteCandidate.name}" deleted successfully`, 'success')
     setDeleteCandidate(null)
@@ -326,7 +393,9 @@ export default function Classes() {
         </button>
       </div>
 
-      {/* KPI Stats Strip */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {loading && <div className="text-xs text-text-main/55">Loading classes from the school database...</div>}
+      {/* Legacy KPI markup kept out of the render path during migration.
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
           <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
@@ -375,7 +444,7 @@ export default function Classes() {
             <div className="text-xs font-medium text-stone-500">Average Fill Rate</div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Filter and Search Bar (UC-CLASS-01) */}
       <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">

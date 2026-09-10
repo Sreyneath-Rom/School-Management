@@ -8,6 +8,7 @@ import { LOCAL_STORAGE_KEYS } from '@/utils/constants'
 import { mockApiHandler } from '@/lib/mockApiHandler'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true'
 
 export class ApiError extends Error {
   status: number
@@ -137,12 +138,14 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
       parsedBody = options.body
     }
 
-    const mockRes = await mockApiHandler.handle(path, method, parsedBody)
-    if (mockRes) {
-      if (!mockRes.success) {
-        throw new ApiError(400, mockRes.message || 'API request failed', mockRes)
+    if (USE_MOCK_API) {
+      const mockRes = await mockApiHandler.handle(path, method, parsedBody)
+      if (mockRes) {
+        if (!mockRes.success) {
+          throw new ApiError(400, mockRes.message || 'API request failed', mockRes)
+        }
+        return mockRes.data as T
       }
-      return mockRes.data as T
     }
 
     throw err
@@ -180,12 +183,14 @@ async function requestUpload<T>(path: string, formData: FormData, retry = true):
       throw err
     }
 
-    const mockRes = await mockApiHandler.handle(path, 'POST', formData)
-    if (mockRes) {
-      if (!mockRes.success) {
-        throw new ApiError(400, mockRes.message || 'Upload failed', mockRes)
+    if (USE_MOCK_API) {
+      const mockRes = await mockApiHandler.handle(path, 'POST', formData)
+      if (mockRes) {
+        if (!mockRes.success) {
+          throw new ApiError(400, mockRes.message || 'Upload failed', mockRes)
+        }
+        return mockRes.data as T
       }
-      return mockRes.data as T
     }
     throw err
   }

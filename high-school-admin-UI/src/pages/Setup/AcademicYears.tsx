@@ -14,10 +14,10 @@ import {
   X,
   AlertTriangle,
   ShieldCheck,
-  School,
-  Users,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 
 export interface AcademicYear {
   id: string
@@ -103,6 +103,13 @@ export default function AcademicYears() {
     const totalStudents = years.reduce((s, y) => s + y.studentsCount, 0)
     return { total, current, totalClasses, totalStudents }
   }, [years])
+
+  const kpiCards: StatCard[] = [
+    { id: 'academic-sessions', label: 'Academic Sessions', value: stats.total.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'configured', icon: 'CalendarRange', tint: 'blue' },
+    { id: 'current-session', label: 'Current Session', value: stats.current, delta: '-', deltaDirection: 'neutral', deltaLabel: 'active cycle', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'classes-held', label: 'Total Classes Held', value: stats.totalClasses.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across sessions', icon: 'School', tint: 'amber' },
+    { id: 'enrolled-students', label: 'Enrolled Students', value: stats.totalStudents.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across sessions', icon: 'Users', tint: 'violet' },
+  ]
 
   const resetForm = () => {
     setFormData({
@@ -253,56 +260,7 @@ export default function AcademicYears() {
         </button>
       </div>
 
-      {/* KPI Stats Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-            <CalendarRange size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.total}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Academic Sessions</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-            <CheckCircle2 size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white truncate max-w-[150px]">
-              {stats.current}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Current Session</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-            <School size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.totalClasses}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Total Classes Held</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
-            <Users size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.totalStudents}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Enrolled Students</div>
-          </div>
-        </div>
-      </div>
+      <StatsGrid cards={kpiCards} columns={4} />
 
       {/* Grid of Academic Years (UC-ACADEMIC-01) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

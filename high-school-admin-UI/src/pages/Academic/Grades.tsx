@@ -9,16 +9,22 @@ import {
   CheckCircle2,
   TrendingUp,
   AlertTriangle,
+  AlertCircle,
   FileSpreadsheet,
   Layers,
   Printer,
   Sparkles,
   BarChart2,
+  RotateCcw,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { academicService, calculateWeightedGrade } from '@/services/academicService'
 import type { GradeRecord, StudentProgress } from '@/types/academic'
 import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
+import { classService, type ClassRecord } from '@/services/classService'
+import { subjectService, type SubjectItem } from '@/services/subjectService'
 
 export default function GradesPage() {
   const { user } = useAuth()
@@ -38,7 +44,12 @@ export default function GradesPage() {
   const [studentRecords, setStudentRecords] = useState<GradeRecord[]>([])
   const [progressList, setProgressList] = useState<StudentProgress[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [search, setSearch] = useState('')
+  const [classSubjectCatalog, setClassSubjectCatalog] = useState<{ className: string; subjectName: string }[]>([])
+  const [apiClasses, setApiClasses] = useState<ClassRecord[]>([])
+  const [apiSubjects, setApiSubjects] = useState<SubjectItem[]>([])
 
   const loadData = async () => {
     try {
@@ -54,6 +65,7 @@ export default function GradesPage() {
         setGradeRecords(allGrades)
         setProgressList(progress)
       }
+      setHasUnsavedChanges(false)
     } catch {
       showToast('Failed to load academic grades', 'error')
     } finally {
@@ -64,6 +76,46 @@ export default function GradesPage() {
   useEffect(() => {
     loadData()
   }, [selectedClass, selectedSubject, isStudent])
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadClassSubjectCatalog = async () => {
+      const [classes, subjects, grades, lessons, homework, quizzes] = await Promise.all([
+        classService.list(),
+        subjectService.list(),
+        academicService.getGrades('all', 'all'),
+        academicService.getLessons(),
+        academicService.getHomeworkList(),
+        academicService.getQuizzes(),
+      ])
+
+      if (mounted) {
+        setApiClasses(classes)
+        setApiSubjects(subjects)
+      }
+
+      const entries = [
+        ...grades.map((record) => ({ className: record.className, subjectName: record.subjectName })),
+        ...lessons.map((lesson) => ({ className: lesson.className, subjectName: lesson.subjectName })),
+        ...homework.map((assignment) => ({ className: assignment.className, subjectName: assignment.subjectName })),
+        ...quizzes.map((quiz) => ({ className: quiz.className, subjectName: quiz.subjectName })),
+      ]
+      const uniqueEntries = Array.from(
+        new Map(entries.map((entry) => [`${entry.className}::${entry.subjectName}`, entry])).values()
+      ).sort((a, b) => a.className.localeCompare(b.className) || a.subjectName.localeCompare(b.subjectName))
+
+      if (mounted) setClassSubjectCatalog(uniqueEntries)
+    }
+
+    loadClassSubjectCatalog().catch(() => {
+      if (mounted) setClassSubjectCatalog([])
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   // Live input update for teacher table
   const handleScoreChange = (
@@ -90,21 +142,27 @@ export default function GradesPage() {
         }
       })
     )
+    setHasUnsavedChanges(true)
   }
 
   const handleRemarkChange = (recordId: string, remarks: string) => {
     setGradeRecords((prev) =>
       prev.map((rec) => (rec.id === recordId ? { ...rec, remarks } : rec))
     )
+    setHasUnsavedChanges(true)
   }
 
   const handleSaveAllGrades = async () => {
+    if (saving || loading || !hasUnsavedChanges) return
+    setSaving(true)
     try {
       await academicService.saveBatchGrades(gradeRecords)
       showToast('All grades successfully saved and published!', 'success')
       loadData()
     } catch {
       showToast('Error saving grade updates', 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -132,6 +190,58 @@ export default function GradesPage() {
     return r.studentName.toLowerCase().includes(term) || r.studentCode.toLowerCase().includes(term)
   })
 
+  const classOptions = apiClasses.length
+    ? apiClasses.map((record) => record.name)
+    : Array.from(new Set(classSubjectCatalog.map((entry) => entry.className)))
+  const selectedApiClass = apiClasses.find((record) => record.name === selectedClass)
+  const subjectsForSelectedClass = Array.from(
+    new Set(
+      apiSubjects.length
+        ? apiSubjects
+            .filter((subject) => {
+              if (!selectedApiClass) return true
+              return !subject.gradeLevel || subject.gradeLevel === `Grade ${selectedApiClass.gradeLevel}`
+            })
+            .map((subject) => subject.name)
+        : classSubjectCatalog
+            .filter((entry) => entry.className === selectedClass)
+            .map((entry) => entry.subjectName)
+    )
+  )
+  const subjectOptions = subjectsForSelectedClass.length
+    ? subjectsForSelectedClass
+    : apiSubjects.length
+      ? apiSubjects.map((subject) => subject.name)
+      : Array.from(new Set(classSubjectCatalog.map((entry) => entry.subjectName)))
+
+  const handleClassChange = (className: string) => {
+    setSelectedClass(className)
+    const nextClass = apiClasses.find((record) => record.name === className)
+    const nextSubjects = Array.from(new Set(
+      apiSubjects.length
+        ? apiSubjects
+            .filter((subject) => !nextClass || !subject.gradeLevel || subject.gradeLevel === `Grade ${nextClass.gradeLevel}`)
+            .map((subject) => subject.name)
+        : classSubjectCatalog.filter((entry) => entry.className === className).map((entry) => entry.subjectName)
+    ))
+    if (nextSubjects.length && !nextSubjects.includes(selectedSubject)) {
+      setSelectedSubject(nextSubjects[0])
+    }
+  }
+
+  const gradeKpiCards: StatCard[] = isStudent
+    ? [
+        { id: 'student-gpa', label: 'Cumulative GPA', value: `${studentCumulativeGpa} / 4.00`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'academic standing', icon: 'Award', tint: 'amber' },
+        { id: 'student-average', label: 'Weighted Average', value: `${studentAverageScore}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: `${studentRecords.length} subjects`, icon: 'TrendingUp', tint: 'blue' },
+        { id: 'student-attendance', label: 'Attendance Standing', value: '96.5%', delta: '-', deltaDirection: 'neutral', deltaLabel: '0 unexcused absences', icon: 'CheckCircle2', tint: 'green' },
+      ]
+    : [
+        { id: 'class-average', label: 'Class Average', value: `${classAvg}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: `${selectedClass} / ${selectedSubject}`, icon: 'TrendingUp', tint: 'blue' },
+        { id: 'grade-a', label: "Grade 'A' Students", value: countA.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: '90% - 100%', icon: 'Award', tint: 'green' },
+        { id: 'grade-b', label: "Grade 'B' Students", value: countB.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: '80% - 89%', icon: 'BookOpen', tint: 'sky' },
+        { id: 'needs-support', label: 'Needs Support', value: (countC + countDF).toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'below 80%', icon: 'AlertCircle', tint: 'amber' },
+      ]
+
   return (
     <div id="grades-page-container" className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -149,12 +259,23 @@ export default function GradesPage() {
             <button
               id="save-grades-btn"
               onClick={handleSaveAllGrades}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm transition"
+              disabled={loading || saving || !hasUnsavedChanges}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm transition disabled:cursor-not-allowed disabled:opacity-45"
             >
-              <Save className="w-4 h-4" />
-              Save All Grades
+              <Save className={`w-4 h-4 ${saving ? 'animate-pulse' : ''}`} />
+              {saving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'All Changes Saved'}
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={loadData}
+            disabled={loading || saving}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 transition disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
 
           <button
             onClick={() => window.print()}
@@ -183,52 +304,26 @@ export default function GradesPage() {
         </div>
       </div>
 
+      <StatsGrid cards={gradeKpiCards} columns={isStudent ? 3 : 4} />
+
       {/* ==================================================== */}
       {/* STUDENT VIEW                                         */}
       {/* ==================================================== */}
       {isStudent ? (
         <div className="space-y-6">
-          {/* Student Overview Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800">
-              <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider">Cumulative GPA</span>
-                <Award className="w-4 h-4 text-amber-500" />
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
-                {studentCumulativeGpa} <span className="text-sm font-normal text-slate-400">/ 4.00</span>
-              </div>
-              <span className="inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                Academic Honor Roll
-              </span>
+          {loading ? (
+            <div className="glass-sm rounded-2xl border border-slate-200/80 dark:border-slate-800 p-10 text-center text-sm text-slate-500">
+              Loading your grade report...
             </div>
-
-            <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800">
-              <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider">Overall Weighted Average</span>
-                <TrendingUp className="w-4 h-4 text-brand-500" />
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
-                {studentAverageScore}%
-              </div>
-              <span className="text-xs text-slate-400 mt-2 block">
-                Across {studentRecords.length} enrolled subjects
-              </span>
+          ) : studentRecords.length === 0 ? (
+            <div className="glass-sm rounded-2xl border border-slate-200/80 dark:border-slate-800 p-10 text-center">
+              <BookOpen className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No grades available yet</p>
+              <p className="mt-1 text-xs text-slate-500">Your published subject results will appear here.</p>
             </div>
-
-            <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800">
-              <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider">Attendance Standing</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
-                96.5%
-              </div>
-              <span className="text-xs text-slate-400 mt-2 block">
-                Class Grade 10-A • 0 Unexcused Absences
-              </span>
-            </div>
-          </div>
+          ) : (
+          <>
+          
 
           {/* Student Subject Grades Table */}
           <div className="glass-sm rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden">
@@ -293,6 +388,8 @@ export default function GradesPage() {
               </table>
             </div>
           </div>
+          </>
+          )}
         </div>
       ) : (
         /* ==================================================== */
@@ -325,34 +422,19 @@ export default function GradesPage() {
 
           {activeTab === 'grades' ? (
             <>
-              {/* Class Summary KPIs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-                  <span className="text-xs text-slate-500 block">Class Average</span>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-                    {classAvg}%
-                  </div>
-                  <span className="text-[11px] text-slate-400">{selectedClass} • {selectedSubject}</span>
+              {loading && (
+                <div className="rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 text-xs text-brand-700 dark:border-brand-900/60 dark:bg-brand-950/20 dark:text-brand-300">
+                  Loading the selected class gradebook...
                 </div>
-
-                <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-                  <span className="text-xs text-slate-500 block">Grade 'A' Students</span>
-                  <div className="text-2xl font-bold text-emerald-600 mt-1">{countA}</div>
-                  <span className="text-[11px] text-slate-400">90% - 100% threshold</span>
+              )}
+              {!loading && filteredTeacherRecords.length === 0 && (
+                <div className="glass-sm rounded-2xl border border-slate-200/80 dark:border-slate-800 p-10 text-center">
+                  <AlertCircle className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No grade records found</p>
+                  <p className="mt-1 text-xs text-slate-500">Try another class, subject, or search term.</p>
                 </div>
-
-                <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-                  <span className="text-xs text-slate-500 block">Grade 'B' Students</span>
-                  <div className="text-2xl font-bold text-sky-600 mt-1">{countB}</div>
-                  <span className="text-[11px] text-slate-400">80% - 89% threshold</span>
-                </div>
-
-                <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-                  <span className="text-xs text-slate-500 block">Needs Support (C/D/F)</span>
-                  <div className="text-2xl font-bold text-amber-600 mt-1">{countC + countDF}</div>
-                  <span className="text-[11px] text-slate-400">&lt; 80% threshold</span>
-                </div>
-              </div>
+              )}
+              
 
               {/* Class & Subject Selector */}
               <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">
@@ -364,12 +446,13 @@ export default function GradesPage() {
                   <select
                     id="grade-class-selector"
                     value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
+                    onChange={(e) => handleClassChange(e.target.value)}
                     className="text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-medium"
                   >
-                    <option value="Grade 10-A">Grade 10-A</option>
-                    <option value="Grade 10-B">Grade 10-B</option>
-                    <option value="Grade 11-A">Grade 11-A</option>
+                    {classOptions.length === 0 && <option value={selectedClass}>{selectedClass}</option>}
+                    {classOptions.map((className) => (
+                      <option key={className} value={className}>{className}</option>
+                    ))}
                   </select>
 
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 ml-2">
@@ -382,11 +465,10 @@ export default function GradesPage() {
                     onChange={(e) => setSelectedSubject(e.target.value)}
                     className="text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-medium"
                   >
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Physics">Physics</option>
-                    <option value="English Literature">English Literature</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Computer Science">Computer Science</option>
+                    {subjectOptions.length === 0 && <option value={selectedSubject}>{selectedSubject}</option>}
+                    {subjectOptions.map((subjectName) => (
+                      <option key={subjectName} value={subjectName}>{subjectName}</option>
+                    ))}
                   </select>
                 </div>
 

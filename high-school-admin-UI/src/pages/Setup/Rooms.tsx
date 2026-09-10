@@ -16,6 +16,8 @@ import {
   Trash2
 } from "lucide-react";
 import { useToast } from "@/components/common/ToastProvider";
+import StatsGrid from "@/components/cards/StatsGrid";
+import type { StatCard } from "@/types";
 
 interface RoomItem {
   id: string;
@@ -118,6 +120,13 @@ export default function Rooms() {
     amenitiesText: "Interactive Smartboard, AC",
   });
 
+  const roomKpiCards: StatCard[] = [
+    { id: "total-rooms", label: "Total Rooms & Facilities", value: rooms.length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "campus spaces", icon: "School", tint: "blue" },
+    { id: "available-rooms", label: "Available Spaces", value: rooms.filter((room) => room.status === "Available").length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "ready to assign", icon: "DoorOpen", tint: "green" },
+    { id: "occupied-rooms", label: "Occupied Spaces", value: rooms.filter((room) => room.status === "Occupied").length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "in active use", icon: "Users", tint: "amber" },
+    { id: "total-capacity", label: "Total Seating Capacity", value: rooms.reduce((total, room) => total + room.capacity, 0).toLocaleString(), delta: "-", deltaDirection: "neutral", deltaLabel: "available seats", icon: "BookOpen", tint: "violet" },
+  ];
+
   const filteredRooms = rooms.filter((r) => {
     const matchesSearch =
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -170,6 +179,8 @@ export default function Rooms() {
           <span>Add New Room</span>
         </button>
       </div>
+
+      <StatsGrid cards={roomKpiCards} columns={4} />
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">

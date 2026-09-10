@@ -150,9 +150,9 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/reports/library" element={<BookList />} />
 
     {/* System */}
-    <Route path="/system/logs" element={<AuditLogs />} />
+    
     <Route path="/system/activity" element={<AuditLogs />} />
-    <Route path="/system/settings" element={<SchoolSetup />} />
+  
 
     {/* Fallback */}
     <Route path="/" element={<Navigate to="/dashboard" replace />} />

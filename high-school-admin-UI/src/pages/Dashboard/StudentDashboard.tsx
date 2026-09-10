@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import PageHeading from '@/components/common/PageHeading'
+import StatsGrid from '@/components/cards/StatsGrid'
 import {
   GraduationCap,
   Calendar,
@@ -18,6 +19,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { academicService } from '@/services/academicService'
 import type { Homework, Quiz, GradeRecord, Lesson } from '@/types/academic'
+import type { StatCard } from '@/types'
 
 export default function StudentDashboard() {
   const { user } = useAuth()
@@ -57,6 +59,12 @@ export default function StudentDashboard() {
 
   const gpa = grades.length > 0 ? (grades.reduce((sum, r) => sum + r.gpa, 0) / grades.length).toFixed(2) : '3.85'
   const avgGrade = grades.length > 0 ? (grades.reduce((sum, r) => sum + r.totalWeightedScore, 0) / grades.length).toFixed(1) : '92.1'
+  const studentStatCards: StatCard[] = [
+    { id: 'enrolled-class', label: 'My Enrolled Class', value: 'Grade 10-A', delta: '-', deltaDirection: 'neutral', deltaLabel: 'ID: STU123456', icon: 'GraduationCap', tint: 'blue' },
+    { id: 'gpa', label: 'Cumulative GPA', value: `${gpa} / 4.0`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Honor Roll Standing', icon: 'Award', tint: 'amber' },
+    { id: 'weighted-average', label: 'Weighted Average', value: `${avgGrade}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: `${grades.length} Graded Subjects`, icon: 'CheckCircle2', tint: 'green' },
+    { id: 'attendance-rate', label: 'Attendance Rate', value: '96.5%', delta: '-', deltaDirection: 'neutral', deltaLabel: 'Perfect Record This Term', icon: 'Clock', tint: 'sky' },
+  ]
 
   return (
     <div id="student-dashboard" className="space-y-6">
@@ -77,46 +85,7 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Student Profile & KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">My Enrolled Class</span>
-            <GraduationCap className="w-4 h-4 text-brand-600" />
-          </div>
-          <div className="text-xl font-bold text-slate-900 dark:text-slate-100">Grade 10-A</div>
-          <span className="text-[11px] text-slate-400">ID: STU123456</span>
-        </div>
-
-        <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Cumulative GPA</span>
-            <Award className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {gpa} <span className="text-xs font-normal text-slate-400">/ 4.0</span>
-          </div>
-          <span className="text-[11px] text-emerald-600 font-medium">Honor Roll Standing</span>
-        </div>
-
-        <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Weighted Average</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgGrade}%</div>
-          <span className="text-[11px] text-slate-400">{grades.length} Graded Subjects</span>
-        </div>
-
-        <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-medium">Attendance Rate</span>
-            <Clock className="w-4 h-4 text-sky-600" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">96.5%</div>
-          <span className="text-[11px] text-slate-400">Perfect Record This Term</span>
-        </div>
-      </div>
+      <StatsGrid cards={studentStatCards} loading={loading} />
 
       {/* Main Grid: Today's Schedule & Quick Action Hub */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

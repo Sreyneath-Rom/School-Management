@@ -45,18 +45,17 @@ export function Skeleton({
  */
 export function StatCardSkeleton() {
   return (
-    <div className="rounded-[28px] glass-sm p-6 space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        {/* Icon square placeholder */}
-        <Skeleton variant="rounded" className="h-12 w-12 !rounded-3xl" />
-        {/* Delta pill placeholder */}
-        <Skeleton variant="rounded" className="h-6 w-14 !rounded-full" />
-      </div>
-      <div className="pt-2 space-y-2">
-        {/* Label line placeholder */}
-        <Skeleton variant="text" className="h-4 w-20 !rounded-md" />
-        {/* Big number placeholder */}
-        <Skeleton variant="text" className="h-8 w-28 !rounded-lg" />
+    <div className="min-h-44 rounded-3xl glass-sm p-5">
+      <div className="flex h-full flex-col justify-between gap-5">
+        <div className="flex items-start justify-between gap-4">
+          <Skeleton variant="rounded" className="h-10 w-10 rounded-2xl!" />
+          <Skeleton variant="rounded" className="h-7 w-7 rounded-full!" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton variant="text" className="h-4 w-24 rounded-md!" />
+          <Skeleton variant="text" className="h-8 w-28 rounded-lg!" />
+        </div>
+        <Skeleton variant="text" className="h-4 w-32 rounded-md!" />
       </div>
     </div>
   )

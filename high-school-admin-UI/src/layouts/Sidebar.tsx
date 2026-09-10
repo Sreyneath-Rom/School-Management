@@ -394,21 +394,13 @@ const roleMenus: Record<string, MenuSection[]> = {
       icon: Sliders,
       categoryGroup: "system",
       items: [
-        {
-          translationKey: "sidebar.auditLogs",
-          icon: FileText,
-          path: "/system/logs",
-        },
+   
         {
           translationKey: "sidebar.activityLogs",
           icon: Activity,
           path: "/system/activity",
         },
-        {
-          translationKey: "sidebar.systemSettings",
-          icon: Sliders,
-          path: "/system/settings",
-        },
+      
       ],
     },
   ],

@@ -22,6 +22,8 @@ import { academicService } from '@/services/academicService'
 import type { Homework, HomeworkSubmission } from '@/types/academic'
 import { useToast } from '@/components/common/ToastProvider'
 import FileUploadZone from '@/components/common/FileUploadZone'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 
 export default function HomeworkPage() {
   const { user } = useAuth()
@@ -115,6 +117,13 @@ export default function HomeworkPage() {
     }
     return true
   })
+
+  const homeworkKpiCards: StatCard[] = [
+    { id: 'available-homework', label: 'Available Assignments', value: filteredHomework.length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'matching filters', icon: 'FileCheck2', tint: 'blue' },
+    { id: 'submitted-homework', label: 'Submitted Work', value: submissions.filter((submission) => filteredHomework.some((homework) => homework.id === submission.homeworkId) && (!isStudent || submission.studentId === currentStudentId)).length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: isStudent ? 'your submissions' : 'student submissions', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'graded-homework', label: 'Graded Work', value: submissions.filter((submission) => submission.status === 'Graded' && filteredHomework.some((homework) => homework.id === submission.homeworkId) && (!isStudent || submission.studentId === currentStudentId)).length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'feedback available', icon: 'Award', tint: 'amber' },
+    { id: 'homework-points', label: 'Available Points', value: filteredHomework.reduce((total, homework) => total + homework.maxPoints, 0).toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'assessment value', icon: 'TrendingUp', tint: 'violet' },
+  ]
 
   const handleCreateHomework = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -215,6 +224,8 @@ export default function HomeworkPage() {
           </button>
         )}
       </div>
+
+      <StatsGrid cards={homeworkKpiCards} columns={4} />
 
       {/* Filter and Search Bar */}
       <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">

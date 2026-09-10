@@ -30,157 +30,19 @@ import {
 } from 'lucide-react'
 import PageHeading from '@/components/common/PageHeading'
 import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 import {
   teacherService,
   type TeacherRecord,
   type CreateTeacherPayload,
 } from '@/services/teacherService'
-
-const DEPARTMENTS = [
-  'All Departments',
-  'Science',
-  'Mathematics',
-  'Social Studies',
-  'Languages',
-  'Technology',
-  'Fine Arts',
-]
-
-const STATUSES = ['All', 'Active', 'On Leave', 'Inactive']
-
-const DEFAULT_FACULTY_ROSTER: TeacherRecord[] = [
-  {
-    id: 't1',
-    employeeId: 'FAC-SCI-01',
-    firstName: 'John',
-    lastName: 'Whitfield',
-    name: 'Dr. John Whitfield',
-    title: 'Head of Science & Biology Faculty',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop',
-    department: 'Science',
-    position: 'Department Chair',
-    qualifications: 'Ph.D. in Molecular Biology (Harvard)',
-    specialization: 'Cellular Biochemistry & Genetics',
-    weeklyTeachingHours: 18,
-    assignedClasses: ['Grade 10-A', 'Grade 10-B', 'Grade 12-A'],
-    subjectsTaught: ['Advanced Biology', 'AP Biology Seminar'],
-    performanceRating: 4.92,
-    joiningDate: '2019-08-15',
-    email: 'john.whitfield@oakridge.edu',
-    phone: '+1 (555) 019-2834',
-    status: 'Active',
-  },
-  {
-    id: 't2',
-    employeeId: 'FAC-MTH-03',
-    firstName: 'Marcus',
-    lastName: 'Kane',
-    name: 'Prof. Marcus Kane',
-    title: 'Senior Mathematics Lecturer',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop',
-    department: 'Mathematics',
-    position: 'Senior Lecturer',
-    qualifications: 'M.Sc. in Applied Mathematics (MIT)',
-    specialization: 'Calculus, Differential Equations & Topology',
-    weeklyTeachingHours: 20,
-    assignedClasses: ['Grade 11-A', 'Grade 12-A'],
-    subjectsTaught: ['Calculus BC', 'Linear Algebra'],
-    performanceRating: 4.88,
-    joiningDate: '2018-01-10',
-    email: 'marcus.kane@oakridge.edu',
-    phone: '+1 (555) 019-9943',
-    status: 'Active',
-  },
-  {
-    id: 't3',
-    employeeId: 'FAC-CS-02',
-    firstName: 'Elena',
-    lastName: 'Vance',
-    name: 'Elena Vance',
-    title: 'Director of Computer Science & Robotics',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&h=256&fit=crop',
-    department: 'Technology',
-    position: 'Faculty Lead',
-    qualifications: 'M.S. in Computer Science (Stanford)',
-    specialization: 'Algorithms, AI Ethics & Robotics',
-    weeklyTeachingHours: 16,
-    assignedClasses: ['Grade 10-A', 'Grade 11-B', 'Grade 12-B'],
-    subjectsTaught: ['AP Computer Science', 'Robotics Systems'],
-    performanceRating: 4.95,
-    joiningDate: '2020-08-01',
-    email: 'elena.vance@oakridge.edu',
-    phone: '+1 (555) 019-4821',
-    status: 'Active',
-  },
-  {
-    id: 't4',
-    employeeId: 'FAC-ENG-05',
-    firstName: 'Sarah',
-    lastName: 'Chen',
-    name: 'Sarah Chen',
-    title: 'Senior Faculty in World Literature',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=256&h=256&fit=crop',
-    department: 'Languages',
-    position: 'Faculty Member',
-    qualifications: 'M.A. in Comparative Literature (Columbia)',
-    specialization: 'Modernist Fiction & Classical Rhetoric',
-    weeklyTeachingHours: 17,
-    assignedClasses: ['Grade 9-A', 'Grade 10-A', 'Grade 11-A'],
-    subjectsTaught: ['World Literature', 'Creative Writing'],
-    performanceRating: 4.84,
-    joiningDate: '2021-09-01',
-    email: 'sarah.chen@oakridge.edu',
-    phone: '+1 (555) 019-7712',
-    status: 'Active',
-  },
-  {
-    id: 't5',
-    employeeId: 'FAC-SCI-04',
-    firstName: 'David',
-    lastName: 'Miller',
-    name: 'David Miller',
-    title: 'Associate Professor of Physics',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop',
-    department: 'Science',
-    position: 'Faculty Member',
-    qualifications: 'Ph.D. in Experimental Physics (Caltech)',
-    specialization: 'Astrophysics & Classical Mechanics',
-    weeklyTeachingHours: 19,
-    assignedClasses: ['Grade 11-B', 'Grade 12-A'],
-    subjectsTaught: ['AP Physics Mechanics', 'Astronomy Elective'],
-    performanceRating: 4.81,
-    joiningDate: '2019-01-15',
-    email: 'david.miller@oakridge.edu',
-    phone: '+1 (555) 019-3389',
-    status: 'On Leave',
-  },
-  {
-    id: 't6',
-    employeeId: 'FAC-ART-01',
-    firstName: 'Maya',
-    lastName: 'Lin',
-    name: 'Maya Lin',
-    title: 'Head of Visual Arts & Digital Media',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=256&h=256&fit=crop',
-    department: 'Fine Arts',
-    position: 'Program Director',
-    qualifications: 'M.F.A. in Visual Arts (RISD)',
-    specialization: 'Digital Design & Studio Fine Arts',
-    weeklyTeachingHours: 15,
-    assignedClasses: ['Grade 9-B', 'Grade 10-A', 'Grade 12-B'],
-    subjectsTaught: ['Studio Art', 'Digital Media Design'],
-    performanceRating: 4.91,
-    joiningDate: '2022-08-10',
-    email: 'maya.lin@oakridge.edu',
-    phone: '+1 (555) 019-6632',
-    status: 'Active',
-  },
-]
+import { DEPARTMENTS, STATUSES } from '@/data/teacherOptions'
 
 export default function TeacherList() {
   const { showToast } = useToast()
   const navigate = useNavigate()
-  const [teachers, setTeachers] = useState<TeacherRecord[]>(DEFAULT_FACULTY_ROSTER)
+  const [teachers, setTeachers] = useState<TeacherRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Filters & Views
@@ -220,13 +82,9 @@ export default function TeacherList() {
     setIsLoading(true)
     try {
       const data = await teacherService.list()
-      if (Array.isArray(data) && data.length > 0) {
-        setTeachers(data)
-      } else {
-        setTeachers(DEFAULT_FACULTY_ROSTER)
-      }
+      setTeachers(Array.isArray(data) ? data : [])
     } catch {
-      setTeachers(DEFAULT_FACULTY_ROSTER)
+      setTeachers([])
     } finally {
       setIsLoading(false)
     }
@@ -272,6 +130,13 @@ export default function TeacherList() {
 
     return { total, active, avgHours, topRated }
   }, [teachers])
+
+  const kpiCards: StatCard[] = [
+    { id: 'total-faculty', label: 'Total Faculty', value: stats.total.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'directory', icon: 'Users', tint: 'blue' },
+    { id: 'active-faculty', label: 'Active In-Service', value: stats.active.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'active staff', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'avg-workload', label: 'Avg Workload / Wk', value: `${stats.avgHours}h`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'teaching hours', icon: 'Clock', tint: 'amber' },
+    { id: 'top-rated', label: 'Top Rated Faculty', value: stats.topRated.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'high performers', icon: 'TrendingUp', tint: 'violet' },
+  ]
 
   // Handlers
   const handleOpenCreate = () => {
@@ -477,7 +342,8 @@ export default function TeacherList() {
         </div>
       </div>
 
-      {/* KPI Stats Strip */}
+      <StatsGrid cards={kpiCards} columns={4} />
+      {/* Legacy KPI markup retained below only as migration reference.
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl border border-stone-200/80 dark:border-white/10 bg-white/70 dark:bg-stone-900/60 backdrop-blur-md shadow-xs flex items-center gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
@@ -526,13 +392,13 @@ export default function TeacherList() {
             <div className="text-xs font-semibold text-stone-500">Top Evaluation (≥4.85)</div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Filters Toolbar */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 p-4 rounded-2xl border border-stone-200/80 dark:border-white/10 bg-white/70 dark:bg-stone-900/60 backdrop-blur-md shadow-xs">
         <div className="flex flex-1 flex-col sm:flex-row items-center gap-3 w-full">
           {/* Search */}
-          <div className="relative flex-1 w-full min-w-[240px]">
+          <div className="relative flex-1 w-full min-w-60">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
             <input
               type="text"
@@ -656,7 +522,7 @@ export default function TeacherList() {
                           className="h-12 w-12 rounded-2xl object-cover ring-2 ring-brand-500/20 shadow-xs"
                         />
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500/20 to-brand-600/10 font-bold text-brand-700 dark:text-brand-300 ring-2 ring-brand-500/20">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500/20 to-brand-600/10 font-bold text-brand-700 dark:text-brand-300 ring-2 ring-brand-500/20">
                           {initials}
                         </div>
                       )}
@@ -702,7 +568,7 @@ export default function TeacherList() {
 
                     <div className="flex items-center justify-between">
                       <span className="text-stone-400">Specialization:</span>
-                      <span className="font-medium text-stone-800 dark:text-stone-200 truncate max-w-[180px]" title={t.specialization}>
+                      <span className="font-medium text-stone-800 dark:text-stone-200 truncate max-w-45" title={t.specialization}>
                         {t.specialization || 'General Curriculum'}
                       </span>
                     </div>
@@ -726,7 +592,7 @@ export default function TeacherList() {
                     {/* Classes Tags */}
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-stone-400">Classes:</span>
-                      <div className="flex flex-wrap gap-1 justify-end max-w-[200px]">
+                      <div className="flex flex-wrap gap-1 justify-end max-w-50">
                         {(t.assignedClasses || []).slice(0, 3).map((c) => (
                           <span
                             key={c}
@@ -824,7 +690,7 @@ export default function TeacherList() {
                               className="h-9 w-9 rounded-xl object-cover ring-1 ring-brand-500/20"
                             />
                           ) : (
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500/20 to-brand-600/10 font-bold text-brand-700 dark:text-brand-300">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-brand-500/20 to-brand-600/10 font-bold text-brand-700 dark:text-brand-300">
                               {initials}
                             </div>
                           )}
@@ -975,7 +841,7 @@ export default function TeacherList() {
                     className="h-16 w-16 rounded-2xl object-cover ring-2 ring-brand-500/20 shadow-xs"
                   />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500/20 to-brand-600/10 text-xl font-bold text-brand-700 dark:text-brand-300 ring-2 ring-brand-500/20">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500/20 to-brand-600/10 text-xl font-bold text-brand-700 dark:text-brand-300 ring-2 ring-brand-500/20">
                     {detailTeacher.firstName.charAt(0)}{detailTeacher.lastName.charAt(0)}
                   </div>
                 )}

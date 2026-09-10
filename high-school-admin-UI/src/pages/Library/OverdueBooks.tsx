@@ -1,5 +1,7 @@
 import { useState } from "react";
 import PageHeading from "@/components/common/PageHeading";
+import StatsGrid from "@/components/cards/StatsGrid";
+import type { StatCard } from "@/types";
 import { 
   AlertTriangle, 
   Search, 
@@ -97,6 +99,12 @@ export default function OverdueBooks() {
 
   const totalFines = overdues.reduce((acc, curr) => acc + curr.fineAccrued, 0);
 
+  const kpiCards: StatCard[] = [
+    { id: "overdue-titles", label: "Overdue Titles", value: `${overdues.length} Books Unreturned`, delta: "-", deltaDirection: "neutral", deltaLabel: "requires return", icon: "AlertTriangle", tint: "red" },
+    { id: "late-fines", label: "Accrued Late Fines", value: `$${totalFines.toFixed(2)}`, delta: "-", deltaDirection: "neutral", deltaLabel: "assessed", icon: "DollarSign", tint: "amber" },
+    { id: "daily-penalty", label: "Daily Penalty Rate", value: "$0.50 / day", delta: "-", deltaDirection: "neutral", deltaLabel: "standard rate", icon: "Mail", tint: "blue" },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -113,7 +121,8 @@ export default function OverdueBooks() {
         </button>
       </div>
 
-      {/* Stats */}
+      <StatsGrid cards={kpiCards} columns={3} />
+      {/* Legacy stats markup retained below only as migration reference.
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
           <div className="p-3 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
@@ -150,7 +159,7 @@ export default function OverdueBooks() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="overflow-hidden rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
         <div className="p-3.5 border-b border-stone-200/50 dark:border-white/10 flex items-center justify-between gap-3">
