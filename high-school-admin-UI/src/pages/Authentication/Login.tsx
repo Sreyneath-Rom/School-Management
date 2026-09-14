@@ -30,7 +30,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleInstantLogin = (role: UserRole) => {
-    const result = authService.loginAsRole(role);
+    const result = authService.loginAs(role);
     login(result);
     const target =
       role === 'admin'

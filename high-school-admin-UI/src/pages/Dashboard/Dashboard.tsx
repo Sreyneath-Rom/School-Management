@@ -9,7 +9,7 @@ import Announcements from '@/features/dashboard/Announcements'
 import TeacherDashboard from '@/pages/Dashboard/TeacherDashboard'
 import StudentDashboard from '@/pages/Dashboard/StudentDashboard'
 import { useAuth } from '@/hooks/useAuth'
-import { getGreetingForUser } from '@/data/mockUsers'
+import { getGreetingForUser } from '@/utils/userGreeting'
 import { useFetch } from '@/hooks/useFetch'
 import { dashboardService, type DashboardStats } from '@/services/dashboardService'
 

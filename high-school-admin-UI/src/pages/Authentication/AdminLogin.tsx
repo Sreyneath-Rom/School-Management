@@ -79,7 +79,7 @@ export default function AdminLogin() {
   };
 
   const handleDirectDemoLogin = () => {
-    const result = authService.loginAsRole('admin');
+    const result = authService.loginAs('admin');
     login(result);
     navigate('/dashboard', { replace: true });
   };

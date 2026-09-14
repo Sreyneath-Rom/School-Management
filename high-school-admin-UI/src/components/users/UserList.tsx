@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react'
 import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -23,7 +25,8 @@ import { useNotification } from '@/hooks/useNotification'
 import Button from '@/components/common/Button'
 import PageHeading from '@/components/common/PageHeading'
 import UserDetail from '@/components/users/UserDetail'
-import { mockUserDirectory } from '@/data/mockUserDirectory'
+import { userService } from '@/services/userService'
+import { ApiError } from '@/lib/apiClient'
 import {
   type SystemUser,
   type UserRole,
@@ -51,8 +54,13 @@ const SEARCH_FIELD_LABELS: Record<SearchField, string> = {
 }
 
 export default function UserList({ showHeading = true }: { showHeading?: boolean }) {
-  const [users] = useState<SystemUser[]>(mockUserDirectory)
+  // ---- Server state ----
+  const [users, setUsers] = useState<SystemUser[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
+  // ---- UI state ----
   const [searchField, setSearchField] = useState<SearchField>('all')
   const [searchInput, setSearchInput] = useState('')
   const searchQuery = useDebounce(searchInput, 300)
@@ -69,8 +77,47 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [viewingUser, setViewingUser] = useState<SystemUser | null>(null)
 
-  const { success, info, notifications, removeNotification } = useNotification()
+  const { success, info, error: notifyError, notifications, removeNotification } = useNotification()
 
+  // ---- Fetch users from the API ----
+  const loadUsers = async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true)
+    else setRefreshing(true)
+    setError(null)
+    try {
+      const data = await userService.list()
+      setUsers(data)
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Failed to load users'
+      setError(msg)
+      setUsers([])
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await userService.list()
+        if (!cancelled) setUsers(data)
+      } catch (err) {
+        if (cancelled) return
+        const msg = err instanceof ApiError ? err.message : 'Failed to load users'
+        setError(msg)
+        setUsers([])
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  // ---- Derived filter option lists ----
   const grades = useMemo(() => uniqueSorted(users.map(getDisplayGrade).filter(isString)), [users])
   const classes = useMemo(() => uniqueSorted(users.map(getDisplayClass).filter(isString)), [users])
   const departments = useMemo(() => uniqueSorted(users.map(getDisplayDepartment).filter(isString)), [users])
@@ -157,11 +204,8 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -178,13 +222,88 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
 
   const clearSelection = () => setSelectedIds(new Set())
 
-  const handleBulkActivate = () => { success(`${selectedIds.size} user(s) activated`); clearSelection() }
-  const handleBulkDeactivate = () => { info(`${selectedIds.size} user(s) deactivated`); clearSelection() }
-  const handleBulkDelete = () => { info(`${selectedIds.size} user(s) deleted`); clearSelection() }
-  const handleBulkResetPassword = () => { success(`Password reset for ${selectedIds.size} user(s)`); clearSelection() }
+  // ---- CRUD operations ----
+  const handleDeleteUser = async (user: SystemUser) => {
+    const label = getFullName(user)
+    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return
+    try {
+      await userService.delete(user.id)
+      setUsers((prev) => prev.filter((u) => u.id !== user.id))
+      setSelectedIds((prev) => { const n = new Set(prev); n.delete(user.id); return n })
+      success(`${label} deleted`)
+    } catch (err) {
+      notifyError(err instanceof ApiError ? err.message : `Failed to delete ${label}`)
+    }
+  }
+
+  const handleResetPassword = async (user: SystemUser) => {
+    const label = getFullName(user)
+    if (!window.confirm(`Reset password for ${label}?`)) return
+    try {
+      await userService.resetPassword(user.id)
+      success(`Password reset for ${label}`)
+    } catch (err) {
+      notifyError(err instanceof ApiError ? err.message : `Failed to reset password`)
+    }
+  }
+
+  const handleBulkActivate = async () => {
+    const ids = Array.from(selectedIds)
+    if (!ids.length) return
+    try {
+      await userService.bulkStatusUpdate(ids, 'active')
+      setUsers((prev) => prev.map((u) => (ids.includes(u.id) ? { ...u, status: 'active' } : u)))
+      success(`${ids.length} user(s) activated`)
+      clearSelection()
+    } catch (err) {
+      notifyError(err instanceof ApiError ? err.message : 'Bulk activate failed')
+    }
+  }
+
+  const handleBulkDeactivate = async () => {
+    const ids = Array.from(selectedIds)
+    if (!ids.length) return
+    try {
+      await userService.bulkStatusUpdate(ids, 'inactive')
+      setUsers((prev) => prev.map((u) => (ids.includes(u.id) ? { ...u, status: 'inactive' } : u)))
+      info(`${ids.length} user(s) deactivated`)
+      clearSelection()
+    } catch (err) {
+      notifyError(err instanceof ApiError ? err.message : 'Bulk deactivate failed')
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds)
+    if (!ids.length) return
+    if (!window.confirm(`Delete ${ids.length} user(s)? This cannot be undone.`)) return
+    try {
+      await Promise.all(ids.map((id) => userService.delete(id)))
+      setUsers((prev) => prev.filter((u) => !ids.includes(u.id)))
+      success(`${ids.length} user(s) deleted`)
+      clearSelection()
+    } catch (err) {
+      notifyError(err instanceof ApiError ? err.message : 'Bulk delete failed')
+      loadUsers({ silent: true })
+    }
+  }
+
+  const handleBulkResetPassword = async () => {
+    const ids = Array.from(selectedIds)
+    if (!ids.length) return
+    if (!window.confirm(`Reset password for ${ids.length} user(s)?`)) return
+    try {
+      await Promise.all(ids.map((id) => userService.resetPassword(id)))
+      success(`Password reset for ${ids.length} user(s)`)
+      clearSelection()
+    } catch (err) {
+      notifyError(err instanceof ApiError ? err.message : 'Bulk reset failed')
+    }
+  }
 
   const pageAllSelected = currentItems.length > 0 && currentItems.every((u) => selectedIds.has(u.id))
 
+  // ---- Render ----
   return (
     <div className="w-full text-text-main">
       {/* Toast Notifications */}
@@ -208,22 +327,37 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
 
       {showHeading && (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <PageHeading title="User Management" subtitle={`${totalItems} user${totalItems === 1 ? '' : 's'} across all roles`} />
+          <PageHeading
+            title="User Management"
+            subtitle={
+              loading
+                ? 'Loading users…'
+                : `${totalItems} user${totalItems === 1 ? '' : 's'} across all roles`
+            }
+          />
           <div className="flex flex-wrap items-center gap-2">
-            <button className="glass glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-text-main">
-              <Upload size={16} /> Import
+            <button
+              onClick={() => loadUsers({ silent: true })}
+              disabled={refreshing}
+              className="glass glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-text-main disabled:opacity-50"
+            >
+              {refreshing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              Refresh
             </button>
             <button className="glass glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-text-main">
               <Download size={16} /> Export
             </button>
-            <button className="glass-teal glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white">
+            <button
+              onClick={() => info('Add-user form not wired yet')}
+              className="glass-teal glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white"
+            >
               <UserPlus size={16} /> Add User
             </button>
           </div>
         </div>
       )}
 
-      {/* Search & Dynamic Filters */}
+      {/* Search & Filters */}
       <div className="glass-strong rounded-2xl sm:rounded-3xl p-3 sm:p-4 mb-4 flex flex-wrap items-center gap-2.5 sm:gap-3">
         <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0 sm:min-w-60">
           <select
@@ -275,7 +409,21 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
         </div>
       )}
 
-      {/* Main Table */}
+      {/* Error state */}
+      {error && !loading && (
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <div className="font-semibold">Could not load users</div>
+            <div className="text-rose-200/80">{error}</div>
+          </div>
+          <button onClick={() => loadUsers()} className="text-xs font-semibold underline hover:no-underline">
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Table */}
       <div className="glass-strong rounded-3xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -296,22 +444,32 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((user) => (
+              {loading && (
+                <tr>
+                  <td colSpan={10} className="px-4 py-16 text-center text-text-main/60">
+                    <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
+                    Loading users…
+                  </td>
+                </tr>
+              )}
+              {!loading && currentItems.map((user) => (
                 <UserRow
                   key={user.id}
                   user={user}
                   selected={selectedIds.has(user.id)}
                   onToggleSelect={() => toggleSelect(user.id)}
                   onView={() => setViewingUser(user)}
-                  onEdit={() => info(`Edit form for ${getFullName(user)} standardizing...`)}
-                  onResetPassword={() => success(`Password reset for ${getFullName(user)}`)}
-                  onDelete={() => info(`${getFullName(user)} deleted`)}
+                  onEdit={() => info(`Edit form for ${getFullName(user)} not wired yet`)}
+                  onResetPassword={() => handleResetPassword(user)}
+                  onDelete={() => handleDeleteUser(user)}
                 />
               ))}
-              {currentItems.length === 0 && (
+              {!loading && currentItems.length === 0 && (
                 <tr>
                   <td colSpan={10} className="px-4 py-16 text-center text-text-main/60">
-                    <p className="font-medium text-text-main">No users match these filters</p>
+                    <p className="font-medium text-text-main">
+                      {users.length === 0 ? 'No users yet' : 'No users match these filters'}
+                    </p>
                   </td>
                 </tr>
               )}
@@ -319,8 +477,7 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
           </table>
         </div>
 
-        {/* Pagination controls */}
-        {totalItems > 0 && (
+        {!loading && totalItems > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-text-main/10">
             <p className="text-xs text-text-main/60">Showing {startIndex}–{endIndex} of {totalItems}</p>
             <div className="flex items-center gap-1">

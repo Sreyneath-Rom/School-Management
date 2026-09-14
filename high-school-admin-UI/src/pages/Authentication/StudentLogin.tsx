@@ -4,7 +4,7 @@ import { useForm } from '@/hooks';
 import { isValidEmail } from '@/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/services/authService';
-import { getUserGreeting } from '@/data/mockUsers';
+import { getUserGreeting } from '@/utils/userGreeting';
 import AuthBackground from '@/components/auth/AuthBackground';
 import AuthHeader from '@/components/auth/AuthHeader';
 import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
@@ -81,7 +81,7 @@ export default function StudentLogin() {
   };
 
   const handleDirectDemoLogin = () => {
-    const result = authService.loginAsRole('student');
+    const result = authService.loginAs('student');
     login(result);
     navigate('/student/dashboard', { replace: true });
   };
