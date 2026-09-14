@@ -85,7 +85,7 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      <StatsGrid cards={studentStatCards} loading={loading} />
+      <StatsGrid cards={studentStatCards} loading={loading} showHeader={false} />
 
       {/* Main Grid: Today's Schedule & Quick Action Hub */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

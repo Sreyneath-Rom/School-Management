@@ -1,6 +1,7 @@
 import { upcomingEvents } from '@/services/mockData'
-import Button from '@/components/common/Button'
 import { ListCardSkeleton } from '@/components/common/Skeleton'
+import { Calendar, Clock, MapPin, ChevronRight, ArrowUpRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 interface UpcomingEventsProps {
   loading?: boolean
@@ -12,26 +13,55 @@ export default function UpcomingEvents({ loading }: UpcomingEventsProps = {}) {
   }
 
   return (
-    <section className="glass rounded-[28px] p-6 text-text-main">
-      <div className="mb-6 flex items-center justify-between">
+    <section className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-4 flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h2 className="text-base font-semibold text-text-main">Daily Schedule</h2>
-          <p className="text-sm text-text-main/70">Wednesday, July 1</p>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            Upcoming Events
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Institutional timeline & schedules
+          </p>
         </div>
-        <Button variant="teal">View Full Schedule</Button>
+
+        <Link
+          to="/calendar"
+          className="flex items-center gap-1 text-xs font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400"
+        >
+          <span>Calendar</span>
+          <ArrowUpRight size={13} />
+        </Link>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {upcomingEvents.map((event) => (
-          <div key={event.id} className="glass glass-interactive rounded-3xl p-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 flex-col items-center justify-center rounded-3xl bg-brand-500 text-white shadow-emboss">
-                <span className="text-sm font-semibold">{event.day}</span>
-                <span className="text-[10px] uppercase tracking-widest text-white/80">{event.month}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-text-main">{event.title}</p>
-                <p className="text-sm text-text-main/70">{event.time}</p>
+          <div
+            key={event.id}
+            className="group flex items-start gap-3.5 rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5 transition hover:border-teal-500/30 hover:bg-slate-100/60 dark:border-slate-800/80 dark:bg-slate-800/40 dark:hover:bg-slate-800/80"
+          >
+            {/* Calendar date badge */}
+            <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 text-white shadow-xs">
+              <span className="text-sm font-black leading-none">{event.day}</span>
+              <span className="text-[9.5px] font-bold uppercase tracking-wider text-teal-100 mt-0.5">
+                {event.month}
+              </span>
+            </div>
+
+            {/* Event details */}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-slate-900 dark:text-white leading-snug group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                {event.title}
+              </p>
+              <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="flex items-center gap-1">
+                  <Clock size={11} />
+                  {event.time}
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1 truncate">
+                  <MapPin size={11} />
+                  Main Auditorium
+                </span>
               </div>
             </div>
           </div>

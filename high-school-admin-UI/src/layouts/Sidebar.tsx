@@ -1,4 +1,3 @@
-
 import {
   useState,
   useEffect,
@@ -56,6 +55,8 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
+  Search,
+  School2,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -93,7 +94,15 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-// Role-tailored menu configuration
+// Category group labels for organizing section flow
+const categoryGroupLabels: Record<string, string> = {
+  core: "Core Administration",
+  academic: "Curriculum & Academic",
+  management: "Faculty & Students",
+  system: "Communication & Reports",
+};
+
+// Role-tailored menu configuration (preserved exactly for all roles)
 const roleMenus: Record<string, MenuSection[]> = {
   admin: [
     {
@@ -394,13 +403,11 @@ const roleMenus: Record<string, MenuSection[]> = {
       icon: Sliders,
       categoryGroup: "system",
       items: [
-   
         {
           translationKey: "sidebar.activityLogs",
           icon: Activity,
           path: "/system/activity",
         },
-      
       ],
     },
   ],
@@ -482,7 +489,7 @@ const roleMenus: Record<string, MenuSection[]> = {
         },
         {
           translationKey: "sidebar.notifications",
-          icon: Megaphone,
+          icon: Bell,
           path: "/teacher/notifications",
         },
         {
@@ -656,7 +663,7 @@ const roleMenus: Record<string, MenuSection[]> = {
         },
         {
           translationKey: "sidebar.notifications",
-          icon: Megaphone,
+          icon: Bell,
           path: "/student/notifications",
         },
         {
@@ -696,7 +703,7 @@ const roleMenus: Record<string, MenuSection[]> = {
         },
         {
           translationKey: "sidebar.notifications",
-          icon: Megaphone,
+          icon: Bell,
           path: "/parent/notifications",
         },
         {
@@ -713,31 +720,27 @@ const roleMenus: Record<string, MenuSection[]> = {
 
 const roleBadgeColorMap: Record<
   string,
-  { label: string; bg: string; text: string; ring: string }
+  { label: string; badgeClass: string; dotClass: string }
 > = {
   admin: {
     label: "Administrator",
-    bg: "bg-gradient-to-r from-purple-500/15 to-indigo-500/15 text-purple-700 dark:text-purple-300",
-    text: "text-purple-700 dark:text-purple-300",
-    ring: "border-purple-500/30 dark:border-purple-400/30",
+    badgeClass: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20",
+    dotClass: "bg-blue-500",
   },
   teacher: {
-    label: "Teacher / Faculty",
-    bg: "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-emerald-700 dark:text-emerald-300",
-    text: "text-emerald-700 dark:text-emerald-300",
-    ring: "border-emerald-500/30 dark:border-emerald-400/30",
+    label: "Faculty",
+    badgeClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
+    dotClass: "bg-emerald-500",
   },
   student: {
-    label: "Student",
-    bg: "bg-gradient-to-r from-sky-500/15 to-blue-500/15 text-sky-700 dark:text-sky-300",
-    text: "text-sky-700 dark:text-sky-300",
-    ring: "border-sky-500/30 dark:border-sky-400/30",
+    label: "Scholar",
+    badgeClass: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20",
+    dotClass: "bg-purple-500",
   },
   parent: {
-    label: "Parent / Guardian",
-    bg: "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-amber-700 dark:text-amber-300",
-    text: "text-amber-700 dark:text-amber-300",
-    ring: "border-amber-500/30 dark:border-amber-400/30",
+    label: "Guardian",
+    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
+    dotClass: "bg-amber-500",
   },
 };
 
@@ -796,12 +799,15 @@ export default function Sidebar({
   const [hoveredSection, setHoveredSection] = useState<Section | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Quick search filter for menu items
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Active role's menu sections
   const baseMenu = useMemo(() => {
     return roleMenus[activeRole] || roleMenus.admin;
   }, [activeRole]);
 
-  // Single Accordion State: Only 1 section expanded at a time ("flow 1 expand other collapse")
+  // Single Accordion State: Only 1 section expanded at a time ("flow: 1 expand other collapse")
   const [openSection, setOpenSection] = useState<Section | null>(() => {
     if (isDashboardActive) return null;
     return (
@@ -811,7 +817,7 @@ export default function Sidebar({
   });
 
   // Automatically keep current route's section expanded and others collapsed.
-  // On the Dashboard, no section owns the route, so collapse them all too.
+  // On the Dashboard, collapse all accordion sections.
   useEffect(() => {
     if (isDashboardActive) {
       setOpenSection(null);
@@ -828,8 +834,46 @@ export default function Sidebar({
     setOpenSection((current) => (current === sectionKey ? null : sectionKey));
   };
 
-  // Refs for the scrollable nav list: keep the open section in view and
-  // support arrow-key navigation between section headers
+  // Filtered menu if search query is present
+  const filteredMenu = useMemo(() => {
+    if (!searchQuery.trim()) return baseMenu;
+    const q = searchQuery.toLowerCase();
+    return baseMenu
+      .map((section) => {
+        const titleMatch = t(section.titleKey).toLowerCase().includes(q);
+        const matchedItems = section.items.filter((item) =>
+          t(item.translationKey).toLowerCase().includes(q),
+        );
+        if (titleMatch || matchedItems.length > 0) {
+          return {
+            ...section,
+            items: titleMatch ? section.items : matchedItems,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean) as MenuSection[];
+  }, [baseMenu, searchQuery, t]);
+
+  // If searching, auto-expand sections with matches
+  useEffect(() => {
+    if (searchQuery.trim() && filteredMenu.length > 0) {
+      setOpenSection(filteredMenu[0].key);
+    }
+  }, [searchQuery, filteredMenu]);
+
+  // Group sections by categoryGroup for visual hierarchy
+  const groupedSections = useMemo(() => {
+    const groups: { [key: string]: MenuSection[] } = {};
+    filteredMenu.forEach((sec) => {
+      const g = sec.categoryGroup || "academic";
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(sec);
+    });
+    return groups;
+  }, [filteredMenu]);
+
+  // Refs for keyboard navigation
   const sectionPanelRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const sectionTriggerRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -874,11 +918,13 @@ export default function Sidebar({
     }
   }, [mobileOpen]);
 
-  // Keyboard shortcut listener: Escape closes mobile drawer
+  // Escape key closes mobile drawer
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (mobileOpen && onClose) {
+        if (searchQuery) {
+          setSearchQuery("");
+        } else if (mobileOpen && onClose) {
           onClose();
         }
       }
@@ -886,7 +932,7 @@ export default function Sidebar({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileOpen, onClose]);
+  }, [mobileOpen, onClose, searchQuery]);
 
   const handleLinkClick = useCallback(() => {
     if (onClose) {
@@ -927,18 +973,26 @@ export default function Sidebar({
 
   // --- Render Compact Rail Mode for Desktop ---
   const renderCompactMenu = () => (
-    <div className="app-sidebar flex h-full flex-col justify-between p-2.5 select-none overflow-hidden">
-      <div className="flex flex-col items-center space-y-2.5 overflow-y-auto no-scrollbar flex-1 py-1">
-        {/* Expand sidebar trigger (branding now lives in the header) */}
+    <div className="app-sidebar flex h-full flex-col justify-between p-2 select-none overflow-hidden bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl">
+      <div className="flex flex-col items-center space-y-2 overflow-y-auto no-scrollbar flex-1 py-1.5">
+        {/* School Crest mini icon */}
+        <div
+          title="Varin High School"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-slate-900 to-teal-900 text-white shadow-md border border-teal-500/30"
+        >
+          <School2 size={18} className="text-teal-300" />
+        </div>
+
+        {/* Expand sidebar trigger button */}
         <button
           type="button"
           onClick={toggleCollapsed}
           title="Expand sidebar"
-          className="group relative my-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer transition-all duration-200 active:scale-95"
+          className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer transition-all duration-200 active:scale-95"
           aria-label="Expand sidebar"
         >
           <PanelLeft
-            size={18}
+            size={17}
             className="group-hover:scale-110 transition-transform duration-200"
           />
         </button>
@@ -950,17 +1004,17 @@ export default function Sidebar({
           title={t("sidebar.dashboard")}
           className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 shrink-0 ${
             isDashboardActive
-              ? "bg-brand-600 text-white shadow-sm shadow-brand-600/35 font-semibold"
-              : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+              ? "bg-teal-600 text-white shadow-md shadow-teal-600/30 font-semibold"
+              : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
           }`}
         >
           <LayoutDashboard size={18} />
           {isDashboardActive && (
-            <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-brand-600" />
+            <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-teal-600" />
           )}
         </NavLink>
 
-        <div className="my-0.5 h-px w-6 bg-slate-200/80 dark:bg-slate-800 shrink-0" />
+        <div className="my-1 h-px w-6 bg-slate-200/80 dark:bg-slate-800 shrink-0" />
 
         {/* Section Icons with Hover Popover */}
         <nav
@@ -988,15 +1042,15 @@ export default function Sidebar({
                   type="button"
                   onClick={() => toggleSection(section.key)}
                   aria-label={t(section.titleKey)}
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 ${
                     isSectionActive
-                      ? "bg-brand-500/15 text-brand-700 font-semibold ring-1 ring-brand-500/30 dark:bg-brand-500/25 dark:text-teal-300 dark:ring-teal-400/30"
-                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+                      ? "bg-teal-500/15 text-teal-700 font-semibold ring-1 ring-teal-500/30 dark:bg-teal-500/25 dark:text-teal-300 dark:ring-teal-400/30"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                   }`}
                 >
                   <SectionIcon size={18} />
                   {isSectionActive && (
-                    <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-slate-900" />
+                    <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-teal-600 ring-2 ring-white dark:ring-slate-900" />
                   )}
                   {!isSectionActive && hasBadges && (
                     <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-500 ring-1 ring-white dark:ring-slate-900" />
@@ -1006,7 +1060,7 @@ export default function Sidebar({
                 {/* Popover Flyout for Compact Mode */}
                 {isHovered && (
                   <div
-                    className="absolute left-full top-0 z-50 ml-3 w-72 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-2xl shadow-slate-900/10 dark:shadow-black/30 border border-slate-200/80 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute left-full top-0 z-50 ml-3 w-72 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-2xl shadow-slate-900/10 dark:shadow-black/40 border border-slate-200/90 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150"
                     onMouseEnter={() => handleMouseEnter(section.key)}
                     onMouseLeave={handleMouseLeave}
                   >
@@ -1014,12 +1068,12 @@ export default function Sidebar({
                       <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                         <SectionIcon
                           size={15}
-                          className="text-brand-600 dark:text-teal-400"
+                          className="text-teal-600 dark:text-teal-400"
                         />
                         {t(section.titleKey)}
                       </span>
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                        {section.items.length}
+                        {section.items.length} items
                       </span>
                     </div>
                     <div className="space-y-0.5 max-h-72 overflow-y-auto pr-1">
@@ -1036,8 +1090,8 @@ export default function Sidebar({
                             onClick={handleLinkClick}
                             className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition duration-150 ${
                               isItemActive
-                                ? "bg-brand-600 text-white font-medium shadow-xs"
-                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                                ? "bg-teal-600 text-white font-medium shadow-xs"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                             }`}
                           >
                             <span className="flex items-center gap-2 truncate">
@@ -1048,7 +1102,7 @@ export default function Sidebar({
                             </span>
                             {item.badge && (
                               <span
-                                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${item.badgeColor || "bg-brand-600 text-white"} ${item.badgePulse ? "animate-pulse" : ""}`}
+                                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${item.badgeColor || "bg-teal-600 text-white"} ${item.badgePulse ? "animate-pulse" : ""}`}
                               >
                                 {item.badge}
                               </span>
@@ -1065,11 +1119,11 @@ export default function Sidebar({
         </nav>
       </div>
 
-      {/* Compact Mode Footer with Expand Button & User Avatar */}
-      <div className="flex flex-col items-center space-y-2 pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80 shrink-0">
+      {/* Compact Mode Footer with User Initials */}
+      <div className="flex flex-col items-center space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80 shrink-0">
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-white/20"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-white/20"
         >
           {userInitials}
         </div>
@@ -1079,192 +1133,254 @@ export default function Sidebar({
 
   // --- Render Standard Expanded Menu ---
   const renderExpandedMenu = (isMobile = false) => (
-    <div className="flex h-full flex-col justify-between select-none overflow-hidden  ">
-      {/* Top Fixed Area: Sidebar Controls & Dashboard Action */}
-      <div className="shrink-0 p-3 pb-2 space-y-2.5">
-        {/* Sidebar controls (branding now lives in the header) */}
-        <div className="flex items-center justify-end gap-2">
-          {/* Desktop collapse toggle */}
-          {!isMobile && (
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white transition cursor-pointer"
-              title="Collapse sidebar (rail mode)"
-              aria-label="Collapse sidebar"
-            >
-              <PanelLeftClose size={16} />
-            </button>
-          )}
+    <div className="flex h-full flex-col justify-between select-none overflow-hidden bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl">
+      {/* Top Header: Institutional Branding & Controls */}
+      <div className="shrink-0 p-3 pb-2 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          {/* School Identity Emblem */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-slate-900 via-teal-950 to-slate-900 text-white shadow-md border border-teal-500/30">
+              <School2 size={18} className="text-teal-300" />
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-amber-400 ring-1 ring-white dark:ring-slate-900" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h2 className="truncate text-xs font-black tracking-tight text-slate-900 dark:text-white uppercase">
+                  Varin High School
+                </h2>
+              </div>
+              <p className="truncate text-[10.5px] font-semibold text-teal-600 dark:text-teal-400">
+                វិទ្យាល័យ វ៉ារិន • AY 2025–26
+              </p>
+            </div>
+          </div>
 
-          {/* Mobile close button */}
-          {isMobile && (
+          {/* Desktop Collapse Toggle / Mobile Close Button */}
+          <div className="flex items-center gap-1 shrink-0">
+            {!isMobile && (
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition cursor-pointer"
+                title="Collapse sidebar (rail mode)"
+                aria-label="Collapse sidebar"
+              >
+                <PanelLeftClose size={16} />
+              </button>
+            )}
+
+            {isMobile && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:hidden dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition cursor-pointer"
+                aria-label="Close navigation drawer"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Menu Search / Filter */}
+        <div className="relative">
+          <span className="absolute left-3 top-2.5 text-slate-400">
+            <Search size={14} />
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Quick search menu..."
+            className="w-full pl-8 pr-7 py-2 rounded-xl text-xs bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500 transition"
+          />
+          {searchQuery && (
             <button
               type="button"
-              onClick={onClose}
-              className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:hidden dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white transition cursor-pointer"
-              aria-label="Close navigation drawer"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
             >
-              <X size={19} />
+              <X size={13} />
             </button>
           )}
         </div>
 
-        {/* Dashboard quick link */}
+        {/* Primary Dashboard Link */}
         <NavLink
           to={dashboardPath}
           onClick={handleLinkClick}
-          className={`group flex min-h-[38px] w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
+          className={`group flex min-h-[38px] w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all duration-150 ${
             isDashboardActive
-              ? "bg-brand-600 text-white shadow-xs"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50 dark:text-slate-300 dark:hover:text-slate-200 dark:hover:bg-white/3"
+              ? "bg-teal-600 text-white shadow-md shadow-teal-600/25"
+              : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80"
           }`}
         >
           <div
             className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
               isDashboardActive
-                ? "bg-white/15 text-white"
-                : "glass-sm text-slate-600 group-hover:text-slate-700 dark:glass-sm dark:text-slate-300 dark:group-hover:text-slate-200"
+                ? "bg-white/20 text-white"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
             }`}
           >
             <LayoutDashboard size={14} />
           </div>
-          <span className="truncate text-[12px]">{t("sidebar.dashboard")}</span>
+          <span className="truncate text-xs">{t("sidebar.dashboard")}</span>
+          {isDashboardActive && (
+            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+          )}
         </NavLink>
       </div>
 
-      {/* Middle Scrollable Navigation List (Single-accordion flow: 1 expand, others collapse) */}
-      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700/60 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600/80">
+      {/* Middle Scrollable Navigation List (Single-Accordion Flow Preserved: 1 expand, others collapse) */}
+      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-3 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700/60 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600/80">
         <nav aria-label="Sidebar Sections">
-          {baseMenu.map((section, index) => {
-            const SectionIcon = section.icon;
-            const isSectionOpen = openSection === section.key;
-            const hasActiveChild = section.items.some(
-              (item) =>
-                location.pathname === item.path ||
-                location.pathname.startsWith(item.path + "/"),
-            );
-            const triggerId = `sidebar-trigger-${section.key}`;
-            const panelId = `sidebar-panel-${section.key}`;
+          {Object.entries(groupedSections).map(([groupKey, sections]) => {
+            const groupTitle = categoryGroupLabels[groupKey] || groupKey;
 
             return (
-              <div
-                key={section.key}
-                ref={(el) => {
-                  sectionPanelRefs.current[section.key] = el;
-                }}
-                className="py-0.5 scroll-mt-2"
-              >
-                <button
-                  type="button"
-                  id={triggerId}
-                  ref={(el) => {
-                    sectionTriggerRefs.current[index] = el;
-                  }}
-                  onClick={() => toggleSection(section.key)}
-                  onKeyDown={(e) => handleSectionKeyDown(e, index)}
-                  aria-expanded={isSectionOpen}
-                  aria-controls={panelId}
-                  className={`group flex min-h-10 w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
-                    isSectionOpen
-                      ? "glass-sm text-slate-600 dark:glass-sm dark:text-slate-300"
-                      : hasActiveChild
-                        ? "text-brand-700 bg-brand-500/5 dark:text-teal-300 dark:bg-brand-500/10"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50 dark:text-slate-300 dark:hover:text-slate-200 dark:hover:bg-white/3"
-                  }`}
-                >
-                  <span className="flex items-center gap-2.5 truncate">
+              <div key={groupKey} className="space-y-1">
+                {/* Category Group Header */}
+                <div className="px-2 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  {groupTitle}
+                </div>
+
+                {sections.map((section, index) => {
+                  const SectionIcon = section.icon;
+                  const isSectionOpen = openSection === section.key;
+                  const hasActiveChild = section.items.some(
+                    (item) =>
+                      location.pathname === item.path ||
+                      location.pathname.startsWith(item.path + "/"),
+                  );
+                  const triggerId = `sidebar-trigger-${section.key}`;
+                  const panelId = `sidebar-panel-${section.key}`;
+
+                  return (
                     <div
-                      className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                        isSectionOpen || hasActiveChild
-                          ? "bg-brand-600 text-white shadow-xs"
-                          : "glass-sm text-slate-600 group-hover:text-slate-700 dark:glass-sm dark:text-slate-300 dark:group-hover:text-slate-200"
-                      }`}
+                      key={section.key}
+                      ref={(el) => {
+                        sectionPanelRefs.current[section.key] = el;
+                      }}
+                      className="scroll-mt-2"
                     >
-                      <SectionIcon size={14} />
-                    </div>
-                    <span className="truncate text-[12px]">{t(section.titleKey)}</span>
-                  </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {!isSectionOpen && hasActiveChild && (
-                      <span
-                        className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600 dark:bg-teal-400"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <ChevronRight
-                      size={14}
-                      className={`transition-transform duration-200 text-slate-600 ${
-                        isSectionOpen ? "rotate-90 text-slate-700 dark:text-slate-200" : "rotate-0"
-                      }`}
-                    />
-                  </div>
-                </button>
-
-                {/* Sub-item Accordion Panel — animated with grid-rows so it expands
-                    AND collapses smoothly (the old conditional-render only faded in) */}
-                <div
-                  id={panelId}
-                  role="region"
-                  aria-labelledby={triggerId}
-                  aria-hidden={!isSectionOpen}
-                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-                    isSectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                  }`}
-                >
-                  <div className="overflow-hidden min-h-0">
-                    <div className="relative mt-1 mb-1 ml-5 pl-3.5 space-y-0.5 border-l-2 border-slate-200/80 dark:border-slate-800">
-                      {section.items.map((item) => {
-                        const Icon = item.icon;
-                        const isItemActive =
-                          location.pathname === item.path ||
-                          location.pathname.startsWith(item.path + "/");
-
-                        return (
-                          <NavLink
-                            key={item.path}
-                            to={item.path}
-                            onClick={handleLinkClick}
-                            tabIndex={isSectionOpen ? 0 : -1}
-                            className={`group relative flex min-h-9 items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
-                              isItemActive
-                                ? "font-semibold bg-brand-600 text-white"
-                                : "font-medium text-slate-600 hover:bg-brand-200 hover:text-slate-700 dark:text-slate-200 dark:hover:bg-brand-600/10 dark:hover:text-slate-600"
+                      <button
+                        type="button"
+                        id={triggerId}
+                        ref={(el) => {
+                          sectionTriggerRefs.current[index] = el;
+                        }}
+                        onClick={() => toggleSection(section.key)}
+                        onKeyDown={(e) => handleSectionKeyDown(e, index)}
+                        aria-expanded={isSectionOpen}
+                        aria-controls={panelId}
+                        className={`group flex min-h-[38px] w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 ${
+                          isSectionOpen
+                            ? "bg-slate-100/90 dark:bg-slate-800/90 text-slate-900 dark:text-white shadow-xs"
+                            : hasActiveChild
+                            ? "text-teal-700 bg-teal-500/10 dark:text-teal-300 dark:bg-teal-500/15 font-bold"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2.5 truncate">
+                          <div
+                            className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                              isSectionOpen || hasActiveChild
+                                ? "bg-teal-600 text-white shadow-xs"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-white"
                             }`}
                           >
-                            {isItemActive && (
-                              <span className="absolute -left-[19px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-slate-900" />
-                            )}
-                            <span className="flex items-center gap-2 truncate">
-                              <Icon
-                                size={14}
-                                className={`shrink-0 ${
-                                  isItemActive
-                                    ? "text-slate-700 dark:text-slate-200"
-                                    : "text-slate-600 group-hover:text-slate-700 dark:text-slate-200 dark:group-hover:text-slate-600"
-                                }`}
-                              />
-                              <span className="truncate text-[12px]">
-                                {t(item.translationKey)}
-                              </span>
-                            </span>
-                            {item.badge && (
-                              <span
-                                className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                                  isItemActive
-                                    ? "glass-sm dark:glass-sm text-slate-700 dark:text-slate-200"
-                                    : item.badgeColor || "bg-brand-600 text-slate-700 dark:text-slate-200"
-                                } ${item.badgePulse ? "animate-pulse" : ""}`}
-                              >
-                                {item.badge}
-                              </span>
-                            )}
-                          </NavLink>
-                        );
-                      })}
+                            <SectionIcon size={14} />
+                          </div>
+                          <span className="truncate text-xs">
+                            {t(section.titleKey)}
+                          </span>
+                        </span>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {!isSectionOpen && hasActiveChild && (
+                            <span
+                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-teal-600 dark:bg-teal-400"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <span className="text-[10px] text-slate-400 font-medium px-1">
+                            {section.items.length}
+                          </span>
+                          <ChevronRight
+                            size={14}
+                            className={`transition-transform duration-200 text-slate-400 ${
+                              isSectionOpen ? "rotate-90 text-teal-600 dark:text-teal-400" : "rotate-0"
+                            }`}
+                          />
+                        </div>
+                      </button>
+
+                      {/* Sub-item Accordion Panel (Animated smoothly via CSS grid) */}
+                      <div
+                        id={panelId}
+                        role="region"
+                        aria-labelledby={triggerId}
+                        aria-hidden={!isSectionOpen}
+                        className={`grid transition-[grid-template-rows] duration-250 ease-in-out ${
+                          isSectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                        }`}
+                      >
+                        <div className="overflow-hidden min-h-0">
+                          <div className="relative mt-1 mb-1 ml-4 pl-3 space-y-0.5 border-l border-slate-200 dark:border-slate-800">
+                            {section.items.map((item) => {
+                              const Icon = item.icon;
+                              const isItemActive =
+                                location.pathname === item.path ||
+                                location.pathname.startsWith(item.path + "/");
+
+                              return (
+                                <NavLink
+                                  key={item.path}
+                                  to={item.path}
+                                  onClick={handleLinkClick}
+                                  tabIndex={isSectionOpen ? 0 : -1}
+                                  className={`group relative flex min-h-[34px] items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 ${
+                                    isItemActive
+                                      ? "font-bold bg-teal-600 text-white shadow-xs"
+                                      : "font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                                  }`}
+                                >
+                                  {isItemActive && (
+                                    <span className="absolute -left-[17px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-teal-600 ring-2 ring-white dark:ring-slate-900" />
+                                  )}
+                                  <span className="flex items-center gap-2 truncate">
+                                    <Icon
+                                      size={14}
+                                      className={`shrink-0 ${
+                                        isItemActive
+                                          ? "text-white"
+                                          : "text-slate-400 group-hover:text-slate-700 dark:text-slate-400 dark:group-hover:text-slate-200"
+                                      }`}
+                                    />
+                                    <span className="truncate text-xs">
+                                      {t(item.translationKey)}
+                                    </span>
+                                  </span>
+                                  {item.badge && (
+                                    <span
+                                      className={`rounded-full px-1.5 py-0.5 text-[9.5px] font-bold ${
+                                        isItemActive
+                                          ? "bg-white/20 text-white"
+                                          : item.badgeColor || "bg-teal-600 text-white"
+                                      } ${item.badgePulse ? "animate-pulse" : ""}`}
+                                    >
+                                      {item.badge}
+                                    </span>
+                                  )}
+                                </NavLink>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             );
           })}
@@ -1272,19 +1388,21 @@ export default function Sidebar({
       </div>
 
       {/* User Profile Bottom Footer */}
-      <div className="shrink-0  p-2.5">
-        <div className="flex items-center justify-between gap-2 rounded-2xl glass-sm dark:glass-sm p-2.5">
+      <div className="shrink-0 p-3 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+        <div className="flex items-center justify-between gap-2 rounded-2xl bg-slate-50 dark:bg-slate-800/70 p-2.5 border border-slate-200/70 dark:border-slate-700/70">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-700 text-white font-bold text-xs select-none shadow-xs">
+            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white font-bold text-xs select-none shadow-xs">
               {userInitials}
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs font-bold text-slate-900 dark:text-white leading-tight">
                 {userDisplayName}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[9.5px] font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                <span
+                  className={`text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-md border ${roleConfig.badgeClass}`}
+                >
                   {roleConfig.label}
                 </span>
               </div>
@@ -1296,7 +1414,7 @@ export default function Sidebar({
               type="button"
               onClick={() => logout()}
               title="Sign out"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors cursor-pointer"
               aria-label="Sign out"
             >
               <LogOut size={15} />
@@ -1332,10 +1450,10 @@ export default function Sidebar({
         <div className="h-full overflow-hidden">{renderExpandedMenu(true)}</div>
       </div>
 
-      {/* Desktop / Laptop Sidebar (Fixed viewport height, completely independent of main view scroll) */}
+      {/* Desktop / Laptop Sidebar (Fixed viewport height, independent of main view scroll) */}
       <aside
         className={`app-sidebar hidden h-full shrink-0 flex-col lg:flex overflow-hidden transition-all duration-300 ease-in-out ${
-          isCollapsed ? "w-[72px]" : "w-72 xl:w-[19rem]"
+          isCollapsed ? "w-[68px]" : "w-72 xl:w-[18.5rem]"
         }`}
       >
         {isCollapsed ? renderCompactMenu() : renderExpandedMenu(false)}

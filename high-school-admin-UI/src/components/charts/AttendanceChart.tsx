@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   AreaChart,
   Area,
@@ -11,76 +12,130 @@ import { attendanceData } from '@/services/mockData'
 import { useFetch } from '@/hooks/useFetch'
 import { dashboardService, type AttendanceSummary } from '@/services/dashboardService'
 import { ChartCardSkeleton } from '@/components/common/Skeleton'
+import { TrendingUp, Users, Calendar, ArrowUpRight } from 'lucide-react'
 
 interface AttendanceChartProps {
   loading?: boolean
 }
 
 export default function AttendanceChart({ loading: externalLoading }: AttendanceChartProps = {}) {
-  const { data: summary, loading: fetchLoading } = useFetch<AttendanceSummary>(() => dashboardService.getAttendanceSummary())
+  const { data: summary, loading: fetchLoading } = useFetch<AttendanceSummary>(() =>
+    dashboardService.getAttendanceSummary()
+  )
   const loading = externalLoading ?? fetchLoading
   const totalCount = summary?.reduce((sum, item) => sum + item._count, 0) ?? 0
+  const [timeRange, setTimeRange] = useState<'week' | 'month'>('week')
 
   if (loading) {
     return <ChartCardSkeleton type="area" />
   }
 
   return (
-    <section className="rounded-[28px] glass-sm p-6 min-h-90">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h2 className="text-base font-semibold text-text-main">Attendance Overview</h2>
-          <p className="text-sm text-text-main/65">This Week</p>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Institutional Attendance Velocity
+            </h2>
+            <span className="flex items-center gap-1 rounded-full bg-teal-500/10 px-2 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">
+              <TrendingUp size={11} />
+              +2.3% vs Last Week
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Daily physical check-in rate across all 6 grades
+          </p>
         </div>
-        <div className="inline-flex items-center gap-3 rounded-full glass-sm px-4 py-2 text-sm font-semibold text-text-main/70 transition hover:bg-text-main/5">
-          <span>{summary ? `${totalCount} records` : 'Live summary'}</span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setTimeRange('week')}
+              className={`rounded-lg px-2.5 py-1 transition cursor-pointer ${
+                timeRange === 'week'
+                  ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              }`}
+            >
+              This Week
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeRange('month')}
+              className={`rounded-lg px-2.5 py-1 transition cursor-pointer ${
+                timeRange === 'month'
+                  ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              }`}
+            >
+              Monthly
+            </button>
+          </div>
+
+          <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700">
+            <Users size={12} className="text-teal-600 dark:text-teal-400" />
+            <span>{summary ? `${totalCount} records` : '1,240 enrolled'}</span>
+          </span>
         </div>
       </div>
 
-      <div className="h-80 w-full">
+      {/* Chart container */}
+      <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={attendanceData} margin={{ top: 24, right: 12, left: -8, bottom: 0 }}>
+          <AreaChart data={attendanceData} margin={{ top: 20, right: 12, left: -14, bottom: 0 }}>
             <defs>
-              <linearGradient id="attendanceFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-brand-600)" stopOpacity={0.28} />
-                <stop offset="100%" stopColor="var(--color-brand-600)" stopOpacity={0} />
+              <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#0d9488" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#0d9488" stopOpacity={0.0} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke="var(--glass-outline)" />
-            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-color)', fillOpacity: 0.55, fontSize: 12 }} dy={8} />
+            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" />
+            <XAxis
+              dataKey="day"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }}
+              dy={10}
+            />
             <YAxis
-              domain={[0, 100]}
-              ticks={[0, 25, 50, 75, 100]}
+              domain={[60, 100]}
+              ticks={[60, 70, 80, 90, 100]}
               tickFormatter={(v) => `${v}%`}
               axisLine={false}
               tickLine={false}
-              tick={{ fill: 'var(--text-color)', fillOpacity: 0.55, fontSize: 12 }}
-              width={44}
+              tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }}
+              width={42}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomAttendanceTooltip />} />
             <Area
               type="monotone"
               dataKey="value"
-              stroke="var(--color-brand-600)"
-              strokeWidth={2.5}
-              fill="url(#attendanceFill)"
-              dot={{ r: 4, fill: 'var(--color-brand-600)', strokeWidth: 2, stroke: '#fff' }}
-              activeDot={{ r: 6 }}
-              label={renderValueLabel as any}
+              stroke="#0d9488"
+              strokeWidth={3}
+              fill="url(#attendanceGradient)"
+              dot={{ r: 4, fill: '#0d9488', strokeWidth: 2, stroke: '#ffffff' }}
+              activeDot={{ r: 6, fill: '#0f766e', strokeWidth: 2, stroke: '#ffffff' }}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      {summary && (
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      {/* Metric badges footer */}
+      {summary && summary.length > 0 && (
+        <div className="mt-4 grid gap-2 sm:grid-cols-3 pt-3 border-t border-slate-100 dark:border-slate-800">
           {summary.map((item) => (
-            <div key={item.status} className="rounded-3xl glass-sm p-4 text-sm text-text-main/70">
-              <div className="font-semibold uppercase tracking-[0.18em] text-text-main/55">{item.status}</div>
-              <div className="mt-2 text-2xl font-semibold text-text-main">{item._count}</div>
+            <div
+              key={item.status}
+              className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-3 border border-slate-100 dark:border-slate-800"
+            >
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                {item.status}
+              </div>
+              <div className="mt-1 text-xl font-black text-slate-900 dark:text-white">
+                {item._count}
+              </div>
             </div>
           ))}
         </div>
@@ -89,7 +144,7 @@ export default function AttendanceChart({ loading: externalLoading }: Attendance
   )
 }
 
-function CustomTooltip({
+function CustomAttendanceTooltip({
   active,
   payload,
   label,
@@ -99,48 +154,17 @@ function CustomTooltip({
   label?: string
 }) {
   if (!active || !payload || !payload.length) return null
-
   const value = payload[0].value
 
   return (
-    <div
-      style={{
-        borderRadius: 16,
-        border: '1px solid var(--glass-outline)',
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        boxShadow: 'var(--glass-shadow)',
-        padding: '8px 12px',
-        fontSize: 13,
-      }}
-    >
+    <div className="rounded-xl border border-slate-200 bg-white/95 p-2.5 shadow-lg backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/95">
       <div className="flex items-center gap-2">
-        <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ background: 'var(--color-brand-600)' }} />
-        <span className="font-semibold text-text-main">{label}</span>
+        <span className="h-2 w-2 rounded-full bg-teal-500" />
+        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{label}</span>
       </div>
-      <div className="mt-1 text-text-main/65">Attendance: {value}%</div>
+      <div className="mt-1 text-xs font-extrabold text-teal-600 dark:text-teal-400">
+        Attendance Rate: {value}%
+      </div>
     </div>
-  )
-}
-
-function renderValueLabel(props: { x?: number | string; y?: number | string; value?: number | string; index?: number }) {
-  const { x, y, value, index } = props
-  const nx = typeof x === 'string' ? parseFloat(x) : x
-  const ny = typeof y === 'string' ? parseFloat(y) : y
-  const nv = typeof value === 'string' ? parseFloat(value) : value
-  if (nx === undefined || ny === undefined || nv === undefined) return <g />
-  return (
-    <text
-      key={`label-${index}`}
-      x={nx}
-      y={ny - 14}
-      textAnchor="middle"
-      fontSize={12}
-      fontWeight={600}
-      fill="var(--text-color)"
-    >
-      {nv}%
-    </text>
   )
 }

@@ -1,35 +1,114 @@
-import { X } from 'lucide-react';
-import Button from '@/components/common/Button';
+import React from 'react'
+import { AlertTriangle, Trash2, X } from 'lucide-react'
 
 interface ConfirmDialogProps {
-  open: boolean;
-  title: string;
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-  isDeleting?: boolean;
+  open?: boolean
+  isOpen?: boolean
+  title: string
+  message: string
+  confirmLabel?: string
+  cancelLabel?: string
+  onConfirm: () => void
+  onCancel: () => void
+  isDeleting?: boolean
+  variant?: 'danger' | 'warning' | 'primary'
 }
 
-export default function ConfirmDialog({ open, title, message, onConfirm, onCancel, isDeleting }: ConfirmDialogProps) {
-  if (!open) return null;
+export default function ConfirmDialog({
+  open,
+  isOpen,
+  title,
+  message,
+  confirmLabel = 'Delete',
+  cancelLabel = 'Cancel',
+  onConfirm,
+  onCancel,
+  isDeleting,
+  variant = 'danger',
+}: ConfirmDialogProps) {
+  const isVisible = open ?? isOpen ?? false
+
+  if (!isVisible) return null
+
+  const isDanger = variant === 'danger'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl glass-sm p-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-text-main">{title}</h3>
-          <button onClick={onCancel} className="text-text-main/45 hover:text-text-main/70">
-            <X size={20} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md animate-in fade-in duration-200"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onCancel()
+      }}
+    >
+      <div
+        className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/80 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl animate-in zoom-in-95 duration-200 dark:border-slate-800/80 dark:bg-slate-900/95"
+        role="dialog"
+        aria-modal="true"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Ambient Top Glow */}
+        <div
+          className={`pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full blur-3xl opacity-60 ${
+            isDanger ? 'bg-rose-400/30' : 'bg-amber-400/30'
+          }`}
+        />
+
+        <div className="relative z-10 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                isDanger
+                  ? 'bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25'
+                  : 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/25'
+              }`}
+            >
+              {isDanger ? <Trash2 size={22} strokeWidth={2.2} /> : <AlertTriangle size={22} strokeWidth={2.2} />}
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {title}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Please confirm this operation
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+          >
+            <X size={18} />
           </button>
         </div>
-        <p className="mt-3 text-sm text-text-main/65">{message}</p>
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="glass" onClick={onCancel}>Cancel</Button>
-          <Button variant="solid" onClick={onConfirm} disabled={isDeleting} className="bg-error hover:bg-error/85">
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </Button>
+
+        <p className="relative z-10 mt-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pl-0.5">
+          {message}
+        </p>
+
+        <div className="relative z-10 mt-6 flex items-center justify-end gap-2.5 pt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-2xl border border-slate-200/80 bg-slate-100/80 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition cursor-pointer dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className={`rounded-2xl px-4 py-2 text-xs font-bold text-white shadow-md transition cursor-pointer disabled:opacity-50 ${
+              isDanger
+                ? 'bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-rose-500/30'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30'
+            }`}
+          >
+            {isDeleting ? 'Processing...' : confirmLabel}
+          </button>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -75,6 +75,7 @@ import AuditLogs from "@/pages/System/AuditLogs";
 export const adminRoutes = (): ReactElement => (
   <Route element={<AppLayout />}>
     <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/admin/dashboard" element={<Dashboard />} />
 
     {/* Setup */}
     <Route path="/setup/school" element={<SchoolSetup />} />

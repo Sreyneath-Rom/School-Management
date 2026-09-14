@@ -6,7 +6,9 @@ export interface StatCard {
   deltaDirection: 'up' | 'down' | 'neutral'
   deltaLabel: string
   icon: string
-  tint: 'blue' | 'green' | 'amber' | 'violet' | 'sky' | 'red'
+  tint: 'blue' | 'green' | 'amber' | 'violet' | 'sky' | 'red' | 'pink' | 'purple' | 'orange' | 'emerald'
+  footerLabel?: string
+  miniGraphicType?: 'wave-blue' | 'bars-teal' | 'wave-purple' | 'ring-orange' | 'bars-pink' | 'ring-blue' | 'users-purple' | 'calendar-mint'
 }
 
 export interface AttendanceDay {

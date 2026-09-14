@@ -84,7 +84,7 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      <StatsGrid cards={teacherStatCards} loading={loading} />
+      <StatsGrid cards={teacherStatCards} loading={loading} showHeader={false} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Teaching Schedule */}

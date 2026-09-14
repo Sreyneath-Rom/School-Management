@@ -1,11 +1,10 @@
-
 import {
   useState,
   useRef,
   useEffect,
   useMemo,
 } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   Bell,
   Calendar,
@@ -15,13 +14,11 @@ import {
   Check,
   UserCircle,
   Settings,
-  GraduationCap,
-  ShieldCheck,
   CircleHelp,
+  CheckCheck,
 } from 'lucide-react'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useSchool } from '@/context/SchoolContext'
 import ThemeToggle from '@/components/common/ThemeToggle'
 import { resolveAssetUrl } from '@/utils/resolveAssetUrl'
 import { useTranslations } from '@/i18n'
@@ -32,23 +29,48 @@ interface NotificationItem {
   message: string
   time: string
   read: boolean
+  category?: 'academic' | 'attendance' | 'exam' | 'system'
+  link?: string
 }
-const INITIAL_NOTIFICATIONS: NotificationItem[] = []
+
+const INITIAL_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: 'notif-1',
+    title: 'Grade 12 Physics Term Exam Marks Ready',
+    message: 'Teacher Sovann has submitted the final semester scores for Class 12-A.',
+    time: '15m ago',
+    read: false,
+    category: 'exam',
+    link: '/academic/grades',
+  },
+  {
+    id: 'notif-2',
+    title: 'Daily Attendance Report Finalized',
+    message: '97.8% attendance recorded across all secondary grades today.',
+    time: '1h ago',
+    read: false,
+    category: 'attendance',
+    link: '/students/attendance',
+  },
+  {
+    id: 'notif-3',
+    title: 'Semester II Schedule Verification',
+    message: 'Academic committee approved the revised room allocations.',
+    time: '3h ago',
+    read: true,
+    category: 'academic',
+    link: '/academic/schedules',
+  },
+]
 
 function getInitials(name?: string | null): string {
   if (!name) return '?'
-
   const parts = name.trim().split(/\s+/).filter(Boolean)
-
   if (parts.length === 0) return '?'
   if (parts.length === 1) {
     return parts[0].slice(0, 2).toUpperCase()
   }
-
-  return (
-    parts[0][0] +
-    parts[parts.length - 1][0]
-  ).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
 export default function Header({
@@ -58,79 +80,89 @@ export default function Header({
 }) {
   const navigate = useNavigate()
   const { user, logout, role } = useAuth()
-  const { school } = useSchool()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
+  const [activeFilterCategory, setActiveFilterCategory] = useState<'all' | 'unread'>('all')
 
   const menuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const langRef = useRef<HTMLDivElement>(null)
 
-  // ---------------------------------------------------------------------------
-  // SCHOOL IDENTITY
-  // ---------------------------------------------------------------------------
-
   const activeRole = (role || 'admin').toLowerCase()
 
-  const dashboardPath =
-    activeRole === 'admin'
-      ? '/dashboard'
-      : `/${activeRole}/dashboard`
-
-  const schoolName =
-    school?.name || 'High School Academic OS'
-
-  const schoolMotto =
-    school?.settings?.motto ||
-    'MoEYS Curriculum • 2025–2026'
-
-  const logoUrl = resolveAssetUrl(school?.logoUrl)
-
-  const [logoLoadFailed, setLogoLoadFailed] =
-    useState(false)
-
-  useEffect(() => {
-    setLogoLoadFailed(false)
-  }, [logoUrl])
-
   // ---------------------------------------------------------------------------
-  // USER
+  // USER META
   // ---------------------------------------------------------------------------
+  const roleBadgeMap: Record<string, { label: string; badge: string; dot: string }> = {
+    admin: {
+      label: 'Administrator',
+      badge: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
+      dot: 'bg-blue-500',
+    },
+    teacher: {
+      label: 'Faculty Member',
+      badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
+      dot: 'bg-emerald-500',
+    },
+    student: {
+      label: 'Enrolled Scholar',
+      badge: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
+      dot: 'bg-purple-500',
+    },
+    parent: {
+      label: 'Parent / Guardian',
+      badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
+      dot: 'bg-amber-500',
+    },
+  }
 
-  const roleLabel = user?.role
-    ? user.role.charAt(0).toUpperCase() +
-      user.role.slice(1)
-    : ''
-
-  const avatarUrl = (
-    user as { avatarUrl?: string } | null
-  )?.avatarUrl
-    ? resolveAssetUrl(
-        (user as { avatarUrl?: string }).avatarUrl!,
-      )
+  const roleMeta = roleBadgeMap[activeRole] || roleBadgeMap.admin
+  const avatarUrl = (user as { avatarUrl?: string } | null)?.avatarUrl
+    ? resolveAssetUrl((user as { avatarUrl?: string }).avatarUrl!)
     : null
-
   const initials = getInitials(user?.name)
 
   // ---------------------------------------------------------------------------
-  // NOTIFICATIONS
+  // NOTIFICATIONS STATE
   // ---------------------------------------------------------------------------
+  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
 
-  const [notifications, setNotifications] =
-    useState<NotificationItem[]>(
-      INITIAL_NOTIFICATIONS,
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications]
+  )
+
+  const filteredNotifications = useMemo(() => {
+    if (activeFilterCategory === 'unread') {
+      return notifications.filter((n) => !n.read)
+    }
+    return notifications
+  }, [notifications, activeFilterCategory])
+
+  const markOneRead = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     )
+  }
 
-  const unreadCount = notifications.filter(
-    (notification) => !notification.read,
-  ).length
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+  }
+
+  const handleNotificationClick = (item: NotificationItem) => {
+    markOneRead(item.id)
+    setNotifOpen(false)
+    if (item.link) {
+      navigate(item.link)
+    }
+  }
 
   // ---------------------------------------------------------------------------
-  // LANGUAGE
+  // LANGUAGE & LOCALIZATION
   // ---------------------------------------------------------------------------
-
   const {
     language,
     setLanguage,
@@ -139,260 +171,119 @@ export default function Header({
     t,
   } = useTranslations()
 
-  const today = useMemo(() => {
-    return new Date().toLocaleDateString(
-      activeLanguage.locale,
-      {
-        weekday: 'long',
+  const formattedDate = useMemo(() => {
+    try {
+      return new Date().toLocaleDateString(activeLanguage?.locale || 'en-US', {
+        weekday: 'short',
+        month: 'short',
         day: 'numeric',
-        month: 'long',
-      },
-    )
-  }, [activeLanguage.locale])
+      })
+    } catch {
+      return 'Mon, Sep 14'
+    }
+  }, [activeLanguage?.locale])
 
-  // ---------------------------------------------------------------------------
-  // ACTIONS
-  // ---------------------------------------------------------------------------
-
-  const markOneRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id
-          ? { ...notification, read: true }
-          : notification,
-      ),
-    )
-  }
-
-  const markAllRead = () => {
-    setNotifications((prev) =>
-      prev.map((notification) => ({
-        ...notification,
-        read: true,
-      })),
-    )
-  }
-
-  const openUserMenu = () => {
-    setMenuOpen((open) => !open)
-    setNotifOpen(false)
-    setLangOpen(false)
-  }
-
-  const openNotifications = () => {
-    setNotifOpen((open) => !open)
-    setMenuOpen(false)
-    setLangOpen(false)
-  }
-
-  const openLanguage = () => {
-    setLangOpen((open) => !open)
-    setMenuOpen(false)
-    setNotifOpen(false)
-  }
-
-  // ---------------------------------------------------------------------------
-  // OUTSIDE CLICK + ESC
-  // ---------------------------------------------------------------------------
-
+  // Close menus on outside click & escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node
-
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(target)
-      ) {
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setMenuOpen(false)
       }
-
-      if (
-        notifRef.current &&
-        !notifRef.current.contains(target)
-      ) {
+      if (notifRef.current && !notifRef.current.contains(target)) {
         setNotifOpen(false)
       }
-
-      if (
-        langRef.current &&
-        !langRef.current.contains(target)
-      ) {
+      if (langRef.current && !langRef.current.contains(target)) {
         setLangOpen(false)
       }
     }
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-
-      setMenuOpen(false)
-      setNotifOpen(false)
-      setLangOpen(false)
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+        setNotifOpen(false)
+        setLangOpen(false)
+      }
     }
 
-    document.addEventListener(
-      'mousedown',
-      handleClickOutside,
-    )
-
-    document.addEventListener(
-      'keydown',
-      handleEscape,
-    )
-
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
     return () => {
-      document.removeEventListener(
-        'mousedown',
-        handleClickOutside,
-      )
-
-      document.removeEventListener(
-        'keydown',
-        handleEscape,
-      )
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
     }
   }, [])
 
-  // ---------------------------------------------------------------------------
-  // MENU ITEM
-  // ---------------------------------------------------------------------------
-
   const menuItemClass =
-    'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-stone-700 transition-all duration-150 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-white/[0.06] dark:hover:text-white'
+    'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer'
 
   return (
-    <header className="app-header sticky top-0 z-30">
-      <div className="app-header-inner flex h-16 items-center justify-between gap-2 px-3 sm:h-20 sm:gap-3 sm:px-6 lg:px-8">
-
+    <header className="app-header sticky top-0 z-30 select-none bg-white/80 dark:bg-slate-900/85 backdrop-blur-2xl border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
+      <div className="flex h-16 items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
         {/* ================================================================= */}
-        {/* LEFT */}
+        {/* LEFT: MOBILE TOGGLE ONLY (NO REDUNDANT SCHOOL PROFILE/LOGO)       */}
         {/* ================================================================= */}
-
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-
-          {/* MOBILE SIDEBAR */}
+        <div className="flex items-center gap-2">
+          {/* Mobile Sidebar Hamburger Toggle (Visible on screens < lg) */}
           <button
             type="button"
             onClick={onOpenSidebar}
-            aria-label="Open menu"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full glass-sm text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white lg:hidden"
+            aria-label="Open navigation drawer"
+            className="flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-xl bg-slate-100/90 text-slate-700 hover:bg-slate-200 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-slate-700 lg:hidden cursor-pointer transition active:scale-95"
           >
-            <Menu size={19} />
+            <Menu size={18} />
           </button>
-
-          {/* SCHOOL IDENTITY */}
-          <Link
-            to={dashboardPath}
-            title={`${schoolName} — Dashboard`}
-            className="group flex min-w-0 items-center gap-2.5 rounded-full py-1.5 pl-1 pr-3 transition-colors hover:bg-stone-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 dark:hover:bg-white/5 sm:py-2"
-          >
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-br from-brand-500 via-brand-600 to-brand-700 text-white shadow-sm shadow-brand-600/30 ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105 sm:h-10 sm:w-10">
-              {logoUrl && !logoLoadFailed ? (
-                <img
-                  src={logoUrl}
-                  alt={schoolName}
-                  className="h-full w-full object-cover"
-                  onError={() =>
-                    setLogoLoadFailed(true)
-                  }
-                />
-              ) : (
-                <GraduationCap size={18} />
-              )}
-            </div>
-
-            <div className="hidden min-w-0 sm:block">
-              <span className="block max-w-40 truncate text-[13px] font-bold tracking-tight text-stone-900 dark:text-stone-100 lg:max-w-56">
-                {schoolName}
-              </span>
-
-              <span className="block max-w-40 truncate text-[10.5px] font-medium text-stone-500 dark:text-stone-400 lg:max-w-56">
-                {schoolMotto}
-              </span>
-            </div>
-          </Link>
         </div>
 
         {/* ================================================================= */}
-        {/* RIGHT */}
+        {/* RIGHT: LIVE CALENDAR, LANGUAGE, NOTIFICATIONS, THEME, USER MENU   */}
         {/* ================================================================= */}
-
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-
-          {/* DATE */}
-          <div className="hidden items-center gap-2 text-sm text-stone-500 xl:flex dark:text-stone-400">
-            <Calendar size={16} />
-            <span>{today}</span>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 ml-auto">
+          {/* Academic Session Date Pill */}
+          <div className="hidden sm:flex items-center gap-2 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 px-2.5 py-1.5 border border-slate-200/70 dark:border-slate-700/70 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <Calendar size={13} className="text-teal-600 dark:text-teal-400" />
+            <span>{formattedDate}</span>
+            <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+            <span className="text-[10.5px] font-bold text-teal-700 dark:text-teal-300">Sem II</span>
           </div>
 
-          {/* ================================================================= */}
-          {/* LANGUAGE */}
-          {/* ================================================================= */}
-
+          {/* ------------------------------------------------------------- */}
+          {/* LANGUAGE SELECTOR                                             */}
+          {/* ------------------------------------------------------------- */}
           {(() => {
-            const safeLanguages = Array.isArray(
-              languages,
-            )
-              ? languages
-              : []
-
-            const safeActiveLang =
-              activeLanguage || {
-                code: 'en',
-                name: 'English',
-                flag: '🇬🇧',
-              }
-
-            if (safeLanguages.length <= 1) {
-              return (
-                <div className="inline-flex h-10 items-center gap-1.5 rounded-full glass-sm px-3 text-stone-600 dark:text-stone-300">
-                  <span className="text-base">
-                    {safeActiveLang.flag}
-                  </span>
-
-                  <span className="hidden text-[10px] font-bold uppercase tracking-[0.12em] sm:inline">
-                    {safeActiveLang.code}
-                  </span>
-
-                  <span className="hidden text-xs font-semibold sm:inline">
-                    {safeActiveLang.name}
-                  </span>
-                </div>
-              )
+            const safeLanguages = Array.isArray(languages) ? languages : []
+            const safeActiveLang = activeLanguage || {
+              code: 'en',
+              name: 'English',
+              flag: '🇬🇧',
             }
 
             return (
-              <div
-                className="relative"
-                ref={langRef}
-              >
+              <div className="relative" ref={langRef}>
                 <button
                   type="button"
-                  aria-label={`${t(
-                    'header.changeLanguage',
-                  )}: ${safeActiveLang.name}`}
+                  aria-label={`${t('header.changeLanguage')}: ${safeActiveLang.name}`}
                   aria-expanded={langOpen}
                   aria-haspopup="menu"
-                  onClick={openLanguage}
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full glass-sm px-3 text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white"
+                  onClick={() => {
+                    setLangOpen((o) => !o)
+                    setMenuOpen(false)
+                    setNotifOpen(false)
+                  }}
+                  className={`flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition cursor-pointer ${
+                    langOpen
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white ring-1 ring-teal-500/30'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                  }`}
                 >
-                  <span className="text-base">
-                    {safeActiveLang.flag}
-                  </span>
-
-                  <span className="hidden text-[10px] font-bold uppercase tracking-[0.12em] sm:inline">
+                  <span className="text-sm">{safeActiveLang.flag}</span>
+                  <span className="hidden sm:inline font-bold uppercase text-[10.5px]">
                     {safeActiveLang.code}
                   </span>
-
-                  <span className="hidden text-xs font-semibold sm:inline">
-                    {safeActiveLang.name}
-                  </span>
-
                   <ChevronDown
                     size={13}
-                    className={`transition-transform duration-200 ${
-                      langOpen
-                        ? 'rotate-180'
-                        : ''
+                    className={`transition-transform duration-200 text-slate-400 ${
+                      langOpen ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
@@ -400,12 +291,10 @@ export default function Header({
                 {langOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-full z-40 mt-2 w-56 overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 p-2 shadow-2xl backdrop-blur-xl dark:border-stone-700/60 dark:bg-stone-900/95"
+                    className="absolute right-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 animate-in fade-in zoom-in-95 duration-150"
                   >
-                    <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">
-                      {t(
-                        'header.changeLanguage',
-                      )}
+                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      {t('header.changeLanguage')}
                     </div>
 
                     <div className="space-y-0.5">
@@ -418,26 +307,17 @@ export default function Header({
                             setLanguage(lang.code)
                             setLangOpen(false)
                           }}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition ${
+                          className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition cursor-pointer ${
                             lang.code === language
-                              ? 'bg-brand-50 font-semibold text-brand-700 dark:bg-brand-950/30 dark:text-brand-300'
-                              : 'text-stone-700 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-white/5'
+                              ? 'bg-teal-600 text-white font-semibold shadow-xs'
+                              : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                           }`}
                         >
-                          <span className="flex items-center gap-2.5">
-                            <span className="text-base">
-                              {lang.flag}
-                            </span>
-
-                            <span>
-                              {lang.name}
-                            </span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm">{lang.flag}</span>
+                            <span>{lang.name}</span>
                           </span>
-
-                          {lang.code ===
-                            language && (
-                            <Check size={15} />
-                          )}
+                          {lang.code === language && <Check size={14} />}
                         </button>
                       ))}
                     </div>
@@ -447,39 +327,46 @@ export default function Header({
             )
           })()}
 
-          {/* ================================================================= */}
-          {/* NOTIFICATIONS */}
-          {/* ================================================================= */}
-
-          <div
-            className="relative"
-            ref={notifRef}
-          >
+          {/* ------------------------------------------------------------- */}
+          {/* NOTIFICATIONS CENTER                                          */}
+          {/* ------------------------------------------------------------- */}
+          <div className="relative" ref={notifRef}>
             <button
               type="button"
-              aria-label={t(
-                'header.notifications',
-              )}
+              aria-label={t('header.notifications')}
               aria-expanded={notifOpen}
               aria-haspopup="menu"
-              onClick={openNotifications}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full glass-sm text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white"
+              onClick={() => {
+                setNotifOpen((o) => !o)
+                setMenuOpen(false)
+                setLangOpen(false)
+              }}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition cursor-pointer ${
+                notifOpen
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white ring-1 ring-teal-500/30'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+              }`}
             >
-              <Bell size={18} />
-
+              <Bell size={17} />
               {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-bold text-white ring-2 ring-white dark:ring-stone-900">
+                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900">
                   {unreadCount}
                 </span>
               )}
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-stone-700/60 dark:bg-stone-900/95">
-                <div className="flex items-center justify-between border-b border-stone-200/60 px-4 py-3 dark:border-stone-700/60">
-                  <div className="text-sm font-bold text-stone-800 dark:text-stone-100">
-                    {t(
-                      'header.notifications',
+              <div className="absolute right-0 top-full z-40 mt-2 w-84 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 animate-in fade-in zoom-in-95 duration-150">
+                {/* Notifications Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-3.5 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      {t('header.notifications')}
+                    </span>
+                    {unreadCount > 0 && (
+                      <span className="rounded-full bg-teal-500/15 px-1.5 py-0.2 text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
+                        {unreadCount} new
+                      </span>
                     )}
                   </div>
 
@@ -487,201 +374,204 @@ export default function Header({
                     <button
                       type="button"
                       onClick={markAllRead}
-                      className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400"
+                      className="flex items-center gap-1 text-[11px] font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 cursor-pointer"
                     >
-                      {t(
-                        'header.markAllRead',
-                      )}
+                      <CheckCheck size={13} />
+                      {t('header.markAllRead')}
                     </button>
                   )}
                 </div>
 
-                <div className="max-h-80 overflow-y-auto">
-                  {notifications.length === 0 ? (
-                    <div className="p-8 text-center">
-                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800">
-                        <Bell
-                          size={17}
-                          className="text-stone-400"
-                        />
-                      </div>
+                {/* Filter tabs */}
+                <div className="flex gap-1 border-b border-slate-100 dark:border-slate-800 px-3 py-1.5 bg-slate-50/60 dark:bg-slate-900/40">
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilterCategory('all')}
+                    className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                      activeFilterCategory === 'all'
+                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                    }`}
+                  >
+                    All ({notifications.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilterCategory('unread')}
+                    className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                      activeFilterCategory === 'unread'
+                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                    }`}
+                  >
+                    Unread ({unreadCount})
+                  </button>
+                </div>
 
-                      <p className="text-sm font-medium text-stone-600 dark:text-stone-300">
-                        {t(
-                          'header.allCaughtUp',
-                        )}
+                {/* Notification items list */}
+                <div className="max-h-76 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {filteredNotifications.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+                        <Bell size={16} />
+                      </div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {t('header.allCaughtUp')}
                       </p>
                     </div>
                   ) : (
-                    notifications.map(
-                      (notification) => (
-                        <button
-                          key={notification.id}
-                          type="button"
-                          onClick={() =>
-                            markOneRead(
-                              notification.id,
-                            )
-                          }
-                          className={`flex w-full gap-3 border-b border-stone-200/50 px-4 py-3 text-left transition last:border-0 hover:bg-stone-50 dark:border-stone-800/50 dark:hover:bg-white/5 ${
-                            notification.read
-                              ? ''
-                              : 'bg-brand-50/40 dark:bg-brand-950/10'
+                    filteredNotifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => handleNotificationClick(n)}
+                        className={`group flex gap-2.5 px-3.5 py-2.5 transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
+                          !n.read ? 'bg-teal-500/5 dark:bg-teal-500/10' : ''
+                        }`}
+                      >
+                        <div
+                          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs ${
+                            n.category === 'exam'
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
+                              : n.category === 'attendance'
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
                           }`}
                         >
-                          <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800">
-                            <Bell
-                              size={14}
-                              className="text-stone-600 dark:text-stone-300"
-                            />
-                          </span>
+                          <Bell size={13} />
+                        </div>
 
-                          <span className="min-w-0 flex-1">
-                            <span className="flex items-start justify-between gap-2">
-                              <span className="text-sm font-semibold text-stone-800 dark:text-stone-100">
-                                {
-                                  notification.title
-                                }
-                              </span>
-
-                              {!notification.read && (
-                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" />
-                              )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-1.5">
+                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
+                              {n.title}
+                            </p>
+                            {!n.read && (
+                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-600" />
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 leading-normal line-clamp-2">
+                            {n.message}
+                          </p>
+                          <div className="mt-1 flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                              {n.time}
                             </span>
-
-                            <span className="mt-0.5 block text-xs leading-5 text-stone-500 dark:text-stone-400">
-                              {
-                                notification.message
-                              }
-                            </span>
-
-                            <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500">
-                              {notification.time}
-                            </span>
-                          </span>
-                        </button>
-                      ),
-                    )
+                            {!n.read && (
+                              <button
+                                type="button"
+                                onClick={(e) => markOneRead(n.id, e)}
+                                className="text-[10px] font-semibold text-teal-600 hover:underline dark:text-teal-400"
+                              >
+                                Mark read
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
             )}
           </div>
 
-          {/* THEME */}
+          {/* Theme Toggle Button */}
           <ThemeToggle />
 
-          {/* ================================================================= */}
-          {/* USER MENU */}
-          {/* ================================================================= */}
-
-          <div
-            className="relative"
-            ref={menuRef}
-          >
+          {/* ------------------------------------------------------------- */}
+          {/* USER EXECUTIVE PROFILE MENU                                   */}
+          {/* ------------------------------------------------------------- */}
+          <div className="relative" ref={menuRef}>
             <button
               type="button"
-              aria-label="Open account menu"
+              aria-label="Open account options"
               aria-expanded={menuOpen}
               aria-haspopup="menu"
-              onClick={openUserMenu}
-              className={`group flex items-center gap-2 rounded-full p-1.5 pr-2.5 transition-all duration-200 sm:pr-3 ${
+              onClick={() => {
+                setMenuOpen((o) => !o)
+                setNotifOpen(false)
+                setLangOpen(false)
+              }}
+              className={`group flex items-center gap-2 rounded-xl p-1 pr-2 sm:pr-2.5 transition cursor-pointer ${
                 menuOpen
-                  ? 'bg-stone-100 shadow-sm dark:bg-white/10'
-                  : 'glass-sm hover:bg-stone-100 dark:hover:bg-white/5'
+                  ? 'bg-slate-100 dark:bg-slate-800 ring-1 ring-teal-500/30'
+                  : 'hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              {/* AVATAR */}
+              {/* User Avatar with Presence Badge */}
               <div className="relative">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={user?.name ?? 'User'}
-                    className="h-8 w-8 rounded-full object-cover ring-2 ring-white/60 dark:ring-stone-700/60"
+                    className="h-8 w-8 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
                   />
                 ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-brand-100 to-brand-200 text-xs font-bold text-brand-700 ring-2 ring-white/60 dark:from-brand-950 dark:to-brand-900 dark:text-brand-300 dark:ring-stone-700/60">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white text-xs font-black shadow-xs">
                     {initials}
-                  </span>
+                  </div>
                 )}
-
-                {/* ONLINE INDICATOR */}
-                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-stone-900" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
               </div>
 
-              {/* NAME + ROLE */}
-              <span className="hidden text-left md:block">
-                <span className="block max-w-28 truncate text-xs font-bold text-stone-800 dark:text-stone-100">
+              {/* User Name & Role Label */}
+              <div className="hidden text-left md:block min-w-0">
+                <p className="max-w-28 truncate text-xs font-bold text-slate-900 dark:text-white leading-tight">
                   {user?.name ?? 'User'}
-                </span>
-
-                <span className="block text-[10px] font-medium text-stone-500 dark:text-stone-400">
-                  {roleLabel}
-                </span>
-              </span>
+                </p>
+                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
+                  {roleMeta.label}
+                </p>
+              </div>
 
               <ChevronDown
-                size={14}
-                className={`hidden text-stone-400 transition-transform duration-200 md:block ${
-                  menuOpen
-                    ? 'rotate-180'
-                    : ''
+                size={13}
+                className={`hidden text-slate-400 transition-transform duration-200 md:block ${
+                  menuOpen ? 'rotate-180' : ''
                 }`}
               />
             </button>
 
-            {/* USER DROPDOWN */}
+            {/* User Dropdown Panel */}
             {menuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-stone-200/70 bg-white/95 p-2 shadow-2xl backdrop-blur-xl dark:border-stone-700/70 dark:bg-stone-900/95"
+                className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 animate-in fade-in zoom-in-95 duration-150"
               >
-                {/* ========================================================= */}
-                {/* PROFILE HEADER */}
-                {/* ========================================================= */}
-
-                <div className="mb-1 rounded-xl bg-stone-50/80 p-3 dark:bg-white/4">
-                  <div className="flex items-center gap-3">
+                {/* Executive Header Identity Card */}
+                <div className="mb-1 rounded-xl bg-slate-50 dark:bg-slate-800/70 p-3 border border-slate-200/70 dark:border-slate-700/70">
+                  <div className="flex items-center gap-2.5">
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
-                        alt={
-                          user?.name ?? 'User'
-                        }
-                        className="h-11 w-11 rounded-xl object-cover ring-1 ring-stone-200 dark:ring-stone-700"
+                        alt={user?.name ?? 'User'}
+                        className="h-10 w-10 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
                       />
                     ) : (
-                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br from-brand-100 to-brand-200 text-sm font-bold text-brand-700 dark:from-brand-950 dark:to-brand-900 dark:text-brand-300">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white text-sm font-black shadow-xs">
                         {initials}
-                      </span>
+                      </div>
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-stone-900 dark:text-white">
-                        {user?.name ?? 'User'}
+                      <p className="truncate text-xs font-bold text-slate-900 dark:text-white">
+                        {user?.name ?? 'Administrator'}
                       </p>
-
                       <div className="mt-0.5 flex items-center gap-1.5">
-                        <ShieldCheck
-                          size={12}
-                          className="text-brand-600 dark:text-brand-400"
-                        />
-
-                        <p className="truncate text-[11px] font-medium text-stone-500 dark:text-stone-400">
-                          {roleLabel ||
-                            'User'}
-                        </p>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.2 text-[9.5px] font-bold border ${roleMeta.badge}`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${roleMeta.dot}`} />
+                          {roleMeta.label}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* ========================================================= */}
-                {/* ACCOUNT */}
-                {/* ========================================================= */}
-
-                <div className="px-2 pb-1 pt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">
-                  Account
+                {/* Navigation Links */}
+                <div className="px-2 pb-1 pt-1.5 text-[9.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Account & System
                 </div>
 
                 <button
@@ -693,21 +583,15 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-600 transition group-hover:bg-brand-100 group-hover:text-brand-700 dark:bg-stone-800 dark:text-stone-300 dark:group-hover:bg-brand-950 dark:group-hover:text-brand-300">
-                    <UserCircle size={17} />
-                  </span>
-
-                  <span className="flex-1">
-                    <span className="block">
-                      {t(
-                        'header.myProfile',
-                      )}
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-teal-600 group-hover:text-white transition">
+                    <UserCircle size={15} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="block leading-tight">{t('header.myProfile')}</span>
+                    <span className="block text-[10px] text-slate-400 font-normal">
+                      Personal profile & credentials
                     </span>
-
-                    <span className="block text-[10px] font-normal text-stone-400 dark:text-stone-500">
-                      View and edit your profile
-                    </span>
-                  </span>
+                  </div>
                 </button>
 
                 <button
@@ -719,24 +603,17 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-600 transition group-hover:bg-brand-100 group-hover:text-brand-700 dark:bg-stone-800 dark:text-stone-300 dark:group-hover:bg-brand-950 dark:group-hover:text-brand-300">
-                    <Settings size={17} />
-                  </span>
-
-                  <span className="flex-1">
-                    <span className="block">
-                      {t(
-                        'header.settings',
-                      )}
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-teal-600 group-hover:text-white transition">
+                    <Settings size={15} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="block leading-tight">{t('header.settings')}</span>
+                    <span className="block text-[10px] text-slate-400 font-normal">
+                      Preferences & localization
                     </span>
-
-                    <span className="block text-[10px] font-normal text-stone-400 dark:text-stone-500">
-                      Preferences and system settings
-                    </span>
-                  </span>
+                  </div>
                 </button>
 
-                {/* HELP */}
                 <button
                   type="button"
                   role="menuitem"
@@ -746,26 +623,19 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-600 transition group-hover:bg-brand-100 group-hover:text-brand-700 dark:bg-stone-800 dark:text-stone-300 dark:group-hover:bg-brand-950 dark:group-hover:text-brand-300">
-                    <CircleHelp size={17} />
-                  </span>
-
-                  <span className="flex-1">
-                    <span className="block">
-                      Help & Support
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-teal-600 group-hover:text-white transition">
+                    <CircleHelp size={15} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="block leading-tight">Help & Knowledge Base</span>
+                    <span className="block text-[10px] text-slate-400 font-normal">
+                      Documentation & support
                     </span>
-
-                    <span className="block text-[10px] font-normal text-stone-400 dark:text-stone-500">
-                      Get help using the system
-                    </span>
-                  </span>
+                  </div>
                 </button>
 
-                {/* ========================================================= */}
-                {/* LOGOUT */}
-                {/* ========================================================= */}
-
-                <div className="my-2 border-t border-stone-200/70 dark:border-stone-700/70" />
+                {/* Sign Out Action */}
+                <div className="my-1.5 border-t border-slate-200/80 dark:border-slate-800/80" />
 
                 <button
                   type="button"
@@ -774,21 +644,17 @@ export default function Header({
                     setMenuOpen(false)
                     logout()
                   }}
-                  className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/20 dark:hover:text-rose-300"
+                  className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/20 dark:hover:text-rose-300 transition cursor-pointer"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 transition group-hover:bg-rose-100 dark:bg-rose-950/30 dark:group-hover:bg-rose-950/50">
-                    <LogOut size={17} />
-                  </span>
-
-                  <span className="flex-1">
-                    <span className="block">
-                      {t('header.logOut')}
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-100 dark:bg-rose-950/40 dark:group-hover:bg-rose-950/70 transition">
+                    <LogOut size={14} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="block leading-tight">{t('header.logOut')}</span>
+                    <span className="block text-[10px] text-rose-400/80 font-normal">
+                      End active session safely
                     </span>
-
-                    <span className="block text-[10px] font-normal text-rose-400 dark:text-rose-500">
-                      Sign out of your account
-                    </span>
-                  </span>
+                  </div>
                 </button>
               </div>
             )}
@@ -798,4 +664,3 @@ export default function Header({
     </header>
   )
 }
-

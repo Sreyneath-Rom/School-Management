@@ -32,13 +32,57 @@ function mockApiPlugin(): Plugin {
 
           // Auth routes
           if (url === '/api/v1/auth/login' && method === 'POST') {
-            const { email } = parsedBody
+            const identifier = (parsedBody.identifier || parsedBody.email || '').trim()
+            const password = parsedBody.password || ''
+
+            if (!identifier) {
+              res.statusCode = 400
+              return res.end(
+                JSON.stringify({
+                  success: false,
+                  message: 'Please enter your email or school ID.',
+                })
+              )
+            }
+
+            if (!password) {
+              res.statusCode = 400
+              return res.end(
+                JSON.stringify({
+                  success: false,
+                  message: 'Please enter your password.',
+                })
+              )
+            }
+
+            // Inactive or suspended account check per Spec 7.4
+            if (identifier.toLowerCase().includes('inactive') || identifier.toLowerCase().includes('suspended')) {
+              res.statusCode = 403
+              return res.end(
+                JSON.stringify({
+                  success: false,
+                  message: 'Your account is currently inactive or suspended. Please contact the school administrator.',
+                })
+              )
+            }
+
+            // Invalid credentials check per Spec 7.3 & AC-07/AC-08
+            if (password === 'wrong' || password === 'invalid' || password === 'incorrect') {
+              res.statusCode = 401
+              return res.end(
+                JSON.stringify({
+                  success: false,
+                  message: 'Invalid credentials. Please verify your email or school ID and password.',
+                })
+              )
+            }
+
             const role =
-              email?.includes('teacher') || email?.startsWith('TCH-')
+              identifier.includes('teacher') || identifier.startsWith('TCH-')
                 ? 'teacher'
-                : email?.includes('student') || email?.startsWith('STU')
+                : identifier.includes('student') || identifier.startsWith('STU')
                 ? 'student'
-                : email?.includes('parent') || email?.startsWith('PAR-')
+                : identifier.includes('parent') || identifier.startsWith('PAR-')
                 ? 'parent'
                 : 'admin'
             const firstName = role.charAt(0).toUpperCase() + role.slice(1)
@@ -50,10 +94,11 @@ function mockApiPlugin(): Plugin {
                   refreshToken: `mock-refresh-${role}-${Date.now()}`,
                   user: {
                     id: `user-${role}`,
-                    email: email?.includes('@') ? email : `${role}@example.com`,
+                    email: identifier.includes('@') ? identifier : `${role}@example.com`,
                     firstName,
-                    lastName: 'User',
+                    lastName: role === 'admin' ? 'Administrator' : role === 'teacher' ? 'Faculty' : 'Scholar',
                     role,
+                    status: 'ACTIVE',
                   },
                 },
               })
@@ -87,9 +132,28 @@ function mockApiPlugin(): Plugin {
                   id: `user-${role}`,
                   email: `${role}@example.com`,
                   firstName: role.charAt(0).toUpperCase() + role.slice(1),
-                  lastName: 'User',
+                  lastName: role === 'admin' ? 'Administrator' : role === 'teacher' ? 'Faculty' : 'Scholar',
                   role,
+                  status: 'ACTIVE',
                 },
+              })
+            )
+          }
+
+          if (url === '/api/v1/auth/forgot-password' && method === 'POST') {
+            return res.end(
+              JSON.stringify({
+                success: true,
+                message: 'Password recovery instructions have been dispatched to your registered contact or assigned school advisor.',
+              })
+            )
+          }
+
+          if (url === '/api/v1/auth/reset-password' && method === 'POST') {
+            return res.end(
+              JSON.stringify({
+                success: true,
+                message: 'Your password has been successfully reset. Please log in with your new password.',
               })
             )
           }
@@ -280,7 +344,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    ...(process.env.VITE_USE_MOCK_API === 'true' ? [mockApiPlugin()] : []),
+    ...(process.env.VITE_USE_MOCK_API !== 'false' ? [mockApiPlugin()] : []),
   ],
   resolve: {
     alias: {

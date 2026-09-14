@@ -24,24 +24,29 @@ export default function AppRoutes() {
     );
   }
 
-  if (role !== portalRole) {
-    return <Login />;
-  }
-
-  const homeRoute = "/dashboard";
+  const homeRoute =
+    role === "admin"
+      ? "/dashboard"
+      : role === "teacher"
+      ? "/teacher/dashboard"
+      : role === "student"
+      ? "/student/dashboard"
+      : role === "parent"
+      ? "/parent/dashboard"
+      : "/dashboard";
 
   return (
     <Routes>
-      <Route path="/login" element={<Navigate to={homeRoute} replace />} />
-      <Route path="/login/admin" element={<Navigate to={homeRoute} replace />} />
-      <Route path="/login/teacher" element={<Navigate to={homeRoute} replace />} />
-      <Route path="/login/student" element={<Navigate to={homeRoute} replace />} />
-      <Route path="/login/parent" element={<Navigate to={homeRoute} replace />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/login/admin" element={<AdminLogin />} />
+      <Route path="/login/teacher" element={<TeacherLogin />} />
+      <Route path="/login/student" element={<StudentLogin />} />
+      <Route path="/login/parent" element={<ParentLogin />} />
 
-      {(role as string) === "admin" && adminRoutes()}
-      {(role as string) === "teacher" && teacherRoutes()}
-      {(role as string) === "student" && studentRoutes()}
-      {(role as string) === "parent" && parentRoutes()}
+      {role === "admin" && adminRoutes()}
+      {role === "teacher" && teacherRoutes()}
+      {role === "student" && studentRoutes()}
+      {role === "parent" && parentRoutes()}
 
       <Route path="/" element={<Navigate to={homeRoute} replace />} />
       <Route path="*" element={<Navigate to={homeRoute} replace />} />

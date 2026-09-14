@@ -2,121 +2,132 @@ import { useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { enrollmentData } from '@/services/mockData'
 import { ChartCardSkeleton } from '@/components/common/Skeleton'
+import { GraduationCap, ArrowUpRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 interface EnrollmentDonutProps {
   loading?: boolean
 }
 
+// Modern, accessible color palette harmonized with teal/emerald/indigo
+const gradeColors = [
+  '#0d9488', // Teal-600 (Grade 7)
+  '#059669', // Emerald-600 (Grade 8)
+  '#2563eb', // Blue-600 (Grade 9)
+  '#4f46e5', // Indigo-600 (Grade 10)
+  '#9333ea', // Purple-600 (Grade 11)
+  '#ea580c', // Orange-600 (Grade 12)
+]
+
 export default function EnrollmentDonut({ loading }: EnrollmentDonutProps = {}) {
   const total = enrollmentData.reduce((sum, item) => sum + item.count, 0)
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null)
+  const [hoveredGrade, setHoveredGrade] = useState<string | null>(null)
 
   if (loading) {
     return <ChartCardSkeleton type="donut" />
   }
 
+  const activeData = hoveredGrade
+    ? enrollmentData.find((d) => d.grade === hoveredGrade)
+    : null
+
   return (
-    <section className="rounded-[28px] glass-sm p-6 min-h-90">
-      <div className="mb-6">
-        <h2 className="text-base font-semibold text-text-main">Student Enrollment</h2>
+    <section className="flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      {/* Card Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            Enrollment Demographics
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Student cohort distribution
+          </p>
+        </div>
+
+        <Link
+          to="/students"
+          className="flex items-center gap-1 text-xs font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400"
+        >
+          <span>Roster</span>
+          <ArrowUpRight size={13} />
+        </Link>
       </div>
 
-      <div className="relative flex items-center justify-center">
-        <div
-          className="h-55 w-full max-w-[320px]"
-          onMouseMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect()
-            setCursorPos({ x: e.clientX - rect.left + 14, y: e.clientY - rect.top + 14 })
-          }}
-          onMouseLeave={() => setCursorPos(null)}
-        >
+      {/* Donut graphic with center stats */}
+      <div className="relative my-2 flex items-center justify-center">
+        <div className="h-48 w-full max-w-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={enrollmentData}
                 dataKey="count"
                 nameKey="grade"
-                innerRadius={62}
-                outerRadius={90}
-                paddingAngle={2}
+                innerRadius={58}
+                outerRadius={84}
+                paddingAngle={3}
                 startAngle={90}
                 endAngle={450}
+                stroke="transparent"
+                onMouseEnter={(_, index) => setHoveredGrade(enrollmentData[index].grade)}
+                onMouseLeave={() => setHoveredGrade(null)}
               >
-                {enrollmentData.map((slice) => (
-                  <Cell key={slice.grade} fill={slice.color} stroke="none" />
+                {enrollmentData.map((slice, index) => (
+                  <Cell
+                    key={slice.grade}
+                    fill={gradeColors[index % gradeColors.length]}
+                    className="cursor-pointer transition-opacity duration-200 hover:opacity-85"
+                  />
                 ))}
               </Pie>
-              <Tooltip
-                content={<CustomTooltip total={total} />}
-                position={cursorPos ?? undefined}
-                allowEscapeViewBox={{ x: true, y: true }}
-                wrapperStyle={{
-                  zIndex: 50,
-                  transition: 'transform 0.12s ease-out, left 0.12s ease-out, top 0.12s ease-out, opacity 0.12s ease-out',
-                }}
-              />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto flex w-fit -translate-y-1/2 flex-col items-center px-6 py-4 text-center">
-          <div className="text-3xl font-semibold text-text-main">{total.toLocaleString()}</div>
-          <div className="text-sm text-text-main/65">Total</div>
+        {/* Dynamic Center Callout */}
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            {activeData ? activeData.count.toLocaleString() : total.toLocaleString()}
+          </span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            {activeData ? activeData.grade : 'Enrolled'}
+          </span>
         </div>
       </div>
 
-      <ul className="mt-6 space-y-3">
-        {enrollmentData.map((slice) => (
-          <li key={slice.grade} className="flex items-center gap-3 text-sm text-text-main/65">
-            <span className="inline-flex h-3.5 w-3.5 rounded-full" style={{ background: slice.color }} />
-            <span className="flex-1 text-text-main/65">{slice.grade}</span>
-            <span className="font-semibold text-text-main">{slice.count}</span>
-          </li>
-        ))}
-      </ul>
+      {/* Compact Legend Grid */}
+      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+        {enrollmentData.map((slice, index) => {
+          const percent = total > 0 ? Math.round((slice.count / total) * 100) : 0
+          const color = gradeColors[index % gradeColors.length]
+          const isHovered = hoveredGrade === slice.grade
+
+          return (
+            <div
+              key={slice.grade}
+              onMouseEnter={() => setHoveredGrade(slice.grade)}
+              onMouseLeave={() => setHoveredGrade(null)}
+              className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 transition cursor-pointer ${
+                isHovered
+                  ? 'bg-slate-100 dark:bg-slate-800 font-bold'
+                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+              }`}
+            >
+              <div className="flex items-center gap-2 truncate">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+                <span className="text-slate-600 dark:text-slate-300 truncate text-[11px]">
+                  {slice.grade}
+                </span>
+              </div>
+              <span className="font-mono text-[11px] font-bold text-slate-900 dark:text-white ml-2">
+                {percent}%
+              </span>
+            </div>
+          )
+        })}
+      </div>
     </section>
-  )
-}
-
-function CustomTooltip({
-  active,
-  payload,
-  total,
-}: {
-  active?: boolean
-  payload?: Array<{ name?: string; value?: number; payload?: { grade: string; count: number; color: string } }>
-  total: number
-}) {
-  if (!active || !payload || !payload.length) return null
-
-  const entry = payload[0].payload
-  if (!entry) return null
-
-  const percent = total > 0 ? Math.round((entry.count / total) * 100) : 0
-
-  return (
-    <div
-      style={{
-        borderRadius: 16,
-        border: '1px solid var(--glass-outline)',
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        boxShadow: 'var(--glass-shadow)',
-        padding: '8px 12px',
-        fontSize: 13,
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="inline-flex h-2.5 w-2.5 rounded-full"
-          style={{ background: entry.color }}
-        />
-        <span className="font-semibold text-text-main">{entry.grade}</span>
-      </div>
-      <div className="mt-1 text-text-main/65">
-        {entry.count} students <span className="text-text-main/55">({percent}%)</span>
-      </div>
-    </div>
   )
 }
