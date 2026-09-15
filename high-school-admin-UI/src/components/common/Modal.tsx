@@ -66,7 +66,7 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-md transition-all duration-200 animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center  bg-slate-950/60 p-4 backdrop-blur-md transition-all duration-200 animate-in fade-in"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose()
@@ -80,7 +80,7 @@ export default function Modal({
       >
         {/* Soft Liquid Ambient Glow in Top-Right Corner */}
         <div
-          className={`pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-3xl opacity-70 bg-gradient-to-br ${accentGradients[accentColor]}`}
+          className={`pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-3xl opacity-70 bg-linear-to-br ${accentGradients[accentColor]}`}
         />
 
         {/* Modal Header */}
@@ -116,7 +116,7 @@ export default function Modal({
         </div>
 
         {/* Modal Body */}
-        <div className="relative z-10 flex-1 overflow-y-auto px-6 py-5 text-slate-700 dark:text-slate-300">
+        <div className="relative z-10 flex-1  px-6 py-5 text-slate-700 dark:text-slate-300">
           {children}
         </div>
 

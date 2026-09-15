@@ -45,7 +45,7 @@ export default function FormModal({
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Soft Ambient Light in Top-Right Corner */}
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-blue-400/20 to-teal-400/20 blur-3xl opacity-60" />
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-linear-to-br from-blue-400/20 to-teal-400/20 blur-3xl opacity-60" />
 
         {/* Header */}
         <div className="relative z-10 flex items-center justify-between border-b border-slate-100 bg-white/60 px-6 py-4.5 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/60">
@@ -94,7 +94,7 @@ export default function FormModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer disabled:opacity-50"
+              className="rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? 'Saving...' : submitLabel}
             </button>

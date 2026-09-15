@@ -345,7 +345,7 @@ function KPICardView({ card }: { card: StatCard }) {
         className={`pointer-events-none absolute -bottom-10 -left-6 h-32 w-32 rounded-full blur-2xl opacity-40 ${style.blob1}`}
       />
 
-      <div className="relative flex flex-col justify-between h-full min-h-[178px]">
+      <div className="relative flex flex-col justify-between h-full min-h-44.5">
         {/* Top: Icon Badge */}
         <div className="flex items-start justify-between">
           <div

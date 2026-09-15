@@ -47,10 +47,10 @@ export default function Toast({
       <div
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-white shadow-md ${
           isSuccess
-            ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/25'
+            ? 'bg-linear-to-br from-emerald-500 to-teal-600 shadow-emerald-500/25'
             : isError
-            ? 'bg-gradient-to-br from-rose-500 to-red-600 shadow-rose-500/25'
-            : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/25'
+            ? 'bg-linear-to-br from-rose-500 to-red-600 shadow-rose-500/25'
+            : 'bg-linear-to-br from-blue-500 to-indigo-600 shadow-blue-500/25'
         }`}
       >
         {isSuccess && <CheckCircle2 size={20} strokeWidth={2.2} />}

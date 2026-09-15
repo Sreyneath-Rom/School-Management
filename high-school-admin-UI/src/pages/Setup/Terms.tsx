@@ -16,58 +16,9 @@ import {
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
+import { INITIAL_TERMS, type TermItem } from '@/data/terms'
 
-export interface TermItem {
-  id: string
-  name: string
-  academicYear: string
-  startDate: string
-  endDate: string
-  gradingDeadline: string
-  status: 'Active' | 'Completed' | 'Upcoming'
-  examCount: number
-  weightPercentage: number
-  description?: string
-}
-
-const INITIAL_TERMS: TermItem[] = [
-  {
-    id: 'term-1',
-    name: 'Term 1 (Fall Semester)',
-    academicYear: '2025 - 2026',
-    startDate: '2025-08-15',
-    endDate: '2025-11-20',
-    gradingDeadline: '2025-11-28',
-    status: 'Completed',
-    examCount: 4,
-    weightPercentage: 30,
-    description: 'First formal evaluation period encompassing midterms and initial assessments.',
-  },
-  {
-    id: 'term-2',
-    name: 'Term 2 (Winter Trimester)',
-    academicYear: '2025 - 2026',
-    startDate: '2025-12-01',
-    endDate: '2026-03-15',
-    gradingDeadline: '2026-03-25',
-    status: 'Active',
-    examCount: 6,
-    weightPercentage: 35,
-    description: 'Current instructional cycle with ongoing coursework and mid-year standard examinations.',
-  },
-  {
-    id: 'term-3',
-    name: 'Term 3 (Spring Trimester)',
-    academicYear: '2025 - 2026',
-    startDate: '2026-03-20',
-    endDate: '2026-06-20',
-    gradingDeadline: '2026-06-28',
-    status: 'Upcoming',
-    examCount: 5,
-    weightPercentage: 35,
-    description: 'Final academic trimester culminating in AP testing and comprehensive final examinations.',
-  },
-]
+export type { TermItem }
 
 export default function Terms() {
   const { showToast } = useToast()

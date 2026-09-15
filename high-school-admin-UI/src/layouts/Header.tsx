@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from '@/components/common/ThemeToggle'
 import { resolveAssetUrl } from '@/utils/resolveAssetUrl'
 import { useTranslations } from '@/i18n'
+import { getActiveTerm } from '@/data/terms'
 
 interface NotificationItem {
   id: string
@@ -32,6 +33,9 @@ interface NotificationItem {
   category?: 'academic' | 'attendance' | 'exam' | 'system'
   link?: string
 }
+const CURRENT_TERM_NAME = getActiveTerm()?.name ?? ''
+
+
 
 const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
@@ -215,10 +219,10 @@ export default function Header({
   }, [])
 
   const menuItemClass =
-    'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer'
+    'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-secondary transition-all duration-150 hover:bg-surface hover:text-color cursor-pointer'
 
   return (
-    <header className="app-header sticky top-0 z-30 select-none bg-white/80 dark:bg-slate-900/85 backdrop-blur-2xl border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
+    <header className="sticky top-0 z-30 select-none  transition-colors">
       <div className="flex h-16 items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
         {/* ================================================================= */}
         {/* LEFT: MOBILE TOGGLE ONLY (NO REDUNDANT SCHOOL PROFILE/LOGO)       */}
@@ -229,7 +233,7 @@ export default function Header({
             type="button"
             onClick={onOpenSidebar}
             aria-label="Open navigation drawer"
-            className="flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-xl bg-slate-100/90 text-slate-700 hover:bg-slate-200 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-slate-700 lg:hidden cursor-pointer transition active:scale-95"
+            className="flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-xl glass-sm text-color  dark:glass-sm dark:text-color lg:hidden cursor-pointer transition active:scale-95"
           >
             <Menu size={18} />
           </button>
@@ -240,11 +244,16 @@ export default function Header({
         {/* ================================================================= */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 ml-auto">
           {/* Academic Session Date Pill */}
-          <div className="hidden sm:flex items-center gap-2 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 px-2.5 py-1.5 border border-slate-200/70 dark:border-slate-700/70 text-xs font-semibold text-slate-700 dark:text-slate-300">
-            <Calendar size={13} className="text-teal-600 dark:text-teal-400" />
+          <div className="hidden sm:flex items-center gap-2 rounded-3xl glass-sm dark:glass-sm h-9.5 px-2.5 py-1.5  text-xs font-semibold text-color dark:text-color">
+            <Calendar size={13} className="text-color dark:text-color" />
             <span>{formattedDate}</span>
-            <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-            <span className="text-[10.5px] font-bold text-teal-700 dark:text-teal-300">Sem II</span>
+            <span className="h-1 w-1 rounded-full bg-success " />
+            <span
+              className="max-w-32 truncate text-[10.5px] font-bold text-color dark:text-color"
+              title={CURRENT_TERM_NAME}
+            >
+              {CURRENT_TERM_NAME}
+            </span>
           </div>
 
           {/* ------------------------------------------------------------- */}
@@ -270,10 +279,10 @@ export default function Header({
                     setMenuOpen(false)
                     setNotifOpen(false)
                   }}
-                  className={`flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition cursor-pointer ${
+                  className={`flex h-9.5 items-center gap-1.5 rounded-3xl px-2.5 text-xs font-semibold transition cursor-pointer ${
                     langOpen
-                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white ring-1 ring-teal-500/30'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                      ? 'glass-sm dark:glass-sm text-color dark:text-color'
+                      : 'text-color dark:text-color glass-sm dark:glass-sm '
                   }`}
                 >
                   <span className="text-sm">{safeActiveLang.flag}</span>
@@ -282,7 +291,7 @@ export default function Header({
                   </span>
                   <ChevronDown
                     size={13}
-                    className={`transition-transform duration-200 text-slate-400 ${
+                    className={`transition-transform duration-200 text-color ${
                       langOpen ? 'rotate-180' : ''
                     }`}
                   />
@@ -291,9 +300,9 @@ export default function Header({
                 {langOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute right-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-3xl glass-sm p-1.5 dark:glass-sm animate-in fade-in zoom-in-95 duration-150"
                   >
-                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-secondary">
                       {t('header.changeLanguage')}
                     </div>
 
@@ -310,7 +319,7 @@ export default function Header({
                           className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition cursor-pointer ${
                             lang.code === language
                               ? 'bg-teal-600 text-white font-semibold shadow-xs'
-                              : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                              : 'text-secondary hover:bg-surface'
                           }`}
                         >
                           <span className="flex items-center gap-2">
@@ -343,8 +352,8 @@ export default function Header({
               }}
               className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition cursor-pointer ${
                 notifOpen
-                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white ring-1 ring-teal-500/30'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                  ? 'bg-surface text-color ring-1 ring-teal-500/30'
+                  : 'text-secondary hover:bg-surface hover:text-color'
               }`}
             >
               <Bell size={17} />
@@ -356,11 +365,11 @@ export default function Header({
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-84 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 top-full z-40 mt-2 w-84 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-3xl glass-sm dark:glass-sm animate-in fade-in zoom-in-95 duration-150">
                 {/* Notifications Header */}
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-3.5 py-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                    <span className="text-xs font-bold text-color">
                       {t('header.notifications')}
                     </span>
                     {unreadCount > 0 && (
@@ -389,8 +398,8 @@ export default function Header({
                     onClick={() => setActiveFilterCategory('all')}
                     className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
                       activeFilterCategory === 'all'
-                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                        ? 'bg-surface text-color shadow-xs'
+                        : 'text-secondary hover:text-color'
                     }`}
                   >
                     All ({notifications.length})
@@ -400,8 +409,8 @@ export default function Header({
                     onClick={() => setActiveFilterCategory('unread')}
                     className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
                       activeFilterCategory === 'unread'
-                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                        ? 'bg-surface text-color shadow-xs'
+                        : 'text-secondary hover:text-color'
                     }`}
                   >
                     Unread ({unreadCount})
@@ -412,10 +421,10 @@ export default function Header({
                 <div className="max-h-76 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">
                   {filteredNotifications.length === 0 ? (
                     <div className="p-8 text-center">
-                      <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+                      <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface text-secondary">
                         <Bell size={16} />
                       </div>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      <p className="text-xs font-medium text-secondary">
                         {t('header.allCaughtUp')}
                       </p>
                     </div>
@@ -442,18 +451,18 @@ export default function Header({
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-1.5">
-                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
+                            <p className="text-xs font-bold text-color leading-snug">
                               {n.title}
                             </p>
                             {!n.read && (
                               <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-600" />
                             )}
                           </div>
-                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 leading-normal line-clamp-2">
+                          <p className="mt-0.5 text-[11px] text-secondary leading-normal line-clamp-2">
                             {n.message}
                           </p>
                           <div className="mt-1 flex items-center justify-between">
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                            <span className="text-[10px] text-secondary">
                               {n.time}
                             </span>
                             {!n.read && (
@@ -494,8 +503,8 @@ export default function Header({
               }}
               className={`group flex items-center gap-2 rounded-xl p-1 pr-2 sm:pr-2.5 transition cursor-pointer ${
                 menuOpen
-                  ? 'bg-slate-100 dark:bg-slate-800 ring-1 ring-teal-500/30'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'glass-sm dark:glass-sm text-text-main/80'
+                  : 'rounded-full glass-sm text-text-main/65 transition hover:text-text-main'
               }`}
             >
               {/* User Avatar with Presence Badge */}
@@ -507,7 +516,7 @@ export default function Header({
                     className="h-8 w-8 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
                   />
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white text-xs font-black shadow-xs">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-linear-to-tr from-teal-600 to-emerald-600 text-white text-xs font-black shadow-xs">
                     {initials}
                   </div>
                 )}
@@ -516,17 +525,17 @@ export default function Header({
 
               {/* User Name & Role Label */}
               <div className="hidden text-left md:block min-w-0">
-                <p className="max-w-28 truncate text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                <p className="max-w-28 truncate text-xs font-bold text-color leading-tight">
                   {user?.name ?? 'User'}
                 </p>
-                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
+                <p className="text-[10px] font-semibold text-secondary leading-tight">
                   {roleMeta.label}
                 </p>
               </div>
 
               <ChevronDown
                 size={13}
-                className={`hidden text-slate-400 transition-transform duration-200 md:block ${
+                className={`hidden text-secondary transition-transform duration-200 md:block ${
                   menuOpen ? 'rotate-180' : ''
                 }`}
               />
@@ -536,10 +545,11 @@ export default function Header({
             {menuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 animate-in fade-in zoom-in-95 duration-150"
+                className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-3xl glass-sm p-2 dark:glass-sm animate-in fade-in zoom-in-95 duration-150"
+                ref={menuRef}
               >
                 {/* Executive Header Identity Card */}
-                <div className="mb-1 rounded-xl bg-slate-50 dark:bg-slate-800/70 p-3 border border-slate-200/70 dark:border-slate-700/70">
+                <div className="mb-1 rounded-xl glass-sm dark:glass-sm p-3 border border-slate-200/70 dark:border-slate-700/70">
                   <div className="flex items-center gap-2.5">
                     {avatarUrl ? (
                       <img
@@ -548,13 +558,13 @@ export default function Header({
                         className="h-10 w-10 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
                       />
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white text-sm font-black shadow-xs">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-tr from-teal-600 to-emerald-600 text-white text-sm font-black shadow-xs">
                         {initials}
                       </div>
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-slate-900 dark:text-white">
+                      <p className="truncate text-xs font-bold text-color">
                         {user?.name ?? 'Administrator'}
                       </p>
                       <div className="mt-0.5 flex items-center gap-1.5">
@@ -570,7 +580,7 @@ export default function Header({
                 </div>
 
                 {/* Navigation Links */}
-                <div className="px-2 pb-1 pt-1.5 text-[9.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <div className="px-2 pb-1 pt-1.5 text-[9.5px] font-bold uppercase tracking-wider text-color dark:text-color">
                   Account & System
                 </div>
 
@@ -583,12 +593,12 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-teal-600 group-hover:text-white transition">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-teal-600 group-hover:text-white transition">
                     <UserCircle size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="block leading-tight">{t('header.myProfile')}</span>
-                    <span className="block text-[10px] text-slate-400 font-normal">
+                    <span className="block text-[10px] text-secondary font-normal">
                       Personal profile & credentials
                     </span>
                   </div>
@@ -603,12 +613,12 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-teal-600 group-hover:text-white transition">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-teal-600 group-hover:text-white transition">
                     <Settings size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="block leading-tight">{t('header.settings')}</span>
-                    <span className="block text-[10px] text-slate-400 font-normal">
+                    <span className="block text-[10px] text-secondary font-normal">
                       Preferences & localization
                     </span>
                   </div>
@@ -623,19 +633,19 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-teal-600 group-hover:text-white transition">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-teal-600 group-hover:text-white transition">
                     <CircleHelp size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="block leading-tight">Help & Knowledge Base</span>
-                    <span className="block text-[10px] text-slate-400 font-normal">
+                    <span className="block text-[10px] text-secondary font-normal">
                       Documentation & support
                     </span>
                   </div>
                 </button>
 
                 {/* Sign Out Action */}
-                <div className="my-1.5 border-t border-slate-200/80 dark:border-slate-800/80" />
+                <div className="my-1.5 " />
 
                 <button
                   type="button"
@@ -644,14 +654,14 @@ export default function Header({
                     setMenuOpen(false)
                     logout()
                   }}
-                  className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/20 dark:hover:text-rose-300 transition cursor-pointer"
+                  className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-error hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/20 dark:hover:text-rose-300 transition cursor-pointer"
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-100 dark:bg-rose-950/40 dark:group-hover:bg-rose-950/70 transition">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg glass-sm text-error  dark:glass-sm transition">
                     <LogOut size={14} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="block leading-tight">{t('header.logOut')}</span>
-                    <span className="block text-[10px] text-rose-400/80 font-normal">
+                    <span className="block text-[10px] text-error font-normal">
                       End active session safely
                     </span>
                   </div>

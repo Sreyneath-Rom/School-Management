@@ -58,8 +58,8 @@ export default function ConfirmDialog({
             <div
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
                 isDanger
-                  ? 'bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25'
-                  : 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/25'
+                  ? 'bg-linear-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25'
+                  : 'bg-linear-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/25'
               }`}
             >
               {isDanger ? <Trash2 size={22} strokeWidth={2.2} /> : <AlertTriangle size={22} strokeWidth={2.2} />}
@@ -101,8 +101,8 @@ export default function ConfirmDialog({
             disabled={isDeleting}
             className={`rounded-2xl px-4 py-2 text-xs font-bold text-white shadow-md transition cursor-pointer disabled:opacity-50 ${
               isDanger
-                ? 'bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-rose-500/30'
-                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30'
+                ? 'bg-linear-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-rose-500/30'
+                : 'bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30'
             }`}
           >
             {isDeleting ? 'Processing...' : confirmLabel}

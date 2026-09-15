@@ -54,10 +54,10 @@ export default function StatusDialog({
           <div
             className={`flex h-16 w-16 items-center justify-center rounded-3xl text-white shadow-xl ${
               isSuccess
-                ? 'bg-gradient-to-br from-emerald-400 to-teal-600 shadow-emerald-500/30'
+                ? 'bg-linear-to-br from-emerald-400 to-teal-600 shadow-emerald-500/30'
                 : isError
-                ? 'bg-gradient-to-br from-rose-500 to-red-600 shadow-rose-500/30'
-                : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/30'
+                ? 'bg-linear-to-br from-rose-500 to-red-600 shadow-rose-500/30'
+                : 'bg-linear-to-br from-blue-500 to-indigo-600 shadow-blue-500/30'
             }`}
           >
             {isSuccess && <CheckCircle2 size={32} strokeWidth={2.2} />}
