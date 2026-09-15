@@ -2,15 +2,6 @@
 
 A full-stack school management platform with separate role-based web applications for administrators, teachers, and students, backed by an Express REST API and PostgreSQL database.
 
-## Applications
-
-| Application | Purpose | Development command |
-| --- | --- | --- |
-| `high-school-admin-UI` | School administration, users, roles, setup, academics, attendance, reports, and communication | `npm run dev:admin` |
-| `high-school-teacher-UI` | Classes, lessons, homework, quizzes, grades, attendance, and teacher communication | `npm run dev:teacher` |
-| `high-school-student-UI` | Student dashboard, classes, calendar, lessons, homework, quizzes, grades, and attendance | `npm run dev:student` |
-| `high-school-api` | Authentication, authorization, school data, academic workflows, reports, uploads, and integrations | `npm run dev:api` |
-
 ## Technology
 
 ### Frontend
@@ -36,15 +27,6 @@ A full-stack school management platform with separate role-based web application
 
 ## Architecture
 
-```text
-Administrator UI ─┐
-Teacher UI       ─┼── Vite proxy ── Express API ── Services ── Prisma ── PostgreSQL
-Student UI       ─┘                    │
-                                       ├── JWT authentication and RBAC
-                                       ├── Request validation and error handling
-                                       ├── File uploads at /uploads
-                                       └── Swagger documentation at /api-docs
-```
 
 All frontend applications use the same API contract. In development, requests to `/api` are proxied to `http://localhost:5000`; the API base path is `/api/v1`.
 
