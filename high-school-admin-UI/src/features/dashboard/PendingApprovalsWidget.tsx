@@ -61,27 +61,27 @@ export default function PendingApprovalsWidget() {
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+    <div className="rounded-3xl border border-surface bg-surface-strong p-5 shadow-xs">
+      <div className="flex items-center justify-between pb-4 border-b border-surface">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            <h2 className="text-base font-bold text-color">
               Action Required & Approvals
             </h2>
             {tasks.length > 0 && (
-              <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300 border border-rose-500/20">
+              <span className="rounded-full bg-error/10 px-2 py-0.5 text-[10px] font-bold text-error border border-error/20">
                 {tasks.length} Pending
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-secondary">
             Administrative items awaiting institutional clearance
           </p>
         </div>
 
         <Link
           to="/system/logs"
-          className="text-xs font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400"
+          className="text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400"
         >
           View All
         </Link>
@@ -89,8 +89,8 @@ export default function PendingApprovalsWidget() {
 
       <div className="mt-4 space-y-3">
         {tasks.length === 0 ? (
-          <div className="py-8 text-center text-xs text-slate-400">
-            <CheckCircle size={24} className="mx-auto mb-2 text-emerald-500" />
+          <div className="py-8 text-center text-xs text-secondary">
+            <CheckCircle size={24} className="mx-auto mb-2 text-success" />
             All administrative approvals and clearances are up to date!
           </div>
         ) : (
@@ -98,31 +98,31 @@ export default function PendingApprovalsWidget() {
             <Link
               key={task.id}
               to={task.link}
-              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5 transition hover:border-teal-500/30 hover:bg-slate-100/70 dark:border-slate-800/80 dark:bg-slate-800/40 dark:hover:bg-slate-800/80"
+              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-surface bg-surface p-3.5 transition hover:border-brand-500/30"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <span
-                    className={`rounded-md px-1.5 py-0.2 text-[9.5px] font-extrabold uppercase ${
+                    className={`rounded-md px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase ${
                       task.severity === 'high'
-                        ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                        ? 'bg-error/15 text-error'
                         : task.severity === 'medium'
-                        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
-                        : 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
+                        ? 'bg-warning/15 text-warning'
+                        : 'bg-brand-500/15 text-brand-600 dark:text-brand-400'
                     }`}
                   >
                     {task.category}
                   </span>
-                  <span className="flex items-center gap-1 text-[10.5px] text-slate-400">
+                  <span className="flex items-center gap-1 text-[10.5px] text-secondary">
                     <Clock size={11} />
                     {task.dueTime}
                   </span>
                 </div>
 
-                <p className="text-xs font-bold text-slate-900 dark:text-white leading-snug group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                <p className="text-xs font-bold text-color leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                   {task.title}
                 </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                <p className="text-[11px] text-secondary leading-normal">
                   {task.subtitle}
                 </p>
               </div>
@@ -131,11 +131,11 @@ export default function PendingApprovalsWidget() {
                 <button
                   type="button"
                   onClick={(e) => handleDismiss(task.id, e)}
-                  className="rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                  className="rounded-lg px-2 py-1 text-[11px] font-semibold text-secondary hover:bg-surface-strong hover:text-color cursor-pointer"
                 >
                   Dismiss
                 </button>
-                <span className="flex items-center gap-1 rounded-xl bg-teal-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs group-hover:bg-teal-700 transition">
+                <span className="flex items-center gap-1 rounded-xl bg-brand-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs group-hover:bg-brand-700 transition">
                   Review
                   <ChevronRight size={13} />
                 </span>

@@ -150,8 +150,10 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/reports/teachers" element={<TeacherReport />} />
     <Route path="/reports/library" element={<BookList />} />
 
-    {/* System */}
-    
+    {/* System & Account */}
+    <Route path="/profile" element={<Users />} />
+    <Route path="/settings" element={<SchoolSetup />} />
+    <Route path="/help" element={<AuditLogs />} />
     <Route path="/system/activity" element={<AuditLogs />} />
   
 

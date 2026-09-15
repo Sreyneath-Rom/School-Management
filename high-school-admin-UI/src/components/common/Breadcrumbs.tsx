@@ -322,7 +322,7 @@ export default function Breadcrumbs({
             onClick={() => navigate(-1)}
             aria-label={t('breadcrumb.back') || 'Go back'}
             title={t('breadcrumb.back') || 'Back'}
-            className="mr-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 active:scale-95 transition dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
+            className="mr-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-surface hover:text-color active:scale-95 transition cursor-pointer"
           >
             <ArrowLeft size={15} />
           </button>
@@ -343,7 +343,7 @@ export default function Breadcrumbs({
                   {index > 0 && (
                     <ChevronRight
                       size={13}
-                      className="shrink-0 text-stone-400 dark:text-stone-600"
+                      className="shrink-0 text-secondary"
                       aria-hidden="true"
                     />
                   )}
@@ -351,7 +351,7 @@ export default function Breadcrumbs({
                   {isLast ? (
                     <span
                       aria-current="page"
-                      className="flex items-center gap-1.5 font-semibold text-stone-900 dark:text-stone-100 truncate max-w-50 sm:max-w-[320px] md:max-w-none"
+                      className="flex items-center gap-1.5 font-semibold text-color truncate max-w-50 sm:max-w-[320px] md:max-w-none"
                     >
                       {Icon && <Icon size={14} className="shrink-0 text-brand-600 dark:text-brand-400" />}
                       <span className="truncate">{item.label}</span>
@@ -359,13 +359,13 @@ export default function Breadcrumbs({
                   ) : item.path ? (
                     <Link
                       to={item.path}
-                      className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-stone-500 hover:bg-stone-100 hover:text-brand-600 transition dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-brand-400"
+                      className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-secondary hover:bg-surface hover:text-brand-600 transition"
                     >
                       {Icon && <Icon size={14} className="shrink-0" />}
                       <span className="truncate">{item.label}</span>
                     </Link>
                   ) : (
-                    <span className="flex items-center gap-1.5 px-1.5 py-0.5 text-stone-500 dark:text-stone-400">
+                    <span className="flex items-center gap-1.5 px-1.5 py-0.5 text-secondary">
                       {Icon && <Icon size={14} className="shrink-0" />}
                       <span className="truncate">{item.label}</span>
                     </span>
@@ -381,18 +381,18 @@ export default function Breadcrumbs({
                 {firstItem.path ? (
                   <Link
                     to={firstItem.path}
-                    className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-stone-500 hover:bg-stone-100 hover:text-brand-600 transition dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-brand-400"
+                    className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-secondary hover:bg-surface hover:text-brand-600 transition"
                   >
                     {firstItem.icon && <firstItem.icon size={14} className="shrink-0" />}
                     <span className="hidden sm:inline">{firstItem.label}</span>
                   </Link>
                 ) : (
-                  <span className="flex items-center gap-1.5 px-1.5 py-0.5 text-stone-500 dark:text-stone-400">
+                  <span className="flex items-center gap-1.5 px-1.5 py-0.5 text-secondary">
                     {firstItem.icon && <firstItem.icon size={14} className="shrink-0" />}
                     <span className="hidden sm:inline">{firstItem.label}</span>
                   </span>
                 )}
-                <ChevronRight size={13} className="shrink-0 text-stone-400 dark:text-stone-600" aria-hidden="true" />
+                <ChevronRight size={13} className="shrink-0 text-secondary" aria-hidden="true" />
               </li>
 
               {/* Middle Collapsed Dropdown */}
@@ -402,27 +402,27 @@ export default function Breadcrumbs({
                   onClick={() => setCollapsedOpen((prev) => !prev)}
                   aria-expanded={collapsedOpen}
                   aria-label="Show collapsed breadcrumb items"
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition dark:text-stone-400 dark:hover:bg-white/10 dark:hover:text-stone-100"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-color transition cursor-pointer"
                 >
                   <MoreHorizontal size={15} />
                 </button>
 
                 {collapsedOpen && (
-                  <div className="absolute left-0 top-full z-40 mt-1.5 min-w-44 rounded-xl glass-sm p-1.5 shadow-xl border border-stone-200/60 dark:border-stone-700/60">
+                  <div className="dropdown-surface absolute left-0 top-full z-40 mt-1.5 min-w-44 rounded-xl p-1.5 shadow-xl">
                     {middleItems.map((midItem, idx) => (
                       <div key={idx}>
                         {midItem.path ? (
                           <Link
                             to={midItem.path}
                             onClick={() => setCollapsedOpen(false)}
-                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-stone-700 hover:bg-stone-100 hover:text-brand-600 transition dark:text-stone-300 dark:hover:bg-white/5 dark:hover:text-brand-400"
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-secondary hover:bg-surface hover:text-brand-600 transition"
                           >
-                            <FolderOpen size={13} className="text-stone-400" />
+                            <FolderOpen size={13} className="text-secondary" />
                             <span className="truncate">{midItem.label}</span>
                           </Link>
                         ) : (
-                          <span className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-stone-500 dark:text-stone-400">
-                            <FolderOpen size={13} className="text-stone-400" />
+                          <span className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-secondary">
+                            <FolderOpen size={13} className="text-secondary" />
                             <span className="truncate">{midItem.label}</span>
                           </span>
                         )}
@@ -430,14 +430,14 @@ export default function Breadcrumbs({
                     ))}
                   </div>
                 )}
-                <ChevronRight size={13} className="ml-1 shrink-0 text-stone-400 dark:text-stone-600" aria-hidden="true" />
+                <ChevronRight size={13} className="ml-1 shrink-0 text-secondary" aria-hidden="true" />
               </li>
 
               {/* Last Item (Active Page) */}
               <li className="flex items-center gap-1.5 whitespace-nowrap min-w-0">
                 <span
                   aria-current="page"
-                  className="flex items-center gap-1.5 font-semibold text-stone-900 dark:text-stone-100 truncate max-w-50 sm:max-w-[320px] md:max-w-none"
+                  className="flex items-center gap-1.5 font-semibold text-color truncate max-w-50 sm:max-w-[320px] md:max-w-none"
                 >
                   {lastItem.icon && <lastItem.icon size={14} className="shrink-0 text-brand-600 dark:text-brand-400" />}
                   <span className="truncate">{lastItem.label}</span>
@@ -456,15 +456,15 @@ export default function Breadcrumbs({
             onClick={handleCopyLink}
             aria-label={t('breadcrumb.copyLink') || 'Copy page link'}
             title={copied ? (t('breadcrumb.linkCopied') || 'Copied!') : (t('breadcrumb.copyLink') || 'Copy page link')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
               copied
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
-                : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-stone-200'
+                ? 'bg-surface text-success border border-surface'
+                : 'text-secondary hover:bg-surface hover:text-color'
             }`}
           >
             {copied ? (
               <>
-                <Check size={13} className="text-emerald-600 dark:text-emerald-400" />
+                <Check size={13} className="text-success" />
                 <span className="hidden sm:inline">{t('breadcrumb.linkCopied') || 'Copied'}</span>
               </>
             ) : (

@@ -25,7 +25,10 @@
   /* កំណត់ពណ៌អក្សរទៅក្នុងប្រព័ន្ធ Tailwind */
   --color-text-main: var(--text-color);
   --color-text-secondary: var(--text-color-secondary);
+  --color-color: var(--text-color);
+  --color-secondary: var(--text-color-secondary);
   --color-surface: var(--glass-bg);
+  --color-surface-strong: var(--glass-strong-bg);
 
   /* ប្រព័ន្ធពណ៌ស្ថានភាព (Status Colors) */
   --color-success: var(--status-success);
@@ -146,6 +149,17 @@
               background 0.3s ease;
 }
 
+/* Ensure absolute or fixed positioned glass elements retain their position */
+.glass.absolute, .glass-teal.absolute, .glass-org.absolute, .glass-sm.absolute, .glass-strong.absolute,
+.glass[class*="absolute"], .glass-sm[class*="absolute"], .glass-strong[class*="absolute"] {
+  position: absolute !important;
+}
+
+.glass.fixed, .glass-sm.fixed, .glass-strong.fixed,
+.glass[class*="fixed"], .glass-sm[class*="fixed"], .glass-strong[class*="fixed"] {
+  position: fixed !important;
+}
+
 /* គែមរាងកោងចាំងពន្លឺ (Refractive Rim Light Layer) */
 .glass::before, .glass-teal::before, .glass-org::before, .glass-sm::before, .glass-strong::before {
   content: "";
@@ -231,8 +245,28 @@ body {
 }
 
 /* Semantic utilities keep component text and surfaces tied to the theme. */
+.text-color {
+  color: var(--text-color) !important;
+}
+
 .text-secondary {
   color: var(--text-color-secondary) !important;
+}
+
+.bg-surface {
+  background-color: var(--glass-bg) !important;
+}
+
+.bg-surface-strong {
+  background-color: var(--glass-strong-bg) !important;
+}
+
+.border-surface {
+  border-color: var(--glass-outline) !important;
+}
+
+.border-surface-strong {
+  border-color: var(--glass-strong-border) !important;
 }
 
 .surface-theme {
@@ -247,6 +281,22 @@ body {
 
 .page-surface {
   color: var(--text-color);
+}
+
+/* Dropdown surface styling: clean high-contrast, high-opacity backdrop for floating panels */
+.dropdown-surface {
+  position: absolute !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.2), 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+}
+
+.dark .dropdown-surface {
+  background-color: rgba(15, 23, 42, 0.96) !important;
+  border: 1px solid rgba(51, 65, 85, 0.85);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 4px 14px -2px rgba(0, 0, 0, 0.5);
 }
 
 .app-header {

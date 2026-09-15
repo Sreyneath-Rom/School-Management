@@ -336,7 +336,7 @@ function KPICardView({ card }: { card: StatCard }) {
   const isNegative = card.deltaDirection === 'down'
 
   return (
-    <div className="group relative isolate overflow-hidden rounded-[26px] border border-white/80 bg-white/70 backdrop-blur-xl p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-800/80 dark:bg-slate-900/70">
+    <div className="group relative isolate overflow-hidden rounded-[26px] border border-surface bg-surface-strong backdrop-blur-xl p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       {/* Background Soft Fluid Glass Glow */}
       <div
         className={`pointer-events-none absolute -right-6 -top-6 h-36 w-36 rounded-full blur-2xl opacity-70 transition-transform duration-500 group-hover:scale-110 ${style.blob1}`}
@@ -357,10 +357,10 @@ function KPICardView({ card }: { card: StatCard }) {
 
         {/* Middle: Metric Title & Large Number */}
         <div className="mt-4">
-          <p className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-200 tracking-tight">
+          <p className="text-xs sm:text-[13px] font-bold text-color tracking-tight">
             {card.label}
           </p>
-          <p className="mt-1 text-3xl sm:text-[34px] font-black tracking-tight text-slate-900 dark:text-white leading-none">
+          <p className="mt-1 text-3xl sm:text-[34px] font-black tracking-tight text-color leading-none">
             {card.value}
           </p>
         </div>
@@ -375,14 +375,14 @@ function KPICardView({ card }: { card: StatCard }) {
                   {isNegative && <ArrowDown size={13} strokeWidth={3} className="mr-0.5" />}
                   {card.delta}
                 </span>
-                <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] font-medium text-secondary">
                   {card.deltaLabel}
                 </span>
               </div>
             ) : null}
 
             {card.footerLabel && (
-              <p className="mt-1 text-[11px] font-normal text-slate-400 dark:text-slate-500">
+              <p className="mt-1 text-[11px] font-normal text-secondary">
                 {card.footerLabel}
               </p>
             )}
@@ -424,19 +424,18 @@ export default function StatsGrid<T = DashboardStats>({
 
   return (
     <div className="space-y-4">
-      {/* Header bar matching user's image reference:
-          "Key Performance Indicators" + "Overall school performance at a glance" + year pill dropdown */}
+      {/* Header bar matching user's image reference */}
       {showHeader && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-xs">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 shadow-xs">
               <BarChart3 size={22} strokeWidth={2.2} />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              <h2 className="text-lg sm:text-xl font-black tracking-tight text-color">
                 Key Performance Indicators
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs sm:text-sm text-secondary">
                 Overall school performance at a glance
               </p>
             </div>
@@ -447,15 +446,15 @@ export default function StatsGrid<T = DashboardStats>({
             <button
               type="button"
               onClick={() => setShowYearDropdown(!showYearDropdown)}
-              className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/90 px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 cursor-pointer transition"
+              className="flex items-center gap-2 rounded-2xl border border-surface bg-surface-strong px-3.5 py-2 text-xs font-bold text-color shadow-xs hover:bg-surface cursor-pointer transition"
             >
-              <Calendar size={14} className="text-slate-400" />
+              <Calendar size={14} className="text-secondary" />
               <span>{selectedYear}</span>
-              <ChevronDown size={14} className="text-slate-400" />
+              <ChevronDown size={14} className="text-secondary" />
             </button>
 
             {showYearDropdown && (
-              <div className="absolute right-0 mt-1.5 z-30 w-36 rounded-2xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+              <div className="dropdown-surface absolute right-0 mt-1.5 z-30 w-36 rounded-2xl p-1 shadow-lg">
                 {['2025 – 2026', '2024 – 2025', '2023 – 2024'].map((year) => (
                   <button
                     key={year}
@@ -466,8 +465,8 @@ export default function StatsGrid<T = DashboardStats>({
                     }}
                     className={`w-full text-left rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                       selectedYear === year
-                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400'
-                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
+                        ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 font-bold'
+                        : 'text-secondary hover:bg-surface hover:text-color'
                     }`}
                   >
                     {year}
@@ -491,10 +490,10 @@ export default function StatsGrid<T = DashboardStats>({
         })}
       </div>
 
-      {/* Footer slogan matching design reference: "✦ Better Learning • Brighter Future" */}
+      {/* Footer slogan */}
       {showHeader && (
-        <div className="flex items-center gap-2 pt-1 px-1 text-xs font-medium text-slate-400 dark:text-slate-500">
-          <Sparkles size={13} className="text-blue-500" />
+        <div className="flex items-center gap-2 pt-1 px-1 text-xs font-medium text-secondary">
+          <Sparkles size={13} className="text-brand-500" />
           <span>Better Learning</span>
           <span>•</span>
           <span>Brighter Future</span>

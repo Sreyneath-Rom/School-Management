@@ -32,7 +32,7 @@ export default function Toast({
   const isError = type === 'error'
 
   return (
-    <div className="pointer-events-auto relative flex w-full max-w-sm items-start gap-3 overflow-hidden rounded-[22px] border border-white/80 bg-white/95 p-4 shadow-xl backdrop-blur-xl animate-in slide-in-from-top-2 duration-200 dark:border-slate-800/80 dark:bg-slate-900/95">
+    <div className="pointer-events-auto relative flex w-full max-w-sm items-start gap-3 overflow-hidden rounded-[22px] border border-surface bg-surface-strong p-4 shadow-xl backdrop-blur-xl animate-in slide-in-from-top-2 duration-200">
       {/* Ambient Accent Light */}
       <div
         className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-xl opacity-60 ${
@@ -40,7 +40,7 @@ export default function Toast({
             ? 'bg-emerald-400/30'
             : isError
             ? 'bg-rose-400/30'
-            : 'bg-blue-400/30'
+            : 'bg-brand-400/30'
         }`}
       />
 
@@ -50,7 +50,7 @@ export default function Toast({
             ? 'bg-linear-to-br from-emerald-500 to-teal-600 shadow-emerald-500/25'
             : isError
             ? 'bg-linear-to-br from-rose-500 to-red-600 shadow-rose-500/25'
-            : 'bg-linear-to-br from-blue-500 to-indigo-600 shadow-blue-500/25'
+            : 'bg-linear-to-br from-brand-500 to-brand-700 shadow-brand-500/25'
         }`}
       >
         {isSuccess && <CheckCircle2 size={20} strokeWidth={2.2} />}
@@ -60,11 +60,11 @@ export default function Toast({
 
       <div className="min-w-0 flex-1 pt-0.5">
         {title && (
-          <p className="text-xs font-bold text-slate-900 dark:text-white">
+          <p className="text-xs font-bold text-color">
             {title}
           </p>
         )}
-        <p className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p className="text-xs font-medium text-color leading-relaxed">
           {message}
         </p>
       </div>
@@ -72,7 +72,7 @@ export default function Toast({
       <button
         type="button"
         onClick={onClose}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-secondary hover:bg-surface hover:text-color transition cursor-pointer"
       >
         <X size={14} />
       </button>

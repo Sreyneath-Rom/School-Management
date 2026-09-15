@@ -102,23 +102,23 @@ export default function Header({
   const roleBadgeMap: Record<string, { label: string; badge: string; dot: string }> = {
     admin: {
       label: 'Administrator',
-      badge: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
-      dot: 'bg-blue-500',
+      badge: 'bg-surface text-brand-600 dark:text-brand-300 border-surface',
+      dot: 'bg-brand-500',
     },
     teacher: {
       label: 'Faculty Member',
-      badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
-      dot: 'bg-emerald-500',
+      badge: 'bg-surface text-success border-surface',
+      dot: 'bg-success',
     },
     student: {
       label: 'Enrolled Scholar',
-      badge: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
-      dot: 'bg-purple-500',
+      badge: 'bg-surface text-info border-surface',
+      dot: 'bg-info',
     },
     parent: {
       label: 'Parent / Guardian',
-      badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
-      dot: 'bg-amber-500',
+      badge: 'bg-surface text-warning border-surface',
+      dot: 'bg-warning',
     },
   }
 
@@ -189,7 +189,7 @@ export default function Header({
 
   // Close menus on outside click & escape
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node
       if (menuRef.current && !menuRef.current.contains(target)) {
         setMenuOpen(false)
@@ -211,9 +211,11 @@ export default function Header({
     }
 
     document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
     document.addEventListener('keydown', handleEscape)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
       document.removeEventListener('keydown', handleEscape)
     }
   }, [])
@@ -222,8 +224,8 @@ export default function Header({
     'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-secondary transition-all duration-150 hover:bg-surface hover:text-color cursor-pointer'
 
   return (
-    <header className="sticky top-0 z-30 select-none  transition-colors">
-      <div className="flex h-16 items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
+    <header className="app-header sticky top-0 z-30 select-none transition-colors">
+      <div className="app-header-inner flex h-14 sm:h-16 items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
         {/* ================================================================= */}
         {/* LEFT: MOBILE TOGGLE ONLY (NO REDUNDANT SCHOOL PROFILE/LOGO)       */}
         {/* ================================================================= */}
@@ -233,7 +235,7 @@ export default function Header({
             type="button"
             onClick={onOpenSidebar}
             aria-label="Open navigation drawer"
-            className="flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-xl glass-sm text-color  dark:glass-sm dark:text-color lg:hidden cursor-pointer transition active:scale-95"
+            className="flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-2xl glass-sm text-color lg:hidden cursor-pointer transition hover:bg-surface active:scale-95"
           >
             <Menu size={18} />
           </button>
@@ -244,12 +246,12 @@ export default function Header({
         {/* ================================================================= */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 ml-auto">
           {/* Academic Session Date Pill */}
-          <div className="hidden sm:flex items-center gap-2 rounded-3xl glass-sm dark:glass-sm h-9.5 px-2.5 py-1.5  text-xs font-semibold text-color dark:text-color">
-            <Calendar size={13} className="text-color dark:text-color" />
-            <span>{formattedDate}</span>
-            <span className="h-1 w-1 rounded-full bg-success " />
+          <div className="hidden sm:flex items-center gap-2 rounded-2xl glass-sm h-9.5 px-3 py-1.5 text-xs font-semibold text-color">
+            <Calendar size={13} className="text-brand-600 dark:text-brand-400" />
+            <span className="text-color">{formattedDate}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-success" />
             <span
-              className="max-w-32 truncate text-[10.5px] font-bold text-color dark:text-color"
+              className="max-w-32 truncate text-[10.5px] font-bold text-secondary"
               title={CURRENT_TERM_NAME}
             >
               {CURRENT_TERM_NAME}
@@ -279,19 +281,19 @@ export default function Header({
                     setMenuOpen(false)
                     setNotifOpen(false)
                   }}
-                  className={`flex h-9.5 items-center gap-1.5 rounded-3xl px-2.5 text-xs font-semibold transition cursor-pointer ${
+                  className={`flex h-9.5 items-center gap-1.5 rounded-2xl px-2.5 text-xs font-semibold transition cursor-pointer glass-sm ${
                     langOpen
-                      ? 'glass-sm dark:glass-sm text-color dark:text-color'
-                      : 'text-color dark:text-color glass-sm dark:glass-sm '
+                      ? 'ring-1 ring-brand-500/30 text-color'
+                      : 'text-secondary hover:text-color'
                   }`}
                 >
                   <span className="text-sm">{safeActiveLang.flag}</span>
-                  <span className="hidden sm:inline font-bold uppercase text-[10.5px]">
+                  <span className="hidden sm:inline font-bold uppercase text-[10.5px] text-color">
                     {safeActiveLang.code}
                   </span>
                   <ChevronDown
                     size={13}
-                    className={`transition-transform duration-200 text-color ${
+                    className={`transition-transform duration-200 text-secondary ${
                       langOpen ? 'rotate-180' : ''
                     }`}
                   />
@@ -300,7 +302,7 @@ export default function Header({
                 {langOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-3xl glass-sm p-1.5 dark:glass-sm animate-in fade-in zoom-in-95 duration-150"
+                    className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-150"
                   >
                     <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-secondary">
                       {t('header.changeLanguage')}
@@ -318,13 +320,13 @@ export default function Header({
                           }}
                           className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition cursor-pointer ${
                             lang.code === language
-                              ? 'bg-teal-600 text-white font-semibold shadow-xs'
-                              : 'text-secondary hover:bg-surface'
+                              ? 'bg-brand-600 text-white font-semibold shadow-xs'
+                              : 'text-secondary hover:bg-surface hover:text-color'
                           }`}
                         >
                           <span className="flex items-center gap-2">
                             <span className="text-sm">{lang.flag}</span>
-                            <span>{lang.name}</span>
+                            <span className="font-medium">{lang.name}</span>
                           </span>
                           {lang.code === language && <Check size={14} />}
                         </button>
@@ -350,30 +352,30 @@ export default function Header({
                 setMenuOpen(false)
                 setLangOpen(false)
               }}
-              className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition cursor-pointer ${
+              className={`relative flex h-9.5 w-9.5 items-center justify-center rounded-2xl glass-sm transition cursor-pointer ${
                 notifOpen
-                  ? 'bg-surface text-color ring-1 ring-teal-500/30'
-                  : 'text-secondary hover:bg-surface hover:text-color'
+                  ? 'ring-1 ring-brand-500/30 text-color'
+                  : 'text-secondary hover:text-color hover:bg-surface'
               }`}
             >
               <Bell size={17} />
               {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900">
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-black text-white ring-2 ring-surface-strong">
                   {unreadCount}
                 </span>
               )}
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-84 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-3xl glass-sm dark:glass-sm animate-in fade-in zoom-in-95 duration-150">
+              <div className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-84 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl animate-in fade-in zoom-in-95 duration-150">
                 {/* Notifications Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-3.5 py-2.5">
+                <div className="flex items-center justify-between border-b border-surface px-3.5 py-2.5 bg-surface-strong">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-color">
                       {t('header.notifications')}
                     </span>
                     {unreadCount > 0 && (
-                      <span className="rounded-full bg-teal-500/15 px-1.5 py-0.2 text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
+                      <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-extrabold text-brand-600 dark:text-brand-400">
                         {unreadCount} new
                       </span>
                     )}
@@ -383,7 +385,7 @@ export default function Header({
                     <button
                       type="button"
                       onClick={markAllRead}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 cursor-pointer"
+                      className="flex items-center gap-1 text-[11px] font-semibold text-brand-600 hover:text-brand-500 dark:text-brand-400 cursor-pointer transition"
                     >
                       <CheckCheck size={13} />
                       {t('header.markAllRead')}
@@ -392,13 +394,13 @@ export default function Header({
                 </div>
 
                 {/* Filter tabs */}
-                <div className="flex gap-1 border-b border-slate-100 dark:border-slate-800 px-3 py-1.5 bg-slate-50/60 dark:bg-slate-900/40">
+                <div className="flex gap-1 border-b border-surface px-3 py-1.5 bg-surface">
                   <button
                     type="button"
                     onClick={() => setActiveFilterCategory('all')}
-                    className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                    className={`rounded-lg px-2.5 py-1 text-[11px] transition cursor-pointer ${
                       activeFilterCategory === 'all'
-                        ? 'bg-surface text-color shadow-xs'
+                        ? 'bg-surface-strong text-color shadow-xs font-bold'
                         : 'text-secondary hover:text-color'
                     }`}
                   >
@@ -407,9 +409,9 @@ export default function Header({
                   <button
                     type="button"
                     onClick={() => setActiveFilterCategory('unread')}
-                    className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                    className={`rounded-lg px-2.5 py-1 text-[11px] transition cursor-pointer ${
                       activeFilterCategory === 'unread'
-                        ? 'bg-surface text-color shadow-xs'
+                        ? 'bg-surface-strong text-color shadow-xs font-bold'
                         : 'text-secondary hover:text-color'
                     }`}
                   >
@@ -418,9 +420,9 @@ export default function Header({
                 </div>
 
                 {/* Notification items list */}
-                <div className="max-h-76 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">
+                <div className="max-h-76 overflow-y-auto divide-y divide-surface">
                   {filteredNotifications.length === 0 ? (
-                    <div className="p-8 text-center">
+                    <div className="p-8 text-center bg-surface/30">
                       <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface text-secondary">
                         <Bell size={16} />
                       </div>
@@ -433,19 +435,11 @@ export default function Header({
                       <div
                         key={n.id}
                         onClick={() => handleNotificationClick(n)}
-                        className={`group flex gap-2.5 px-3.5 py-2.5 transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
-                          !n.read ? 'bg-teal-500/5 dark:bg-teal-500/10' : ''
+                        className={`group flex gap-2.5 px-3.5 py-2.5 transition cursor-pointer hover:bg-surface ${
+                          !n.read ? 'bg-surface/50' : ''
                         }`}
                       >
-                        <div
-                          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs ${
-                            n.category === 'exam'
-                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
-                              : n.category === 'attendance'
-                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                          }`}
-                        >
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs bg-surface text-brand-600 dark:text-brand-400">
                           <Bell size={13} />
                         </div>
 
@@ -455,7 +449,7 @@ export default function Header({
                               {n.title}
                             </p>
                             {!n.read && (
-                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-600" />
+                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
                             )}
                           </div>
                           <p className="mt-0.5 text-[11px] text-secondary leading-normal line-clamp-2">
@@ -469,7 +463,7 @@ export default function Header({
                               <button
                                 type="button"
                                 onClick={(e) => markOneRead(n.id, e)}
-                                className="text-[10px] font-semibold text-teal-600 hover:underline dark:text-teal-400"
+                                className="text-[10px] font-semibold text-brand-600 hover:text-brand-500 hover:underline dark:text-brand-400 cursor-pointer"
                               >
                                 Mark read
                               </button>
@@ -501,10 +495,10 @@ export default function Header({
                 setNotifOpen(false)
                 setLangOpen(false)
               }}
-              className={`group flex items-center gap-2 rounded-xl p-1 pr-2 sm:pr-2.5 transition cursor-pointer ${
+              className={`group flex items-center gap-2 rounded-2xl glass-sm h-9.5 p-1 pr-2 sm:pr-2.5 transition cursor-pointer ${
                 menuOpen
-                  ? 'glass-sm dark:glass-sm text-text-main/80'
-                  : 'rounded-full glass-sm text-text-main/65 transition hover:text-text-main'
+                  ? 'ring-1 ring-brand-500/30 text-color'
+                  : 'text-secondary hover:text-color'
               }`}
             >
               {/* User Avatar with Presence Badge */}
@@ -513,14 +507,14 @@ export default function Header({
                   <img
                     src={avatarUrl}
                     alt={user?.name ?? 'User'}
-                    className="h-8 w-8 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+                    className="h-7.5 w-7.5 rounded-xl object-cover ring-1 ring-surface"
                   />
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-linear-to-tr from-teal-600 to-emerald-600 text-white text-xs font-black shadow-xs">
+                  <div className="flex h-7.5 w-7.5 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white text-xs font-black shadow-xs">
                     {initials}
                   </div>
                 )}
-                <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface-strong" />
               </div>
 
               {/* User Name & Role Label */}
@@ -545,20 +539,19 @@ export default function Header({
             {menuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-3xl glass-sm p-2 dark:glass-sm animate-in fade-in zoom-in-95 duration-150"
-                ref={menuRef}
+                className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl p-2 animate-in fade-in zoom-in-95 duration-150"
               >
                 {/* Executive Header Identity Card */}
-                <div className="mb-1 rounded-xl glass-sm dark:glass-sm p-3 border border-slate-200/70 dark:border-slate-700/70">
+                <div className="mb-1 rounded-xl p-3 bg-surface-strong border border-surface">
                   <div className="flex items-center gap-2.5">
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
                         alt={user?.name ?? 'User'}
-                        className="h-10 w-10 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+                        className="h-10 w-10 rounded-xl object-cover ring-1 ring-surface"
                       />
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-tr from-teal-600 to-emerald-600 text-white text-sm font-black shadow-xs">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white text-sm font-black shadow-xs">
                         {initials}
                       </div>
                     )}
@@ -569,7 +562,7 @@ export default function Header({
                       </p>
                       <div className="mt-0.5 flex items-center gap-1.5">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.2 text-[9.5px] font-bold border ${roleMeta.badge}`}
+                          className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9.5px] font-bold border ${roleMeta.badge}`}
                         >
                           <span className={`h-1.5 w-1.5 rounded-full ${roleMeta.dot}`} />
                           {roleMeta.label}
@@ -580,7 +573,7 @@ export default function Header({
                 </div>
 
                 {/* Navigation Links */}
-                <div className="px-2 pb-1 pt-1.5 text-[9.5px] font-bold uppercase tracking-wider text-color dark:text-color">
+                <div className="px-2 pb-1 pt-1.5 text-[9.5px] font-bold uppercase tracking-wider text-secondary">
                   Account & System
                 </div>
 
@@ -593,11 +586,11 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-teal-600 group-hover:text-white transition">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-brand-600 group-hover:text-white transition">
                     <UserCircle size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block leading-tight">{t('header.myProfile')}</span>
+                    <span className="block leading-tight text-color group-hover:text-color">{t('header.myProfile')}</span>
                     <span className="block text-[10px] text-secondary font-normal">
                       Personal profile & credentials
                     </span>
@@ -613,11 +606,11 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-teal-600 group-hover:text-white transition">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-brand-600 group-hover:text-white transition">
                     <Settings size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block leading-tight">{t('header.settings')}</span>
+                    <span className="block leading-tight text-color group-hover:text-color">{t('header.settings')}</span>
                     <span className="block text-[10px] text-secondary font-normal">
                       Preferences & localization
                     </span>
@@ -633,11 +626,11 @@ export default function Header({
                   }}
                   className={menuItemClass}
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-teal-600 group-hover:text-white transition">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-secondary group-hover:bg-brand-600 group-hover:text-white transition">
                     <CircleHelp size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block leading-tight">Help & Knowledge Base</span>
+                    <span className="block leading-tight text-color group-hover:text-color">Help & Knowledge Base</span>
                     <span className="block text-[10px] text-secondary font-normal">
                       Documentation & support
                     </span>
@@ -645,7 +638,7 @@ export default function Header({
                 </button>
 
                 {/* Sign Out Action */}
-                <div className="my-1.5 " />
+                <div className="my-1.5 border-t border-surface" />
 
                 <button
                   type="button"
@@ -654,14 +647,14 @@ export default function Header({
                     setMenuOpen(false)
                     logout()
                   }}
-                  className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-error hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/20 dark:hover:text-rose-300 transition cursor-pointer"
+                  className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-error hover:bg-surface hover:text-error transition cursor-pointer"
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg glass-sm text-error  dark:glass-sm transition">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-error group-hover:bg-error group-hover:text-white transition">
                     <LogOut size={14} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block leading-tight">{t('header.logOut')}</span>
-                    <span className="block text-[10px] text-error font-normal">
+                    <span className="block leading-tight text-error">{t('header.logOut')}</span>
+                    <span className="block text-[10px] text-error/80 font-normal">
                       End active session safely
                     </span>
                   </div>

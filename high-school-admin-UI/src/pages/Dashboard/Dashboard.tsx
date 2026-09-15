@@ -40,7 +40,7 @@ function AdminDashboard() {
 
       {/* 3. Error Alert if API metrics fail */}
       {error && (
-        <div className="rounded-2xl p-4 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60">
+        <div className="rounded-2xl p-4 text-xs font-semibold text-error bg-surface border border-surface">
           Unable to synchronize real-time dashboard metrics from server. Displaying cached benchmarks.
         </div>
       )}

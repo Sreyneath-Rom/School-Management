@@ -90,13 +90,13 @@ export default function StudentDashboard() {
       {/* Main Grid: Today's Schedule & Quick Action Hub */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Timetable */}
-        <div className="lg:col-span-2 glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
+        <div className="rounded-2xl p-5 border border-surface bg-surface-strong space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h3 className="font-semibold text-sm text-color flex items-center gap-2">
               <Calendar className="w-4 h-4 text-brand-600" />
               Today's Class Schedule (Grade 10-A)
             </h3>
-            <span className="text-xs text-slate-400">Friday, Sep 4</span>
+            <span className="text-xs text-secondary">Friday, Sep 4</span>
           </div>
 
           <div className="space-y-3">
@@ -105,8 +105,8 @@ export default function StudentDashboard() {
                 key={i}
                 className={`p-3.5 rounded-xl border flex items-center justify-between transition ${
                   slot.status === 'Active Now'
-                    ? 'bg-brand-50/70 dark:bg-brand-950/30 border-brand-500/60 shadow-sm'
-                    : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/80'
+                    ? 'bg-brand-500/10 border-brand-500/40'
+                    : 'bg-surface border-surface'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -114,17 +114,17 @@ export default function StudentDashboard() {
                     className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold ${
                       slot.status === 'Active Now'
                         ? 'bg-brand-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                        : 'bg-surface text-secondary border border-surface'
                     }`}
                   >
                     P{i + 1}
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <h4 className="text-sm font-semibold text-color">
                       {slot.subject}
                     </h4>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                      <Clock className="w-3 h-3 text-slate-400" />
+                    <div className="flex items-center gap-2 text-xs text-secondary mt-0.5">
+                      <Clock className="w-3 h-3 text-secondary" />
                       <span>{slot.time}</span>
                       <span>•</span>
                       <span>{slot.room}</span>
@@ -137,8 +137,8 @@ export default function StudentDashboard() {
                 <span
                   className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
                     slot.status === 'Active Now'
-                      ? 'bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-300'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      ? 'bg-brand-500/15 text-brand-600 dark:text-brand-300'
+                      : 'bg-surface text-secondary border border-surface'
                   }`}
                 >
                   {slot.status}
@@ -149,54 +149,54 @@ export default function StudentDashboard() {
         </div>
 
         {/* Student Quick Links */}
-        <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 space-y-3">
-          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+        <div className="rounded-2xl p-5 border border-surface bg-surface-strong space-y-3 shadow-xs">
+          <h3 className="font-semibold text-sm text-color">
             Academic Quick Navigation
           </h3>
 
           <div className="space-y-2 text-xs font-medium">
             <Link
               to="/student/lessons"
-              className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 hover:border-brand-500/50 transition group"
+              className="flex items-center justify-between p-3 rounded-xl bg-surface border border-surface hover:border-brand-500/50 transition group"
             >
               <div className="flex items-center gap-2.5">
                 <BookOpen className="w-4 h-4 text-brand-600" />
-                <span>Class Lessons & Lecture Slides</span>
+                <span className="text-color">Class Lessons & Lecture Slides</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600" />
+              <ArrowRight className="w-3.5 h-3.5 text-secondary group-hover:text-brand-600" />
             </Link>
 
             <Link
               to="/student/homework"
-              className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 hover:border-brand-500/50 transition group"
+              className="flex items-center justify-between p-3 rounded-xl bg-surface border border-surface hover:border-brand-500/50 transition group"
             >
               <div className="flex items-center gap-2.5">
-                <FileCheck2 className="w-4 h-4 text-amber-600" />
-                <span>Homework & Assignment Portal</span>
+                <FileCheck2 className="w-4 h-4 text-warning" />
+                <span className="text-color">Homework & Assignment Portal</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600" />
+              <ArrowRight className="w-3.5 h-3.5 text-secondary group-hover:text-warning" />
             </Link>
 
             <Link
               to="/student/quizzes"
-              className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 hover:border-brand-500/50 transition group"
+              className="flex items-center justify-between p-3 rounded-xl bg-surface border border-surface hover:border-brand-500/50 transition group"
             >
               <div className="flex items-center gap-2.5">
-                <HelpCircle className="w-4 h-4 text-sky-600" />
-                <span>Timed Online Tests & Quizzes</span>
+                <HelpCircle className="w-4 h-4 text-brand-600" />
+                <span className="text-color">Timed Online Tests & Quizzes</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600" />
+              <ArrowRight className="w-3.5 h-3.5 text-secondary group-hover:text-brand-600" />
             </Link>
 
             <Link
               to="/student/grades"
-              className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 hover:border-brand-500/50 transition group"
+              className="flex items-center justify-between p-3 rounded-xl bg-surface border border-surface hover:border-brand-500/50 transition group"
             >
               <div className="flex items-center gap-2.5">
-                <Award className="w-4 h-4 text-emerald-600" />
-                <span>Official Semester Report Card</span>
+                <Award className="w-4 h-4 text-success" />
+                <span className="text-color">Official Semester Report Card</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600" />
+              <ArrowRight className="w-3.5 h-3.5 text-secondary group-hover:text-success" />
             </Link>
           </div>
         </div>
@@ -205,10 +205,10 @@ export default function StudentDashboard() {
       {/* Homework Due & Active Quizzes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Homework Section */}
-        <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
+        <div className="rounded-2xl p-5 border border-surface bg-surface-strong space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <FileCheck2 className="w-4 h-4 text-amber-600" />
+            <h3 className="font-semibold text-sm text-color flex items-center gap-2">
+              <FileCheck2 className="w-4 h-4 text-warning" />
               Assignments Due Soon
             </h3>
             <Link to="/student/homework" className="text-xs text-brand-600 hover:underline">
@@ -220,18 +220,18 @@ export default function StudentDashboard() {
             {homeworkList.map((hw) => (
               <div
                 key={hw.id}
-                className="p-3 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between text-xs"
+                className="p-3 rounded-xl bg-surface border border-surface flex items-center justify-between text-xs"
               >
                 <div>
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100">{hw.title}</h4>
-                  <p className="text-slate-400 mt-0.5">
+                  <h4 className="font-semibold text-color">{hw.title}</h4>
+                  <p className="text-secondary mt-0.5">
                     {hw.subjectName} • Due {hw.dueDate} ({hw.maxPoints} pts)
                   </p>
                 </div>
 
                 <Link
                   to="/student/homework"
-                  className="px-3 py-1 rounded-xl bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 font-medium transition"
+                  className="px-3 py-1 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-300 font-medium transition"
                 >
                   View Details
                 </Link>
@@ -241,10 +241,10 @@ export default function StudentDashboard() {
         </div>
 
         {/* Quizzes Section */}
-        <div className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
+        <div className="rounded-2xl p-5 border border-surface bg-surface-strong space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-sky-600" />
+            <h3 className="font-semibold text-sm text-color flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-brand-600" />
               Scheduled Quizzes & Tests
             </h3>
             <Link to="/student/quizzes" className="text-xs text-brand-600 hover:underline">
@@ -256,18 +256,18 @@ export default function StudentDashboard() {
             {quizzes.map((q) => (
               <div
                 key={q.id}
-                className="p-3 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between text-xs"
+                className="p-3 rounded-xl bg-surface border border-surface flex items-center justify-between text-xs"
               >
                 <div>
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100">{q.title}</h4>
-                  <p className="text-slate-400 mt-0.5">
+                  <h4 className="font-semibold text-color">{q.title}</h4>
+                  <p className="text-secondary mt-0.5">
                     {q.subjectName} • {q.durationMinutes} mins • {q.questions.length} questions
                   </p>
                 </div>
 
                 <Link
                   to="/student/quizzes"
-                  className="px-3 py-1 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 font-medium transition inline-flex items-center gap-1"
+                  className="px-3 py-1 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-300 font-medium transition inline-flex items-center gap-1"
                 >
                   <Timer className="w-3 h-3" />
                   Take Test

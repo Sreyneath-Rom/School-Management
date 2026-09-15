@@ -17,7 +17,7 @@ export default function AppLayout() {
 
   return (
     <SchoolProvider>
-      <div className="page-theme flex h-screen w-full overflow-hidden text-text-main">
+      <div className="page-theme flex h-screen w-full overflow-hidden text-color">
         {/* ============================================================
             SIDEBAR
         ============================================================ */}
@@ -48,14 +48,13 @@ export default function AppLayout() {
                 className="
                   min-h-full
                   rounded-2xl
-                
                   p-4
-                  shadow-sm
-                 glass-sm
+                  shadow-xs
+                  glass-sm
+                  border-surface
                   sm:rounded-3xl
                   sm:p-6
                   lg:p-8
-                  dark:glass-sm
                 "
               >
                 {/* Breadcrumb */}

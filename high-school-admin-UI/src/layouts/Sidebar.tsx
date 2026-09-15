@@ -724,23 +724,23 @@ const roleBadgeColorMap: Record<
 > = {
   admin: {
     label: "Administrator",
-    badgeClass: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20",
-    dotClass: "bg-blue-500",
+    badgeClass: "bg-surface text-brand-600 dark:text-brand-300 border-surface",
+    dotClass: "bg-brand-500",
   },
   teacher: {
     label: "Faculty",
-    badgeClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
-    dotClass: "bg-emerald-500",
+    badgeClass: "bg-surface text-success border-surface",
+    dotClass: "bg-success",
   },
   student: {
     label: "Scholar",
-    badgeClass: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20",
-    dotClass: "bg-purple-500",
+    badgeClass: "bg-surface text-info border-surface",
+    dotClass: "bg-info",
   },
   parent: {
     label: "Guardian",
-    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
-    dotClass: "bg-amber-500",
+    badgeClass: "bg-surface text-warning border-surface",
+    dotClass: "bg-warning",
   },
 };
 
@@ -973,7 +973,7 @@ export default function Sidebar({
 
   // --- Render Compact Rail Mode for Desktop ---
   const renderCompactMenu = () => (
-    <div className="app-sidebar flex h-full flex-col justify-between p-2 select-none overflow-hidden bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl">
+    <div className="app-sidebar flex h-full flex-col justify-between p-2 select-none overflow-hidden">
       <div className="flex flex-col items-center space-y-2 overflow-y-auto no-scrollbar flex-1 py-1.5">
         {/* School Crest mini icon */}
         <div
@@ -988,7 +988,7 @@ export default function Sidebar({
           type="button"
           onClick={toggleCollapsed}
           title="Expand sidebar"
-          className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer transition-all duration-200 active:scale-95"
+          className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-color cursor-pointer transition-all duration-200 active:scale-95"
           aria-label="Expand sidebar"
         >
           <PanelLeft
@@ -1004,17 +1004,17 @@ export default function Sidebar({
           title={t("sidebar.dashboard")}
           className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 shrink-0 ${
             isDashboardActive
-              ? "bg-teal-600 text-white shadow-md shadow-teal-600/30 font-semibold"
-              : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              ? "bg-brand-600 text-white shadow-md shadow-brand-600/30 font-semibold"
+              : "text-secondary hover:bg-surface hover:text-color"
           }`}
         >
           <LayoutDashboard size={18} />
           {isDashboardActive && (
-            <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-teal-600" />
+            <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-brand-600" />
           )}
         </NavLink>
 
-        <div className="my-1 h-px w-6 bg-slate-200/80 dark:bg-slate-800 shrink-0" />
+        <div className="my-1 h-px w-6 bg-surface shrink-0" />
 
         {/* Section Icons with Hover Popover */}
         <nav
@@ -1042,37 +1042,37 @@ export default function Sidebar({
                   type="button"
                   onClick={() => toggleSection(section.key)}
                   aria-label={t(section.titleKey)}
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 ${
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                     isSectionActive
-                      ? "bg-teal-500/15 text-teal-700 font-semibold ring-1 ring-teal-500/30 dark:bg-teal-500/25 dark:text-teal-300 dark:ring-teal-400/30"
-                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                      ? "bg-surface-strong text-brand-600 font-semibold ring-1 ring-brand-500/30 dark:text-brand-300"
+                      : "text-secondary hover:bg-surface hover:text-color"
                   }`}
                 >
                   <SectionIcon size={18} />
                   {isSectionActive && (
-                    <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-teal-600 ring-2 ring-white dark:ring-slate-900" />
+                    <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface-strong" />
                   )}
                   {!isSectionActive && hasBadges && (
-                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-500 ring-1 ring-white dark:ring-slate-900" />
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning ring-1 ring-surface-strong" />
                   )}
                 </button>
 
                 {/* Popover Flyout for Compact Mode */}
                 {isHovered && (
                   <div
-                    className="absolute left-full top-0 z-50 ml-3 w-72 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-2xl shadow-slate-900/10 dark:shadow-black/40 border border-slate-200/90 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150"
+                    className="dropdown-surface absolute left-full top-0 z-50 ml-3 w-72 rounded-2xl p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
                     onMouseEnter={() => handleMouseEnter(section.key)}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2 px-1 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                    <div className="mb-2 flex items-center justify-between border-b border-surface pb-2 px-1">
+                      <span className="text-xs font-bold text-color flex items-center gap-1.5">
                         <SectionIcon
                           size={15}
-                          className="text-teal-600 dark:text-teal-400"
+                          className="text-brand-600 dark:text-brand-400"
                         />
                         {t(section.titleKey)}
                       </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                      <span className="text-[10px] text-secondary font-semibold px-2 py-0.5 rounded-full bg-surface">
                         {section.items.length} items
                       </span>
                     </div>
@@ -1090,8 +1090,8 @@ export default function Sidebar({
                             onClick={handleLinkClick}
                             className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition duration-150 ${
                               isItemActive
-                                ? "bg-teal-600 text-white font-medium shadow-xs"
-                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                                ? "bg-brand-600 text-white font-medium shadow-xs"
+                                : "text-secondary hover:bg-surface hover:text-color"
                             }`}
                           >
                             <span className="flex items-center gap-2 truncate">
@@ -1102,7 +1102,7 @@ export default function Sidebar({
                             </span>
                             {item.badge && (
                               <span
-                                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${item.badgeColor || "bg-teal-600 text-white"} ${item.badgePulse ? "animate-pulse" : ""}`}
+                                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${item.badgeColor || "bg-brand-600 text-white"} ${item.badgePulse ? "animate-pulse" : ""}`}
                               >
                                 {item.badge}
                               </span>
@@ -1120,10 +1120,10 @@ export default function Sidebar({
       </div>
 
       {/* Compact Mode Footer with User Initials */}
-      <div className="flex flex-col items-center space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80 shrink-0">
+      <div className="flex flex-col items-center space-y-2 pt-2 border-t border-surface shrink-0">
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-white/20"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-surface"
         >
           {userInitials}
         </div>
@@ -1133,7 +1133,7 @@ export default function Sidebar({
 
   // --- Render Standard Expanded Menu ---
   const renderExpandedMenu = (isMobile = false) => (
-    <div className="flex h-full flex-col justify-between select-none overflow-hidden bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl">
+    <div className="app-sidebar flex h-full flex-col justify-between select-none overflow-hidden">
       {/* Top Header: Institutional Branding & Controls */}
       <div className="shrink-0 p-3 pb-2 space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -1141,15 +1141,15 @@ export default function Sidebar({
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-slate-900 via-teal-950 to-slate-900 text-white shadow-md border border-teal-500/30">
               <School2 size={18} className="text-teal-300" />
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-amber-400 ring-1 ring-white dark:ring-slate-900" />
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-amber-400 ring-1 ring-surface-strong" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <h2 className="truncate text-xs font-black tracking-tight text-slate-900 dark:text-white uppercase">
+                <h2 className="truncate text-xs font-black tracking-tight text-color uppercase">
                   Varin High School
                 </h2>
               </div>
-              <p className="truncate text-[10.5px] font-semibold text-teal-600 dark:text-teal-400">
+              <p className="truncate text-[10.5px] font-semibold text-brand-600 dark:text-brand-400">
                 វិទ្យាល័យ វ៉ារិន • AY 2025–26
               </p>
             </div>
@@ -1161,7 +1161,7 @@ export default function Sidebar({
               <button
                 type="button"
                 onClick={toggleCollapsed}
-                className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition cursor-pointer"
+                className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-color transition cursor-pointer"
                 title="Collapse sidebar (rail mode)"
                 aria-label="Collapse sidebar"
               >
@@ -1173,7 +1173,7 @@ export default function Sidebar({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:hidden dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition cursor-pointer"
+                className="flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-color lg:hidden transition cursor-pointer"
                 aria-label="Close navigation drawer"
               >
                 <X size={18} />
@@ -1184,7 +1184,7 @@ export default function Sidebar({
 
         {/* Quick Menu Search / Filter */}
         <div className="relative">
-          <span className="absolute left-3 top-2.5 text-slate-400">
+          <span className="absolute left-3 top-2.5 text-secondary">
             <Search size={14} />
           </span>
           <input
@@ -1192,13 +1192,13 @@ export default function Sidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Quick search menu..."
-            className="w-full pl-8 pr-7 py-2 rounded-xl text-xs bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500 transition"
+            className="w-full pl-8 pr-7 py-2 rounded-xl text-xs bg-surface border border-surface text-color placeholder-secondary focus:outline-none focus:ring-1 focus:ring-brand-500 transition"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+              className="absolute right-2.5 top-2.5 text-secondary hover:text-color p-0.5 cursor-pointer"
             >
               <X size={13} />
             </button>
@@ -1211,15 +1211,15 @@ export default function Sidebar({
           onClick={handleLinkClick}
           className={`group flex min-h-[38px] w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all duration-150 ${
             isDashboardActive
-              ? "bg-teal-600 text-white shadow-md shadow-teal-600/25"
-              : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80"
+              ? "bg-brand-600 text-white shadow-md shadow-brand-600/25"
+              : "text-secondary hover:text-color hover:bg-surface"
           }`}
         >
           <div
             className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
               isDashboardActive
                 ? "bg-white/20 text-white"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
+                : "bg-surface text-secondary group-hover:text-color"
             }`}
           >
             <LayoutDashboard size={14} />
@@ -1232,7 +1232,7 @@ export default function Sidebar({
       </div>
 
       {/* Middle Scrollable Navigation List (Single-Accordion Flow Preserved: 1 expand, others collapse) */}
-      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-3 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700/60 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600/80">
+      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-3 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-surface-strong hover:[&::-webkit-scrollbar-thumb]:bg-surface">
         <nav aria-label="Sidebar Sections">
           {Object.entries(groupedSections).map(([groupKey, sections]) => {
             const groupTitle = categoryGroupLabels[groupKey] || groupKey;
@@ -1240,7 +1240,7 @@ export default function Sidebar({
             return (
               <div key={groupKey} className="space-y-1">
                 {/* Category Group Header */}
-                <div className="px-2 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <div className="px-2 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-secondary">
                   {groupTitle}
                 </div>
 
@@ -1273,20 +1273,20 @@ export default function Sidebar({
                         onKeyDown={(e) => handleSectionKeyDown(e, index)}
                         aria-expanded={isSectionOpen}
                         aria-controls={panelId}
-                        className={`group flex min-h-[38px] w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 ${
+                        className={`group flex min-h-[38px] w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                           isSectionOpen
-                            ? "bg-slate-100/90 dark:bg-slate-800/90 text-slate-900 dark:text-white shadow-xs"
+                            ? "bg-surface text-color shadow-xs"
                             : hasActiveChild
-                            ? "text-teal-700 bg-teal-500/10 dark:text-teal-300 dark:bg-teal-500/15 font-bold"
-                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60"
+                            ? "text-brand-600 bg-surface dark:text-brand-300 font-bold"
+                            : "text-secondary hover:text-color hover:bg-surface"
                         }`}
                       >
                         <span className="flex items-center gap-2.5 truncate">
                           <div
                             className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
                               isSectionOpen || hasActiveChild
-                                ? "bg-teal-600 text-white shadow-xs"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-white"
+                                ? "bg-brand-600 text-white shadow-xs"
+                                : "bg-surface text-secondary group-hover:text-color"
                             }`}
                           >
                             <SectionIcon size={14} />
@@ -1299,17 +1299,17 @@ export default function Sidebar({
                         <div className="flex items-center gap-1.5 shrink-0">
                           {!isSectionOpen && hasActiveChild && (
                             <span
-                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-teal-600 dark:bg-teal-400"
+                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600 dark:bg-brand-400"
                               aria-hidden="true"
                             />
                           )}
-                          <span className="text-[10px] text-slate-400 font-medium px-1">
+                          <span className="text-[10px] text-secondary font-medium px-1">
                             {section.items.length}
                           </span>
                           <ChevronRight
                             size={14}
-                            className={`transition-transform duration-200 text-slate-400 ${
-                              isSectionOpen ? "rotate-90 text-teal-600 dark:text-teal-400" : "rotate-0"
+                            className={`transition-transform duration-200 text-secondary ${
+                              isSectionOpen ? "rotate-90 text-brand-600 dark:text-brand-400" : "rotate-0"
                             }`}
                           />
                         </div>
@@ -1326,7 +1326,7 @@ export default function Sidebar({
                         }`}
                       >
                         <div className="overflow-hidden min-h-0">
-                          <div className="relative mt-1 mb-1 ml-4 pl-3 space-y-0.5 border-l border-slate-200 dark:border-slate-800">
+                          <div className="relative mt-1 mb-1 ml-4 pl-3 space-y-0.5 border-l border-surface">
                             {section.items.map((item) => {
                               const Icon = item.icon;
                               const isItemActive =
@@ -1339,14 +1339,14 @@ export default function Sidebar({
                                   to={item.path}
                                   onClick={handleLinkClick}
                                   tabIndex={isSectionOpen ? 0 : -1}
-                                  className={`group relative flex min-h-[34px] items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 ${
+                                  className={`group relative flex min-h-[34px] items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                                     isItemActive
-                                      ? "font-bold bg-teal-600 text-white shadow-xs"
-                                      : "font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                                      ? "font-bold bg-brand-600 text-white shadow-xs"
+                                      : "font-medium text-secondary hover:bg-surface hover:text-color"
                                   }`}
                                 >
                                   {isItemActive && (
-                                    <span className="absolute -left-[17px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-teal-600 ring-2 ring-white dark:ring-slate-900" />
+                                    <span className="absolute -left-[17px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface-strong" />
                                   )}
                                   <span className="flex items-center gap-2 truncate">
                                     <Icon
@@ -1354,7 +1354,7 @@ export default function Sidebar({
                                       className={`shrink-0 ${
                                         isItemActive
                                           ? "text-white"
-                                          : "text-slate-400 group-hover:text-slate-700 dark:text-slate-400 dark:group-hover:text-slate-200"
+                                          : "text-secondary group-hover:text-color"
                                       }`}
                                     />
                                     <span className="truncate text-xs">
@@ -1366,7 +1366,7 @@ export default function Sidebar({
                                       className={`rounded-full px-1.5 py-0.5 text-[9.5px] font-bold ${
                                         isItemActive
                                           ? "bg-white/20 text-white"
-                                          : item.badgeColor || "bg-teal-600 text-white"
+                                          : item.badgeColor || "bg-brand-600 text-white"
                                       } ${item.badgePulse ? "animate-pulse" : ""}`}
                                     >
                                       {item.badge}
@@ -1388,20 +1388,20 @@ export default function Sidebar({
       </div>
 
       {/* User Profile Bottom Footer */}
-      <div className="shrink-0 p-3 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-        <div className="flex items-center justify-between gap-2 rounded-2xl bg-slate-50 dark:bg-slate-800/70 p-2.5 border border-slate-200/70 dark:border-slate-700/70">
+      <div className="shrink-0 p-3 pt-2 border-t border-surface">
+        <div className="flex items-center justify-between gap-2 rounded-2xl bg-surface-strong p-2.5 border border-surface">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white font-bold text-xs select-none shadow-xs">
+            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none shadow-xs">
               {userInitials}
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface-strong animate-pulse" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xs font-bold text-slate-900 dark:text-white leading-tight">
+              <p className="truncate text-xs font-bold text-color leading-tight">
                 {userDisplayName}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span
-                  className={`text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-md border ${roleConfig.badgeClass}`}
+                  className={`text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border ${roleConfig.badgeClass}`}
                 >
                   {roleConfig.label}
                 </span>
@@ -1414,7 +1414,7 @@ export default function Sidebar({
               type="button"
               onClick={() => logout()}
               title="Sign out"
-              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-error transition-colors cursor-pointer"
               aria-label="Sign out"
             >
               <LogOut size={15} />

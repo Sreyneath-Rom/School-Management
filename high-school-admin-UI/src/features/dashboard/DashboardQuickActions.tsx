@@ -76,10 +76,10 @@ export default function DashboardQuickActions() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-secondary">
             Administrative Fast-Actions
           </h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
+          <p className="text-xs text-secondary">
             One-click workflows for high-frequency daily management
           </p>
         </div>
@@ -92,7 +92,7 @@ export default function DashboardQuickActions() {
             <Link
               key={act.id}
               to={act.to}
-              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition hover:-translate-y-0.5 hover:border-teal-500/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-surface bg-surface-strong p-3.5 shadow-xs transition hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-md"
             >
               <div className="flex items-center justify-between">
                 <div
@@ -102,15 +102,15 @@ export default function DashboardQuickActions() {
                 </div>
                 <ArrowRight
                   size={14}
-                  className="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-teal-600 dark:text-slate-600 dark:group-hover:text-teal-400"
+                  className="text-secondary transition group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400"
                 />
               </div>
 
               <div className="mt-3">
-                <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                <p className="text-xs font-bold text-color leading-tight">
                   {act.title}
                 </p>
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight truncate">
+                <p className="text-[10.5px] text-secondary leading-tight truncate">
                   {act.subtitle}
                 </p>
               </div>

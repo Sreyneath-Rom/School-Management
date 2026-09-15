@@ -41,7 +41,7 @@ export default function ConfirmDialog({
       }}
     >
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/80 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl animate-in zoom-in-95 duration-200 dark:border-slate-800/80 dark:bg-slate-900/95"
+        className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-surface bg-surface-strong p-6 shadow-2xl backdrop-blur-2xl animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         onMouseDown={(e) => e.stopPropagation()}
@@ -65,10 +65,10 @@ export default function ConfirmDialog({
               {isDanger ? <Trash2 size={22} strokeWidth={2.2} /> : <AlertTriangle size={22} strokeWidth={2.2} />}
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-bold text-color">
                 {title}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-secondary mt-0.5">
                 Please confirm this operation
               </p>
             </div>
@@ -77,13 +77,13 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+            className="rounded-full p-1.5 text-secondary hover:bg-surface hover:text-color transition cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
-        <p className="relative z-10 mt-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pl-0.5">
+        <p className="relative z-10 mt-4 text-xs sm:text-sm text-color leading-relaxed pl-0.5">
           {message}
         </p>
 
@@ -91,7 +91,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-2xl border border-slate-200/80 bg-slate-100/80 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition cursor-pointer dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            className="rounded-2xl border border-surface bg-surface px-4 py-2 text-xs font-bold text-secondary hover:text-color hover:bg-surface-strong transition cursor-pointer"
           >
             {cancelLabel}
           </button>
@@ -102,7 +102,7 @@ export default function ConfirmDialog({
             className={`rounded-2xl px-4 py-2 text-xs font-bold text-white shadow-md transition cursor-pointer disabled:opacity-50 ${
               isDanger
                 ? 'bg-linear-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-rose-500/30'
-                : 'bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30'
+                : 'bg-linear-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 shadow-brand-500/30'
             }`}
           >
             {isDeleting ? 'Processing...' : confirmLabel}

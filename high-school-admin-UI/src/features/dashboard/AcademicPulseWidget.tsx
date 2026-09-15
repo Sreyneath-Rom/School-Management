@@ -32,31 +32,31 @@ export default function AcademicPulseWidget() {
   const [selectedTerm, setSelectedTerm] = useState<'Term 1' | 'Term 2'>('Term 2')
 
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+    <div className="rounded-3xl border border-surface bg-surface-strong p-5 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            <h2 className="text-base font-bold text-color">
               Curriculum Mastery & Subject Health
             </h2>
-            <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+            <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success border border-success/20">
               MoEYS Benchmark
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-secondary">
             Real-time average marks across core Grade 10-12 disciplines
           </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-semibold">
+          <div className="flex rounded-xl bg-surface p-0.5 text-xs font-semibold border border-surface">
             <button
               type="button"
               onClick={() => setSelectedTerm('Term 1')}
               className={`rounded-lg px-2.5 py-1 transition cursor-pointer ${
                 selectedTerm === 'Term 1'
-                  ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-white'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                  ? 'bg-surface-strong text-color shadow-xs font-bold'
+                  : 'text-secondary hover:text-color'
               }`}
             >
               Term I
@@ -66,8 +66,8 @@ export default function AcademicPulseWidget() {
               onClick={() => setSelectedTerm('Term 2')}
               className={`rounded-lg px-2.5 py-1 transition cursor-pointer ${
                 selectedTerm === 'Term 2'
-                  ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-white'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                  ? 'bg-surface-strong text-color shadow-xs font-bold'
+                  : 'text-secondary hover:text-color'
               }`}
             >
               Term II (Live)
@@ -76,7 +76,7 @@ export default function AcademicPulseWidget() {
 
           <Link
             to="/academic/grades"
-            className="flex items-center gap-1 text-xs font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400"
+            className="flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400"
           >
             <span>All Grades</span>
             <ArrowUpRight size={13} />
@@ -92,38 +92,38 @@ export default function AcademicPulseWidget() {
             <div key={sub.code} className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 truncate">
-                  <span className="font-bold text-slate-900 dark:text-white truncate">
+                  <span className="font-bold text-color truncate">
                     {sub.subject}
                   </span>
-                  <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                  <span className="rounded bg-surface px-1.5 py-0.5 text-[10px] font-mono text-secondary border border-surface">
                     {sub.code}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="font-mono text-xs font-extrabold text-slate-900 dark:text-white">
+                  <span className="font-mono text-xs font-extrabold text-color">
                     {sub.averageScore}/100
                   </span>
-                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-[11px] font-semibold text-success">
                     {sub.trend}
                   </span>
                 </div>
               </div>
 
               {/* Multi-layered progress indicator */}
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-surface">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     scorePercent >= 80
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                      ? 'bg-success'
                       : scorePercent >= 75
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-500'
-                      : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                      ? 'bg-brand-600'
+                      : 'bg-warning'
                   }`}
                   style={{ width: `${scorePercent}%` }}
                 />
               </div>
 
-              <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500">
+              <div className="flex items-center justify-between text-[10px] text-secondary">
                 <span>Passing Rate: {sub.passingRate}%</span>
                 <span>Honor Roll: {sub.topGrade}</span>
               </div>

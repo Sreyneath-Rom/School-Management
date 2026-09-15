@@ -24,7 +24,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useNotification } from '@/hooks/useNotification'
 import Button from '@/components/common/Button'
 import PageHeading from '@/components/common/PageHeading'
-import UserDetail from '@/components/users/UserDetail'
+import UserDetail from '@/features/users/UserDetail'
 import { userService } from '@/services/userService'
 import { ApiError } from '@/lib/apiClient'
 import {
