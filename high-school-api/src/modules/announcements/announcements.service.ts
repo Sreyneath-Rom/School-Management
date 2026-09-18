@@ -1,10 +1,16 @@
-
 import { prisma } from '@/config/database'
 import { ApiError } from '@/utils/ApiError'
+import type {
+  Audience,
+  CreateAnnouncementBody,
+  UpdateAnnouncementBody,
+} from './announcements.validation'
 
 export const announcementsService = {
-  // 'all' is always visible; otherwise the announcement's audience must match
-  // the requester's role name.
+  /**
+   * Returns announcements visible to the calling role: everything addressed
+   * to `'all'` plus anything addressed specifically to their role name.
+   */
   async list(requestingRoleName: string) {
     return prisma.announcement.findMany({
       where: { OR: [{ audience: 'all' }, { audience: requestingRoleName }] },
@@ -13,35 +19,64 @@ export const announcementsService = {
   },
 
   async getById(announcementId: string, requestingRoleName: string) {
-    const announcement = await prisma.announcement.findUnique({ where: { id: announcementId } })
+    const announcement = await prisma.announcement.findUnique({
+      where: { id: announcementId },
+    })
     if (!announcement) throw ApiError.notFound('Announcement not found')
 
-    if (announcement.audience !== 'all' && announcement.audience !== requestingRoleName) {
+    // Same audience rule as the list endpoint — otherwise a caller could
+    // enumerate IDs and read announcements addressed to other roles.
+    if (
+      announcement.audience !== 'all' &&
+      announcement.audience !== requestingRoleName
+    ) {
       throw ApiError.forbidden('This announcement is not addressed to your audience')
     }
+
     return announcement
   },
 
-  async create(input: { title: string; content: string; audience: string; authorId: string }) {
-    return prisma.announcement.create({ data: input })
+  /**
+   * `authorId` is a required, explicit parameter rather than part of the
+   * caller-supplied body — the controller passes `req.user.sub`. This makes
+   * the trust boundary visible at the type level.
+   */
+  async create(input: CreateAnnouncementBody & { authorId: string }) {
+    return prisma.announcement.create({
+      data: {
+        title: input.title,
+        content: input.content,
+        audience: input.audience as Audience,
+        authorId: input.authorId,
+      },
+    })
   },
 
-  // No author check — anyone holding the `announcements:edit` permission can
-  // update any announcement (per your answer). If you later want to restrict
-  // this to the original author, add an authorId comparison here.
-  async update(
-    announcementId: string,
-    changes: Partial<{ title: string; content: string; audience: string; authorId: string }>
-  ) {
-    const announcement = await prisma.announcement.findUnique({ where: { id: announcementId } })
-    if (!announcement) throw ApiError.notFound('Announcement not found')
+  /**
+   * No author check: anyone holding `announcements.edit` may update any
+   * announcement. If you later want to restrict edits to the original
+   * author (or to admins), add that check here — the controller cannot
+   * enforce it because it has no visibility into the existing row.
+   */
+  async update(announcementId: string, changes: UpdateAnnouncementBody) {
+    const existing = await prisma.announcement.findUnique({
+      where: { id: announcementId },
+      select: { id: true },
+    })
+    if (!existing) throw ApiError.notFound('Announcement not found')
 
-    return prisma.announcement.update({ where: { id: announcementId }, data: changes })
+    return prisma.announcement.update({
+      where: { id: announcementId },
+      data: changes,
+    })
   },
 
   async remove(announcementId: string) {
-    const announcement = await prisma.announcement.findUnique({ where: { id: announcementId } })
-    if (!announcement) throw ApiError.notFound('Announcement not found')
+    const existing = await prisma.announcement.findUnique({
+      where: { id: announcementId },
+      select: { id: true },
+    })
+    if (!existing) throw ApiError.notFound('Announcement not found')
 
     await prisma.announcement.delete({ where: { id: announcementId } })
   },

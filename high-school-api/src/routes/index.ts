@@ -1,146 +1,148 @@
 import { Router } from 'express'
 
 // -----------------------------------------------------------------------------
-// Individual Route Module Imports
+// Module imports — every router below is mounted exactly once, at its natural
+// path. Do not create aggregate routers that re-mount these elsewhere; that
+// pattern caused duplicate reachability in an earlier version of this file.
 // -----------------------------------------------------------------------------
-import authRoutes from './auth.routes'
-import dashboardRoutes from './dashboard.routes'
-import setupRoutes from './setup.routes'
-import academicRoutes from './academic.routes'
-import studentsRoutes from './students.routes'
-import teachersRoutes from './teachers.routes'
-import examsRoutes from './exams.routes'
-import attendanceRoutes from './attendance.routes'
-import communicationRoutes from './communication.routes'
-import reportsRoutes from './reports.routes'
+import authRoutes from '@/modules/auth/auth.routes'
+import usersRoutes from '@/modules/users/users.routes'
+import rolesRoutes from '@/modules/roles/roles.routes'
+import permissionsRoutes from '@/modules/permissions/permissions.routes'
 
-// Individual sub-module direct routes for granular mounting
+import dashboardRoutes from '@/modules/dashboard/dashboard.routes'
+import schoolRoutes from '@/modules/school/school.routes'
+import academicYearsRoutes from '@/modules/academicYears/academicYears.routes'
+import roomsRoutes from '@/modules/rooms/rooms.routes'
+import gradeLevelsRoutes from '@/modules/gradeLevels/gradeLevels.routes'
+import termsRoutes from '@/modules/terms/terms.routes'
+
+import studentsRoutes from '@/modules/students/students.routes'
+import teachersRoutes from '@/modules/teachers/teachers.routes'
+
 import classesRoutes from '@/modules/classes/classes.routes'
 import subjectsRoutes from '@/modules/subjects/subjects.routes'
 import schedulesRoutes from '@/modules/schedules/schedules.routes'
 import lessonsRoutes from '@/modules/lessons/lessons.routes'
 import homeworkRoutes from '@/modules/homework/homework.routes'
 import quizzesRoutes from '@/modules/quizzes/quizzes.routes'
+
+import examsRoutes from '@/modules/exams/exams.routes'
 import gradesRoutes from '@/modules/grades/grades.routes'
+
+import attendanceRoutes from '@/modules/attendance/attendance.routes'
 import leaveRequestsRoutes from '@/modules/leaveRequests/leaveRequests.routes'
-import usersRoutes from '@/modules/users/users.routes'
-import rolesRoutes from '@/modules/roles/roles.routes'
-import permissionsRoutes from '@/modules/permissions/permissions.routes'
-import schoolRoutes from '@/modules/school/school.routes'
+
 import announcementsRoutes from '@/modules/announcements/announcements.routes'
 import notificationsRoutes from '@/modules/notifications/notifications.routes'
+
+import reportsRoutes from '@/modules/reports/reports.routes'
+
 import languagesRoutes from '@/modules/languages/languages.routes'
 import translationsRoutes from '@/modules/translations/translations.routes'
-import academicYearsRoutes from '@/modules/academicYears/academicYears.routes'
-import roomsRoutes from '@/modules/rooms/rooms.routes'
-import gradeLevelsRoutes from '@/modules/gradeLevels/gradeLevels.routes'
-import termsRoutes from '@/modules/terms/terms.routes'
+
+const router = Router()
+
+// 1. Auth & RBAC
+router.use('/auth', authRoutes)
+router.use('/users', usersRoutes)
+router.use('/roles', rolesRoutes)
+router.use('/permissions', permissionsRoutes)
+
+// 2. Administration
+router.use('/dashboard', dashboardRoutes)
+router.use('/schools', schoolRoutes)
+router.use('/academic-years', academicYearsRoutes)
+router.use('/rooms', roomsRoutes)
+router.use('/grade-levels', gradeLevelsRoutes)
+router.use('/terms', termsRoutes)
+
+// 3. People
+router.use('/students', studentsRoutes)
+router.use('/teachers', teachersRoutes)
+
+// 4. Academics
+router.use('/classes', classesRoutes)
+router.use('/subjects', subjectsRoutes)
+router.use('/schedules', schedulesRoutes)
+router.use('/lessons', lessonsRoutes)
+router.use('/homeworks', homeworkRoutes)
+router.use('/quizzes', quizzesRoutes)
+
+// 5. Examinations & grading
+router.use('/exams', examsRoutes)
+router.use('/grades', gradesRoutes)
+
+// 6. Attendance & leaves
+router.use('/attendance', attendanceRoutes)
+router.use('/leaves', leaveRequestsRoutes)
+
+// 7. Communication
+router.use('/announcements', announcementsRoutes)
+router.use('/notifications', notificationsRoutes)
+
+// 8. Reports
+router.use('/reports', reportsRoutes)
+
+// 9. i18n
+router.use('/languages', languagesRoutes)
+router.use('/translations', translationsRoutes)
+
+export default router
 
 // -----------------------------------------------------------------------------
-// Named Exports for Modular Consumption
-// -----------------------------------------------------------------------------
-export {
-  authRoutes,
-  dashboardRoutes,
-  setupRoutes,
-  academicRoutes,
-  studentsRoutes,
-  teachersRoutes,
-  examsRoutes,
-  attendanceRoutes,
-  communicationRoutes,
-  reportsRoutes,
-  // Granular module routes
-  classesRoutes,
-  subjectsRoutes,
-  schedulesRoutes,
-  lessonsRoutes,
-  homeworkRoutes,
-  quizzesRoutes,
-  gradesRoutes,
-  leaveRequestsRoutes,
-  usersRoutes,
-  rolesRoutes,
-  permissionsRoutes,
-  schoolRoutes,
-  announcementsRoutes,
-  notificationsRoutes,
-  languagesRoutes,
-  translationsRoutes,
-  academicYearsRoutes,
-  roomsRoutes,
-  gradeLevelsRoutes,
-  termsRoutes,
-}
-
-// -----------------------------------------------------------------------------
-// Module Definition Metadata
+// Module metadata — kept for tooling / docs generation. This mirrors the
+// mount list above; keep them in sync, or delete this if nothing consumes it.
 // -----------------------------------------------------------------------------
 export interface ModuleRouteDefinition {
   domain: string
   path: string
-  router: Router
   description: string
 }
 
 export const moduleRoutes: ModuleRouteDefinition[] = [
-  // 1. Authentication & Security
-  { domain: 'Auth & RBAC', path: '/auth', router: authRoutes, description: 'Authentication, tokens, sessions & security' },
-  { domain: 'Auth & RBAC', path: '/users', router: usersRoutes, description: 'User account management & credentials' },
-  { domain: 'Auth & RBAC', path: '/roles', router: rolesRoutes, description: 'Role-based access control & assignments' },
-  { domain: 'Auth & RBAC', path: '/permissions', router: permissionsRoutes, description: 'System-wide granular permissions registry' },
+  // 1. Auth & RBAC
+  { domain: 'Auth & RBAC', path: '/auth', description: 'Authentication, tokens, sessions' },
+  { domain: 'Auth & RBAC', path: '/users', description: 'User account management' },
+  { domain: 'Auth & RBAC', path: '/roles', description: 'Role-based access control' },
+  { domain: 'Auth & RBAC', path: '/permissions', description: 'Permission registry' },
 
-  // 2. Dashboard & School Administration
-  { domain: 'Administration', path: '/dashboard', router: dashboardRoutes, description: 'Overview metrics, charts & summary data' },
-  { domain: 'Administration', path: '/schools', router: schoolRoutes, description: 'School profile, academic configurations & setup' },
-  { domain: 'Administration', path: '/setup', router: setupRoutes, description: 'Unified administrative setup & config hub' },
-  { domain: 'Administration', path: '/academic-years', router: academicYearsRoutes, description: 'Academic year lifecycle and current-year selection' },
-  { domain: 'Administration', path: '/rooms', router: roomsRoutes, description: 'Room and facility lifecycle management' },
-  { domain: 'Administration', path: '/grade-levels', router: gradeLevelsRoutes, description: 'Grade and academic level lifecycle management' },
-  { domain: 'Administration', path: '/terms', router: termsRoutes, description: 'Academic term and grading cycle lifecycle management' },
+  // 2. Administration
+  { domain: 'Administration', path: '/dashboard', description: 'Overview metrics & summary data' },
+  { domain: 'Administration', path: '/schools', description: 'School profile & settings' },
+  { domain: 'Administration', path: '/academic-years', description: 'Academic year lifecycle' },
+  { domain: 'Administration', path: '/rooms', description: 'Room and facility management' },
+  { domain: 'Administration', path: '/grade-levels', description: 'Grade level lifecycle' },
+  { domain: 'Administration', path: '/terms', description: 'Academic terms' },
 
-  // 3. People (Students & Teachers)
-  { domain: 'People', path: '/students', router: studentsRoutes, description: 'Student directory, records & parent links' },
-  { domain: 'People', path: '/teachers', router: teachersRoutes, description: 'Faculty roster, teacher codes & assignments' },
+  // 3. People
+  { domain: 'People', path: '/students', description: 'Student directory & records' },
+  { domain: 'People', path: '/teachers', description: 'Faculty roster & assignments' },
 
-  // 4. Academic Structure & Coursework
-  { domain: 'Academics', path: '/academic', router: academicRoutes, description: 'Unified academic master route' },
-  { domain: 'Academics', path: '/classes', router: classesRoutes, description: 'Class sections & grade levels' },
-  { domain: 'Academics', path: '/subjects', router: subjectsRoutes, description: 'Academic curriculum subjects' },
-  { domain: 'Academics', path: '/schedules', router: schedulesRoutes, description: 'Timetable slots & classroom scheduling' },
-  { domain: 'Academics', path: '/lessons', router: lessonsRoutes, description: 'Lesson plans & learning resources' },
-  { domain: 'Academics', path: '/homeworks', router: homeworkRoutes, description: 'Homework assignments & student submissions' },
-  { domain: 'Academics', path: '/quizzes', router: quizzesRoutes, description: 'Quizzes, questionnaires & auto-grading' },
+  // 4. Academics
+  { domain: 'Academics', path: '/classes', description: 'Class sections & grade levels' },
+  { domain: 'Academics', path: '/subjects', description: 'Curriculum subjects' },
+  { domain: 'Academics', path: '/schedules', description: 'Timetable slots' },
+  { domain: 'Academics', path: '/lessons', description: 'Lesson plans & resources' },
+  { domain: 'Academics', path: '/homeworks', description: 'Homework & submissions' },
+  { domain: 'Academics', path: '/quizzes', description: 'Quizzes & auto-grading' },
 
-  // 5. Examinations & Grading
-  { domain: 'Examinations', path: '/exams', router: examsRoutes, description: 'Exams, schedules, mark entry & report cards' },
-  { domain: 'Grades & Records', path: '/grades', router: gradesRoutes, description: 'Gradebook records, transcripts & GPA' },
+  // 5. Examinations & grading
+  { domain: 'Examinations', path: '/exams', description: 'Exams, schedules, mark entry & report cards' },
+  { domain: 'Examinations', path: '/grades', description: 'Gradebook records & transcripts' },
 
-  // 6. Attendance & Leaves
-  { domain: 'Attendance & Leaves', path: '/attendance', router: attendanceRoutes, description: 'Daily student & staff attendance' },
-  { domain: 'Attendance & Leaves', path: '/leaves', router: leaveRequestsRoutes, description: 'Leave request processing & approvals' },
+  // 6. Attendance & leaves
+  { domain: 'Attendance', path: '/attendance', description: 'Daily student attendance' },
+  { domain: 'Attendance', path: '/leaves', description: 'Leave request processing & approvals' },
 
-  // 7. Communication & Alerts
-  { domain: 'Communication', path: '/communication', router: communicationRoutes, description: 'Unified communication hub' },
-  { domain: 'Communication', path: '/announcements', router: announcementsRoutes, description: 'Broadcast school announcements' },
-  { domain: 'Communication', path: '/notifications', router: notificationsRoutes, description: 'In-app and push notifications' },
+  // 7. Communication
+  { domain: 'Communication', path: '/announcements', description: 'School announcements' },
+  { domain: 'Communication', path: '/notifications', description: 'In-app notifications' },
 
-  // 8. Reports & Analytics
-  { domain: 'Reports & Analytics', path: '/reports', router: reportsRoutes, description: 'Attendance, grade, student & financial analytics' },
+  // 8. Reports
+  { domain: 'Reports', path: '/reports', description: 'Analytics & reporting' },
 
-  // 9. Internationalization (i18n)
-  { domain: 'Localization', path: '/languages', router: languagesRoutes, description: 'Supported languages & locale config' },
-  { domain: 'Localization', path: '/translations', router: translationsRoutes, description: 'Dynamic translation dictionary' },
+  // 9. i18n
+  { domain: 'Localization', path: '/languages', description: 'Supported languages & locale config' },
+  { domain: 'Localization', path: '/translations', description: 'Translation dictionary' },
 ]
-
-// -----------------------------------------------------------------------------
-// Unified Master Router Setup
-// -----------------------------------------------------------------------------
-const router = Router()
-
-// Register all modular routes with their designated paths
-moduleRoutes.forEach((moduleRoute) => {
-  router.use(moduleRoute.path, moduleRoute.router)
-})
-
-export default router

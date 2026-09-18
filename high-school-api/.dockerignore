@@ -1,7 +1,40 @@
+# Dependencies — reinstalled inside the image
 node_modules
+**/node_modules
+
+# Build output — produced inside the image
 dist
-.env
-uploads
+
+# Local runtime artifacts
 logs
-tests
+uploads
+*.log
+
+# VCS
 .git
+.gitignore
+
+# Editor and OS
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+
+# Test output
+coverage
+.vitest
+
+# Docker itself
+Dockerfile
+Dockerfile.*
+docker-compose*.yml
+.dockerignore
+
+# Documentation — not needed inside the image
+README.md
+docs

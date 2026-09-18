@@ -4,14 +4,25 @@ import { authenticate } from '@/middleware/auth.middleware'
 import { requirePermission } from '@/middleware/role.middleware'
 import { validateBody } from '@/middleware/validation.middleware'
 import { asyncHandler } from '@/utils/asyncHandler'
-import { createAnnouncementSchema, updateAnnouncementSchema } from './announcements.validation'
+import {
+  createAnnouncementSchema,
+  updateAnnouncementSchema,
+} from './announcements.validation'
 
 const router = Router()
 router.use(authenticate)
 
-router.get('/', requirePermission('announcements', 'view'), asyncHandler(announcementsController.list))
+router.get(
+  '/',
+  requirePermission('announcements', 'view'),
+  asyncHandler(announcementsController.list)
+)
 
-router.get('/:id', requirePermission('announcements', 'view'), asyncHandler(announcementsController.getById))
+router.get(
+  '/:id',
+  requirePermission('announcements', 'view'),
+  asyncHandler(announcementsController.getById)
+)
 
 router.post(
   '/',
@@ -27,6 +38,10 @@ router.patch(
   asyncHandler(announcementsController.update)
 )
 
-router.delete('/:id', requirePermission('announcements', 'delete'), asyncHandler(announcementsController.remove))
+router.delete(
+  '/:id',
+  requirePermission('announcements', 'delete'),
+  asyncHandler(announcementsController.remove)
+)
 
 export default router

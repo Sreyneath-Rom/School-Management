@@ -2,40 +2,62 @@ import type { Request, Response } from 'express'
 import { announcementsService } from './announcements.service'
 import { sendCreated, sendSuccess } from '@/utils/apiResponse'
 import { ApiError } from '@/utils/ApiError'
+import type {
+  CreateAnnouncementBody,
+  UpdateAnnouncementBody,
+} from './announcements.validation'
 
-// Same pattern as notifications.controller.ts's requireUserId — req.user is
-// only possibly-undefined to TypeScript, not in practice, since `authenticate`
-// runs on every route in announcements.routes.ts.
-//
-// NOTE: `.roleName` is assumed to be the role-name claim on AccessTokenPayload
-// (per your answer that audience is determined by role name). If your token
-// payload names this differently, change it ONLY here.
-function requireRoleName(req: Request): string {
+/**
+ * `authenticate` runs on every route in announcements.routes.ts, so
+ * `req.user` is set by the time any handler here runs. The guard exists so
+ * TypeScript can narrow the type without a non-null assertion at every call.
+ */
+function requireUser(req: Request) {
   if (!req.user) throw ApiError.unauthorized('Authentication required')
-  return req.user.roleName
+  return req.user
 }
 
 export const announcementsController = {
   async list(req: Request, res: Response) {
-    sendSuccess(res, await announcementsService.list(requireRoleName(req)))
+    const user = requireUser(req)
+    sendSuccess(res, await announcementsService.list(user.roleName))
   },
 
   async getById(req: Request, res: Response) {
-    sendSuccess(res, await announcementsService.getById(req.params.id, requireRoleName(req)))
+    const user = requireUser(req)
+    sendSuccess(
+      res,
+      await announcementsService.getById(req.params.id, user.roleName)
+    )
   },
 
   async create(req: Request, res: Response) {
-    sendCreated(res, await announcementsService.create(req.body))
+    const user = requireUser(req)
+    const body = req.validated?.body as CreateAnnouncementBody | undefined
+    if (!body) throw ApiError.badRequest('Request body is required')
+
+    // Author comes from the authenticated token, NOT from the request body.
+    // This is the fix for the previous version, which accepted `authorId`
+    // from client input and let any caller forge authorship.
+    sendCreated(
+      res,
+      await announcementsService.create({ ...body, authorId: user.sub })
+    )
   },
 
   async update(req: Request, res: Response) {
-    sendSuccess(res, await announcementsService.update(req.params.id, req.body))
+    requireUser(req) // ensures the caller is authenticated before proceeding
+    const body = req.validated?.body as UpdateAnnouncementBody | undefined
+    if (!body) throw ApiError.badRequest('Request body is required')
+
+    sendSuccess(res, await announcementsService.update(req.params.id, body))
   },
 
   async remove(req: Request, res: Response) {
+    requireUser(req)
     await announcementsService.remove(req.params.id)
-    // No sendSuccess helper for empty bodies here — 204 must not include a
-    // response body, so this bypasses the JSON envelope entirely.
+    // 204 must not include a body. Bypassing sendSuccess here is intentional —
+    // the JSON envelope helper always writes a JSON body.
     res.status(204).end()
   },
 }

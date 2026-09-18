@@ -2,16 +2,35 @@ import { Router } from 'express'
 import { lessonsController } from './lessons.controller'
 import { authenticate } from '@/middleware/auth.middleware'
 import { requirePermission } from '@/middleware/role.middleware'
-import { validateBody } from '@/middleware/validation.middleware'
+import { validateBody, validateQuery } from '@/middleware/validation.middleware'
 import { asyncHandler } from '@/utils/asyncHandler'
-import { createLessonSchema, updateLessonSchema } from './lessons.validation'
+import {
+  createLessonSchema,
+  listLessonsQuerySchema,
+  updateLessonSchema,
+} from './lessons.validation'
 
 const router = Router()
 router.use(authenticate)
 
-router.get('/', requirePermission('lessons', 'view'), asyncHandler(lessonsController.list))
+/**
+ * ROUTE ORDER — literal paths before `/:id`, per method. Currently no
+ * single-segment literals besides `/`, so the ordering below is safe. When
+ * adding a literal route (e.g. `GET /recent`), register it ABOVE `/:id`.
+ */
 
-router.get('/:id', requirePermission('lessons', 'view'), asyncHandler(lessonsController.getById))
+router.get(
+  '/',
+  requirePermission('lessons', 'view'),
+  validateQuery(listLessonsQuerySchema),
+  asyncHandler(lessonsController.list)
+)
+
+router.get(
+  '/:id',
+  requirePermission('lessons', 'view'),
+  asyncHandler(lessonsController.getById)
+)
 
 router.post(
   '/',
@@ -27,6 +46,10 @@ router.patch(
   asyncHandler(lessonsController.update)
 )
 
-router.delete('/:id', requirePermission('lessons', 'delete'), asyncHandler(lessonsController.remove))
+router.delete(
+  '/:id',
+  requirePermission('lessons', 'delete'),
+  asyncHandler(lessonsController.remove)
+)
 
 export default router

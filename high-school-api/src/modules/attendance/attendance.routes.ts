@@ -2,18 +2,42 @@ import { Router } from 'express'
 import { attendanceController } from './attendance.controller'
 import { authenticate } from '@/middleware/auth.middleware'
 import { requirePermission } from '@/middleware/role.middleware'
-import { validateBody } from '@/middleware/validation.middleware'
+import { validateBody, validateQuery } from '@/middleware/validation.middleware'
 import { asyncHandler } from '@/utils/asyncHandler'
-import { checkInSchema, checkOutSchema, bulkMarkSchema, updateAttendanceSchema } from './attendance.validation'
+import {
+  bulkMarkSchema,
+  checkInSchema,
+  checkOutSchema,
+  listAttendanceQuerySchema,
+  statsQuerySchema,
+  updateAttendanceSchema,
+} from './attendance.validation'
 
 const router = Router()
 router.use(authenticate)
 
-router.get('/stats', requirePermission('attendance', 'view'), asyncHandler(attendanceController.getStats))
+// Route order: `/stats` is a single-segment literal and `/:id` is a
+// single-segment param, so `/stats` must be registered first — otherwise a
+// GET /stats would be routed to getById with params.id = "stats".
+router.get(
+  '/stats',
+  requirePermission('attendance', 'view'),
+  validateQuery(statsQuerySchema),
+  asyncHandler(attendanceController.getStats)
+)
 
-router.get('/', requirePermission('attendance', 'view'), asyncHandler(attendanceController.list))
+router.get(
+  '/',
+  requirePermission('attendance', 'view'),
+  validateQuery(listAttendanceQuerySchema),
+  asyncHandler(attendanceController.list)
+)
 
-router.get('/:id', requirePermission('attendance', 'view'), asyncHandler(attendanceController.getById))
+router.get(
+  '/:id',
+  requirePermission('attendance', 'view'),
+  asyncHandler(attendanceController.getById)
+)
 
 router.post(
   '/check-in',
@@ -43,6 +67,10 @@ router.patch(
   asyncHandler(attendanceController.update)
 )
 
-router.delete('/:id', requirePermission('attendance', 'delete'), asyncHandler(attendanceController.remove))
+router.delete(
+  '/:id',
+  requirePermission('attendance', 'delete'),
+  asyncHandler(attendanceController.remove)
+)
 
 export default router

@@ -30,38 +30,38 @@ model School {
 }
 
 model AcademicYear {
-  id              String   @id @default(cuid())
-  name            String   @unique
-  startDate       DateTime
-  endDate         DateTime
-  status          String   @default("Upcoming")
-  termsCount      Int      @default(3)
-  classesCount    Int      @default(0)
-  studentsCount   Int      @default(0)
-  isCurrent       Boolean  @default(false)
-  description     String?
-  terms           Term[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String   @unique
+  startDate     DateTime
+  endDate       DateTime
+  status        String   @default("Upcoming")
+  termsCount    Int      @default(3)
+  classesCount  Int      @default(0)
+  studentsCount Int      @default(0)
+  isCurrent     Boolean  @default(false)
+  description   String?
+  terms         Term[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([isCurrent])
   @@index([status])
 }
 
 model Term {
-  id              String       @id @default(cuid())
-  name            String
-  academicYearId  String
-  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  startDate       DateTime
-  endDate         DateTime
-  gradingDeadline DateTime
-  status          String       @default("Upcoming")
-  examCount       Int          @default(0)
+  id               String       @id @default(cuid())
+  name             String
+  academicYearId   String
+  academicYear     AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  startDate        DateTime
+  endDate          DateTime
+  gradingDeadline  DateTime
+  status           String       @default("Upcoming")
+  examCount        Int          @default(0)
   weightPercentage Int
-  description     String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  description      String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   @@unique([academicYearId, name])
   @@index([academicYearId])
@@ -76,7 +76,7 @@ model Room {
   floor        String
   type         String
   capacity     Int
-  amenities    Json
+  amenities    String[] @default([])
   status       String   @default("Available")
   currentClass String?
   createdAt    DateTime @default(now())
@@ -88,21 +88,21 @@ model Room {
 }
 
 model GradeLevel {
-  id                String   @id @default(cuid())
-  code              String   @unique
-  name              String   @unique
-  alias             String
-  levelOrder        Int
-  minPassingScore   Int      @default(50)
-  headCoordinator   String
-  totalClasses      Int      @default(0)
-  enrolledStudents  Int      @default(0)
-  maxCapacity       Int      @default(0)
-  averageGpa        Float    @default(0)
-  status            String   @default("Active")
-  description       String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  code             String   @unique
+  name             String   @unique
+  alias            String
+  levelOrder       Int
+  minPassingScore  Int      @default(50)
+  headCoordinator  String
+  totalClasses     Int      @default(0)
+  enrolledStudents Int      @default(0)
+  maxCapacity      Int      @default(0)
+  averageGpa       Float    @default(0)
+  status           String   @default("Active")
+  description      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([levelOrder])
   @@index([status])
@@ -112,9 +112,20 @@ model Language {
   id           String        @id @default(cuid())
   code         String        @unique
   name         String
+  // `nativeName` is the label shown in the language switcher
+  // ("ខ្មែរ" rather than "Khmer"); `name` is the English label.
+  nativeName   String?
+  // Right-to-left scripts (Arabic, Hebrew, Urdu). Drives the `dir="rtl"`
+  // attribute on the frontend.
+  rtl          Boolean       @default(false)
+  // Soft-disable a language without deleting it — hides it from the
+  // switcher but keeps every translation row intact.
+  isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   translations Translation[]
+
+  @@index([isActive])
 }
 
 model Translation {
@@ -128,6 +139,7 @@ model Translation {
 
   @@unique([languageCode, key])
 }
+
 // ------------------------------------------------------------
 // AUTH / RBAC
 // Roles + granular Permissions rather than a fixed role enum,
@@ -145,6 +157,14 @@ model User {
   isActive     Boolean   @default(true)
   lastLoginAt  DateTime?
 
+  // Password reset flow. Both null until a reset is requested. The token
+  // is stored hashed (SHA-256) — the raw value only ever exists in the
+  // reset email. `@unique` so a lookup by hash can't match more than one
+  // user (multiple NULLs are allowed by Postgres, so pending rows don't
+  // collide).
+  passwordResetTokenHash   String?   @unique
+  passwordResetExpiresAt   DateTime?
+
   roleId String
   role   Role   @relation(fields: [roleId], references: [id])
 
@@ -153,10 +173,10 @@ model User {
   teacher Teacher?
   parent  Parent?
 
-  refreshTokens  RefreshToken[]
-  auditLogs      AuditLog[]
-  notifications  Notification[]
-  announcements  Announcement[]  @relation("AnnouncementAuthor")
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+  announcements Announcement[] @relation("AnnouncementAuthor")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -179,7 +199,7 @@ model Role {
 
 model Permission {
   id          String           @id @default(cuid())
-  key         String           @unique // e.g. "grades:write:own_class"
+  key         String           @unique // e.g. "grades.edit"
   description String?
   roles       RolePermission[]
 }
@@ -213,23 +233,23 @@ model RefreshToken {
 // PEOPLE
 // ------------------------------------------------------------
 model Student {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id])
-  studentCode  String   @unique
-  dateOfBirth  DateTime?
-  gender       String?
-  enrolledAt   DateTime @default(now())
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id])
+  studentCode String    @unique
+  dateOfBirth DateTime?
+  gender      String?
+  enrolledAt  DateTime  @default(now())
 
   classId String?
   class   Class?  @relation(fields: [classId], references: [id])
 
-  parents        StudentParent[]
-  attendance     Attendance[]
-  grades         Grade[]
-  leaveRequests  LeaveRequest[]
-  homeworkSubs   HomeworkSubmission[]
-  quizSubs       QuizSubmission[]
+  parents       StudentParent[]
+  attendance    Attendance[]
+  grades        Grade[]
+  leaveRequests LeaveRequest[]
+  homeworkSubs  HomeworkSubmission[]
+  quizSubs      QuizSubmission[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -240,19 +260,19 @@ model Student {
 }
 
 model Teacher {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id])
-  teacherCode  String   @unique
-  hiredAt      DateTime @default(now())
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  teacherCode String   @unique
+  hiredAt     DateTime @default(now())
 
-  subjects       TeacherSubject[]
-  classesLed     Class[]           @relation("ClassHomeroomTeacher")
-  schedules      Schedule[]
-  lessons        Lesson[]
-  homeworkGiven  Homework[]
-  quizzesGiven   Quiz[]
-  gradesGiven    Grade[]
+  subjects      TeacherSubject[]
+  classesLed    Class[]          @relation("ClassHomeroomTeacher")
+  schedules     Schedule[]
+  lessons       Lesson[]
+  homeworkGiven Homework[]
+  quizzesGiven  Quiz[]
+  gradesGiven   Grade[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -288,33 +308,41 @@ model StudentParent {
 // ACADEMIC STRUCTURE
 // ------------------------------------------------------------
 model Class {
-  id                  String    @id @default(cuid())
-  name                String // e.g. "Grade 10 - A"
-  gradeLevel          Int
-  homeroomTeacherId   String?
-  homeroomTeacher     Teacher?  @relation("ClassHomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+  id                String   @id @default(cuid())
+  name              String // e.g. "Grade 10 - A"
+  gradeLevel        Int
+  capacity          Int?
+  homeroomTeacherId String?
+  homeroomTeacher   Teacher? @relation("ClassHomeroomTeacher", fields: [homeroomTeacherId], references: [id])
 
   students  Student[]
   schedules Schedule[]
+  lessons   Lesson[]
+  homework  Homework[]
+  quizzes   Quiz[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@index([homeroomTeacherId])
+  @@index([deletedAt])
 }
 
 model Subject {
-  id          String @id @default(cuid())
-  name        String @unique
-  code        String @unique
-  department  String @default("General")
-  category    String @default("Core")
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  department  String   @default("General")
+  category    String   @default("Core")
   description String?
-  credits     Int    @default(3)
-  weeklyHours Int    @default(4)
-  gradeLevel  String @default("Grade 10")
-  teacherNames Json   @default("[]")
+  credits     Int      @default(3)
+  weeklyHours Int      @default(4)
+  gradeLevel  String   @default("Grade 10")
+  // Names of teachers associated with the subject, stored as a denormalized
+  // cache. Prefer the `teachers` relation (TeacherSubject) as the source of
+  // truth — see subjects.service.ts for the migration plan.
+  teacherNames String[] @default([])
 
   teachers  TeacherSubject[]
   schedules Schedule[]
@@ -323,9 +351,11 @@ model Subject {
   quizzes   Quiz[]
   grades    Grade[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+
+  @@index([deletedAt])
 }
 
 model TeacherSubject {
@@ -358,6 +388,7 @@ model Schedule {
 
   @@index([classId])
   @@index([teacherId])
+  @@index([room])
 }
 
 // ------------------------------------------------------------
@@ -371,6 +402,11 @@ model Lesson {
   subject     Subject  @relation(fields: [subjectId], references: [id])
   teacherId   String
   teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  // Optional: a lesson may be school-wide material (no specific class) or
+  // scheduled for a particular class at a particular time.
+  classId     String?
+  class       Class?   @relation(fields: [classId], references: [id])
+  scheduledAt DateTime?
   fileUrl     String?
   fileType    String?
   fileSizeKb  Int?
@@ -379,6 +415,8 @@ model Lesson {
   updatedAt DateTime @updatedAt
 
   @@index([subjectId])
+  @@index([classId])
+  @@index([scheduledAt])
 }
 
 model Homework {
@@ -389,8 +427,14 @@ model Homework {
   subject     Subject  @relation(fields: [subjectId], references: [id])
   teacherId   String
   teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  // Optional: some homework is school-wide by subject; most is per class.
+  classId     String?
+  class       Class?   @relation(fields: [classId], references: [id])
   dueDate     DateTime
   maxScore    Float    @default(100)
+  // When false (default), submissions after `dueDate` are refused.
+  // When true, late submissions are accepted and flagged.
+  allowLateSubmissions Boolean @default(false)
 
   submissions HomeworkSubmission[]
 
@@ -398,6 +442,8 @@ model Homework {
   updatedAt DateTime @updatedAt
 
   @@index([subjectId])
+  @@index([classId])
+  @@index([dueDate])
 }
 
 model HomeworkSubmission {
@@ -406,6 +452,9 @@ model HomeworkSubmission {
   homework    Homework  @relation(fields: [homeworkId], references: [id])
   studentId   String
   student     Student   @relation(fields: [studentId], references: [id])
+  // A submission can be text-only, file-only, or both. At least one is
+  // required — the service enforces this (schema can't express "not both null").
+  content     String?
   fileUrl     String?
   submittedAt DateTime  @default(now())
   score       Float?
@@ -423,6 +472,9 @@ model Quiz {
   subject     Subject  @relation(fields: [subjectId], references: [id])
   teacherId   String
   teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  // Optional: a quiz can be school-wide by subject or scoped to a class.
+  classId     String?
+  class       Class?   @relation(fields: [classId], references: [id])
   isAutoGrade Boolean  @default(true)
   timeLimitMin Int?
 
@@ -433,16 +485,19 @@ model Quiz {
   updatedAt DateTime @updatedAt
 
   @@index([subjectId])
+  @@index([classId])
 }
 
 model QuizQuestion {
-  id            String  @id @default(cuid())
+  id            String   @id @default(cuid())
   quizId        String
-  quiz          Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   questionText  String
-  options       Json // ["A) ...", "B) ...", ...] for MCQ; null for free text
+  // Multiple-choice options, e.g. ["A) ...", "B) ..."]. Empty array for
+  // free-response questions.
+  options       String[] @default([])
   correctAnswer String
-  points        Float   @default(1)
+  points        Float    @default(1)
 
   @@index([quizId])
 }
@@ -471,18 +526,18 @@ enum GradePeriod {
 }
 
 model Grade {
-  id        String      @id @default(cuid())
-  studentId String
-  student   Student     @relation(fields: [studentId], references: [id])
-  subjectId String
-  subject   Subject     @relation(fields: [subjectId], references: [id])
-  teacherId String
-  teacher   Teacher     @relation(fields: [teacherId], references: [id])
-  period    GradePeriod
+  id          String      @id @default(cuid())
+  studentId   String
+  student     Student     @relation(fields: [studentId], references: [id])
+  subjectId   String
+  subject     Subject     @relation(fields: [subjectId], references: [id])
+  teacherId   String
+  teacher     Teacher     @relation(fields: [teacherId], references: [id])
+  period      GradePeriod
   periodLabel String // e.g. "2026-Sep", "Semester 1", "2026-2027"
-  score     Float
-  maxScore  Float       @default(100)
-  comment   String?
+  score       Float
+  maxScore    Float       @default(100)
+  comment     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -499,10 +554,10 @@ enum AttendanceStatus {
 }
 
 model Attendance {
-  id        String            @id @default(cuid())
+  id        String           @id @default(cuid())
   studentId String
-  student   Student           @relation(fields: [studentId], references: [id])
-  date      DateTime          @db.Date
+  student   Student          @relation(fields: [studentId], references: [id])
+  date      DateTime         @db.Date
   status    AttendanceStatus
   checkIn   DateTime?
   checkOut  DateTime?
@@ -531,6 +586,7 @@ model LeaveRequest {
   status     LeaveStatus @default(PENDING)
   reviewedBy String? // userId of admin/teacher who approved/rejected
   reviewedAt DateTime?
+  reviewNote String? // reviewer's comment on the decision
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -548,10 +604,12 @@ model Announcement {
   content  String
   authorId String
   author   User   @relation("AnnouncementAuthor", fields: [authorId], references: [id])
-  audience String @default("all") // "all", "teachers", "students", "parents", classId, etc.
+  audience String @default("all") // "all", "admin", "teacher", "student", "parent"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([audience])
 }
 
 enum NotificationChannel {
@@ -571,6 +629,7 @@ model Notification {
   createdAt DateTime            @default(now())
 
   @@index([userId])
+  @@index([userId, readAt])
 }
 
 // ------------------------------------------------------------
@@ -591,4 +650,5 @@ model AuditLog {
 
   @@index([userId])
   @@index([entityType, entityId])
+  @@index([createdAt])
 }

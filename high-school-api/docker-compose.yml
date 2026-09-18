@@ -13,9 +13,25 @@ services:
       # the same POSTGRES_* vars in .env, so they can't drift out of sync
       # with the postgres service below.
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-high_school_db}?schema=public
+      NODE_ENV: ${NODE_ENV:-production}
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      # The API serves /health without touching the database, so this probe
+      # is safe to run before migrations have been applied. It checks that
+      # the process is listening, not that the DB is reachable.
+      #
+      # node:alpine ships BusyBox wget — that's what's used here. If you
+      # switch the base image to something without wget, replace with curl
+      # or a node one-liner.
+      test:
+        - CMD-SHELL
+        - wget --spider -q http://localhost:5000/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     volumes:
       - uploads:/app/uploads
       - logs:/app/logs
@@ -31,14 +47,27 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-high_school_db}
     ports:
-      - "5432:5432"
+      # Bound to loopback only. Postgres on 0.0.0.0:5432 is reachable from
+      # the public internet unless the host firewall blocks it — a real
+      # problem on cloud VMs. Use `psql` through a tunnel or the pgAdmin
+      # service to reach it.
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # `$$` escapes the Compose-level interpolation so the shell inside the
+      # container expands POSTGRES_USER at runtime. Without this, the check
+      # would hardcode "postgres" and fail the moment .env overrides the
+      # user — blocking the API container from ever starting.
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
       interval: 5s
       timeout: 5s
       retries: 5
+      # Postgres needs a few seconds to initdb on first boot. Without this,
+      # the API's depends_on can fire before the DB accepts connections.
+      start_period: 10s
     networks:
       - school-network
 
@@ -47,12 +76,18 @@ services:
     container_name: high-school-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@school.local
-      PGADMIN_DEFAULT_PASSWORD: admin
+      # Credentials come from .env, not from this file. The `:?` form makes
+      # `docker compose up` fail fast with a clear message if they're not
+      # set, rather than launching pgAdmin with a default that will be
+      # scraped within minutes of any public deploy.
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?PGADMIN_EMAIL must be set in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD must be set in .env}
     ports:
-      - "5050:80"
+      # Loopback-only for the same reason as Postgres above.
+      - "127.0.0.1:5050:80"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - school-network
 
@@ -65,7 +100,11 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - api
+      api:
+        # Waits for the API's healthcheck to pass, not just for the container
+        # to start. Without this, nginx accepts connections before the API
+        # is listening and returns 502s for the first few seconds.
+        condition: service_healthy
     networks:
       - school-network
 

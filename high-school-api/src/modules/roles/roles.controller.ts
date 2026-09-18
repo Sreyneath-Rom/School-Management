@@ -1,6 +1,12 @@
 import type { Request, Response } from 'express'
 import { rolesService } from './roles.service'
 import { sendCreated, sendSuccess } from '@/utils/apiResponse'
+import { ApiError } from '@/utils/ApiError'
+import type {
+  CreateRoleBody,
+  UpdateRoleBody,
+  UpdateRolePermissionsBody,
+} from './roles.validation'
 
 export const rolesController = {
   async list(_req: Request, res: Response) {
@@ -8,24 +14,31 @@ export const rolesController = {
   },
 
   async create(req: Request, res: Response) {
-    sendCreated(res, await rolesService.create(req.body.name, req.body.label))
+    const body = req.validated?.body as CreateRoleBody | undefined
+    if (!body) throw ApiError.badRequest('Request body is required')
+
+    sendCreated(res, await rolesService.create(body))
   },
 
   async update(req: Request, res: Response) {
-    sendSuccess(
-      res,
-      await rolesService.update(req.params.roleId, { name: req.body.name, label: req.body.label })
-    )
+    const body = req.validated?.body as UpdateRoleBody | undefined
+    if (!body) throw ApiError.badRequest('Request body is required')
+
+    sendSuccess(res, await rolesService.update(req.params.roleId, body))
   },
 
   async remove(req: Request, res: Response) {
     await rolesService.remove(req.params.roleId)
-    // No sendSuccess helper for empty bodies here — 204 must not include a
-    // response body, so this bypasses the JSON envelope entirely.
     res.status(204).end()
   },
 
   async updatePermissions(req: Request, res: Response) {
-    sendSuccess(res, await rolesService.replacePermissions(req.params.roleId, req.body.permissionIds))
+    const body = req.validated?.body as UpdateRolePermissionsBody | undefined
+    if (!body) throw ApiError.badRequest('Request body is required')
+
+    sendSuccess(
+      res,
+      await rolesService.replacePermissions(req.params.roleId, body.permissionIds)
+    )
   },
 }

@@ -13,6 +13,19 @@ import {
 const router = Router()
 router.use(authenticate)
 
+/**
+ * All report routes are staff-only (`reports.view`, held by admin and
+ * teacher per the seed). Self-service access for students and parents —
+ * "show me my own attendance", "show me my child's grades" — lives in the
+ * domain modules (`GET /grades/me`, `GET /attendance` with role-scoped
+ * filtering, etc.). Reports is for staff-facing aggregate views.
+ *
+ * ROUTE ORDER: literal paths (`/attendance`, `/grades`) before param paths
+ * (`/students/:id`, `/teachers/:id`). No collision today — the literal paths
+ * are single-segment and the param paths are two — but keeping the rule
+ * avoids a surprise if a single-segment `/attendance` variant is ever added.
+ */
+
 router.get(
   '/attendance',
   requirePermission('reports', 'view'),
