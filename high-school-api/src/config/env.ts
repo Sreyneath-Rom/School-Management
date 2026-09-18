@@ -32,12 +32,29 @@ const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
   .map((origin) => origin.trim())
   .filter(Boolean)
 
+/**
+ * Coerces an empty string to `undefined`.
+ *
+ * `.env` files commonly contain `REDIS_URL=` (key present, value empty) as a
+ * "this is a thing you could configure" hint. Zod's `.optional()` treats that
+ * as a defined string — `""` is not `undefined` — so `.url()` or `.email()`
+ * validators fail on it. Wrapping every optional field with this preprocessor
+ * makes empty-string and omitted behave identically.
+ */
+const emptyToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+    schema
+  )
+
 const envSchema = z
   .object({
     // ---- Runtime ----
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().max(65535).default(5000),
-    LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).optional(),
+    LOG_LEVEL: emptyToUndefined(
+      z.enum(['error', 'warn', 'info', 'http', 'debug']).optional()
+    ),
 
     // ---- Database ----
     DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
@@ -65,16 +82,16 @@ const envSchema = z
     SWAGGER_ENABLED: z.coerce.boolean().default(false),
     // Override the "Try it out" server URL. Falls back to localhost:{PORT}
     // when unset, which is fine for dev.
-    SWAGGER_SERVER_URL: z.string().url().optional(),
+    SWAGGER_SERVER_URL: emptyToUndefined(z.string().url().optional()),
 
     // ---- Email (optional until password reset is implemented) ----
-    EMAIL_HOST: z.string().optional(),
-    EMAIL_PORT: z.coerce.number().int().positive().optional(),
-    EMAIL_USER: z.string().optional(),
-    EMAIL_PASSWORD: z.string().optional(),
+    EMAIL_HOST: emptyToUndefined(z.string().optional()),
+    EMAIL_PORT: emptyToUndefined(z.coerce.number().int().positive().optional()),
+    EMAIL_USER: emptyToUndefined(z.string().optional()),
+    EMAIL_PASSWORD: emptyToUndefined(z.string().optional()),
 
     // ---- Redis (optional; used for permission caching if enabled) ----
-    REDIS_URL: z.string().url().optional(),
+    REDIS_URL: emptyToUndefined(z.string().url().optional()),
   })
   .superRefine((value, ctx) => {
     // Production-specific hardening. These are the mistakes that ship to prod
