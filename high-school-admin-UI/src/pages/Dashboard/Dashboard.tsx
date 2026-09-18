@@ -1,30 +1,42 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import StatsGrid from '@/components/cards/StatsGrid'
 import AttendanceChart from '@/components/charts/AttendanceChart'
-import EnrollmentDonut from '@/components/charts/EnrollmentDonut'
-import UpcomingEvents from '@/features/dashboard/UpcomingEvents'
-import RecentActivities from '@/features/dashboard/RecentActivities'
-import RecentLeaveRequests from '@/features/dashboard/RecentLeaveRequests'
-import Announcements from '@/features/dashboard/Announcements'
 import DashboardHeroBanner from '@/features/dashboard/DashboardHeroBanner'
 import DashboardQuickActions from '@/features/dashboard/DashboardQuickActions'
 import AcademicPulseWidget from '@/features/dashboard/AcademicPulseWidget'
 import LiveAttendanceBreakdown from '@/features/dashboard/LiveAttendanceBreakdown'
-import PendingApprovalsWidget from '@/features/dashboard/PendingApprovalsWidget'
 import TeacherDashboard from '@/pages/Dashboard/TeacherDashboard'
 import StudentDashboard from '@/pages/Dashboard/StudentDashboard'
 import { useAuth } from '@/hooks/useAuth'
 import { useFetch } from '@/hooks/useFetch'
 import { dashboardService, type DashboardStats } from '@/services/dashboardService'
+import type { StatCard } from '@/types'
 
 function AdminDashboard() {
-  const { data: stats, loading, error } = useFetch<DashboardStats>(dashboardService.getStats)
   const [selectedCohort, setSelectedCohort] = useState('All Grades')
+  const fetchDashboardStats = useCallback(
+    () => dashboardService.getStats(selectedCohort),
+    [selectedCohort],
+  )
+  const { data: stats, loading, error, refetch } = useFetch<DashboardStats>(fetchDashboardStats)
+
+  useEffect(() => {
+    void refetch()
+  }, [selectedCohort, refetch])
 
   const handleExportSummary = () => {
     // Generates browser print / pdf save dialog for administrative reporting
     window.print()
   }
+
+  const cards: StatCard[] | undefined = stats
+    ? [
+        { id: 'students', label: 'Total Students', value: String(stats.studentCount), delta: '', deltaDirection: 'neutral', deltaLabel: 'From database', icon: 'GraduationCap', tint: 'blue' },
+        { id: 'teachers', label: 'Total Teachers', value: String(stats.teacherCount), delta: '', deltaDirection: 'neutral', deltaLabel: 'From database', icon: 'Users', tint: 'emerald' },
+        { id: 'classes', label: 'Total Classes', value: String(stats.classCount), delta: '', deltaDirection: 'neutral', deltaLabel: 'From database', icon: 'BookOpen', tint: 'purple' },
+        { id: 'leave-requests', label: 'Pending Leave Requests', value: String(stats.pendingLeaveRequests), delta: '', deltaDirection: 'neutral', deltaLabel: 'From database', icon: 'FileText', tint: 'orange' },
+      ]
+    : undefined
 
   return (
     <div className="space-y-6">
@@ -46,7 +58,7 @@ function AdminDashboard() {
       )}
 
       {/* 4. High-Level Core Institutional KPIs */}
-      <StatsGrid stats={stats} loading={loading} showHeader={true} />
+      <StatsGrid stats={stats} cards={cards} loading={loading} showHeader={true} />
 
       {/* 5. Academic Performance & Daily Attendance Diagnostics */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
@@ -59,25 +71,8 @@ function AdminDashboard() {
         <div className="lg:col-span-2 xl:col-span-2">
           <AttendanceChart loading={loading} />
         </div>
-        <div className="col-span-1">
-          <EnrollmentDonut loading={loading} />
-        </div>
       </div>
 
-      {/* 7. Action Items, Approvals & Operations Center */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-        <PendingApprovalsWidget />
-        <RecentLeaveRequests loading={loading} />
-      </div>
-
-      {/* 8. Campus Life, Calendar & Administrative Notice Feed */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-        <UpcomingEvents loading={loading} />
-        <RecentActivities loading={loading} />
-        <div className="md:col-span-2 xl:col-span-1">
-          <Announcements loading={loading} />
-        </div>
-      </div>
     </div>
   )
 }

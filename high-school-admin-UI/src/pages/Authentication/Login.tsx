@@ -60,8 +60,8 @@ interface RoleConfig {
   identifierPlaceholder: string;
   accentClass: string;
   badgeClass: string;
-  bgGradient: string;
-  btnGradient: string;
+  bglinear: string;
+  btnlinear: string;
   ringClass: string;
   features: string[];
 }
@@ -75,15 +75,15 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description:
       'Oversee institutional operations, faculty governance, admissions, financial schedules, and real-time KPI metrics.',
     icon: ShieldCheck,
-    demoEmail: 'admin@varinhigh.edu.kh',
+    demoEmail: 'admin@example.com',
     demoPassword: 'password',
     identifierLabel: 'Administrator Email or Staff ID',
-    identifierPlaceholder: 'admin@varinhigh.edu.kh or ADM-2025',
+    identifierPlaceholder: 'admin@example.com or ADM-2025',
     accentClass: 'text-blue-600 dark:text-blue-400',
     badgeClass:
       'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-    bgGradient: 'from-blue-600 to-indigo-700',
-    btnGradient:
+    bglinear: 'from-blue-600 to-indigo-700',
+    btnlinear:
       'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25',
     ringClass: 'focus:ring-blue-500 focus:border-blue-500',
     features: [
@@ -107,8 +107,8 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     accentClass: 'text-emerald-600 dark:text-emerald-400',
     badgeClass:
       'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-    bgGradient: 'from-emerald-600 to-teal-700',
-    btnGradient:
+    bglinear: 'from-emerald-600 to-teal-700',
+    btnlinear:
       'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25',
     ringClass: 'focus:ring-emerald-500 focus:border-emerald-500',
     features: [
@@ -132,8 +132,8 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     accentClass: 'text-purple-600 dark:text-purple-400',
     badgeClass:
       'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
-    bgGradient: 'from-purple-600 to-indigo-700',
-    btnGradient:
+    bglinear: 'from-purple-600 to-indigo-700',
+    btnlinear:
       'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/25',
     ringClass: 'focus:ring-purple-500 focus:border-purple-500',
     features: [
@@ -157,8 +157,8 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     accentClass: 'text-amber-600 dark:text-amber-400',
     badgeClass:
       'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-    bgGradient: 'from-amber-600 to-orange-700',
-    btnGradient:
+    bglinear: 'from-amber-600 to-orange-700',
+    btnlinear:
       'bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-500/25',
     ringClass: 'focus:ring-amber-500 focus:border-amber-500',
     features: [
@@ -175,7 +175,7 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
 function SchoolCrest({ size = 48, className = '' }: { size?: number; className?: string }) {
   return (
     <div
-      className={`relative inline-flex items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-900 via-teal-900 to-slate-900 dark:from-slate-800 dark:via-teal-950 dark:to-slate-800 text-white p-2.5 shadow-xl border border-teal-500/30 shrink-0 ${className}`}
+      className={`relative inline-flex items-center justify-center rounded-2xl bg-linear-to-tr from-slate-900 via-teal-900 to-slate-900 dark:from-slate-800 dark:via-teal-950 dark:to-slate-800 text-white p-2.5 shadow-xl border border-teal-500/30 shrink-0 ${className}`}
       style={{ width: size, height: size }}
     >
       <School2 className="w-full h-full text-teal-300" />
@@ -224,12 +224,12 @@ export default function Login({ initialRole = 'admin' }: Props) {
   };
 
   // 1-Click Instant Demo Login
-  const handleInstantLogin = (role: UserRole = activeRole) => {
+  const handleInstantLogin = async (role: UserRole = activeRole) => {
     setIsLoading(true);
     setError('');
     setRoleNotice('');
     try {
-      const result = authService.loginAs(role);
+      const result = await authService.loginAs(role);
       login(result);
       const target =
         role === 'admin'
@@ -270,6 +270,9 @@ export default function Login({ initialRole = 'admin' }: Props) {
     try {
       // Step 5: Send POST /api/v1/auth/login
       const result = await authService.login(identifier.trim(), password);
+
+      // Store the token before validating the profile so /auth/me can send it.
+      login(result);
 
       // Step 8: Verify profile via GET /api/v1/auth/me
       let verifiedUser = result.user;
@@ -791,7 +794,7 @@ export default function Login({ initialRole = 'admin' }: Props) {
                     id="login-submit-btn"
                     type="submit"
                     disabled={isLoading}
-                    className={`w-full py-3.5 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-[0.99] ${currentConfig.btnGradient} ${
+                    className={`w-full py-3.5 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-[0.99] ${currentConfig.btnlinear} ${
                       isLoading ? 'opacity-70 cursor-not-allowed' : ''
                     }`}
                   >
@@ -868,7 +871,7 @@ export default function Login({ initialRole = 'admin' }: Props) {
                       {/* Badge & Icon */}
                       <div className="flex items-start justify-between mb-4">
                         <div
-                          className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${cfg.bgGradient} flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform`}
+                          className={`w-14 h-14 rounded-2xl bg-linear-to-tr ${cfg.bglinear} flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform`}
                         >
                           <Icon size={28} />
                         </div>
@@ -901,7 +904,7 @@ export default function Login({ initialRole = 'admin' }: Props) {
                       <button
                         type="button"
                         onClick={() => handleRoleTabChange(r)}
-                        className={`w-full py-3 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md ${cfg.btnGradient}`}
+                        className={`w-full py-3 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md ${cfg.btnlinear}`}
                       >
                         <span>Open {cfg.title} Sign In</span>
                         <ArrowRight size={14} />

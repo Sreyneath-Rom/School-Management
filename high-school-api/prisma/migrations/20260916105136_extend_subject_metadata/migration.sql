@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Subject" ADD COLUMN     "credits" INTEGER NOT NULL DEFAULT 3,
+ADD COLUMN     "gradeLevel" TEXT NOT NULL DEFAULT 'Grade 10',
+ADD COLUMN     "teacherNames" JSONB NOT NULL DEFAULT '[]',
+ADD COLUMN     "weeklyHours" INTEGER NOT NULL DEFAULT 4;

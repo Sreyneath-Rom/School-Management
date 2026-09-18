@@ -28,6 +28,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
   const [gender, setGender] = useState<'male' | 'female' | 'other'>('male')
   const [dateOfBirth, setDateOfBirth] = useState('2009-05-15')
@@ -56,6 +57,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
       setFirstName(studentToEdit.firstName || '')
       setLastName(studentToEdit.lastName || '')
       setEmail(studentToEdit.email || '')
+      setPassword('')
       setPhone(studentToEdit.phone || '')
       setGender(studentToEdit.gender || 'male')
       setDateOfBirth(studentToEdit.dateOfBirth || '2009-05-15')
@@ -84,6 +86,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
       setFirstName('')
       setLastName('')
       setEmail('')
+      setPassword('')
       setPhone('')
       setGender('male')
       setDateOfBirth('2009-05-15')
@@ -121,11 +124,17 @@ export const StudentModal: React.FC<StudentModalProps> = ({
       setActiveTab('academic')
       return
     }
+    if (!studentToEdit && password.length < 8) {
+      setError('A password of at least 8 characters is required for the student account.')
+      setActiveTab('basic')
+      return
+    }
 
     const payload: CreateStudentPayload = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      email: email.trim() || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@varinhs.edu`,
+      email: email.trim() || `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${studentId.toLowerCase()}@varinhs.edu`,
+      password: password || undefined,
       phone: phone.trim(),
       gender,
       dateOfBirth,
@@ -164,12 +173,12 @@ export const StudentModal: React.FC<StudentModalProps> = ({
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Soft Ambient Light in Top-Right Corner */}
-        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-gradient-to-br from-blue-400/20 via-cyan-400/15 to-transparent blur-3xl opacity-70" />
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-linear-to-br from-blue-400/20 via-cyan-400/15 to-transparent blur-3xl opacity-70" />
 
         {/* Header */}
         <div className="relative z-10 flex items-center justify-between border-b border-slate-100 bg-white/60 px-6 py-4.5 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/60">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/25">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/25">
               <GraduationCap className="h-5 w-5" />
             </div>
             <div>
@@ -240,6 +249,22 @@ export const StudentModal: React.FC<StudentModalProps> = ({
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     />
                   </div>
+                  {!studentToEdit && (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Account Password <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        minLength={8}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="At least 8 characters"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                       Last Name <span className="text-rose-500">*</span>
@@ -539,7 +564,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
                   onClick={() =>
                     setActiveTab(activeTab === 'basic' ? 'academic' : 'parent')
                   }
-                  className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer"
+                  className="rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer"
                 >
                   Next Step
                 </button>
@@ -547,7 +572,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer disabled:opacity-50"
+                  className="rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting
                     ? 'Saving...'

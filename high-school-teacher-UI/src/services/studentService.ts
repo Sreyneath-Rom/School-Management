@@ -64,7 +64,7 @@ export const studentService = {
 
   getById: (id: string) => apiClient.get<StudentUser>(`/students/${id}`),
 
-  create: (payload: CreateStudentPayload) => apiClient.post<StudentUser>('/students', payload),
+  create: (payload: CreateStudentPayload) => apiClient.post<StudentUser>('/students/enroll', payload),
 
   update: (id: string, payload: UpdateStudentPayload) => apiClient.patch<StudentUser>(`/students/${id}`, payload),
 

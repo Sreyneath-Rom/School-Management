@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import type { UserRole } from "@/utils/rolePermissions";
 import { authService, type AuthResult } from "@/services/authService";
 import { ApiError } from "@/lib/apiClient";
@@ -11,6 +11,7 @@ interface AuthUser {
   lastName: string;
   role: UserRole;
   name: string;
+  permissionKeys: string[];
 }
 
 export interface AuthContextType {
@@ -35,6 +36,7 @@ export const AuthInitializationContext = createContext<
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = useState<AuthUser | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const restoreStarted = useRef(false);
 
   // Helper to ensure setUser completes before other state updates
   const setUser = (newUser: AuthUser | null) => {
@@ -56,6 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("auth:session-expired", handleSessionExpired);
   }, [clearSession]);
   useEffect(() => {
+    if (restoreStarted.current) return;
+    restoreStarted.current = true;
+
     const restoreSession = async () => {
       try {
         const storedUser = localStorage.getItem(LOCAL_STORAGE_KEYS.USER);
@@ -74,10 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Validate token in background (don't block UI, don't log out if it fails)
           try {
             const freshUser = await authService.me();
-            console.log("Session validation successful:", freshUser);
             setUser({
               ...freshUser,
               name: `${freshUser.firstName} ${freshUser.lastName}`,
+              permissionKeys: freshUser.permissionKeys ?? [],
             });
             localStorage.setItem(
               LOCAL_STORAGE_KEYS.USER,
@@ -117,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const normalizedUser = {
       ...result.user,
       name: `${result.user.firstName} ${result.user.lastName}`,
+      permissionKeys: result.user.permissionKeys ?? [],
     };
 
     setUser(normalizedUser);

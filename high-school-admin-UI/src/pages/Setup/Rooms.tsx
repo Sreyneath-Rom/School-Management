@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageHeading from "@/components/common/PageHeading";
 import { 
   DoorOpen, 
@@ -18,6 +18,8 @@ import {
 import { useToast } from "@/components/common/ToastProvider";
 import StatsGrid from "@/components/cards/StatsGrid";
 import type { StatCard } from "@/types";
+import { roomService, type RoomRecord, type RoomPayload } from "@/services/roomService";
+import { ApiError } from "@/lib/apiClient";
 
 interface RoomItem {
   id: string;
@@ -38,6 +40,7 @@ export default function Rooms() {
   const [typeFilter, setTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<RoomItem | null>(null);
 
   const [rooms, setRooms] = useState<RoomItem[]>([
     {
@@ -120,6 +123,25 @@ export default function Rooms() {
     amenitiesText: "Interactive Smartboard, AC",
   });
 
+  const toRoomItem = (room: RoomRecord): RoomItem => ({
+    ...room,
+    amenities: Array.isArray(room.amenities) ? room.amenities : [],
+    currentClass: room.currentClass ?? undefined,
+  });
+
+  useEffect(() => {
+    void loadRooms();
+  }, []);
+
+  async function loadRooms() {
+    try {
+      const records = await roomService.list();
+      setRooms(records.map(toRoomItem));
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Failed to load rooms", "error");
+    }
+  }
+
   const roomKpiCards: StatCard[] = [
     { id: "total-rooms", label: "Total Rooms & Facilities", value: rooms.length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "campus spaces", icon: "School", tint: "blue" },
     { id: "available-rooms", label: "Available Spaces", value: rooms.filter((room) => room.status === "Available").length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "ready to assign", icon: "DoorOpen", tint: "green" },
@@ -137,21 +159,7 @@ export default function Rooms() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const handleCreateRoom = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newRoom: RoomItem = {
-      id: `rm-${Date.now()}`,
-      name: formData.name,
-      code: formData.code,
-      building: formData.building,
-      floor: formData.floor,
-      type: formData.type,
-      capacity: Number(formData.capacity) || 30,
-      amenities: formData.amenitiesText.split(",").map((s) => s.trim()).filter(Boolean),
-      status: "Available",
-    };
-    setRooms((prev) => [newRoom, ...prev]);
-    setModalOpen(false);
+  const resetForm = () => {
     setFormData({
       name: "",
       code: "",
@@ -161,7 +169,59 @@ export default function Rooms() {
       capacity: 30,
       amenitiesText: "Interactive Smartboard, AC",
     });
-    showToast("Room added successfully", "success");
+    setEditingRoom(null);
+  };
+
+  const handleOpenEdit = (room: RoomItem) => {
+    setEditingRoom(room);
+    setFormData({
+      name: room.name,
+      code: room.code,
+      building: room.building,
+      floor: room.floor,
+      type: room.type,
+      capacity: room.capacity,
+      amenitiesText: room.amenities.join(", "),
+    });
+    setModalOpen(true);
+  };
+
+  const handleSaveRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload: RoomPayload = {
+      name: formData.name,
+      code: formData.code,
+      building: formData.building,
+      floor: formData.floor,
+      type: formData.type,
+      capacity: Number(formData.capacity) || 30,
+      amenities: formData.amenitiesText.split(",").map((s) => s.trim()).filter(Boolean),
+    };
+    try {
+      const saved = editingRoom
+        ? await roomService.update(editingRoom.id, payload)
+        : await roomService.create(payload);
+      const nextRoom = toRoomItem(saved);
+      setRooms((prev) => editingRoom
+        ? prev.map((room) => room.id === nextRoom.id ? nextRoom : room)
+        : [nextRoom, ...prev]);
+      setModalOpen(false);
+      resetForm();
+      showToast(editingRoom ? "Room updated successfully" : "Room added successfully", "success");
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Failed to save room", "error");
+    }
+  };
+
+  const handleDeleteRoom = async (room: RoomItem) => {
+    if (!window.confirm(`Delete room "${room.name}"?`)) return;
+    try {
+      await roomService.delete(room.id);
+      setRooms((prev) => prev.filter((item) => item.id !== room.id));
+      showToast("Room deleted successfully", "success");
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Failed to delete room", "error");
+    }
   };
 
   return (
@@ -172,7 +232,7 @@ export default function Rooms() {
           subtitle="Manage campus classrooms, science labs, tech workshops, and seating capacities."
         />
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={() => { resetForm(); setModalOpen(true); }}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer shrink-0"
         >
           <Plus size={16} />
@@ -302,10 +362,18 @@ export default function Rooms() {
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => showToast(`Edit ${room.name}`, "info")}
+                  onClick={() => handleOpenEdit(room)}
                   className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white transition cursor-pointer"
                 >
                   <Edit3 size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRoom(room)}
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+                  title={`Delete ${room.name}`}
+                >
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>
@@ -317,9 +385,9 @@ export default function Rooms() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-stone-900 dark:text-white mb-4">
-              Add New Room / Lab
+              {editingRoom ? "Edit Room / Lab" : "Add New Room / Lab"}
             </h3>
-            <form onSubmit={handleCreateRoom} className="space-y-4">
+            <form onSubmit={handleSaveRoom} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                   Room Name *
@@ -366,7 +434,7 @@ export default function Rooms() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                     Building
@@ -375,6 +443,18 @@ export default function Rooms() {
                     type="text"
                     value={formData.building}
                     onChange={(e) => setFormData({ ...formData, building: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Floor
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.floor}
+                    onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
                     required
                   />

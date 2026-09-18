@@ -1,5 +1,5 @@
 // src/pages/Setup/AcademicYears.tsx
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   CalendarRange,
@@ -18,6 +18,8 @@ import {
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
+import { academicYearService, type AcademicYearRecord } from '@/services/academicYearService'
+import { ApiError } from '@/lib/apiClient'
 
 export interface AcademicYear {
   id: string
@@ -75,15 +77,37 @@ const INITIAL_YEARS: AcademicYear[] = [
   },
 ]
 
+function toPageYear(year: AcademicYearRecord): AcademicYear {
+  return {
+    ...year,
+    startDate: year.startDate.slice(0, 10),
+    endDate: year.endDate.slice(0, 10),
+    description: year.description ?? undefined,
+  }
+}
+
 export default function AcademicYears() {
   const { showToast } = useToast()
-  const [years, setYears] = useState<AcademicYear[]>(INITIAL_YEARS)
+  const [years, setYears] = useState<AcademicYear[]>([])
 
   // Modals
   const [detailYear, setDetailYear] = useState<AcademicYear | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingYear, setEditingYear] = useState<AcademicYear | null>(null)
   const [deleteCandidate, setDeleteCandidate] = useState<AcademicYear | null>(null)
+
+  useEffect(() => {
+    void loadYears()
+  }, [])
+
+  async function loadYears() {
+    try {
+      const records = await academicYearService.list()
+      setYears(records.map(toPageYear))
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to load academic years', 'error')
+    }
+  }
 
   // Form State
   const [formData, setFormData] = useState({
@@ -141,19 +165,18 @@ export default function AcademicYears() {
     setModalOpen(true)
   }
 
-  const handleSetActive = (id: string) => {
-    setYears((prev) =>
-      prev.map((y) => ({
-        ...y,
-        isCurrent: y.id === id,
-        status: y.id === id ? 'Active' : y.status === 'Active' ? 'Archived' : y.status,
-      }))
-    )
-    showToast('Academic Year set to Active successfully', 'success')
+  const handleSetActive = async (id: string) => {
+    try {
+      await academicYearService.setCurrent(id)
+      await loadYears()
+      showToast('Academic Year set to Active successfully', 'success')
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to set academic year', 'error')
+    }
   }
 
   // UC-ACADEMIC-03 & 04 Save Handler
-  const handleSaveYear = (e: React.FormEvent) => {
+  const handleSaveYear = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // 400 Bad Request prevention
@@ -167,10 +190,8 @@ export default function AcademicYears() {
       return
     }
 
-    if (editingYear) {
-      // UC-ACADEMIC-04: Edit
-      const updated: AcademicYear = {
-        ...editingYear,
+    try {
+      const payload = {
         name: formData.name.trim(),
         startDate: formData.startDate,
         endDate: formData.endDate,
@@ -178,26 +199,16 @@ export default function AcademicYears() {
         status: formData.status,
         description: formData.description,
       }
-      setYears((prev) => prev.map((y) => (y.id === updated.id ? updated : y)))
+      const saved = editingYear
+        ? await academicYearService.update(editingYear.id, payload)
+        : await academicYearService.create(payload)
+      const updated = toPageYear(saved)
+      setYears((prev) => editingYear ? prev.map((year) => year.id === updated.id ? updated : year) : [updated, ...prev])
       if (detailYear?.id === updated.id) setDetailYear(updated)
-      showToast(`Academic Year "${updated.name}" updated successfully.`, 'success')
-    } else {
-      // UC-ACADEMIC-03: Create
-      const newYear: AcademicYear = {
-        id: `ay-${Date.now()}`,
-        name: formData.name.trim(),
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        status: formData.status,
-        termsCount: Number(formData.termsCount) || 3,
-        classesCount: 0,
-        studentsCount: 0,
-        isCurrent: false,
-        description: formData.description,
-        createdAt: new Date().toISOString().split('T')[0],
-      }
-      setYears((prev) => [newYear, ...prev])
-      showToast(`Academic Year "${newYear.name}" created successfully.`, 'success')
+      showToast(`Academic Year "${updated.name}" ${editingYear ? 'updated' : 'created'} successfully.`, 'success')
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to save academic year', 'error')
+      return
     }
 
     setModalOpen(false)
@@ -205,7 +216,7 @@ export default function AcademicYears() {
   }
 
   // UC-ACADEMIC-05: Delete with 409 Conflict check
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteCandidate) return
 
     // Precondition check: Cannot delete active current year
@@ -225,10 +236,15 @@ export default function AcademicYears() {
       return
     }
 
-    setYears((prev) => prev.filter((y) => y.id !== deleteCandidate.id))
-    if (detailYear?.id === deleteCandidate.id) setDetailYear(null)
-    showToast(`Academic Year "${deleteCandidate.name}" deleted.`, 'success')
-    setDeleteCandidate(null)
+    try {
+      await academicYearService.delete(deleteCandidate.id)
+      setYears((prev) => prev.filter((y) => y.id !== deleteCandidate.id))
+      if (detailYear?.id === deleteCandidate.id) setDetailYear(null)
+      showToast(`Academic Year "${deleteCandidate.name}" deleted.`, 'success')
+      setDeleteCandidate(null)
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to delete academic year', 'error')
+    }
   }
 
   return (

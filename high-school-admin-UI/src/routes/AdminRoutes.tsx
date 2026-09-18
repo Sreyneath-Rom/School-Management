@@ -45,14 +45,6 @@ import TeacherAttendance from "@/pages/Teachers/TeacherAttendance";
 
 
 
-// Library
-import BookList from "@/pages/Library/BookList";
-import LibraryCategories from "@/pages/Library/LibraryCategories";
-import BorrowForm from "@/pages/Library/BorrowForm";
-import ReturnForm from "@/pages/Library/ReturnForm";
-import OverdueBooks from "@/pages/Library/OverdueBooks";
-
-
 // Calendar
 import CalendarView from "@/pages/Calendar/CalendarView";
 import EventForm from "@/pages/Calendar/EventForm";
@@ -120,13 +112,6 @@ export const adminRoutes = (): ReactElement => (
 
     
 
-    {/* Library */}
-    <Route path="/library/books" element={<BookList />} />
-    <Route path="/library/categories" element={<LibraryCategories />} />
-    <Route path="/library/borrow" element={<BorrowForm />} />
-    <Route path="/library/returns" element={<ReturnForm />} />
-    <Route path="/library/overdue" element={<OverdueBooks />} />
-
     {/* Calendar */}
     <Route path="/calendar" element={<CalendarView />} />
     <Route path="/calendar/events" element={<CalendarView />} />
@@ -148,7 +133,6 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/reports/grades" element={<GradeReport />} />
     <Route path="/reports/students" element={<StudentReport />} />
     <Route path="/reports/teachers" element={<TeacherReport />} />
-    <Route path="/reports/library" element={<BookList />} />
 
     {/* System & Account */}
     <Route path="/profile" element={<Users />} />

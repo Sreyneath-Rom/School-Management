@@ -9,6 +9,7 @@ export interface AuthUserPayload {
   lastName: string
   role: UserRole
   status?: string
+  permissionKeys?: string[]
 }
 
 export interface AuthResult {
@@ -66,25 +67,13 @@ export const authService = {
    * Dev helper — quick login by role using seeded demo accounts.
    * Provides immediate synchronous session credentials for demo and offline use.
    */
-  loginAs: (role: UserRole): AuthResult => {
-    const creds: Record<string, { email: string; firstName: string; lastName: string }> = {
-      admin:   { email: 'admin@varinhigh.edu.kh',   firstName: 'Sarah',   lastName: 'Administrator' },
-      teacher: { email: 'teacher@varinhigh.edu.kh', firstName: 'John',    lastName: 'Faculty' },
-      student: { email: 'student@varinhigh.edu.kh', firstName: 'Emily',   lastName: 'Scholar' },
-      parent:  { email: 'parent@varinhigh.edu.kh',  firstName: 'Robert',  lastName: 'Guardian' },
+  loginAs: async (role: UserRole): Promise<AuthResult> => {
+    const emails: Record<string, string> = {
+      admin: 'admin@example.com',
+      teacher: 'teacher@example.com',
+      student: 'student@example.com',
+      parent: 'parent@example.com',
     }
-    const c = creds[role] ?? creds.admin
-    return {
-      accessToken: `mock-token-${role}-${Date.now()}`,
-      refreshToken: `mock-refresh-${role}-${Date.now()}`,
-      user: {
-        id: `user-${role}`,
-        email: c.email,
-        firstName: c.firstName,
-        lastName: c.lastName,
-        role,
-        status: 'ACTIVE',
-      },
-    }
+    return authService.login(emails[role] ?? emails.admin, 'password')
   },
 }

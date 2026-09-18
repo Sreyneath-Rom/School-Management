@@ -2,9 +2,16 @@ import { prisma } from '@/config/database'
 import { ApiError } from '@/utils/ApiError'
 
 export const leaveRequestsService = {
+  async studentIdForUser(userId: string) {
+    const student = await prisma.student.findUnique({ where: { userId }, select: { id: true } })
+    if (!student) throw ApiError.notFound('Student profile not found')
+    return student.id
+  },
+
   async list(filters: { studentId?: string; status?: string }) {
     return prisma.leaveRequest.findMany({
       where: { studentId: filters.studentId, status: filters.status as never },
+      include: { student: { include: { user: { select: { firstName: true, lastName: true, email: true } }, class: true } } },
       orderBy: { createdAt: 'desc' },
     })
   },
@@ -16,6 +23,9 @@ export const leaveRequestsService = {
   },
 
   async create(input: { studentId: string; startDate: Date; endDate: Date; reason: string }) {
+    if (input.endDate < input.startDate) throw ApiError.badRequest('End date must be on or after start date')
+    const student = await prisma.student.findFirst({ where: { id: input.studentId, deletedAt: null } })
+    if (!student) throw ApiError.badRequest('Student profile not found')
     return prisma.leaveRequest.create({ data: input })
   },
 

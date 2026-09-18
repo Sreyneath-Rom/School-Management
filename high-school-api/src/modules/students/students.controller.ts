@@ -6,8 +6,10 @@ import { paginationQuerySchema } from '@/utils/pagination'
 export const studentsController = {
   async list(req: Request, res: Response) {
     const pagination = paginationQuerySchema.parse(req.query)
-    const { classId } = req.query as { classId?: string }
-    const { items, meta } = await studentsService.list(pagination, classId)
+    const { classId, class: className, search, status, gender } = req.query as {
+      classId?: string; class?: string; search?: string; status?: string; gender?: string
+    }
+    const { items, meta } = await studentsService.list(pagination, { classId, className, search, status, gender })
     sendSuccess(res, items, 200, meta)
   },
 
@@ -17,6 +19,10 @@ export const studentsController = {
 
   async create(req: Request, res: Response) {
     sendCreated(res, await studentsService.create(req.body))
+  },
+
+  async enroll(req: Request, res: Response) {
+    sendCreated(res, await studentsService.enroll(req.body))
   },
 
   async update(req: Request, res: Response) {

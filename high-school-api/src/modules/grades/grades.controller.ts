@@ -3,6 +3,11 @@ import { gradesService } from './grades.service'
 import { sendSuccess } from '@/utils/apiResponse'
 
 export const gradesController = {
+  async me(req: Request, res: Response) {
+    if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required' })
+    sendSuccess(res, await gradesService.listForUser(req.user.sub))
+  },
+
   async list(req: Request, res: Response) {
     const { studentId, subjectId, period } = req.query as {
       studentId?: string

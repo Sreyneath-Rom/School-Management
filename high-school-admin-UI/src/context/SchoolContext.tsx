@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { schoolService, type SchoolModel } from '@/services/schoolService'
+import { ApiError } from '@/lib/apiClient'
 
 interface SchoolContextValue {
   school: SchoolModel | null
@@ -33,7 +34,14 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
       return result
     } catch (err) {
       if (isMounted.current) {
-        setError(err instanceof Error ? err : new Error(String(err)))
+        if (err instanceof ApiError && err.status === 404) {
+          // A first-time setup has no row yet; keep the wizard editable so its
+          // save/upsert endpoint can create the singleton configuration.
+          setSchool(null)
+          setError(null)
+        } else {
+          setError(err instanceof Error ? err : new Error(String(err)))
+        }
         setLoading(false)
       }
       return undefined

@@ -1,6 +1,5 @@
 import { apiClient, ApiError } from '@/lib/apiClient'
 import type { UserRole } from '@/utils/rolePermissions'
-import { mockLogin, mockUsers } from '@/data/mockUsers'
 
 export interface AuthUserPayload {
   id: string
@@ -22,38 +21,12 @@ export const authService = {
       return await apiClient.post<AuthResult>('/auth/login', { email, password })
     } catch (error) {
       if (error instanceof ApiError) throw error
-
-      // Fallback to local mock data for client-side demo and offline resilience
-      const matched = mockLogin(email, password)
-      if (matched) {
-        return {
-          accessToken: `mock-token-${matched.id}-${Date.now()}`,
-          refreshToken: `mock-refresh-${matched.id}-${Date.now()}`,
-          user: {
-            id: matched.id,
-            email: matched.email,
-            firstName: matched.firstName,
-            lastName: matched.name.replace(matched.firstName, '').trim() || matched.role,
-            role: matched.role,
-          },
-        }
-      }
-      throw error
+      throw new ApiError(503, 'Unable to connect to the authentication server.', error)
     }
   },
-  loginAsRole: (role: UserRole): AuthResult => {
-    const matched = mockUsers.find((u) => u.role === role) ?? mockUsers[0]
-    return {
-      accessToken: `mock-token-${matched.id}-${Date.now()}`,
-      refreshToken: `mock-refresh-${matched.id}-${Date.now()}`,
-      user: {
-        id: matched.id,
-        email: matched.email,
-        firstName: matched.firstName,
-        lastName: matched.name.replace(matched.firstName, '').trim() || matched.role,
-        role: matched.role,
-      },
-    }
+  loginAsRole: async (role: UserRole): Promise<AuthResult> => {
+    const emails: Record<string, string> = { admin: 'admin@example.com', teacher: 'teacher@example.com', student: 'student@example.com', parent: 'parent@example.com' }
+    return authService.login(emails[role] ?? emails.teacher, 'password')
   },
   logout: (refreshToken: string) =>
     apiClient.post<void>('/auth/logout', { refreshToken }).catch(() => {}),

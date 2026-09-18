@@ -35,10 +35,10 @@ export default function AuthBackground({ variant }: Props) {
         className={`absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl transition-colors duration-700 ${glow1}`}
       />
       <div
-        className={`absolute top-1/3 -right-32 w-[28rem] h-[28rem] rounded-full blur-3xl transition-colors duration-700 ${glow2}`}
+        className={`absolute top-1/3 -right-32 w-md h-112 rounded-full blur-3xl transition-colors duration-700 ${glow2}`}
       />
       <div
-        className="absolute -bottom-32 left-1/3 w-[32rem] h-[32rem] rounded-full blur-3xl bg-sky-500/10 dark:bg-sky-600/10"
+        className="absolute -bottom-32 left-1/3 w-lg h-128 rounded-full blur-3xl bg-sky-500/10 dark:bg-sky-600/10"
       />
 
       {/* Subtle mathematical grid overlay */}

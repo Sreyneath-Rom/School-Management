@@ -1,22 +1,24 @@
 import PageHeading from '@/components/common/PageHeading'
 import StatsGrid from '@/components/cards/StatsGrid'
 import AttendanceChart from '@/components/charts/AttendanceChart'
-import EnrollmentDonut from '@/components/charts/EnrollmentDonut'
-import UpcomingEvents from '@/features/dashboard/UpcomingEvents'
-import RecentActivities from '@/features/dashboard/RecentActivities'
-import RecentLeaveRequests from '@/features/dashboard/RecentLeaveRequests'
-import Announcements from '@/features/dashboard/Announcements'
 import TeacherDashboard from '@/pages/Dashboard/TeacherDashboard'
 import StudentDashboard from '@/pages/Dashboard/StudentDashboard'
 import { useAuth } from '@/hooks/useAuth'
 import { getGreetingForUser } from '@/data/mockUsers'
 import { useFetch } from '@/hooks/useFetch'
 import { dashboardService, type DashboardStats } from '@/services/dashboardService'
+import type { StatCard } from '@/types'
 
 function AdminDashboard() {
   const { user } = useAuth()
   const displayName = user ? getGreetingForUser(user) : null
   const { data: stats, loading, error } = useFetch<DashboardStats>(dashboardService.getStats)
+  const cards: StatCard[] | undefined = stats ? [
+    { id: 'students', label: 'Total Students', value: String(stats.studentCount), delta: '', deltaDirection: 'neutral', deltaLabel: 'From database', icon: 'GraduationCap', tint: 'blue' },
+    { id: 'teachers', label: 'Total Teachers', value: String(stats.teacherCount), delta: '', deltaDirection: 'neutral', deltaLabel: 'From database', icon: 'UserRound', tint: 'green' },
+    { id: 'classes', label: 'Total Classes', value: String(stats.classCount), delta: '', deltaDirection: 'neutral', deltaLabel: 'From database', icon: 'Users', tint: 'amber' },
+    { id: 'leaves', label: 'Pending Leave Requests', value: String(stats.pendingLeaveRequests), delta: '', deltaDirection: 'neutral', deltaLabel: 'From database', icon: 'ClipboardList', tint: 'red' },
+  ] : undefined
 
   return (
     <>
@@ -32,27 +34,12 @@ function AdminDashboard() {
           </div>
         )}
 
-        <StatsGrid stats={stats} loading={loading} />
+        <StatsGrid stats={stats} cards={cards} loading={loading} />
 
         <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           <div className="lg:col-span-2 xl:col-span-2">
             <AttendanceChart loading={loading} />
           </div>
-          <div className="col-span-1">
-            <EnrollmentDonut loading={loading} />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-          <UpcomingEvents loading={loading} />
-          <RecentActivities loading={loading} />
-          <div className="md:col-span-2 xl:col-span-1">
-            <Announcements loading={loading} />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:gap-6 grid-cols-1">
-          <RecentLeaveRequests loading={loading} />
         </div>
       </div>
     </>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Calendar,
@@ -14,6 +14,7 @@ import {
   Search,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { attendanceService } from '@/services/attendanceService'
 
 interface PersonalAttendanceDay {
   id: string
@@ -41,7 +42,8 @@ const MOCK_STUDENT_ATTENDANCE_LOG: PersonalAttendanceDay[] = [
 
 export default function StudentPersonalAttendanceView() {
   const { user } = useAuth()
-  const [filterMonth, setFilterMonth] = useState('October 2025')
+  const [filterMonth, setFilterMonth] = useState('All dates')
+  const [attendanceLog, setAttendanceLog] = useState<PersonalAttendanceDay[]>([])
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'EXCUSED' | 'ABSENT'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -49,8 +51,14 @@ export default function StudentPersonalAttendanceView() {
   const studentCode = 'STU-1001'
   const className = 'Grade 10 - A'
 
+  useEffect(() => {
+    attendanceService.list({ from: '2025-01-01', to: new Date().toISOString().slice(0, 10) }).then((records) => {
+      setAttendanceLog(records.map((record) => ({ id: record.id, date: record.date.slice(0, 10), dayOfWeek: new Date(record.date).toLocaleDateString(undefined, { weekday: 'long' }), status: record.status, checkIn: record.checkIn ?? null, checkOut: record.checkOut ?? null, periodCount: 0, note: record.note ?? null })))
+    }).catch(() => setAttendanceLog([]))
+  }, [])
+
   const filteredLogs = useMemo(() => {
-    return MOCK_STUDENT_ATTENDANCE_LOG.filter((log) => {
+    return attendanceLog.filter((log) => {
       const matchStatus = statusFilter === 'ALL' || log.status === statusFilter
       const matchSearch =
         log.date.includes(searchQuery) ||
@@ -58,14 +66,14 @@ export default function StudentPersonalAttendanceView() {
         (log.note && log.note.toLowerCase().includes(searchQuery.toLowerCase()))
       return matchStatus && matchSearch
     })
-  }, [statusFilter, searchQuery])
+  }, [attendanceLog, statusFilter, searchQuery])
 
   // Summary figures
-  const totalLogged = MOCK_STUDENT_ATTENDANCE_LOG.length
-  const presentCount = MOCK_STUDENT_ATTENDANCE_LOG.filter((d) => d.status === 'PRESENT').length
-  const lateCount = MOCK_STUDENT_ATTENDANCE_LOG.filter((d) => d.status === 'LATE').length
-  const excusedCount = MOCK_STUDENT_ATTENDANCE_LOG.filter((d) => d.status === 'EXCUSED').length
-  const absentCount = MOCK_STUDENT_ATTENDANCE_LOG.filter((d) => d.status === 'ABSENT').length
+  const totalLogged = attendanceLog.length
+  const presentCount = attendanceLog.filter((d) => d.status === 'PRESENT').length
+  const lateCount = attendanceLog.filter((d) => d.status === 'LATE').length
+  const excusedCount = attendanceLog.filter((d) => d.status === 'EXCUSED').length
+  const absentCount = attendanceLog.filter((d) => d.status === 'ABSENT').length
   const attendancePercentage = (((presentCount + lateCount) / totalLogged) * 100).toFixed(1)
 
   const handlePrint = () => {

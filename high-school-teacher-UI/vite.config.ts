@@ -280,7 +280,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    ...(process.env.VITE_USE_MOCK_API !== 'false' ? [mockApiPlugin()] : []),
+    ...(process.env.VITE_USE_MOCK_API === 'true' ? [mockApiPlugin()] : []),
   ],
   resolve: {
     alias: {

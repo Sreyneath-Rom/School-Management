@@ -2,11 +2,15 @@ import { z } from 'zod'
 
 export const createUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(8).default('Password@123'),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   phone: z.string().optional(),
-  roleId: z.string().cuid(),
+  roleId: z.string().cuid().optional(),
+  role: z.enum(['admin', 'teacher', 'student', 'parent', 'mazer']).optional(),
+}).refine((data) => Boolean(data.roleId || data.role), {
+  message: 'role or roleId is required',
+  path: ['role'],
 })
 
 export const updateUserSchema = z.object({
@@ -14,7 +18,9 @@ export const updateUserSchema = z.object({
   lastName: z.string().min(1).optional(),
   phone: z.string().optional(),
   roleId: z.string().cuid().optional(),
+  role: z.enum(['admin', 'teacher', 'student', 'parent', 'mazer']).optional(),
   isActive: z.boolean().optional(),
+  status: z.enum(['active', 'inactive']).optional(),
 })
 
 export const resetUserPasswordSchema = z.object({

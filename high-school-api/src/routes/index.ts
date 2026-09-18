@@ -9,11 +9,6 @@ import setupRoutes from './setup.routes'
 import academicRoutes from './academic.routes'
 import studentsRoutes from './students.routes'
 import teachersRoutes from './teachers.routes'
-import financeRoutes from './finance.routes'
-import libraryRoutes from './library.routes'
-import transportRoutes from './transport.routes'
-import hostelRoutes from './hostel.routes'
-import inventoryRoutes from './inventory.routes'
 import examsRoutes from './exams.routes'
 import attendanceRoutes from './attendance.routes'
 import communicationRoutes from './communication.routes'
@@ -36,6 +31,10 @@ import announcementsRoutes from '@/modules/announcements/announcements.routes'
 import notificationsRoutes from '@/modules/notifications/notifications.routes'
 import languagesRoutes from '@/modules/languages/languages.routes'
 import translationsRoutes from '@/modules/translations/translations.routes'
+import academicYearsRoutes from '@/modules/academicYears/academicYears.routes'
+import roomsRoutes from '@/modules/rooms/rooms.routes'
+import gradeLevelsRoutes from '@/modules/gradeLevels/gradeLevels.routes'
+import termsRoutes from '@/modules/terms/terms.routes'
 
 // -----------------------------------------------------------------------------
 // Named Exports for Modular Consumption
@@ -47,11 +46,6 @@ export {
   academicRoutes,
   studentsRoutes,
   teachersRoutes,
-  financeRoutes,
-  libraryRoutes,
-  transportRoutes,
-  hostelRoutes,
-  inventoryRoutes,
   examsRoutes,
   attendanceRoutes,
   communicationRoutes,
@@ -73,6 +67,10 @@ export {
   notificationsRoutes,
   languagesRoutes,
   translationsRoutes,
+  academicYearsRoutes,
+  roomsRoutes,
+  gradeLevelsRoutes,
+  termsRoutes,
 }
 
 // -----------------------------------------------------------------------------
@@ -96,6 +94,10 @@ export const moduleRoutes: ModuleRouteDefinition[] = [
   { domain: 'Administration', path: '/dashboard', router: dashboardRoutes, description: 'Overview metrics, charts & summary data' },
   { domain: 'Administration', path: '/schools', router: schoolRoutes, description: 'School profile, academic configurations & setup' },
   { domain: 'Administration', path: '/setup', router: setupRoutes, description: 'Unified administrative setup & config hub' },
+  { domain: 'Administration', path: '/academic-years', router: academicYearsRoutes, description: 'Academic year lifecycle and current-year selection' },
+  { domain: 'Administration', path: '/rooms', router: roomsRoutes, description: 'Room and facility lifecycle management' },
+  { domain: 'Administration', path: '/grade-levels', router: gradeLevelsRoutes, description: 'Grade and academic level lifecycle management' },
+  { domain: 'Administration', path: '/terms', router: termsRoutes, description: 'Academic term and grading cycle lifecycle management' },
 
   // 3. People (Students & Teachers)
   { domain: 'People', path: '/students', router: studentsRoutes, description: 'Student directory, records & parent links' },
@@ -118,31 +120,15 @@ export const moduleRoutes: ModuleRouteDefinition[] = [
   { domain: 'Attendance & Leaves', path: '/attendance', router: attendanceRoutes, description: 'Daily student & staff attendance' },
   { domain: 'Attendance & Leaves', path: '/leaves', router: leaveRequestsRoutes, description: 'Leave request processing & approvals' },
 
-  // 7. Finance & Fees Management
-  { domain: 'Finance & Fees', path: '/finance', router: financeRoutes, description: 'Fee structures, invoices, payments & history' },
-  { domain: 'Finance & Fees', path: '/fees', router: financeRoutes, description: 'Alias for fee collections and billing' },
-
-  // 8. Library Management
-  { domain: 'Library', path: '/library', router: libraryRoutes, description: 'Book catalog, circulation, borrowing & overdue tracking' },
-
-  // 9. Transport Management
-  { domain: 'Transport', path: '/transport', router: transportRoutes, description: 'Bus routes, vehicle fleet, drivers & assignments' },
-
-  // 10. Hostel & Boarding
-  { domain: 'Hostel', path: '/hostel', router: hostelRoutes, description: 'Dormitory rooms, student allocations & boarding fees' },
-
-  // 11. Inventory Management
-  { domain: 'Inventory', path: '/inventory', router: inventoryRoutes, description: 'Stock items, categories, issuance & suppliers' },
-
-  // 12. Communication & Alerts
+  // 7. Communication & Alerts
   { domain: 'Communication', path: '/communication', router: communicationRoutes, description: 'Unified communication hub' },
   { domain: 'Communication', path: '/announcements', router: announcementsRoutes, description: 'Broadcast school announcements' },
   { domain: 'Communication', path: '/notifications', router: notificationsRoutes, description: 'In-app and push notifications' },
 
-  // 13. Reports & Analytics
+  // 8. Reports & Analytics
   { domain: 'Reports & Analytics', path: '/reports', router: reportsRoutes, description: 'Attendance, grade, student & financial analytics' },
 
-  // 14. Internationalization (i18n)
+  // 9. Internationalization (i18n)
   { domain: 'Localization', path: '/languages', router: languagesRoutes, description: 'Supported languages & locale config' },
   { domain: 'Localization', path: '/translations', router: translationsRoutes, description: 'Dynamic translation dictionary' },
 ]

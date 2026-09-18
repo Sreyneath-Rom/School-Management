@@ -18,7 +18,6 @@ import MarkEntry from "@/pages/Exams/MarkEntry";
 import Inbox from "@/pages/Messages/Inbox";
 import Conversation from "@/pages/Messages/Conversation";
 import CalendarView from "@/pages/Calendar/CalendarView";
-import BookList from "@/pages/Library/BookList";
 import AttendanceReport from "@/pages/Reports/AttendanceReport";
 
 export const teacherRoutes = (): ReactElement => (
@@ -39,6 +38,5 @@ export const teacherRoutes = (): ReactElement => (
     <Route path="/teacher/messages" element={<Inbox />} />
     <Route path="/teacher/messages/:id" element={<Conversation />} />
     <Route path="/teacher/calendar" element={<CalendarView />} />
-    <Route path="/teacher/library" element={<BookList />} />
   </Route>
 );

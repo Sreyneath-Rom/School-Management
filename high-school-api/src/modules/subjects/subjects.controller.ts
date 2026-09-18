@@ -3,8 +3,9 @@ import { subjectsService } from './subjects.service'
 import { sendCreated, sendSuccess } from '@/utils/apiResponse'
 
 export const subjectsController = {
-  async list(_req: Request, res: Response) {
-    sendSuccess(res, await subjectsService.list())
+  async list(req: Request, res: Response) {
+    const { department, category, search } = req.query as { department?: string; category?: string; search?: string }
+    sendSuccess(res, await subjectsService.list({ department, category, search }))
   },
 
   async getById(req: Request, res: Response) {

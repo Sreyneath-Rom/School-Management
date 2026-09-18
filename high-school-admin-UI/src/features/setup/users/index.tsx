@@ -206,7 +206,7 @@ export default function UsersFeature() {
       <UserStats users={users} />
 
       {/* Filter and View Bar */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-[24px] glass-sm p-4 border border-text-main/10">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-3xl glass-sm p-4 border border-text-main/10">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-48 sm:min-w-64">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-main/40" />
@@ -321,7 +321,7 @@ export default function UsersFeature() {
           <p className="text-sm font-medium text-text-main/60">Loading user accounts...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
+        <div className="rounded-3xl bg-error/10 border border-error/20 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load users</p>
           <p className="text-xs">{loadError}</p>
         </div>

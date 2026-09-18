@@ -29,8 +29,8 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleInstantLogin = (role: UserRole) => {
-    const result = authService.loginAsRole(role);
+  const handleInstantLogin = async (role: UserRole) => {
+    const result = await authService.loginAsRole(role);
     login(result);
     const target =
       role === 'admin'

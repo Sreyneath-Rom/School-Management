@@ -14,7 +14,8 @@ function requireUserId(req: Request): string {
 export const leaveRequestsController = {
   async list(req: Request, res: Response) {
     const { studentId, status } = req.query as { studentId?: string; status?: string }
-    sendSuccess(res, await leaveRequestsService.list({ studentId, status }))
+    const ownStudent = req.user?.roleName === 'student' ? await leaveRequestsService.studentIdForUser(req.user.sub) : undefined
+    sendSuccess(res, await leaveRequestsService.list({ studentId: ownStudent ?? studentId, status }))
   },
 
   async getById(req: Request, res: Response) {
@@ -22,7 +23,8 @@ export const leaveRequestsController = {
   },
 
   async create(req: Request, res: Response) {
-    sendCreated(res, await leaveRequestsService.create(req.body))
+    const ownStudent = req.user?.roleName === 'student' ? await leaveRequestsService.studentIdForUser(req.user.sub) : undefined
+    sendCreated(res, await leaveRequestsService.create({ ...req.body, ...(ownStudent ? { studentId: ownStudent } : {}) }))
   },
 
   async update(req: Request, res: Response) {

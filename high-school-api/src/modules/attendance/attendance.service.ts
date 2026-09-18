@@ -2,7 +2,13 @@ import { prisma } from '@/config/database'
 import { ApiError } from '@/utils/ApiError'
 
 export const attendanceService = {
-  async list(filters: { studentId?: string; date?: string; from?: string; to?: string; classId?: string }) {
+  async studentIdForUser(userId: string) {
+    const student = await prisma.student.findUnique({ where: { userId }, select: { id: true } })
+    if (!student) throw ApiError.notFound('Student profile not found')
+    return student.id
+  },
+
+  async list(filters: { studentId?: string; date?: string; from?: string; to?: string; classId?: string; includeUnmarked?: boolean }) {
     const dateFilter = filters.date
       ? { equals: new Date(filters.date) }
       : filters.from || filters.to
@@ -12,10 +18,11 @@ export const attendanceService = {
         }
       : undefined
 
-    return prisma.attendance.findMany({
+    const records = await prisma.attendance.findMany({
       where: {
-        studentId: filters.studentId,
-        date: dateFilter,
+        ...(filters.studentId ? { studentId: filters.studentId } : {}),
+        ...(dateFilter ? { date: dateFilter } : {}),
+        ...(filters.classId ? { student: { classId: filters.classId } } : {}),
       },
       include: {
         student: {
@@ -39,6 +46,25 @@ export const attendanceService = {
         },
       },
       orderBy: { date: 'desc' },
+    })
+
+    if (!filters.date || filters.studentId || filters.includeUnmarked === false) return records
+
+    const students = await prisma.student.findMany({
+      where: { deletedAt: null, ...(filters.classId ? { classId: filters.classId } : {}) },
+      include: { user: { select: { id: true, firstName: true, lastName: true, email: true } }, class: { select: { id: true, name: true, gradeLevel: true } } },
+    })
+    const byStudent = new Map(records.map((record: any) => [record.studentId, record]))
+    return students.map((student: any) => byStudent.get(student.id) ?? {
+      id: `unmarked-${student.id}-${filters.date}`,
+      studentId: student.id,
+      date: new Date(filters.date!),
+      status: 'ABSENT' as const,
+      checkIn: null,
+      checkOut: null,
+      note: null,
+      createdAt: new Date(),
+      student,
     })
   },
 
@@ -109,19 +135,18 @@ export const attendanceService = {
     return { count: results.length, records: results }
   },
 
-  async getStats(date?: string) {
+  async getStats(date?: string, studentId?: string, classId?: string) {
     const targetDate = date ? new Date(date) : new Date()
-    const records = await prisma.attendance.findMany({
-      where: {
-        date: { equals: targetDate },
-      },
-    })
+    const [records, totalStudents] = await Promise.all([
+      prisma.attendance.findMany({ where: { date: { equals: targetDate }, ...(studentId ? { studentId } : {}), ...(classId ? { student: { classId } } : {}) } }),
+      prisma.student.count({ where: { deletedAt: null, ...(studentId ? { id: studentId } : {}), ...(classId ? { classId } : {}) } }),
+    ])
 
     const present = records.filter((r: any) => r.status === 'PRESENT').length
     const absent = records.filter((r: any) => r.status === 'ABSENT').length
     const late = records.filter((r: any) => r.status === 'LATE').length
     const excused = records.filter((r: any) => r.status === 'EXCUSED').length
-    const total = records.length
+    const total = totalStudents
     const attendanceRate = total > 0 ? Number(((present + late) / total * 100).toFixed(1)) : 0
 
     return {

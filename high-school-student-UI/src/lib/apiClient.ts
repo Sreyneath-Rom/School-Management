@@ -8,6 +8,7 @@ import { LOCAL_STORAGE_KEYS } from '@/utils/constants'
 import { mockApiHandler } from '@/lib/mockApiHandler'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true'
 
 export class ApiError extends Error {
   status: number
@@ -30,6 +31,7 @@ export class ApiError extends Error {
 // that happens while a refresh is already underway just awaits that same
 // promise instead of firing its own request.
 let inFlightRefresh: Promise<string | null> | null = null
+let sessionExpiryNotified = false
 
 function clearStoredTokens() {
   window.localStorage.removeItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
@@ -37,7 +39,10 @@ function clearStoredTokens() {
   // Let AuthContext (or anything else listening) know the session is
   // truly dead, so it can log the user out instead of "keeping the
   // session" with tokens that will never work again.
-  window.dispatchEvent(new Event('auth:session-expired'))
+  if (!sessionExpiryNotified) {
+    sessionExpiryNotified = true
+    window.dispatchEvent(new Event('auth:session-expired'))
+  }
 }
 
 async function performRefresh(): Promise<string | null> {
@@ -64,6 +69,7 @@ async function performRefresh(): Promise<string | null> {
   const data = body.data as { accessToken: string; refreshToken: string }
   window.localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN, data.accessToken)
   window.localStorage.setItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
+  sessionExpiryNotified = false
   return data.accessToken
 }
 
@@ -115,7 +121,7 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
       },
     })
 
-    if (res.status === 401 && retry) {
+    if (res.status === 401 && retry && !path.startsWith('/auth/')) {
       const refreshedToken = await refreshAccessToken()
       if (refreshedToken) {
         return request<T>(path, options, false)
@@ -124,6 +130,8 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
 
     return await handleResponse<T>(res, path)
   } catch (err) {
+    if (!USE_MOCK_API) throw err
+
     // Only bypass mocks for client validation/business errors (400-403, 409)
     if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 404) {
       throw err
@@ -167,7 +175,7 @@ async function requestUpload<T>(path: string, formData: FormData, retry = true):
       body: formData,
     })
 
-    if (res.status === 401 && retry) {
+    if (res.status === 401 && retry && !path.startsWith('/auth/')) {
       const refreshedToken = await refreshAccessToken()
       if (refreshedToken) {
         return requestUpload<T>(path, formData, false)
@@ -176,6 +184,8 @@ async function requestUpload<T>(path: string, formData: FormData, retry = true):
 
     return await handleResponse<T>(res, path)
   } catch (err) {
+    if (!USE_MOCK_API) throw err
+
     if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 404) {
       throw err
     }

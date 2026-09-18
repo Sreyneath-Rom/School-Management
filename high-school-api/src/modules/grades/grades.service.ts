@@ -2,6 +2,12 @@ import { prisma } from '@/config/database'
 import { ApiError } from '@/utils/ApiError'
 
 export const gradesService = {
+  async listForUser(userId: string) {
+    const student = await prisma.student.findUnique({ where: { userId } })
+    if (!student) throw ApiError.notFound('Student profile not found')
+    return gradesService.list({ studentId: student.id })
+  },
+
   async list(filters: { studentId?: string; subjectId?: string; period?: string }) {
     return prisma.grade.findMany({
       where: { studentId: filters.studentId, subjectId: filters.subjectId, period: filters.period as never },

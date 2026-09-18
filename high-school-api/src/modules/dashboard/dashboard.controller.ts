@@ -13,8 +13,9 @@ function requireUserId(req: Request): string {
 }
 
 export const dashboardController = {
-  async stats(_req: Request, res: Response) {
-    sendSuccess(res, await dashboardService.stats())
+  async stats(req: Request, res: Response) {
+    const { cohort } = req.query as { cohort?: string }
+    sendSuccess(res, await dashboardService.stats(cohort))
   },
 
   async attendanceSummary(req: Request, res: Response) {

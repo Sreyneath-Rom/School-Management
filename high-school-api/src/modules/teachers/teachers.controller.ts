@@ -3,8 +3,9 @@ import { teachersService } from './teachers.service'
 import { sendCreated, sendSuccess } from '@/utils/apiResponse'
 
 export const teachersController = {
-  async list(_req: Request, res: Response) {
-    sendSuccess(res, await teachersService.list())
+  async list(req: Request, res: Response) {
+    const { search, department, status } = req.query as { search?: string; department?: string; status?: string }
+    sendSuccess(res, await teachersService.list({ search, department, status }))
   },
 
   async getById(req: Request, res: Response) {

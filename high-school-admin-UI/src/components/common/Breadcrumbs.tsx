@@ -40,8 +40,6 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   teachers: { key: 'sidebar.teachers', fallback: 'Teachers', defaultChildPath: '/teachers' },
   communication: { key: 'sidebar.communication', fallback: 'Communication', defaultChildPath: '/communication/announcements' },
   reports: { key: 'sidebar.reports', fallback: 'Reports', defaultChildPath: '/reports/attendance' },
-  fees: { key: 'sidebar.fees', fallback: 'Finance & Fees', defaultChildPath: '/fees/structures' },
-  library: { key: 'sidebar.library', fallback: 'Library', defaultChildPath: '/library/books' },
   calendar: { key: 'sidebar.calendar', fallback: 'Calendar', defaultChildPath: '/calendar' },
   messages: { key: 'sidebar.messages', fallback: 'Messages', defaultChildPath: '/messages' },
   system: { key: 'sidebar.system', fallback: 'System', defaultChildPath: '/system/logs' },
@@ -75,18 +73,6 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   edit: { key: 'breadcrumb.editExam', fallback: 'Edit' },
   marks: { key: 'breadcrumb.marksEntry', fallback: 'Mark Entry' },
 
-  // Fees sub-items
-  structures: { key: 'sidebar.feeStructures', fallback: 'Fee Structures' },
-  invoices: { key: 'sidebar.invoices', fallback: 'Invoices' },
-  payments: { key: 'sidebar.payments', fallback: 'Payments' },
-  history: { key: 'sidebar.paymentHistory', fallback: 'Payment History' },
-
-  // Library sub-items
-  books: { key: 'sidebar.books', fallback: 'Books' },
-  categories: { key: 'sidebar.libraryCategories', fallback: 'Categories' },
-  borrow: { key: 'sidebar.borrow', fallback: 'Borrowing' },
-  returns: { key: 'sidebar.returns', fallback: 'Returns' },
-  overdue: { key: 'sidebar.overdueBooks', fallback: 'Overdue Books' },
 
   // Calendar sub-items
   events: { key: 'sidebar.calendarEvents', fallback: 'Events' },
@@ -109,8 +95,6 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   'grade-report': { key: 'sidebar.gradeReport', fallback: 'Academic Performance' },
   'student-report': { key: 'sidebar.studentReport', fallback: 'Student Report' },
   'teacher-report': { key: 'sidebar.teacherReport', fallback: 'Teacher Report' },
-  'finance-report': { key: 'sidebar.financeReport', fallback: 'Finance Report' },
-  'library-report': { key: 'sidebar.libraryReport', fallback: 'Library Report' },
 
   // System sub-items
   logs: { key: 'sidebar.auditLogs', fallback: 'Audit Logs' },

@@ -28,6 +28,86 @@ model School {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+model AcademicYear {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  startDate       DateTime
+  endDate         DateTime
+  status          String   @default("Upcoming")
+  termsCount      Int      @default(3)
+  classesCount    Int      @default(0)
+  studentsCount   Int      @default(0)
+  isCurrent       Boolean  @default(false)
+  description     String?
+  terms           Term[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isCurrent])
+  @@index([status])
+}
+
+model Term {
+  id              String       @id @default(cuid())
+  name            String
+  academicYearId  String
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  startDate       DateTime
+  endDate         DateTime
+  gradingDeadline DateTime
+  status          String       @default("Upcoming")
+  examCount       Int          @default(0)
+  weightPercentage Int
+  description     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([academicYearId, name])
+  @@index([academicYearId])
+  @@index([status])
+}
+
+model Room {
+  id           String   @id @default(cuid())
+  name         String
+  code         String   @unique
+  building     String
+  floor        String
+  type         String
+  capacity     Int
+  amenities    Json
+  status       String   @default("Available")
+  currentClass String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([building])
+  @@index([type])
+  @@index([status])
+}
+
+model GradeLevel {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  name              String   @unique
+  alias             String
+  levelOrder        Int
+  minPassingScore   Int      @default(50)
+  headCoordinator   String
+  totalClasses      Int      @default(0)
+  enrolledStudents  Int      @default(0)
+  maxCapacity       Int      @default(0)
+  averageGpa        Float    @default(0)
+  status            String   @default("Active")
+  description       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([levelOrder])
+  @@index([status])
+}
+
 model Language {
   id           String        @id @default(cuid())
   code         String        @unique
@@ -231,6 +311,10 @@ model Subject {
   department  String @default("General")
   category    String @default("Core")
   description String?
+  credits     Int    @default(3)
+  weeklyHours Int    @default(4)
+  gradeLevel  String @default("Grade 10")
+  teacherNames Json   @default("[]")
 
   teachers  TeacherSubject[]
   schedules Schedule[]
@@ -241,6 +325,7 @@ model Subject {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 }
 
 model TeacherSubject {

@@ -27,18 +27,13 @@ export interface SchoolModel extends SchoolPayload {
   updatedAt: string
 }
 
-// The backend `school` module is a singleton: GET/PATCH /schools and
-// POST|DELETE /schools/logo are the only real endpoints. There is no
-// separate POST /schools (create), PATCH /schools/setup, or DELETE
-// /schools — PATCH already upserts (creates on first save, updates
-// after), and deleting the one School row would break every other table
-// that implicitly depends on it existing.
 export const schoolService = {
   // READ
   getSchool: () => apiClient.get<SchoolModel>('/schools'),
 
   // CREATE-OR-UPDATE (singleton upsert)
-  saveSchool: (payload: Partial<SchoolPayload>) => apiClient.patch<SchoolModel>('/schools', payload),
+  saveSchool: (payload: Partial<SchoolPayload>) =>
+    apiClient.patch<SchoolModel>('/setup/school/setup', payload),
   updateSchool: (payload: Partial<SchoolPayload>) => apiClient.patch<SchoolModel>('/schools', payload),
 
   // LOGO

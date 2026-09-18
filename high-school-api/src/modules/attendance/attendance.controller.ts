@@ -11,12 +11,14 @@ export const attendanceController = {
       to?: string
       classId?: string
     }
-    sendSuccess(res, await attendanceService.list({ studentId, date, from, to, classId }))
+    const ownStudent = req.user?.roleName === 'student' ? await attendanceService.studentIdForUser(req.user.sub) : undefined
+    sendSuccess(res, await attendanceService.list({ studentId: ownStudent ?? studentId, date, from, to, classId, includeUnmarked: req.user?.roleName !== 'student' }))
   },
 
   async getStats(req: Request, res: Response) {
     const { date } = req.query as { date?: string }
-    sendSuccess(res, await attendanceService.getStats(date))
+    const ownStudent = req.user?.roleName === 'student' ? await attendanceService.studentIdForUser(req.user.sub) : undefined
+    sendSuccess(res, await attendanceService.getStats(date, ownStudent))
   },
 
   async getById(req: Request, res: Response) {

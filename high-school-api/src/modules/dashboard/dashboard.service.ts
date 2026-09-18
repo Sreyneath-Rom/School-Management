@@ -1,12 +1,19 @@
 import { prisma } from '@/config/database'
 
 export const dashboardService = {
-  async stats() {
+  async stats(cohort?: string) {
+    const gradeLevelFilter = cohort === 'Upper Sec (10-12)'
+      ? { gte: 10, lte: 12 }
+      : cohort === 'Lower Sec (7-9)'
+        ? { gte: 7, lte: 9 }
+        : undefined
+    const classFilter = gradeLevelFilter ? { gradeLevel: gradeLevelFilter } : undefined
+    const studentFilter = gradeLevelFilter ? { class: { gradeLevel: gradeLevelFilter } } : undefined
     const [studentCount, teacherCount, classCount, pendingLeaveRequests] = await Promise.all([
-      prisma.student.count({ where: { deletedAt: null } }),
+      prisma.student.count({ where: { deletedAt: null, ...studentFilter } }),
       prisma.teacher.count({ where: { deletedAt: null } }),
-      prisma.class.count({ where: { deletedAt: null } }),
-      prisma.leaveRequest.count({ where: { status: 'PENDING' } }),
+      prisma.class.count({ where: { deletedAt: null, ...classFilter } }),
+      prisma.leaveRequest.count({ where: { status: 'PENDING', ...(studentFilter ? { student: studentFilter } : {}) } }),
     ])
     return { studentCount, teacherCount, classCount, pendingLeaveRequests }
   },

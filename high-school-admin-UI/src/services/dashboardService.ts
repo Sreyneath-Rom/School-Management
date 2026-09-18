@@ -10,7 +10,7 @@ export interface DashboardStats {
 export type AttendanceSummary = Array<{ status: string; _count: number }>
 
 export const dashboardService = {
-  getStats: () => apiClient.get<DashboardStats>('/dashboard/stats'),
+  getStats: (cohort?: string) => apiClient.get<DashboardStats>(`/dashboard/stats${cohort ? `?cohort=${encodeURIComponent(cohort)}` : ''}`),
   getAttendanceSummary: (from?: string, to?: string) =>
     apiClient.get<AttendanceSummary>(
       `/dashboard/attendance-summary${from || to ? `?from=${encodeURIComponent(from ?? '')}&to=${encodeURIComponent(to ?? '')}` : ''}`

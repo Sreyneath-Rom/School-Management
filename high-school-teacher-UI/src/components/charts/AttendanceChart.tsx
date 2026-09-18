@@ -7,7 +7,6 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts'
-import { attendanceData } from '@/services/mockData'
 import { useFetch } from '@/hooks/useFetch'
 import { dashboardService, type AttendanceSummary } from '@/services/dashboardService'
 import { ChartCardSkeleton } from '@/components/common/Skeleton'
@@ -20,6 +19,7 @@ export default function AttendanceChart({ loading: externalLoading }: Attendance
   const { data: summary, loading: fetchLoading } = useFetch<AttendanceSummary>(() => dashboardService.getAttendanceSummary())
   const loading = externalLoading ?? fetchLoading
   const totalCount = summary?.reduce((sum, item) => sum + item._count, 0) ?? 0
+  const chartData = summary?.map((item) => ({ day: item.status, value: item._count })) ?? []
 
   if (loading) {
     return <ChartCardSkeleton type="area" />
@@ -41,8 +41,10 @@ export default function AttendanceChart({ loading: externalLoading }: Attendance
       </div>
 
       <div className="h-80 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={attendanceData} margin={{ top: 24, right: 12, left: -8, bottom: 0 }}>
+        {chartData.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-text-main/60">No attendance records available.</div>
+        ) : <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData} margin={{ top: 24, right: 12, left: -8, bottom: 0 }}>
             <defs>
               <linearGradient id="attendanceFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--color-brand-600)" stopOpacity={0.28} />
@@ -72,7 +74,7 @@ export default function AttendanceChart({ loading: externalLoading }: Attendance
               label={renderValueLabel as any}
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
 
       {summary && (

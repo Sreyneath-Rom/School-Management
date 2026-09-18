@@ -282,8 +282,8 @@ export default function TeacherList() {
     })
   }
 
-  const getDepartmentColor = (dept: string) => {
-    switch (dept.toLowerCase()) {
+  const getDepartmentColor = (dept?: string) => {
+    switch ((dept || 'General').toLowerCase()) {
       case 'science':
         return 'text-teal-700 dark:text-teal-300 bg-teal-500/10 border-teal-500/20'
       case 'mathematics':

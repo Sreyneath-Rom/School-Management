@@ -1,3 +1,4 @@
+import { apiClient } from '@/lib/apiClient'
 import type {
   Lesson,
   Homework,
@@ -590,12 +591,30 @@ function setStorageItem<T>(key: string, val: T): void {
   }
 }
 
+function mapLesson(record: any): Lesson {
+  return { id: record.id, title: record.title, description: record.description ?? '', classId: record.classId ?? '', className: record.class?.name ?? '', subjectId: record.subjectId, subjectName: record.subject?.name ?? '', teacherId: record.teacherId, teacherName: record.teacher?.user ? `${record.teacher.user.firstName} ${record.teacher.user.lastName}` : '', date: record.createdAt?.slice(0, 10) ?? '', time: '', durationMinutes: 0, objectives: [], content: record.description ?? '', materials: [], status: 'Scheduled' }
+}
+
+function mapHomework(record: any): Homework {
+  return { id: record.id, title: record.title, description: record.description ?? '', classId: record.classId ?? '', className: record.class?.name ?? '', subjectId: record.subjectId, subjectName: record.subject?.name ?? '', teacherId: record.teacherId, teacherName: '', assignedDate: record.createdAt?.slice(0, 10) ?? '', dueDate: record.dueDate?.slice(0, 10) ?? '', maxPoints: record.maxScore ?? 100, materials: [], status: 'Published', submissionsCount: record._count?.submissions ?? 0 }
+}
+
+function mapQuiz(record: any): Quiz {
+  return { id: record.id, title: record.title, description: '', classId: record.classId ?? '', className: record.class?.name ?? '', subjectId: record.subjectId, subjectName: record.subject?.name ?? '', teacherId: record.teacherId, teacherName: '', durationMinutes: record.timeLimitMin ?? 0, totalPoints: (record.questions ?? []).reduce((sum: number, question: any) => sum + Number(question.points ?? 0), 0), dueDate: record.createdAt?.slice(0, 10) ?? '', status: 'Published', questions: (record.questions ?? []).map((question: any) => ({ id: question.id, question: question.questionText, options: Array.isArray(question.options) ? question.options : [], correctAnswer: -1, points: question.points ?? 1 })), attemptsCount: record._count?.submissions ?? 0 }
+}
+
+function mapGrade(record: any): GradeRecord {
+  const score = Number(((record.score / (record.maxScore || 100)) * 100).toFixed(1))
+  const result = calculateWeightedGrade(score, score, score, score)
+  return { id: record.id, studentId: record.studentId, studentName: '', studentCode: '', classId: record.student?.classId ?? '', className: record.student?.class?.name ?? '', subjectId: record.subjectId, subjectName: record.subject?.name ?? '', assignmentScore: score, quizScore: score, midtermScore: score, finalScore: score, totalWeightedScore: score, letterGrade: result.letterGrade, gpa: result.gpa, remarks: record.comment ?? '' }
+}
+
 export const academicService = {
   // ----------------------------------------------------
   // LESSONS
   // ----------------------------------------------------
   getLessons: async (): Promise<Lesson[]> => {
-    return getStorageItem<Lesson[]>(STORAGE_KEYS.LESSONS, initialLessons)
+    return (await apiClient.get<any[]>('/lessons')).map(mapLesson)
   },
 
   createLesson: async (lesson: Omit<Lesson, 'id'>): Promise<Lesson> => {
@@ -629,7 +648,7 @@ export const academicService = {
   // HOMEWORK
   // ----------------------------------------------------
   getHomeworkList: async (): Promise<Homework[]> => {
-    return getStorageItem<Homework[]>(STORAGE_KEYS.HOMEWORK, initialHomework)
+    return (await apiClient.get<any[]>('/homeworks')).map(mapHomework)
   },
 
   createHomework: async (hw: Omit<Homework, 'id' | 'submissionsCount' | 'totalStudents'>): Promise<Homework> => {
@@ -732,7 +751,7 @@ export const academicService = {
   // QUIZZES & TESTS
   // ----------------------------------------------------
   getQuizzes: async (): Promise<Quiz[]> => {
-    return getStorageItem<Quiz[]>(STORAGE_KEYS.QUIZZES, initialQuizzes)
+    return (await apiClient.get<any[]>('/quizzes')).map(mapQuiz)
   },
 
   /**
@@ -849,20 +868,11 @@ export const academicService = {
   // GRADES & STUDENT PROGRESS
   // ----------------------------------------------------
   getGrades: async (classId?: string, subjectId?: string): Promise<GradeRecord[]> => {
-    const grades = getStorageItem<GradeRecord[]>(STORAGE_KEYS.GRADES, initialGrades)
-    let filtered = grades
-    if (classId && classId !== 'all') {
-      filtered = filtered.filter((g) => g.classId === classId || g.className.toLowerCase() === classId.toLowerCase())
-    }
-    if (subjectId && subjectId !== 'all') {
-      filtered = filtered.filter((g) => g.subjectId === subjectId || g.subjectName.toLowerCase() === subjectId.toLowerCase())
-    }
-    return filtered
+    return (await apiClient.get<any[]>('/grades')).map(mapGrade).filter((grade) => (!classId || classId === 'all' || grade.classId === classId || grade.className.toLowerCase() === classId.toLowerCase()) && (!subjectId || subjectId === 'all' || grade.subjectId === subjectId || grade.subjectName.toLowerCase() === subjectId.toLowerCase()))
   },
 
   getStudentGrades: async (studentId: string): Promise<GradeRecord[]> => {
-    const grades = getStorageItem<GradeRecord[]>(STORAGE_KEYS.GRADES, initialGrades)
-    return grades.filter((g) => g.studentId === studentId)
+    return studentId ? (await apiClient.get<any[]>('/grades/me')).map(mapGrade) : []
   },
 
   saveGradeRecord: async (record: Omit<GradeRecord, 'totalWeightedScore' | 'letterGrade' | 'gpa'>): Promise<GradeRecord> => {

@@ -120,7 +120,7 @@ export default function AuthHeader({ activeRole = 'all', onRoleSelect }: Props) 
             if (e.key === 'Enter' || e.key === ' ') handleRoleClick('all');
           }}
         >
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-teal-600 via-emerald-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/25 group-hover:scale-105 transition-all">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-linear-to-tr from-teal-600 via-emerald-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/25 group-hover:scale-105 transition-all">
             <School2 size={22} className="sm:size-6" />
           </div>
           <div>

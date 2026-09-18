@@ -15,11 +15,41 @@ const publicUserSelect = {
   lastLoginAt: true,
   createdAt: true,
   role: { select: { id: true, name: true } },
+  student: {
+    select: {
+      studentCode: true, dateOfBirth: true, gender: true, enrolledAt: true,
+      class: { select: { id: true, name: true } },
+    },
+  },
+  teacher: {
+    select: {
+      teacherCode: true, hiredAt: true,
+      subjects: { select: { subject: { select: { name: true, department: true } } } },
+      classesLed: { select: { name: true } },
+    },
+  },
 }
 
 export const usersService = {
-  async list(pagination: PaginationQuery) {
-    const where = { deletedAt: null }
+  async list(pagination: PaginationQuery, filters: { search?: string; role?: string; status?: string; classId?: string; department?: string } = {}) {
+    const search = filters.search?.trim()
+    const where = {
+      deletedAt: null,
+      ...(filters.status === 'active' ? { isActive: true } : {}),
+      ...(filters.status === 'inactive' ? { isActive: false } : {}),
+      ...(filters.role ? { role: { name: filters.role === 'mazer' ? 'student' : filters.role } } : {}),
+      ...(filters.classId ? { student: { classId: filters.classId } } : {}),
+      ...(filters.department ? { teacher: { subjects: { some: { subject: { department: filters.department } } } } } : {}),
+      ...(search ? {
+        OR: [
+          { firstName: { contains: search, mode: 'insensitive' as const } },
+          { lastName: { contains: search, mode: 'insensitive' as const } },
+          { email: { contains: search, mode: 'insensitive' as const } },
+          { student: { studentCode: { contains: search, mode: 'insensitive' as const } } },
+          { teacher: { teacherCode: { contains: search, mode: 'insensitive' as const } } },
+        ],
+      } : {}),
+    }
     const [items, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -38,14 +68,16 @@ export const usersService = {
     return user
   },
 
-  async create(input: { email: string; password: string; firstName: string; lastName: string; phone?: string; roleId: string }) {
+  async create(input: { email: string; password: string; firstName: string; lastName: string; phone?: string; roleId?: string; role?: string }) {
     const existing = await prisma.user.findUnique({ where: { email: input.email } })
     if (existing) throw ApiError.conflict('A user with this email already exists')
 
     // Without this check, an invalid roleId reaches Prisma as a raw FK
     // constraint violation (P2003) — an unhandled 500 instead of a clean
     // 400. Same reasoning as the permissionIds check in roles.service.
-    const role = await prisma.role.findUnique({ where: { id: input.roleId } })
+    const role = input.roleId
+      ? await prisma.role.findUnique({ where: { id: input.roleId } })
+      : await prisma.role.findUnique({ where: { name: input.role === 'mazer' ? 'student' : input.role } })
     if (!role) throw ApiError.badRequest('roleId does not refer to an existing role')
 
     const passwordHash = await hashPassword(input.password)
@@ -56,22 +88,35 @@ export const usersService = {
         firstName: input.firstName,
         lastName: input.lastName,
         phone: input.phone,
-        roleId: input.roleId,
+        roleId: role.id,
       },
       select: publicUserSelect,
     })
     return user
   },
 
-  async update(id: string, input: Partial<{ firstName: string; lastName: string; phone: string; roleId: string; isActive: boolean }>) {
+  async update(id: string, input: Partial<{ firstName: string; lastName: string; phone: string; roleId: string; role: string; isActive: boolean; status: 'active' | 'inactive' }>) {
     await usersService.getById(id) // 404s if missing/soft-deleted
 
-    if (input.roleId) {
-      const role = await prisma.role.findUnique({ where: { id: input.roleId } })
+    const roleId = input.roleId
+      ? input.roleId
+      : input.role
+        ? (await prisma.role.findUnique({ where: { name: input.role === 'mazer' ? 'student' : input.role } }))?.id
+        : undefined
+    if ((input.roleId || input.role) && !roleId) {
+      throw ApiError.badRequest('role does not refer to an existing role')
+    }
+    if (roleId) {
+      const role = await prisma.role.findUnique({ where: { id: roleId } })
       if (!role) throw ApiError.badRequest('roleId does not refer to an existing role')
     }
 
-    return prisma.user.update({ where: { id }, data: input, select: publicUserSelect })
+    const { role, roleId: _roleId, status, ...profile } = input
+    return prisma.user.update({
+      where: { id },
+      data: { ...profile, ...(roleId ? { roleId } : {}), ...(status ? { isActive: status === 'active' } : {}) },
+      select: publicUserSelect,
+    })
   },
 
   /** Soft delete — never hard-remove a user, since grades/attendance/audit logs reference them. */

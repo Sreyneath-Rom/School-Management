@@ -14,11 +14,15 @@ export class ApiError extends Error {
 }
 
 let inFlightRefresh: Promise<string | null> | null = null
+let sessionExpiryNotified = false
 
 function clearStoredTokens() {
   window.localStorage.removeItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
   window.localStorage.removeItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN)
-  window.dispatchEvent(new Event('auth:session-expired'))
+  if (!sessionExpiryNotified) {
+    sessionExpiryNotified = true
+    window.dispatchEvent(new Event('auth:session-expired'))
+  }
 }
 
 async function performRefresh(): Promise<string | null> {
@@ -45,6 +49,7 @@ async function performRefresh(): Promise<string | null> {
   const data = body.data as { accessToken: string; refreshToken: string }
   window.localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN, data.accessToken)
   window.localStorage.setItem(LOCAL_STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
+  sessionExpiryNotified = false
   return data.accessToken
 }
 
@@ -96,7 +101,9 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
     },
   })
 
-  if (res.status === 401 && retry) {
+  const isNonRefreshableAuthRequest =
+    path === '/auth/login' || path === '/auth/refresh-token' || path === '/auth/logout'
+  if (res.status === 401 && retry && !isNonRefreshableAuthRequest) {
     const refreshedToken = await refreshAccessToken()
     if (refreshedToken) return request<T>(path, options, false)
     clearStoredTokens()

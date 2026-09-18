@@ -34,6 +34,7 @@ const overrides: Partial<Record<string, (stats: DashboardStats) => string>> = {
 interface StatsGridProps {
   stats?: DashboardStats | null
   loading?: boolean
+  cards?: StatCard[]
 }
 
 const tintClasses: Record<StatCard['tint'], string> = {
@@ -82,11 +83,11 @@ function StatCardView({ card }: { card: StatCard }) {
   )
 }
 
-export default function StatsGrid({ stats, loading }: StatsGridProps) {
+export default function StatsGrid({ stats, loading, cards = statCards }: StatsGridProps) {
   if (loading) {
     return (
       <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6" aria-busy="true" aria-label="Loading statistics">
-        {statCards.map((card) => (
+        {cards.map((card) => (
           <StatCardSkeleton key={`skeleton-${card.id}`} />
         ))}
       </div>
@@ -95,7 +96,7 @@ export default function StatsGrid({ stats, loading }: StatsGridProps) {
 
   return (
     <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
-      {statCards.map((card) => {
+      {cards.map((card) => {
         const value = stats && overrides[card.id] ? overrides[card.id]!(stats) : card.value
         return <StatCardView card={{ ...card, value }} key={card.id} />
       })}

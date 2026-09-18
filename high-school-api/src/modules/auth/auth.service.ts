@@ -40,7 +40,7 @@ export const authService = {
   async login(email: string, password: string, meta: { userAgent?: string; ipAddress?: string }) {
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { role: true },
+      include: { role: { include: { permissions: { include: { permission: true } } } } },
     })
 
     // Same generic error whether the email doesn't exist or the password is
@@ -66,6 +66,7 @@ export const authService = {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role.name,
+        permissionKeys: user.role.permissions.map((item: { permission: { key: string } }) => item.permission.key),
       },
     }
   },
@@ -151,7 +152,7 @@ export const authService = {
   async getCurrentUser(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { role: true },
+      include: { role: { include: { permissions: { include: { permission: true } } } } },
     })
 
     if (!user || user.deletedAt || !user.isActive) {
@@ -164,6 +165,7 @@ export const authService = {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role.name,
+      permissionKeys: user.role.permissions.map((item: { permission: { key: string } }) => item.permission.key),
     }
   },
 }

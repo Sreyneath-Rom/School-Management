@@ -14,6 +14,7 @@ export interface CreateStudentPayload {
   firstName: string
   lastName: string
   email?: string
+  password?: string
   username?: string
   gender: 'male' | 'female' | 'other'
   dateOfBirth: string
@@ -41,6 +42,22 @@ export interface UpdateStudentPayload extends Partial<CreateStudentPayload> {
   id?: string
 }
 
+function normalizeStudent(record: any): StudentUser {
+  const user = record.user ?? record
+  const role = (record.role ?? user.role?.name ?? 'student') === 'mazer' ? 'mazer' : 'student'
+  return {
+    id: record.id ?? user.id,
+    username: user.username ?? user.email ?? '', email: user.email ?? '',
+    status: user.status ?? (user.isActive === false ? 'inactive' : 'active'),
+    createdDate: user.createdDate ?? user.createdAt ?? record.createdAt ?? '',
+    firstName: user.firstName ?? '', lastName: user.lastName ?? '', gender: record.gender ?? 'other',
+    dateOfBirth: record.dateOfBirth ?? '', phone: user.phone ?? '', address: user.address ?? '', nationality: user.nationality ?? '',
+    role, studentId: record.studentCode ?? record.studentId ?? record.id ?? '', grade: record.grade ?? '',
+    class: record.class?.name ?? record.className ?? record.class ?? '', academicYear: record.academicYear ?? '',
+    enrollmentDate: record.enrolledAt ?? record.enrollmentDate ?? record.createdAt ?? '',
+  } as StudentUser
+}
+
 export const studentService = {
   list: async (params?: StudentFilterParams): Promise<StudentUser[]> => {
     const query = new URLSearchParams()
@@ -53,20 +70,25 @@ export const studentService = {
 
     const qs = query.toString() ? `?${query.toString()}` : ''
     try {
-      const res = await apiClient.get<StudentUser[]>(`/students${qs}`)
-      return res
-    } catch {
-      // Fallback to /users endpoint if /students not mounted
-      const users = await apiClient.get<SystemUser[]>(`/users${qs}`)
-      return users.filter((u): u is StudentUser => u.role === 'student' || u.role === 'mazer')
+      const res = await apiClient.get<any[]>(`/students${qs}`)
+      return res.map(normalizeStudent)
+    } catch (error) {
+      // Only use the legacy fallback when the student endpoint is genuinely absent.
+      // Auth, validation, and conflict errors must reach the page unchanged.
+      if (!(error instanceof Error) || !('status' in error) || (error as { status?: number }).status !== 404) {
+        throw error
+      }
+      const usersResponse = await apiClient.get<{ items: SystemUser[] }>(`/users${qs}`)
+      const users = usersResponse.items
+      return users.filter((u) => u.role === 'student' || u.role === 'mazer').map(normalizeStudent)
     }
   },
 
-  getById: (id: string) => apiClient.get<StudentUser>(`/students/${id}`),
+  getById: async (id: string) => normalizeStudent(await apiClient.get<any>(`/students/${id}`)),
 
-  create: (payload: CreateStudentPayload) => apiClient.post<StudentUser>('/students', payload),
+  create: async (payload: CreateStudentPayload) => normalizeStudent(await apiClient.post<any>('/students/enroll', payload)),
 
-  update: (id: string, payload: UpdateStudentPayload) => apiClient.patch<StudentUser>(`/students/${id}`, payload),
+  update: async (id: string, payload: UpdateStudentPayload) => normalizeStudent(await apiClient.patch<any>(`/students/${id}`, payload)),
 
   delete: (id: string) => apiClient.delete<void>(`/students/${id}`),
 

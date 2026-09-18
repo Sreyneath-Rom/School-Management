@@ -80,8 +80,8 @@ export default function TeacherLogin() {
     setFieldValue('password', 'password');
   };
 
-  const handleDirectDemoLogin = () => {
-    const result = authService.loginAsRole('teacher');
+  const handleDirectDemoLogin = async () => {
+    const result = await authService.loginAsRole('teacher');
     login(result);
     navigate('/teacher/dashboard', { replace: true });
   };

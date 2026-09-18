@@ -78,8 +78,8 @@ export default function AdminLogin() {
     setFieldValue('password', 'password');
   };
 
-  const handleDirectDemoLogin = () => {
-    const result = authService.loginAsRole('admin');
+  const handleDirectDemoLogin = async () => {
+    const result = await authService.loginAsRole('admin');
     login(result);
     navigate('/dashboard', { replace: true });
   };

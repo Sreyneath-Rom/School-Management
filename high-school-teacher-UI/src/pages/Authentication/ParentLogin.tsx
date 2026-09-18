@@ -80,8 +80,8 @@ export default function ParentLogin() {
     setFieldValue('password', 'password');
   };
 
-  const handleDirectDemoLogin = () => {
-    const result = authService.loginAsRole('parent');
+  const handleDirectDemoLogin = async () => {
+    const result = await authService.loginAsRole('parent');
     login(result);
     navigate('/parent/dashboard', { replace: true });
   };

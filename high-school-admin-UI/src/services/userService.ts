@@ -40,6 +40,36 @@ export interface UserFilterParams {
   academicYear?: string
 }
 
+interface UserListResponse {
+  items: SystemUser[]
+  meta: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+function normalizeUser(record: any): SystemUser {
+  const role = (record.role?.name ?? record.role ?? 'student') as SystemUser['role']
+  const student = record.student
+  const teacher = record.teacher
+  const className = student?.class?.name ?? record.class ?? ''
+  const common = {
+    id: record.id,
+    username: record.username ?? record.email,
+    email: record.email ?? '',
+    status: record.status ?? (record.isActive === false ? 'inactive' : 'active'),
+    createdDate: record.createdDate ?? record.createdAt ?? '',
+    firstName: record.firstName ?? '', lastName: record.lastName ?? '',
+    gender: record.gender ?? 'other', dateOfBirth: record.dateOfBirth ?? '',
+    phone: record.phone ?? '', address: record.address ?? '', nationality: record.nationality ?? '',
+  }
+  if (role === 'teacher') return { ...common, role, teacherId: teacher?.teacherCode ?? record.teacherId ?? '', department: record.department ?? teacher?.subjects?.[0]?.subject?.department ?? 'General', qualification: record.qualification ?? '', hireDate: teacher?.hiredAt ?? '', experienceYears: 0, subjects: teacher?.subjects?.map((item: any) => item.subject?.name).filter(Boolean) ?? [], assignedClasses: teacher?.classesLed?.map((item: any) => item.name) ?? [] } as SystemUser
+  if (role === 'admin') return { ...common, role, employeeId: record.employeeId ?? '', department: record.department ?? 'Administration', position: record.position ?? '' } as SystemUser
+  return { ...common, role: role === 'mazer' ? 'mazer' : 'student', studentId: student?.studentCode ?? record.studentId ?? '', grade: record.grade ?? '', class: className, academicYear: record.academicYear ?? '', enrollmentDate: student?.enrolledAt ?? '', fatherName: record.fatherName, motherName: record.motherName, guardianName: record.guardianName, parentPhone: record.parentPhone, parentEmail: record.parentEmail, relationship: record.relationship } as SystemUser
+}
+
 export const userService = {
   list: (params?: UserFilterParams) => {
     const query = new URLSearchParams()
@@ -51,14 +81,14 @@ export const userService = {
     if (params?.department && params.department !== 'all') query.append('department', params.department)
     if (params?.academicYear && params.academicYear !== 'all') query.append('academicYear', params.academicYear)
     const qs = query.toString() ? `?${query.toString()}` : ''
-    return apiClient.get<SystemUser[]>(`/users${qs}`)
+    return apiClient.get<UserListResponse>(`/users${qs}`).then((response) => response.items.map(normalizeUser))
   },
 
-  getById: (id: string) => apiClient.get<SystemUser>(`/users/${id}`),
+  getById: async (id: string) => normalizeUser(await apiClient.get<any>(`/users/${id}`)),
 
-  create: (payload: CreateUserPayload) => apiClient.post<SystemUser>('/users', payload),
+  create: async (payload: CreateUserPayload) => normalizeUser(await apiClient.post<any>('/users', payload)),
 
-  update: (id: string, payload: UpdateUserPayload) => apiClient.patch<SystemUser>(`/users/${id}`, payload),
+  update: async (id: string, payload: UpdateUserPayload) => normalizeUser(await apiClient.patch<any>(`/users/${id}`, payload)),
 
   delete: (id: string) => apiClient.delete<void>(`/users/${id}`),
 

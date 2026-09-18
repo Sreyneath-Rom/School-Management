@@ -1,5 +1,5 @@
 // src/pages/Setup/Terms.tsx
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   Clock,
@@ -17,13 +17,62 @@ import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
 import { INITIAL_TERMS, type TermItem } from '@/data/terms'
+import { academicYearService, type AcademicYearRecord } from '@/services/academicYearService'
+import { termService, type TermRecord, type TermPayload } from '@/services/termService'
+import { ApiError } from '@/lib/apiClient'
 
 export type { TermItem }
 
 export default function Terms() {
   const { showToast } = useToast()
-  const [selectedYear, setSelectedYear] = useState('2025 - 2026')
-  const [terms, setTerms] = useState<TermItem[]>(INITIAL_TERMS)
+  const [selectedYear, setSelectedYear] = useState('')
+  const [selectedYearId, setSelectedYearId] = useState('')
+  const [academicYears, setAcademicYears] = useState<AcademicYearRecord[]>([])
+  const [terms, setTerms] = useState<TermItem[]>([])
+
+  const toTermItem = (term: TermRecord): TermItem => ({
+    id: term.id,
+    name: term.name,
+    academicYear: term.academicYear.name,
+    startDate: term.startDate.slice(0, 10),
+    endDate: term.endDate.slice(0, 10),
+    gradingDeadline: term.gradingDeadline.slice(0, 10),
+    status: term.status,
+    examCount: term.examCount,
+    weightPercentage: term.weightPercentage,
+    description: term.description ?? undefined,
+  })
+
+  useEffect(() => {
+    void loadAcademicYears()
+  }, [])
+
+  useEffect(() => {
+    if (selectedYearId) void loadTerms(selectedYearId)
+  }, [selectedYearId])
+
+  async function loadAcademicYears() {
+    try {
+      const years = await academicYearService.list()
+      setAcademicYears(years)
+      const current = years.find((year) => year.isCurrent) ?? years[0]
+      if (current) {
+        setSelectedYearId(current.id)
+        setSelectedYear(current.name)
+      }
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to load academic years', 'error')
+    }
+  }
+
+  async function loadTerms(academicYearId: string) {
+    try {
+      const records = await termService.list(academicYearId)
+      setTerms(records.map(toTermItem))
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to load terms', 'error')
+    }
+  }
 
   // Modals state
   const [detailTerm, setDetailTerm] = useState<TermItem | null>(null)
@@ -95,18 +144,18 @@ export default function Terms() {
     setModalOpen(true)
   }
 
-  const handleSetActive = (id: string) => {
-    setTerms((prev) =>
-      prev.map((t) => ({
-        ...t,
-        status: t.id === id ? 'Active' : t.status === 'Active' ? 'Completed' : t.status,
-      }))
-    )
-    showToast('Active term cycle updated successfully', 'success')
+  const handleSetActive = async (id: string) => {
+    try {
+      const updated = await termService.setActive(id)
+      setTerms((prev) => prev.map((term) => term.id === updated.id ? toTermItem(updated) : { ...term, status: term.status === 'Active' ? 'Completed' : term.status }))
+      showToast('Active term cycle updated successfully', 'success')
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to activate term', 'error')
+    }
   }
 
   // UC-TERM-03 & 04 Save Handler
-  const handleSaveTerm = (e: React.FormEvent) => {
+  const handleSaveTerm = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // 400 Bad Request prevention
@@ -120,37 +169,25 @@ export default function Terms() {
       return
     }
 
-    if (editingTerm) {
-      // UC-TERM-04: Edit
-      const updated: TermItem = {
-        ...editingTerm,
-        name: formData.name.trim(),
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        gradingDeadline: formData.gradingDeadline || formData.endDate,
-        weightPercentage: Number(formData.weightPercentage) || 30,
-        status: formData.status,
-        description: formData.description,
-      }
-      setTerms((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+    const payload: TermPayload = {
+      name: formData.name.trim(),
+      academicYearId: selectedYearId,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      gradingDeadline: formData.gradingDeadline || formData.endDate,
+      status: formData.status,
+      weightPercentage: Number(formData.weightPercentage) || 30,
+      description: formData.description,
+    }
+    try {
+      const saved = editingTerm ? await termService.update(editingTerm.id, payload) : await termService.create(payload)
+      const updated = toTermItem(saved)
+      setTerms((prev) => editingTerm ? prev.map((term) => term.id === updated.id ? updated : term) : [...prev, updated])
       if (detailTerm?.id === updated.id) setDetailTerm(updated)
-      showToast(`Term "${updated.name}" updated successfully.`, 'success')
-    } else {
-      // UC-TERM-03: Create
-      const newTerm: TermItem = {
-        id: `term-${Date.now()}`,
-        name: formData.name.trim(),
-        academicYear: selectedYear,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        gradingDeadline: formData.gradingDeadline || formData.endDate,
-        status: formData.status,
-        examCount: 0,
-        weightPercentage: Number(formData.weightPercentage) || 30,
-        description: formData.description,
-      }
-      setTerms((prev) => [...prev, newTerm])
-      showToast(`Term "${newTerm.name}" created successfully.`, 'success')
+      showToast(`Term "${updated.name}" ${editingTerm ? 'updated' : 'created'} successfully.`, 'success')
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to save term', 'error')
+      return
     }
 
     setModalOpen(false)
@@ -158,7 +195,7 @@ export default function Terms() {
   }
 
   // UC-TERM-05: Delete with 409 Conflict check
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteCandidate) return
 
     // Precondition check: Cannot delete active term
@@ -178,10 +215,15 @@ export default function Terms() {
       return
     }
 
-    setTerms((prev) => prev.filter((t) => t.id !== deleteCandidate.id))
-    if (detailTerm?.id === deleteCandidate.id) setDetailTerm(null)
-    showToast(`Term "${deleteCandidate.name}" deleted.`, 'success')
-    setDeleteCandidate(null)
+    try {
+      await termService.delete(deleteCandidate.id)
+      setTerms((prev) => prev.filter((term) => term.id !== deleteCandidate.id))
+      if (detailTerm?.id === deleteCandidate.id) setDetailTerm(null)
+      showToast(`Term "${deleteCandidate.name}" deleted.`, 'success')
+      setDeleteCandidate(null)
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to delete term', 'error')
+    }
   }
 
   return (
@@ -205,13 +247,17 @@ export default function Terms() {
 
         <div className="flex items-center gap-3">
           <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
+            value={selectedYearId}
+            onChange={(e) => {
+              const year = academicYears.find((item) => item.id === e.target.value)
+              setSelectedYearId(e.target.value)
+              setSelectedYear(year?.name ?? '')
+            }}
             className="px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/10 border border-stone-200 dark:border-white/10 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
           >
-            <option value="2025 - 2026">2025 - 2026 (Current)</option>
-            <option value="2026 - 2027">2026 - 2027 (Upcoming)</option>
-            <option value="2024 - 2025">2024 - 2025 (Archived)</option>
+            {academicYears.map((year) => (
+              <option key={year.id} value={year.id}>{year.name}{year.isCurrent ? ' (Current)' : ''}</option>
+            ))}
           </select>
 
           <button

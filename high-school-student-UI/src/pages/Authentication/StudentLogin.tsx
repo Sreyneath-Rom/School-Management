@@ -80,8 +80,8 @@ export default function StudentLogin() {
     setFieldValue('password', 'password');
   };
 
-  const handleDirectDemoLogin = () => {
-    const result = authService.loginAsRole('student');
+  const handleDirectDemoLogin = async () => {
+    const result = await authService.loginAsRole('student');
     login(result);
     navigate('/student/dashboard', { replace: true });
   };

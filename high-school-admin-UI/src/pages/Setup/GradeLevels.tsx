@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   GraduationCap,
@@ -13,6 +13,8 @@ import {
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
+import { gradeLevelService, type GradeLevelRecord, type GradeLevelPayload } from '@/services/gradeLevelService'
+import { ApiError } from '@/lib/apiClient'
 
 export interface GradeLevel {
   id: string
@@ -125,7 +127,7 @@ const INITIAL_GRADE_LEVELS: GradeLevel[] = [
 
 export default function GradeLevels() {
   const { showToast } = useToast()
-  const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>(INITIAL_GRADE_LEVELS)
+  const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Archived'>('All')
 
@@ -133,6 +135,21 @@ export default function GradeLevels() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingGradeLevel, setEditingGradeLevel] = useState<GradeLevel | null>(null)
   const [deleteCandidate, setDeleteCandidate] = useState<GradeLevel | null>(null)
+
+  const toGradeLevel = (record: GradeLevelRecord): GradeLevel => record
+
+  useEffect(() => {
+    void loadGradeLevels()
+  }, [])
+
+  async function loadGradeLevels() {
+    try {
+      const records = await gradeLevelService.list()
+      setGradeLevels(records.map(toGradeLevel))
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to load grade levels', 'error')
+    }
+  }
 
   // Form State
   const [formData, setFormData] = useState({
@@ -183,44 +200,38 @@ export default function GradeLevels() {
     setIsCreateModalOpen(true)
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name.trim() || !formData.code.trim()) {
       showToast('Please provide both a grade code and name', 'error')
       return
     }
 
-    if (editingGradeLevel) {
-      // Update
-      setGradeLevels((prev) =>
-        prev.map((g) =>
-          g.id === editingGradeLevel.id
-            ? {
-                ...g,
-                ...formData,
-              }
-            : g
-        )
-      )
-      showToast(`Grade level "${formData.name}" updated successfully`, 'success')
-    } else {
-      // Create
-      const newGradeLevel: GradeLevel = {
-        id: `gl-${Date.now()}`,
-        ...formData,
-        totalClasses: 0,
-        enrolledStudents: 0,
-        averageGpa: 3.0,
-      }
-      setGradeLevels((prev) => [...prev, newGradeLevel].sort((a, b) => a.levelOrder - b.levelOrder))
-      showToast(`Grade level "${formData.name}" added to academic structure`, 'success')
+    const payload: GradeLevelPayload = {
+      ...formData,
+      totalClasses: editingGradeLevel?.totalClasses ?? 0,
+      enrolledStudents: editingGradeLevel?.enrolledStudents ?? 0,
+      averageGpa: editingGradeLevel?.averageGpa ?? 0,
+    }
+    try {
+      const saved = editingGradeLevel
+        ? await gradeLevelService.update(editingGradeLevel.id, payload)
+        : await gradeLevelService.create(payload)
+      const nextLevel = toGradeLevel(saved)
+      setGradeLevels((prev) => editingGradeLevel
+        ? prev.map((level) => level.id === nextLevel.id ? nextLevel : level)
+        : [...prev, nextLevel].sort((a, b) => a.levelOrder - b.levelOrder))
+      showToast(`Grade level "${formData.name}" ${editingGradeLevel ? 'updated' : 'added'} successfully`, 'success')
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to save grade level', 'error')
+      return
     }
 
     setIsCreateModalOpen(false)
     resetForm()
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteCandidate) return
 
     // Precondition check: dependency rules
@@ -233,9 +244,14 @@ export default function GradeLevels() {
       return
     }
 
-    setGradeLevels((prev) => prev.filter((g) => g.id !== deleteCandidate.id))
-    showToast(`Grade level "${deleteCandidate.name}" removed successfully`, 'success')
-    setDeleteCandidate(null)
+    try {
+      await gradeLevelService.delete(deleteCandidate.id)
+      setGradeLevels((prev) => prev.filter((g) => g.id !== deleteCandidate.id))
+      showToast(`Grade level "${deleteCandidate.name}" removed successfully`, 'success')
+      setDeleteCandidate(null)
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : 'Failed to delete grade level', 'error')
+    }
   }
 
   const filteredGrades = gradeLevels.filter((g) => {

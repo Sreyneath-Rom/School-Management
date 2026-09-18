@@ -17,6 +17,7 @@ function toRoleDef(role: {
     name: role.name,
     label: role.description ?? role.name,
     initial: role.name.slice(0, 2).toUpperCase(),
+    isSystem: ['admin', 'teacher', 'student', 'parent'].includes(role.name),
     permissionIds: role.permissions.map((rp) => rp.permission.id),
   }
 }
@@ -45,6 +46,10 @@ export const rolesService = {
     const role = await prisma.role.findUnique({ where: { id: roleId } })
     if (!role) throw ApiError.notFound('Role not found')
 
+    if (['admin', 'teacher', 'student', 'parent'].includes(role.name) && changes.name !== undefined) {
+      throw ApiError.forbidden('Built-in role names cannot be changed')
+    }
+
     if (changes.name && changes.name !== role.name) {
       const existing = await prisma.role.findUnique({ where: { name: changes.name } })
       if (existing) throw ApiError.conflict(`Role "${changes.name}" already exists`)
@@ -66,6 +71,10 @@ export const rolesService = {
   async remove(roleId: string) {
     const role = await prisma.role.findUnique({ where: { id: roleId } })
     if (!role) throw ApiError.notFound('Role not found')
+
+    if (['admin', 'teacher', 'student', 'parent'].includes(role.name)) {
+      throw ApiError.forbidden('Built-in roles cannot be deleted')
+    }
 
     // Adjust this if your User model names the relation/field differently
     // (e.g. `roleId` vs a join table) — the intent is just "don't delete a

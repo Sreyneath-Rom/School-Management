@@ -8,7 +8,6 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts'
-import { attendanceData } from '@/services/mockData'
 import { useFetch } from '@/hooks/useFetch'
 import { dashboardService, type AttendanceSummary } from '@/services/dashboardService'
 import { ChartCardSkeleton } from '@/components/common/Skeleton'
@@ -24,6 +23,7 @@ export default function AttendanceChart({ loading: externalLoading }: Attendance
   )
   const loading = externalLoading ?? fetchLoading
   const totalCount = summary?.reduce((sum, item) => sum + item._count, 0) ?? 0
+  const chartData = summary?.map((item) => ({ day: item.status, value: item._count })) ?? []
   const [timeRange, setTimeRange] = useState<'week' | 'month'>('week')
 
   if (loading) {
@@ -83,8 +83,13 @@ export default function AttendanceChart({ loading: externalLoading }: Attendance
 
       {/* Chart container */}
       <div className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={attendanceData} margin={{ top: 20, right: 12, left: -14, bottom: 0 }}>
+        {chartData.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-secondary">
+            No attendance records available.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 20, right: 12, left: -14, bottom: 0 }}>
             <defs>
               <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#0d9488" stopOpacity={0.35} />
@@ -118,8 +123,9 @@ export default function AttendanceChart({ loading: externalLoading }: Attendance
               dot={{ r: 4, fill: '#0d9488', strokeWidth: 2, stroke: '#ffffff' }}
               activeDot={{ r: 6, fill: '#0f766e', strokeWidth: 2, stroke: '#ffffff' }}
             />
-          </AreaChart>
-        </ResponsiveContainer>
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Metric badges footer */}

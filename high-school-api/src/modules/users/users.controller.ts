@@ -6,7 +6,10 @@ import { paginationQuerySchema } from '@/utils/pagination'
 export const usersController = {
   async list(req: Request, res: Response) {
     const pagination = paginationQuerySchema.parse(req.query)
-    const { items, meta } = await usersService.list(pagination)
+    const { search, role, status, classId, department } = req.query as {
+      search?: string; role?: string; status?: string; classId?: string; department?: string
+    }
+    const { items, meta } = await usersService.list(pagination, { search, role, status, classId, department })
     sendSuccess(res, items, 200, meta)
   },
 

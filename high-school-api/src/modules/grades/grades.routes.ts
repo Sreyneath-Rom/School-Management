@@ -9,6 +9,7 @@ import { upsertGradeSchema } from './grades.validation'
 const router = Router()
 router.use(authenticate)
 
+router.get('/me', requirePermission('grades', 'view'), asyncHandler(gradesController.me))
 router.get('/', requirePermission('grades', 'view'), asyncHandler(gradesController.list))
 
 router.get('/:id', requirePermission('grades', 'view'), asyncHandler(gradesController.getById))

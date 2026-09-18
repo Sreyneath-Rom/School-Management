@@ -35,17 +35,11 @@ import {
   Megaphone,
   BarChart3,
   LineChart,
-  DollarSign,
-  Library,
   Calendar as CalendarIcon,
   MessageSquare,
   FileText,
   CalendarClock,
   CheckSquare,
-  Tags,
-  BookmarkPlus,
-  Undo2,
-  AlertCircle,
   PartyPopper,
   SunMedium,
   Bell,
@@ -69,8 +63,6 @@ type Section =
   | "EXAMS"
   | "STUDENTS"
   | "TEACHERS"
-  | "FEES"
-  | "LIBRARY"
   | "CALENDAR"
   | "COMMUNICATION"
   | "REPORTS"
@@ -84,6 +76,34 @@ interface MenuItem {
   badge?: string | number;
   badgeColor?: string;
   badgePulse?: boolean;
+}
+
+function permissionForPath(path: string): string | null {
+  if (path.includes('/setup/roles')) return 'roles.view'
+  if (path.includes('/setup/users')) return 'users.view'
+  if (path.includes('/setup/school')) return 'school.view'
+  if (path.includes('/setup/academic-years')) return 'academicYears.view'
+  if (path.includes('/setup/rooms')) return 'rooms.view'
+  if (path.includes('/setup/grade-levels')) return 'gradeLevels.view'
+  if (path.includes('/setup/terms')) return 'terms.view'
+  if (path.includes('/setup/translations')) return 'translations.view'
+  if (path.includes('/setup/subjects')) return 'subjects.view'
+  if (path.includes('/academic/exams') || path.includes('/academic/exam-') || path.includes('/academic/mark-') || path.includes('/academic/report-cards')) return 'grades.view'
+  if (path.includes('/academic/classes')) return 'classes.view'
+  if (path.includes('/academic/schedules')) return 'schedules.view'
+  if (path.includes('/academic/lessons')) return 'lessons.view'
+  if (path.includes('/academic/homework')) return 'homework.view'
+  if (path.includes('/academic/quizzes')) return 'quizzes.view'
+  if (path.includes('/academic/grades')) return 'grades.view'
+  if (path.includes('/students/attendance') || path.includes('/teacher/attendance') || path.includes('/student/attendance')) return 'attendance.view'
+  if (path.includes('/students/leave-requests') || path.includes('/student/leave-requests')) return 'leaveRequests.view'
+  if (path === '/students' || path.includes('/students/profiles') || path.includes('/teacher/students')) return 'students.view'
+  if (path === '/teachers' || path.includes('/teachers/')) return 'teachers.view'
+  if (path.includes('/reports/')) return 'reports.view'
+  if (path.includes('/communication/announcements')) return 'announcements.view'
+  if (path.includes('/communication/notifications')) return 'notifications.view'
+  if (path.includes('/messages')) return 'notifications.view'
+  return null
 }
 
 interface MenuSection {
@@ -281,41 +301,6 @@ const roleMenus: Record<string, MenuSection[]> = {
       ],
     },
     {
-      key: "LIBRARY",
-      titleKey: "sidebar.library",
-      icon: Library,
-      categoryGroup: "academic",
-      items: [
-        {
-          translationKey: "sidebar.books",
-          icon: Library,
-          path: "/library/books",
-        },
-        {
-          translationKey: "sidebar.libraryCategories",
-          icon: Tags,
-          path: "/library/categories",
-        },
-        {
-          translationKey: "sidebar.borrow",
-          icon: BookmarkPlus,
-          path: "/library/borrow",
-        },
-        {
-          translationKey: "sidebar.returns",
-          icon: Undo2,
-          path: "/library/returns",
-        },
-        {
-          translationKey: "sidebar.overdueBooks",
-          icon: AlertCircle,
-          path: "/library/overdue",
-          badge: "4",
-          badgeColor: "bg-rose-500 text-white",
-        },
-      ],
-    },
-    {
       key: "CALENDAR",
       titleKey: "sidebar.calendar",
       icon: CalendarIcon,
@@ -389,11 +374,6 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.teacherReport",
           icon: UserSquare2,
           path: "/reports/teachers",
-        },
-        {
-          translationKey: "sidebar.libraryReport",
-          icon: Library,
-          path: "/reports/library",
         },
       ],
     },
@@ -515,19 +495,6 @@ const roleMenus: Record<string, MenuSection[]> = {
       ],
     },
     {
-      key: "LIBRARY",
-      titleKey: "sidebar.library",
-      icon: Library,
-      categoryGroup: "academic",
-      items: [
-        {
-          translationKey: "sidebar.books",
-          icon: Library,
-          path: "/teacher/library",
-        },
-      ],
-    },
-    {
       key: "REPORTS",
       titleKey: "sidebar.reports",
       icon: BarChart3,
@@ -608,32 +575,6 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.leaveRequests",
           icon: FileClock,
           path: "/student/leave-requests",
-        },
-      ],
-    },
-    {
-      key: "FEES",
-      titleKey: "sidebar.fees",
-      icon: DollarSign,
-      categoryGroup: "management",
-      items: [
-        {
-          translationKey: "sidebar.invoices",
-          icon: FileText,
-          path: "/student/fees",
-        },
-      ],
-    },
-    {
-      key: "LIBRARY",
-      titleKey: "sidebar.library",
-      icon: Library,
-      categoryGroup: "academic",
-      items: [
-        {
-          translationKey: "sidebar.books",
-          icon: Library,
-          path: "/student/library",
         },
       ],
     },
@@ -804,8 +745,20 @@ export default function Sidebar({
 
   // Active role's menu sections
   const baseMenu = useMemo(() => {
-    return roleMenus[activeRole] || roleMenus.admin;
-  }, [activeRole]);
+    const menu = roleMenus[activeRole] || roleMenus.admin;
+    const permissionKeys = user?.permissionKeys ?? [];
+    if (permissionKeys.length === 0) return menu;
+
+    return menu
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          const requiredPermission = permissionForPath(item.path);
+          return !requiredPermission || permissionKeys.includes(requiredPermission);
+        }),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [activeRole, user?.permissionKeys]);
 
   // Single Accordion State: Only 1 section expanded at a time ("flow: 1 expand other collapse")
   const [openSection, setOpenSection] = useState<Section | null>(() => {
@@ -978,7 +931,7 @@ export default function Sidebar({
         {/* School Crest mini icon */}
         <div
           title="Varin High School"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-slate-900 to-teal-900 text-white shadow-md border border-teal-500/30"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-slate-900 to-teal-900 text-white shadow-md border border-teal-500/30"
         >
           <School2 size={18} className="text-teal-300" />
         </div>
@@ -1123,7 +1076,7 @@ export default function Sidebar({
       <div className="flex flex-col items-center space-y-2 pt-2 border-t border-surface shrink-0">
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-surface"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-surface"
         >
           {userInitials}
         </div>
@@ -1139,7 +1092,7 @@ export default function Sidebar({
         <div className="flex items-center justify-between gap-2">
           {/* School Identity Emblem */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-slate-900 via-teal-950 to-slate-900 text-white shadow-md border border-teal-500/30">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-slate-900 via-teal-950 to-slate-900 text-white shadow-md border border-teal-500/30">
               <School2 size={18} className="text-teal-300" />
               <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-amber-400 ring-1 ring-surface-strong" />
             </div>
@@ -1173,7 +1126,7 @@ export default function Sidebar({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-color lg:hidden transition cursor-pointer"
+                className="flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-color lg:hidden transition cursor-pointer"
                 aria-label="Close navigation drawer"
               >
                 <X size={18} />
@@ -1209,7 +1162,7 @@ export default function Sidebar({
         <NavLink
           to={dashboardPath}
           onClick={handleLinkClick}
-          className={`group flex min-h-[38px] w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all duration-150 ${
+          className={`group flex min-h-9.5 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all duration-150 ${
             isDashboardActive
               ? "bg-brand-600 text-white shadow-md shadow-brand-600/25"
               : "text-secondary hover:text-color hover:bg-surface"
@@ -1273,7 +1226,7 @@ export default function Sidebar({
                         onKeyDown={(e) => handleSectionKeyDown(e, index)}
                         aria-expanded={isSectionOpen}
                         aria-controls={panelId}
-                        className={`group flex min-h-[38px] w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
+                        className={`group flex min-h-9.5 w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                           isSectionOpen
                             ? "bg-surface text-color shadow-xs"
                             : hasActiveChild
@@ -1339,14 +1292,14 @@ export default function Sidebar({
                                   to={item.path}
                                   onClick={handleLinkClick}
                                   tabIndex={isSectionOpen ? 0 : -1}
-                                  className={`group relative flex min-h-[34px] items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
+                                  className={`group relative flex min-h-8.5 items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                                     isItemActive
                                       ? "font-bold bg-brand-600 text-white shadow-xs"
                                       : "font-medium text-secondary hover:bg-surface hover:text-color"
                                   }`}
                                 >
                                   {isItemActive && (
-                                    <span className="absolute -left-[17px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface-strong" />
+                                    <span className="absolute -left-4.25 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface-strong" />
                                   )}
                                   <span className="flex items-center gap-2 truncate">
                                     <Icon
@@ -1391,7 +1344,7 @@ export default function Sidebar({
       <div className="shrink-0 p-3 pt-2 border-t border-surface">
         <div className="flex items-center justify-between gap-2 rounded-2xl bg-surface-strong p-2.5 border border-surface">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none shadow-xs">
+            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none shadow-xs">
               {userInitials}
               <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface-strong animate-pulse" />
             </div>
@@ -1440,7 +1393,7 @@ export default function Sidebar({
 
       {/* Mobile Drawer (Touch-Optimized for Phones & Tablets < 1024px) */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[310px] max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden ${
+        className={`fixed left-0 top-0 z-50 h-full w-77.5 max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -1453,7 +1406,7 @@ export default function Sidebar({
       {/* Desktop / Laptop Sidebar (Fixed viewport height, independent of main view scroll) */}
       <aside
         className={`app-sidebar hidden h-full shrink-0 flex-col lg:flex overflow-hidden transition-all duration-300 ease-in-out ${
-          isCollapsed ? "w-[68px]" : "w-72 xl:w-[18.5rem]"
+          isCollapsed ? "w-17" : "w-72 xl:w-74"
         }`}
       >
         {isCollapsed ? renderCompactMenu() : renderExpandedMenu(false)}
