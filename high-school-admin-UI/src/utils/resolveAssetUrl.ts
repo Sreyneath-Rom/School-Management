@@ -7,13 +7,13 @@
 // backend's origin, then joins it with whatever relative path the API
 // returned.
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
-const API_ORIGIN = API_BASE_URL.replace(/\/api\/v\d+\/?$/, '')
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/v\d+\/?$/, '');
 
 export function resolveAssetUrl(path?: string | null): string | null {
-  if (!path) return null
-  // Already an absolute URL (e.g. a data: URI or external host) — use as-is.
-  if (/^(https?:|data:|blob:)/.test(path)) return path
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return `${API_ORIGIN}${normalizedPath}`
+  if (!path) return null;
+  // Already absolute — data URIs, blob URLs, or an external CDN. Use as-is.
+  if (/^(https?:|data:|blob:)/.test(path)) return path;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${API_ORIGIN}${normalizedPath}`;
 }

@@ -1,45 +1,74 @@
-import React from 'react'
+// src/components/common/Button.tsx
+import { forwardRef } from 'react'
+import type { ButtonHTMLAttributes } from 'react'
 
-type ButtonVariant = 'glass' | 'solid' | 'none' | 'solidOutline' | 'teal'
-type ButtonSize = 'sm' | 'md' | 'lg'
+export type ButtonVariant = 'solid' | 'outline' | 'ghost' | 'link' | 'danger'
+export type ButtonSize = 'sm' | 'md' | 'lg'
 
-const variantClasses: Record<ButtonVariant, string> = {
-  none: '',
-  glass:
-    'rounded-full glass-sm glass-interactive font-semibold text-text-main/70 transition hover:bg-text-main/5',
-  teal:
-    'rounded-full glass-teal glass-interactive font-semibold text-white',
-  solid:
-    'rounded-full bg-brand-700 font-semibold text-white shadow-lg shadow-brand-700/20 transition hover:bg-brand-800',
-  solidOutline:
-    'rounded-full border border-brand-700 font-semibold text-brand-700 dark:text-brand-300 transition hover:bg-brand-50',
-}
-
-const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-xs',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-2.5 text-base',
-}
-
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
   size?: ButtonSize
-  className?: string
+  /** Shows a spinner and disables the button. */
+  loading?: boolean
 }
 
-export default function Button({
-  children,
-  variant = 'none',
-  size = 'md',
-  className = '',
-  ...props
-}: ButtonProps) {
+const BASE =
+  'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-(--glass-bg) disabled:cursor-not-allowed disabled:opacity-50'
+
+const VARIANTS: Record<ButtonVariant, string> = {
+  solid: 'bg-brand-600 text-white shadow-sm shadow-brand-600/20 hover:bg-brand-700 active:bg-brand-800',
+  outline:
+    'bg-surface text-fg border border-surface hover:bg-surface-strong',
+  ghost:
+    'bg-transparent text-fg-muted hover:bg-surface hover:text-fg',
+  link:
+    'bg-transparent text-brand-600 dark:text-brand-400 hover:underline px-0 py-0',
+  danger: 'bg-error text-white shadow-sm shadow-error/20 hover:bg-error/90 active:bg-error',
+}
+
+const SIZES: Record<ButtonSize, string> = {
+  sm: 'px-3 py-1.5 text-xs',
+  md: 'px-4 py-2.5 text-sm',
+  lg: 'px-5 py-3 text-base',
+}
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = 'solid',
+    size = 'md',
+    loading = false,
+    disabled,
+    className = '',
+    children,
+    ...rest
+  },
+  ref
+) {
+  const classes = [
+    BASE,
+    VARIANTS[variant],
+    variant === 'link' ? '' : SIZES[size],
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
     <button
-      {...props}
-      className={`${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim()}
+      ref={ref}
+      disabled={disabled || loading}
+      className={classes}
+      {...rest}
     >
+      {loading && (
+        <span
+          aria-hidden="true"
+          className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"
+        />
+      )}
       {children}
     </button>
   )
-}
+})
+
+export default Button

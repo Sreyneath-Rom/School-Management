@@ -1,68 +1,66 @@
 // src/routes/AdminRoutes.tsx
-import { Route, Navigate } from "react-router-dom";
-import type { ReactElement } from "react";
-import AppLayout from "@/layouts/AppLayout";
+import { Route, Navigate } from 'react-router-dom'
+import type { ReactElement } from 'react'
+import AppLayout from '@/layouts/AppLayout'
 
 // Setup
-import Dashboard from "@/pages/Dashboard/Dashboard";
-import SchoolSetup from "@/pages/Setup/SchoolSetup";
-import AcademicYears from "@/pages/Setup/AcademicYears";
-import GradeLevels from "@/pages/Setup/GradeLevels";
-import Terms from "@/pages/Setup/Terms";
-import Subjects from "@/pages/Setup/Subjects";
-import Rooms from "@/pages/Setup/Rooms";
-import Roles from "@/pages/Setup/Roles";
-import Users from "@/pages/Setup/Users";
-import TranslationManager from "@/pages/Setup/TranslationManager";
+import Dashboard from '@/pages/Dashboard/Dashboard'
+import SchoolSetup from '@/pages/Setup/SchoolSetup'
+import AcademicYears from '@/pages/Setup/AcademicYears'
+import GradeLevels from '@/pages/Setup/GradeLevels'
+import Terms from '@/pages/Setup/Terms'
+import Subjects from '@/pages/Setup/Subjects'
+import Rooms from '@/pages/Setup/Rooms'
+import Roles from '@/pages/Setup/Roles'
+import Users from '@/pages/Setup/Users'
+import TranslationManager from '@/pages/Setup/TranslationManager'
 
 // Academic
-import Classes from "@/pages/Academic/Classes";
-import ClassSubjects from "@/pages/Academic/ClassSubjects";
-import Schedules from "@/pages/Setup/Schedules";
-import Lessons from "@/pages/Academic/Lessons";
-import Homework from "@/pages/Academic/Homework";
-import Quizzes from "@/pages/Academic/Quizzes";
-import Grades from "@/pages/Academic/Grades";
+import Classes from '@/pages/Academic/Classes'
+import ClassSubjects from '@/pages/Academic/ClassSubjects'
+import Schedules from '@/pages/Academic/Schedules'
+import Lessons from '@/pages/Academic/Lessons'
+import Homework from '@/pages/Academic/Homework'
+import Quizzes from '@/pages/Academic/Quizzes'
+import Grades from '@/pages/Academic/Grades'
 
 // Exams
-import ExamList from "@/pages/Exams/ExamList";
-import ExamForm from "@/pages/Exams/ExamForm";
-import ExamSchedules from "@/pages/Exams/ExamSchedules";
-import MarkEntry from "@/pages/Exams/MarkEntry";
-import ReportCard from "@/pages/Exams/ReportCard";
+import ExamList from '@/pages/Exams/ExamList'
+import ExamForm from '@/pages/Exams/ExamForm'
+import ExamSchedules from '@/pages/Exams/ExamSchedules'
+import MarkEntry from '@/pages/Exams/MarkEntry'
+import ReportCard from '@/pages/Exams/ReportCard'
 
 // Students
-import StudentList from "@/pages/Students/StudentList";
-import StudentProfiles from "@/pages/Students/StudentProfiles";
-import Attendance from "@/pages/Students/Attendance";
-import LeaveRequests from "@/pages/Students/LeaveRequests";
+import StudentList from '@/pages/Students/StudentList'
+import StudentProfiles from '@/pages/Students/StudentProfiles'
+import Attendance from '@/pages/Students/Attendance'
+import LeaveRequests from '@/pages/Students/LeaveRequests'
 
 // Teachers
-import TeacherList from "@/pages/Teachers/TeacherList";
-import TeacherProfiles from "@/pages/Teachers/TeacherProfiles";
-import TeacherAssignments from "@/pages/Teachers/TeacherAssignments";
-import TeacherAttendance from "@/pages/Teachers/TeacherAttendance";
-
-
+import TeacherList from '@/pages/Teachers/TeacherList'
+import TeacherProfiles from '@/pages/Teachers/TeacherProfiles'
+import TeacherAssignments from '@/pages/Teachers/TeacherAssignments'
+import TeacherAttendance from '@/pages/Teachers/TeacherAttendance'
 
 // Calendar
-import CalendarView from "@/pages/Calendar/CalendarView";
-import EventForm from "@/pages/Calendar/EventForm";
+import CalendarView from '@/pages/Calendar/CalendarView'
+import EventForm from '@/pages/Calendar/EventForm'
 
 // Communication & Messages
-import AnnouncementsPage from "@/pages/Communication/Announcements";
-import Notifications from "@/pages/Communication/Notifications";
-import Inbox from "@/pages/Messages/Inbox";
-import Conversation from "@/pages/Messages/Conversation";
+import AnnouncementsPage from '@/pages/Communication/Announcements'
+import Notifications from '@/pages/Communication/Notifications'
+import Inbox from '@/pages/Messages/Inbox'
+import Conversation from '@/pages/Messages/Conversation'
 
 // Reports
-import AttendanceReport from "@/pages/Reports/AttendanceReport";
-import GradeReport from "@/pages/Reports/GradeReport";
-import StudentReport from "@/pages/Reports/StudentReport";
-import TeacherReport from "@/pages/Reports/TeacherReport";
+import AttendanceReport from '@/pages/Reports/AttendanceReport'
+import GradeReport from '@/pages/Reports/GradeReport'
+import StudentReport from '@/pages/Reports/StudentReport'
+import TeacherReport from '@/pages/Reports/TeacherReport'
 
 // System
-import AuditLogs from "@/pages/System/AuditLogs";
+import AuditLogs from '@/pages/System/AuditLogs'
 
 export const adminRoutes = (): ReactElement => (
   <Route element={<AppLayout />}>
@@ -110,8 +108,6 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/teachers/assignments" element={<TeacherAssignments />} />
     <Route path="/teachers/attendance" element={<TeacherAttendance />} />
 
-    
-
     {/* Calendar */}
     <Route path="/calendar" element={<CalendarView />} />
     <Route path="/calendar/events" element={<CalendarView />} />
@@ -134,15 +130,11 @@ export const adminRoutes = (): ReactElement => (
     <Route path="/reports/students" element={<StudentReport />} />
     <Route path="/reports/teachers" element={<TeacherReport />} />
 
-    {/* System & Account */}
-    <Route path="/profile" element={<Users />} />
-    <Route path="/settings" element={<SchoolSetup />} />
-    <Route path="/help" element={<AuditLogs />} />
+    {/* System */}
     <Route path="/system/activity" element={<AuditLogs />} />
-  
 
     {/* Fallback */}
     <Route path="/" element={<Navigate to="/dashboard" replace />} />
     <Route path="*" element={<Navigate to="/dashboard" replace />} />
   </Route>
-);
+)

@@ -1,54 +1,54 @@
-import type { UserRole } from '@/utils/rolePermissions';
+// src/components/auth/AuthBackground.tsx
+import type { UserRole } from '@/utils/rolePermissions'
 
-export type AuthBackgroundVariant = UserRole | 'all';
+export type AuthBackgroundVariant = UserRole | 'all'
 
 interface Props {
-  variant: AuthBackgroundVariant;
+  variant: AuthBackgroundVariant
+}
+
+/**
+ * Ambient background for the login pages. The two decorative blobs shift
+ * tint based on the active portal so switching tabs feels responsive.
+ *
+ * Uses the theme's brand and status tokens, so a light/dark toggle changes
+ * the gradients without any variant-specific classes here.
+ */
+const BLOB_TINT: Record<
+  AuthBackgroundVariant,
+  { primary: string; secondary: string }
+> = {
+  all:     { primary: 'bg-brand-400/20 dark:bg-brand-600/20',   secondary: 'bg-info/20 dark:bg-info/20' },
+  admin:   { primary: 'bg-info/20 dark:bg-info/20',             secondary: 'bg-brand-400/20 dark:bg-brand-600/20' },
+  teacher: { primary: 'bg-success/20 dark:bg-success/20',       secondary: 'bg-brand-400/20 dark:bg-brand-600/20' },
+  student: { primary: 'bg-brand-400/20 dark:bg-brand-600/20',   secondary: 'bg-info/20 dark:bg-info/20' },
+  parent:  { primary: 'bg-warning/20 dark:bg-warning/20',       secondary: 'bg-brand-400/20 dark:bg-brand-600/20' },
 }
 
 export default function AuthBackground({ variant }: Props) {
-  const isTeacher = variant === 'teacher';
-  const isStudent = variant === 'student';
-  const isParent = variant === 'parent';
-
-  // Dynamic glow and accent gradient based on the active role
-  const glow1 = isTeacher
-    ? 'bg-emerald-500/15 dark:bg-emerald-600/15'
-    : isStudent
-    ? 'bg-purple-500/15 dark:bg-purple-600/15'
-    : isParent
-    ? 'bg-amber-500/15 dark:bg-amber-600/15'
-    : 'bg-teal-500/15 dark:bg-teal-600/15';
-
-  const glow2 = isTeacher
-    ? 'bg-teal-500/15 dark:bg-teal-600/15'
-    : isStudent
-    ? 'bg-indigo-500/15 dark:bg-indigo-600/15'
-    : isParent
-    ? 'bg-orange-500/15 dark:bg-orange-600/15'
-    : 'bg-blue-500/15 dark:bg-blue-600/15';
+  const tint = BLOB_TINT[variant] ?? BLOB_TINT.all
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-      {/* Dynamic ambient blobs */}
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 z-0 pointer-events-none overflow-hidden"
+    >
       <div
-        className={`absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl transition-colors duration-700 ${glow1}`}
+        className={`absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl transition-colors duration-700 ${tint.primary}`}
       />
       <div
-        className={`absolute top-1/3 -right-32 w-md h-112 rounded-full blur-3xl transition-colors duration-700 ${glow2}`}
+        className={`absolute top-1/3 -right-32 w-md h-112 rounded-full blur-3xl transition-colors duration-700 ${tint.secondary}`}
       />
-      <div
-        className="absolute -bottom-32 left-1/3 w-lg h-128 rounded-full blur-3xl bg-sky-500/10 dark:bg-sky-600/10"
-      />
+      <div className="absolute -bottom-32 left-1/3 w-lg h-128 rounded-full blur-3xl bg-info/10 transition-colors duration-700" />
 
-      {/* Subtle mathematical grid overlay */}
+      {/* Dot-grid overlay — inherits the theme's text color. */}
       <div
-        className="absolute inset-0 opacity-[0.035] dark:opacity-[0.05]"
+        className="absolute inset-0 text-fg opacity-[0.035] dark:opacity-[0.05]"
         style={{
-          backgroundImage: `radial-gradient(currentColor 1px, transparent 1px)`,
+          backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }}
       />
     </div>
-  );
+  )
 }

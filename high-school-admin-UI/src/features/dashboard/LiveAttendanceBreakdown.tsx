@@ -1,61 +1,80 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Users,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  ArrowRight,
-  TrendingUp,
-  School,
-  ChevronRight,
-  CheckCheck,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import { attendanceService } from '@/services/attendanceService'
+import type { AttendanceListRow } from '@/types/attendance'
 
-interface GradeAttendance {
-  grade: string
+interface GradeStats {
+  gradeLevel: number
   present: number
   total: number
   excused: number
   unexcused: number
-  status: 'optimal' | 'moderate' | 'action-required'
 }
 
-const attendanceByGrade: GradeAttendance[] = [
-  { grade: 'Grade 7 (ថ្នាក់ទី ៧)', present: 201, total: 210, excused: 7, unexcused: 2, status: 'optimal' },
-  { grade: 'Grade 8 (ថ្នាក់ទី ៨)', present: 236, total: 245, excused: 6, unexcused: 3, status: 'optimal' },
-  { grade: 'Grade 9 (ថ្នាក់ទី ៩)', present: 244, total: 260, excused: 11, unexcused: 5, status: 'optimal' },
-  { grade: 'Grade 10 (ថ្នាក់ទី ១០)', present: 271, total: 290, excused: 12, unexcused: 7, status: 'moderate' },
-  { grade: 'Grade 11 (ថ្នាក់ទី ១១)', present: 153, total: 160, excused: 5, unexcused: 2, status: 'optimal' },
-  { grade: 'Grade 12 (ថ្នាក់ទី ១២)', present: 114, total: 119, excused: 4, unexcused: 1, status: 'optimal' },
-]
+function buildGradeStats(rows: AttendanceListRow[]): GradeStats[] {
+  const byGrade = new Map<number, GradeStats>()
+
+  for (const row of rows) {
+    const gradeLevel = row.student?.class?.gradeLevel
+    if (gradeLevel === undefined || gradeLevel === null) continue
+
+    const stats =
+      byGrade.get(gradeLevel) ??
+      { gradeLevel, present: 0, total: 0, excused: 0, unexcused: 0 }
+
+    stats.total += 1
+    if (row.status === 'PRESENT' || row.status === 'LATE') stats.present += 1
+    else if (row.status === 'EXCUSED') stats.excused += 1
+    else stats.unexcused += 1
+
+    byGrade.set(gradeLevel, stats)
+  }
+
+  return Array.from(byGrade.values()).sort((a, b) => a.gradeLevel - b.gradeLevel)
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 export default function LiveAttendanceBreakdown() {
-  const totalPresent = attendanceByGrade.reduce((acc, g) => acc + g.present, 0)
-  const totalStudents = attendanceByGrade.reduce((acc, g) => acc + g.total, 0)
-  const totalExcused = attendanceByGrade.reduce((acc, g) => acc + g.excused, 0)
-  const totalUnexcused = attendanceByGrade.reduce((acc, g) => acc + g.unexcused, 0)
-  const overallRate = ((totalPresent / totalStudents) * 100).toFixed(1)
+  const [rows, setRows] = useState<AttendanceListRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [date] = useState(todayIso())
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    attendanceService
+      .list({ date })
+      .then((data) => { if (!cancelled) setRows(data) })
+      .catch(() => { if (!cancelled) setRows([]) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [date])
+
+  const grades = useMemo(() => buildGradeStats(rows), [rows])
+  const totalPresent = grades.reduce((acc, g) => acc + g.present, 0)
+  const totalStudents = grades.reduce((acc, g) => acc + g.total, 0)
+  const totalExcused = grades.reduce((acc, g) => acc + g.excused, 0)
+  const totalUnexcused = grades.reduce((acc, g) => acc + g.unexcused, 0)
+  const overallRate =
+    totalStudents > 0 ? ((totalPresent / totalStudents) * 100).toFixed(1) : '—'
 
   return (
     <div className="rounded-3xl border border-surface bg-surface-strong p-5 shadow-xs">
-      {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-surface">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-color">
-              Daily Attendance Breakdown
-            </h2>
+            <h2 className="text-base font-bold text-fg">Daily Attendance Breakdown</h2>
             <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success border border-success/20">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              Live Sync
+              Live
             </span>
           </div>
-          <p className="text-xs text-secondary">
-            Real-time cohort check-ins across secondary divisions
-          </p>
+          <p className="text-xs text-fg-muted">Cohort check-ins for {date}</p>
         </div>
-
         <Link
           to="/students/attendance"
           className="flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400"
@@ -65,38 +84,45 @@ export default function LiveAttendanceBreakdown() {
         </Link>
       </div>
 
-      {/* Overview Stat Ribbon */}
       <div className="mt-4 grid grid-cols-3 gap-2.5 rounded-2xl bg-surface p-3 border border-surface">
         <div className="text-center sm:text-left">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">Rate</p>
-          <p className="text-base sm:text-lg font-black text-color">{overallRate}%</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-fg-muted">Rate</p>
+          <p className="text-base sm:text-lg font-black text-fg">{overallRate}{overallRate !== '—' ? '%' : ''}</p>
           <p className="text-[10px] text-success font-semibold">{totalPresent} present</p>
         </div>
         <div className="text-center sm:text-left border-x border-surface px-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">Excused</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-fg-muted">Excused</p>
           <p className="text-base sm:text-lg font-black text-warning">{totalExcused}</p>
-          <p className="text-[10px] text-secondary">Parent notes</p>
+          <p className="text-[10px] text-fg-muted">Parent notes</p>
         </div>
         <div className="text-center sm:text-left">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">Unexcused</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-fg-muted">Unexcused</p>
           <p className="text-base sm:text-lg font-black text-error">{totalUnexcused}</p>
-          <p className="text-[10px] text-secondary">SMS dispatched</p>
+          <p className="text-[10px] text-fg-muted">SMS dispatched</p>
         </div>
       </div>
 
-      {/* Grade Rows */}
-      <div className="mt-4 divide-y divide-surface">
-        {attendanceByGrade.map((row) => {
-          const percent = Math.round((row.present / row.total) * 100)
-          return (
-            <div key={row.grade} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
+      {loading ? (
+        <p className="py-6 text-center text-xs text-fg-muted">Loading attendance…</p>
+      ) : grades.length === 0 ? (
+        <p className="py-6 text-center text-xs text-fg-muted">
+          No attendance marked for today.
+        </p>
+      ) : (
+        <div className="mt-4 divide-y divide-surface">
+          {grades.map((row) => {
+            const percent = Math.round((row.present / row.total) * 100)
+            return (
+              <div key={row.gradeLevel} className="py-2.5 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="font-bold text-color truncate">
-                    {row.grade}
+                  <span className="font-bold text-fg truncate">
+                    Grade {row.gradeLevel}
                   </span>
-                  <span className="font-mono text-xs font-black text-color">
-                    {percent}% <span className="text-[10px] font-normal text-secondary">({row.present}/{row.total})</span>
+                  <span className="font-mono text-xs font-black text-fg">
+                    {percent}%{' '}
+                    <span className="text-[10px] font-normal text-fg-muted">
+                      ({row.present}/{row.total})
+                    </span>
                   </span>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-surface overflow-hidden">
@@ -112,10 +138,10 @@ export default function LiveAttendanceBreakdown() {
                   />
                 </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

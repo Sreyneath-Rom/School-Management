@@ -1,12 +1,10 @@
 /**
- * Get current date
+ * Current date and time.
  */
-export const getCurrentDate = (): Date => {
-  return new Date();
-};
+export const getCurrentDate = (): Date => new Date();
 
 /**
- * Add days to a date
+ * Add days to a date. Negative values subtract.
  */
 export const addDays = (date: Date, days: number): Date => {
   const result = new Date(date);
@@ -15,72 +13,57 @@ export const addDays = (date: Date, days: number): Date => {
 };
 
 /**
- * Subtract days from a date
+ * Subtract days from a date.
  */
-export const subtractDays = (date: Date, days: number): Date => {
-  return addDays(date, -days);
-};
+export const subtractDays = (date: Date, days: number): Date =>
+  addDays(date, -days);
 
 /**
- * Get number of days between two dates
+ * Number of whole days between two dates, ignoring time-of-day.
+ *
+ * Uses UTC-normalized timestamps so DST transitions don't produce off-by-one
+ * results (a 23- or 25-hour day would otherwise round wrong).
  */
 export const getDaysBetween = (date1: Date, date2: Date): number => {
-  const time = Math.abs(date2.getTime() - date1.getTime());
-  return Math.ceil(time / (1000 * 60 * 60 * 24));
+  const day1 = Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate());
+  const day2 = Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate());
+  return Math.round(Math.abs(day2 - day1) / (1000 * 60 * 60 * 24));
 };
 
+const sameDay = (a: Date, b: Date): boolean =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
 /**
- * Check if date is today
+ * Check whether the given date is today (local time).
  */
-export const isToday = (date: Date): boolean => {
-  const today = getCurrentDate();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
-};
+export const isToday = (date: Date): boolean => sameDay(date, getCurrentDate());
 
 /**
- * Check if date is tomorrow
+ * Check whether the given date is tomorrow (local time).
  */
-export const isTomorrow = (date: Date): boolean => {
-  const tomorrow = addDays(getCurrentDate(), 1);
-  return (
-    date.getDate() === tomorrow.getDate() &&
-    date.getMonth() === tomorrow.getMonth() &&
-    date.getFullYear() === tomorrow.getFullYear()
-  );
-};
+export const isTomorrow = (date: Date): boolean =>
+  sameDay(date, addDays(getCurrentDate(), 1));
 
 /**
- * Check if date is yesterday
+ * Check whether the given date is yesterday (local time).
  */
-export const isYesterday = (date: Date): boolean => {
-  const yesterday = subtractDays(getCurrentDate(), 1);
-  return (
-    date.getDate() === yesterday.getDate() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getFullYear() === yesterday.getFullYear()
-  );
-};
+export const isYesterday = (date: Date): boolean =>
+  sameDay(date, subtractDays(getCurrentDate(), 1));
 
 /**
- * Check if date is in the past
+ * Check whether a date is strictly in the past.
  */
-export const isPast = (date: Date): boolean => {
-  return date < getCurrentDate();
-};
+export const isPast = (date: Date): boolean => date.getTime() < Date.now();
 
 /**
- * Check if date is in the future
+ * Check whether a date is strictly in the future.
  */
-export const isFuture = (date: Date): boolean => {
-  return date > getCurrentDate();
-};
+export const isFuture = (date: Date): boolean => date.getTime() > Date.now();
 
 /**
- * Get start of day
+ * Midnight at the start of the day (local time).
  */
 export const getStartOfDay = (date: Date): Date => {
   const result = new Date(date);
@@ -89,7 +72,7 @@ export const getStartOfDay = (date: Date): Date => {
 };
 
 /**
- * Get end of day
+ * The last millisecond of the day (local time).
  */
 export const getEndOfDay = (date: Date): Date => {
   const result = new Date(date);
@@ -98,7 +81,7 @@ export const getEndOfDay = (date: Date): Date => {
 };
 
 /**
- * Get start of month
+ * First day of the month (local time).
  */
 export const getStartOfMonth = (date: Date): Date => {
   const result = new Date(date);
@@ -108,63 +91,69 @@ export const getStartOfMonth = (date: Date): Date => {
 };
 
 /**
- * Get end of month
+ * Last millisecond of the month (local time).
  */
 export const getEndOfMonth = (date: Date): Date => {
   const result = new Date(date);
-  result.setMonth(result.getMonth() + 1);
-  result.setDate(0);
+  result.setMonth(result.getMonth() + 1, 0);
   result.setHours(23, 59, 59, 999);
   return result;
 };
 
 /**
- * Get start of year
+ * January 1st, midnight (local time).
  */
 export const getStartOfYear = (date: Date): Date => {
   const result = new Date(date);
-  result.setMonth(0);
-  result.setDate(1);
+  result.setMonth(0, 1);
   result.setHours(0, 0, 0, 0);
   return result;
 };
 
 /**
- * Get end of year
+ * December 31st, last millisecond (local time).
  */
 export const getEndOfYear = (date: Date): Date => {
   const result = new Date(date);
-  result.setMonth(11);
-  result.setDate(31);
+  result.setMonth(11, 31);
   result.setHours(23, 59, 59, 999);
   return result;
 };
 
 /**
- * Get age from birth date
+ * Whole years between a birth date and today.
+ *
+ * This is the "age on their last birthday" that schools typically report.
  */
 export const getAge = (birthDate: Date): number => {
   const today = getCurrentDate();
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
     age--;
   }
-  
   return age;
 };
 
 /**
- * Format relative time (e.g., "2 hours ago")
+ * Human-readable relative time: "just now", "5 minutes ago", "2 days ago",
+ * or a formatted date for anything older than a week.
  */
 export const formatRelativeTime = (date: Date): string => {
-  const seconds = Math.floor((getCurrentDate().getTime() - date.getTime()) / 1000);
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
 
+  if (seconds < 0) return 'in the future';
   if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
-  
+
+  const plural = (n: number, unit: string) =>
+    `${n} ${unit}${n === 1 ? '' : 's'} ago`;
+
+  if (seconds < 3600) return plural(Math.floor(seconds / 60), 'minute');
+  if (seconds < 86400) return plural(Math.floor(seconds / 3600), 'hour');
+  if (seconds < 604800) return plural(Math.floor(seconds / 86400), 'day');
+
   return date.toLocaleDateString();
 };

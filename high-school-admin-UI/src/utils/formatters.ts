@@ -1,8 +1,9 @@
 /**
- * Format date to readable string (e.g., "Jan 15, 2024")
+ * Format a date as "Jan 15, 2024".
  */
 export const formatDate = (date: Date | string, locale = 'en-US'): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(dateObj.getTime())) return '—';
   return dateObj.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
@@ -11,13 +12,14 @@ export const formatDate = (date: Date | string, locale = 'en-US'): string => {
 };
 
 /**
- * Format date and time (e.g., "Jan 15, 2024 10:30 AM")
+ * Format a date and time as "Jan 15, 2024 10:30 AM".
  */
 export const formatDateTime = (
   date: Date | string,
   locale = 'en-US'
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(dateObj.getTime())) return '—';
   return dateObj.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
@@ -28,10 +30,11 @@ export const formatDateTime = (
 };
 
 /**
- * Format time (e.g., "10:30 AM")
+ * Format just the time portion as "10:30 AM".
  */
 export const formatTime = (date: Date | string, locale = 'en-US'): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(dateObj.getTime())) return '—';
   return dateObj.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
@@ -39,7 +42,7 @@ export const formatTime = (date: Date | string, locale = 'en-US'): string => {
 };
 
 /**
- * Format currency (e.g., "$1,234.56")
+ * Format a number as currency, e.g. "$1,234.56".
  */
 export const formatCurrency = (
   amount: number,
@@ -53,14 +56,29 @@ export const formatCurrency = (
 };
 
 /**
- * Format percentage
+ * Format an already-scaled percentage value.
+ *
+ * Expects a value in 0–100 (e.g. `attendanceRate: 93.3` from the backend).
+ * For a ratio (0–1), use `formatRatio`.
+ *
+ * This name used to mean "multiply by 100", which produced `9330.0%` when
+ * fed the backend's already-scaled values.
  */
 export const formatPercentage = (value: number, decimals = 1): string => {
+  return `${value.toFixed(decimals)}%`;
+};
+
+/**
+ * Format a ratio (0–1) as a percentage, e.g. `0.933` → `"93.3%"`.
+ */
+export const formatRatio = (value: number, decimals = 1): string => {
   return `${(value * 100).toFixed(decimals)}%`;
 };
 
 /**
- * Format phone number (e.g., "(555) 123-4567")
+ * Format a 10-digit US phone number as "(555) 123-4567". Other shapes
+ * are returned unchanged — the backend stores `phone` as a free-form
+ * string, so this is a display-only formatter.
  */
 export const formatPhoneNumber = (phone: string): string => {
   const cleaned = phone.replace(/\D/g, '');
@@ -69,7 +87,7 @@ export const formatPhoneNumber = (phone: string): string => {
 };
 
 /**
- * Truncate text with ellipsis
+ * Truncate a string to a maximum length, appending an ellipsis if cut.
  */
 export const truncateText = (
   text: string,
@@ -81,12 +99,27 @@ export const truncateText = (
 };
 
 /**
- * Format file size (e.g., "2.5 MB")
+ * Format a byte count as "2.5 MB", "512 KB", etc.
  */
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
+};
+
+/**
+ * Derive a letter grade from a numeric score (0–100).
+ * Returns `null` for an invalid score.
+ */
+export const formatGradeLetter = (
+  score: number | null | undefined
+): string | null => {
+  if (score == null || Number.isNaN(score)) return null;
+  if (score >= 90) return 'A';
+  if (score >= 80) return 'B';
+  if (score >= 70) return 'C';
+  if (score >= 60) return 'D';
+  return 'F';
 };

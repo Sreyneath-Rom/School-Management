@@ -1,97 +1,84 @@
+// src/services/studentService.ts
 import { apiClient } from '@/lib/apiClient'
-import type { StudentUser, SystemUser } from '@/types/user'
+import type { StudentProfile, StudentProfileView } from '@/types/studentProfile'
+import { toStudentProfileView } from '@/types/studentProfile'
+import type { Gender } from '@/types/user'
 
 export interface StudentFilterParams {
   search?: string
-  grade?: string
-  class?: string
-  status?: string
-  gender?: string
-  academicYear?: string
+  classId?: string
+  className?: string
+  status?: 'active' | 'inactive'
+  gender?: Gender
+  page?: number
+  limit?: number
 }
 
 export interface CreateStudentPayload {
+  email: string
+  password: string
   firstName: string
   lastName: string
-  email?: string
-  password?: string
-  username?: string
-  gender: 'male' | 'female' | 'other'
-  dateOfBirth: string
   phone?: string
-  address?: string
-  nationality?: string
-  studentId: string
-  grade: string
-  class: string
-  academicYear?: string
-  enrollmentDate?: string
+  studentCode: string
+  dateOfBirth?: string
+  gender?: Gender
+  classId?: string
+  className?: string
+}
+
+export interface UpdateStudentPayload {
+  studentCode?: string
+  dateOfBirth?: string
+  gender?: Gender
+  classId?: string
+  className?: string
+  firstName?: string
+  lastName?: string
+  phone?: string
+  email?: string
   status?: 'active' | 'inactive'
-  role?: 'student' | 'mazer'
-  fatherName?: string
-  motherName?: string
-  guardianName?: string
-  parentPhone?: string
-  parentEmail?: string
-  relationship?: 'father' | 'mother' | 'guardian' | 'other'
-  gpa?: number
-  attendanceRate?: number
-}
-
-export interface UpdateStudentPayload extends Partial<CreateStudentPayload> {
-  id?: string
-}
-
-function normalizeStudent(record: any): StudentUser {
-  const user = record.user ?? record
-  const role = (record.role ?? user.role?.name ?? 'student') === 'mazer' ? 'mazer' : 'student'
-  return {
-    id: record.id ?? user.id,
-    username: user.username ?? user.email ?? '', email: user.email ?? '',
-    status: user.status ?? (user.isActive === false ? 'inactive' : 'active'),
-    createdDate: user.createdDate ?? user.createdAt ?? record.createdAt ?? '',
-    firstName: user.firstName ?? '', lastName: user.lastName ?? '', gender: record.gender ?? 'other',
-    dateOfBirth: record.dateOfBirth ?? '', phone: user.phone ?? '', address: user.address ?? '', nationality: user.nationality ?? '',
-    role, studentId: record.studentCode ?? record.studentId ?? record.id ?? '', grade: record.grade ?? '',
-    class: record.class?.name ?? record.className ?? record.class ?? '', academicYear: record.academicYear ?? '',
-    enrollmentDate: record.enrolledAt ?? record.enrollmentDate ?? record.createdAt ?? '',
-  } as StudentUser
 }
 
 export const studentService = {
-  list: async (params?: StudentFilterParams): Promise<StudentUser[]> => {
+  list: (params?: StudentFilterParams) => {
     const query = new URLSearchParams()
-    if (params?.search) query.append('search', params.search)
-    if (params?.grade && params.grade !== 'all') query.append('grade', params.grade)
-    if (params?.class && params.class !== 'all') query.append('class', params.class)
-    if (params?.status && params.status !== 'all') query.append('status', params.status)
-    if (params?.gender && params.gender !== 'all') query.append('gender', params.gender)
-    if (params?.academicYear && params.academicYear !== 'all') query.append('academicYear', params.academicYear)
-
+    if (params?.search) query.set('search', params.search)
+    if (params?.classId) query.set('classId', params.classId)
+    if (params?.className) query.set('className', params.className)
+    if (params?.status) query.set('status', params.status)
+    if (params?.gender) query.set('gender', params.gender)
+    if (params?.page) query.set('page', String(params.page))
+    if (params?.limit) query.set('limit', String(params.limit))
     const qs = query.toString() ? `?${query.toString()}` : ''
-    try {
-      const res = await apiClient.get<any[]>(`/students${qs}`)
-      return res.map(normalizeStudent)
-    } catch (error) {
-      // Only use the legacy fallback when the student endpoint is genuinely absent.
-      // Auth, validation, and conflict errors must reach the page unchanged.
-      if (!(error instanceof Error) || !('status' in error) || (error as { status?: number }).status !== 404) {
-        throw error
-      }
-      const usersResponse = await apiClient.get<{ items: SystemUser[] }>(`/users${qs}`)
-      const users = usersResponse.items
-      return users.filter((u) => u.role === 'student' || u.role === 'mazer').map(normalizeStudent)
-    }
+    return apiClient.get<StudentProfileView[]>(`/students${qs}`)
   },
 
-  getById: async (id: string) => normalizeStudent(await apiClient.get<any>(`/students/${id}`)),
+  getById: async (id: string): Promise<StudentProfileView> => {
+    const profile = await apiClient.get<StudentProfile>(`/students/${id}/profile`)
+    return toStudentProfileView(profile)
+  },
 
-  create: async (payload: CreateStudentPayload) => normalizeStudent(await apiClient.post<any>('/students/enroll', payload)),
+  /**
+   * Enroll — creates the User and Student profile in one call. The backend
+   * endpoint is POST /students/enroll.
+   */
+  create: async (payload: CreateStudentPayload): Promise<StudentProfileView> => {
+    const profile = await apiClient.post<StudentProfile>('/students/enroll', payload)
+    return toStudentProfileView(profile)
+  },
 
-  update: async (id: string, payload: UpdateStudentPayload) => normalizeStudent(await apiClient.patch<any>(`/students/${id}`, payload)),
+  update: async (
+    id: string,
+    payload: UpdateStudentPayload
+  ): Promise<StudentProfileView> => {
+    const profile = await apiClient.patch<StudentProfile>(`/students/${id}`, payload)
+    return toStudentProfileView(profile)
+  },
 
   delete: (id: string) => apiClient.delete<void>(`/students/${id}`),
 
+  /** Bulk enable/disable via the shared users endpoint. */
   bulkStatus: (ids: string[], status: 'active' | 'inactive') =>
     apiClient.post<{ updated: number }>('/users/bulk-status', { ids, status }),
 }

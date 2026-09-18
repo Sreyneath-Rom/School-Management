@@ -1,103 +1,85 @@
+// src/services/teacherService.ts
 import { apiClient } from '@/lib/apiClient'
+import type {
+  CreateTeacherPayload,
+  ListTeachersQuery,
+  TeacherProfile,
+  TeacherProfileView,
+  UpdateTeacherPayload,
+} from '@/types/teacherProfile'
+import { toTeacherProfileView } from '@/types/teacherProfile'
 
-export interface TeacherRecord {
-  id: string
-  employeeId: string
-  firstName: string
-  lastName: string
-  name?: string
+export type TeacherRecord = TeacherProfileView
+export type TeacherFilterParams = ListTeachersQuery
+
+export type { CreateTeacherPayload, UpdateTeacherPayload }
+
+/**
+ * Form payload for the create dialog. Extends the backend's accepted
+ * fields with display-only metadata (`title`, `specialization`) that
+ * lives on the frontend. The service strips them before sending the
+ * request — see `stripUiOnlyFields` below.
+ *
+ * NOTE: `CreateTeacherPayload` is a discriminated union (link-existing vs
+ * create-new), so this is a `type` intersection rather than an `interface
+ * extends` — TypeScript doesn't allow interfaces to extend unions.
+ */
+export type CreateTeacherFormPayload = CreateTeacherPayload & {
   title?: string
-  avatarUrl?: string
-  email: string
-  phone: string
-  department: string
-  position?: string
-  qualifications: string
-  specialization: string
-  weeklyTeachingHours: number
-  assignedClasses: string[]
-  subjectsTaught: string[]
-  performanceRating: number
-  joiningDate: string
-  status: 'Active' | 'On Leave' | 'Inactive'
-  createdAt?: string
-  updatedAt?: string
+  specialization?: string
 }
 
-export interface TeacherFilterParams {
-  search?: string
-  department?: string
-  status?: string
-}
-
-export interface CreateTeacherPayload {
-  employeeId: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  department: string
-  position?: string
-  qualifications: string
-  specialization: string
-  weeklyTeachingHours: number
-  assignedClasses: string[]
-  subjectsTaught: string[]
-  status?: 'Active' | 'On Leave' | 'Inactive'
-}
-
-export interface UpdateTeacherPayload extends Partial<CreateTeacherPayload> {
-  id?: string
-}
-
-function normalizeTeacher(record: any): TeacherRecord {
-  const subjects = Array.isArray(record.subjects) ? record.subjects : []
-  const subjectRecords = subjects.map((entry: any) => entry.subject ?? entry).filter(Boolean)
-  const department = record.department ?? subjectRecords[0]?.department ?? 'General'
-
-  return {
-    id: record.id,
-    employeeId: record.employeeId ?? record.teacherCode ?? record.id,
-    firstName: record.firstName ?? record.user?.firstName ?? '',
-    lastName: record.lastName ?? record.user?.lastName ?? '',
-    name: record.name ?? [record.user?.firstName, record.user?.lastName].filter(Boolean).join(' '),
-    title: record.title ?? '',
-    avatarUrl: record.avatarUrl ?? record.user?.avatarUrl ?? undefined,
-    email: record.email ?? record.user?.email ?? '',
-    phone: record.phone ?? '',
-    department,
-    position: record.position ?? '',
-    qualifications: record.qualifications ?? '',
-    specialization: record.specialization ?? subjectRecords.map((subject: any) => subject.name).join(', '),
-    weeklyTeachingHours: record.weeklyTeachingHours ?? 0,
-    assignedClasses: record.assignedClasses ?? record.classesLed?.map((item: any) => item.name) ?? [],
-    subjectsTaught: record.subjectsTaught ?? subjectRecords.map((subject: any) => subject.name),
-    performanceRating: record.performanceRating ?? 0,
-    joiningDate: record.joiningDate ?? record.hiredAt ?? record.createdAt ?? '',
-    status: record.status ?? (record.user?.isActive === false ? 'Inactive' : 'Active'),
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-  }
+/**
+ * Removes fields that only exist on the frontend before sending to the
+ * backend. The backend's Zod schema strips unknown keys, but sending them
+ * at all is noise and would fail if the schema ever switches to
+ * `strictObject`.
+ */
+function stripUiOnlyFields(
+  payload: CreateTeacherFormPayload | (Partial<CreateTeacherFormPayload> & { status?: string })
+): Record<string, unknown> {
+  const { title: _title, specialization: _spec, ...rest } = payload as Record<string, unknown>
+  return rest
 }
 
 export const teacherService = {
   list: async (params?: TeacherFilterParams): Promise<TeacherRecord[]> => {
     const query = new URLSearchParams()
-    if (params?.search) query.append('search', params.search)
-    if (params?.department && params.department !== 'all') query.append('department', params.department)
-    if (params?.status && params.status !== 'all') query.append('status', params.status)
-
+    if (params?.search) query.set('search', params.search)
+    if (params?.department) query.set('department', params.department)
+    if (params?.status) query.set('status', params.status)
+    if (params?.page) query.set('page', String(params.page))
+    if (params?.limit) query.set('limit', String(params.limit))
+    if (params?.sortBy) query.set('sortBy', params.sortBy)
+    if (params?.sortOrder) query.set('sortOrder', params.sortOrder)
     const qs = query.toString() ? `?${query.toString()}` : ''
-    const records = await apiClient.get<any[]>(`/teachers${qs}`)
-    return records.map(normalizeTeacher)
+    const rows = await apiClient.get<TeacherProfile[]>(`/teachers${qs}`)
+    return rows.map(toTeacherProfileView)
   },
 
-  getById: async (id: string) => normalizeTeacher(await apiClient.get<any>(`/teachers/${id}`)),
+  getById: async (id: string): Promise<TeacherRecord> => {
+    const profile = await apiClient.get<TeacherProfile>(`/teachers/${id}`)
+    return toTeacherProfileView(profile)
+  },
 
-  create: async (payload: CreateTeacherPayload) => normalizeTeacher(await apiClient.post<any>('/teachers', payload)),
+  create: async (payload: CreateTeacherFormPayload): Promise<TeacherRecord> => {
+    const profile = await apiClient.post<TeacherProfile>(
+      '/teachers',
+      stripUiOnlyFields(payload)
+    )
+    return toTeacherProfileView(profile)
+  },
 
-  update: async (id: string, payload: UpdateTeacherPayload) =>
-    normalizeTeacher(await apiClient.patch<any>(`/teachers/${id}`, payload)),
+  update: async (
+    id: string,
+    payload: Partial<CreateTeacherFormPayload> & { status?: string }
+  ): Promise<TeacherRecord> => {
+    const profile = await apiClient.patch<TeacherProfile>(
+      `/teachers/${id}`,
+      stripUiOnlyFields(payload)
+    )
+    return toTeacherProfileView(profile)
+  },
 
   delete: (id: string) => apiClient.delete<void>(`/teachers/${id}`),
 }

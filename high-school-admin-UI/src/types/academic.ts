@@ -1,7 +1,7 @@
 export interface LessonMaterial {
   id: string
   name: string
-  type: 'pdf' | 'doc' | 'slides' | 'video' | 'link'
+  type: string
   url: string
   size?: string
 }
@@ -30,6 +30,7 @@ export interface HomeworkMaterial {
   name: string
   type: string
   url: string
+  size?: string
 }
 
 export interface HomeworkSubmission {
@@ -42,7 +43,7 @@ export interface HomeworkSubmission {
   content: string
   attachments: { name: string; url: string; size?: string }[]
   status: 'Pending' | 'Submitted' | 'Graded' | 'Late'
-  grade?: number // 0 - 100
+  grade?: number
   feedback?: string
 }
 
@@ -69,7 +70,7 @@ export interface QuizQuestion {
   id: string
   question: string
   options: string[]
-  correctAnswer: number // 0-indexed choice index
+  correctAnswer: number
   points: number
   explanation?: string
 }
@@ -99,7 +100,7 @@ export interface QuizSubmission {
   studentName: string
   studentCode: string
   submittedAt: string
-  answers: Record<string, number> // questionId -> selected choice index
+  answers: Record<string, number>
   score: number
   totalPoints: number
   percentage: number
@@ -115,11 +116,11 @@ export interface GradeRecord {
   className: string
   subjectId: string
   subjectName: string
-  assignmentScore: number // 20%
-  quizScore: number // 20%
-  midtermScore: number // 25%
-  finalScore: number // 35%
-  totalWeightedScore: number // 0 - 100
+  assignmentScore: number
+  quizScore: number
+  midtermScore: number
+  finalScore: number
+  totalWeightedScore: number
   letterGrade: 'A' | 'B' | 'C' | 'D' | 'F'
   gpa: number
   remarks?: string

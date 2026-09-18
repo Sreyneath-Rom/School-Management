@@ -1,18 +1,16 @@
-import type{ Status } from '@/types/index';
+// src/components/common/StatusBadge.tsx
+import Badge, { type BadgeTone } from './Badge'
+import type { Status } from '@/types'
 
-const statusColorMap: Record<Status, string> = {
-  Draft: 'bg-text-main/8 text-text-main/70',
-  Upcoming: 'bg-info/15 text-info',
-  Active: 'bg-success/15 text-success',
-  Completed: 'bg-orange-600/15 text-orange-600 dark:text-orange-300',
-  Archived: 'bg-text-main/15 text-text-main/65',
-  Inactive: 'bg-error/15 text-error',
-};
+const STATUS_TONE: Record<Status, BadgeTone> = {
+  Draft: 'neutral',
+  Upcoming: 'info',
+  Active: 'success',
+  Completed: 'success',
+  Archived: 'neutral',
+  Inactive: 'error',
+}
 
 export default function StatusBadge({ status }: { status: Status }) {
-  return (
-    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusColorMap[status]}`}>
-      {status}
-    </span>
-  );
+  return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{status}</Badge>
 }

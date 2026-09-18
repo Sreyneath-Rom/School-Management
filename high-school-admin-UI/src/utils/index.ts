@@ -1,20 +1,26 @@
 /**
- * Formatters
+ * Barrel file for the utils module.
+ *
+ * Keep exports grouped by source file so that removing a helper doesn't
+ * silently break a downstream import — every name here maps 1:1 to a
+ * declaration in one of the sibling files.
  */
+
+// ---- Formatters ----
 export {
   formatDate,
   formatDateTime,
   formatTime,
   formatCurrency,
   formatPercentage,
+  formatRatio,
   formatPhoneNumber,
   truncateText,
   formatFileSize,
+  formatGradeLetter,
 } from './formatters';
 
-/**
- * Validators
- */
+// ---- Validators ----
 export {
   isValidEmail,
   isValidPassword,
@@ -30,9 +36,7 @@ export {
   isFutureDate,
 } from './validators';
 
-/**
- * Helpers
- */
+// ---- Helpers ----
 export {
   capitalize,
   capitalizeWords,
@@ -53,28 +57,38 @@ export {
   throttle,
 } from './helpers';
 
-/**
- * Constants
- */
+// ---- Constants ----
 export {
   USER_ROLES,
   STUDENT_STATUS,
   ATTENDANCE_STATUS,
-  GRADE_LETTERS,
-  DAYS_OF_WEEK,
-  MONTHS,
-  LEAVE_TYPES,
   LEAVE_STATUS,
+  GRADE_PERIOD,
+  NOTIFICATION_CHANNEL,
+  GRADE_LETTERS,
+  GRADE_SCALE,
+  DAYS_OF_WEEK,
+  WEEK_DISPLAY_ORDER,
+  MONTHS,
+  LEAVE_CATEGORIES,
   API_ENDPOINTS,
   LOCAL_STORAGE_KEYS,
   DATE_FORMATS,
   PAGINATION,
-  ERROR_CODES,
+  HTTP_STATUS,
 } from './constants';
 
-/**
- * Error Messages
- */
+export type {
+  UserRole,
+  StudentStatus,
+  AttendanceStatus,
+  LeaveStatus,
+  GradePeriod,
+  NotificationChannel,
+  DayOfWeek,
+} from './constants';
+
+// ---- Error messages ----
 export {
   AUTH_ERRORS,
   VALIDATION_ERRORS,
@@ -89,9 +103,7 @@ export {
   WARNING_MESSAGES,
 } from './errorMessages';
 
-/**
- * Date Utilities
- */
+// ---- Date utilities ----
 export {
   getCurrentDate,
   addDays,
@@ -112,9 +124,7 @@ export {
   formatRelativeTime,
 } from './dateUtils';
 
-/**
- * File Utilities
- */
+// ---- File utilities ----
 export {
   isValidImage,
   isValidDocument,
@@ -128,12 +138,10 @@ export {
   compressImage,
 } from './fileUtils';
 
-/**
- * String Utilities
- */
+// ---- String utilities ----
 export {
   slugify,
-  sanitizeHTML,
+  escapeHtml,
   stripHTMLTags,
   toBase64,
   fromBase64,
@@ -150,14 +158,16 @@ export {
   matchPattern,
 } from './stringUtils';
 
-/**
- * Role & Permissions Utilities
- */
+// ---- Role & permission display ----
 export {
-  ROLE_PERMISSIONS,
-  hasPermission,
-  canAccessSection,
+  ROLE_DISPLAY,
   getRoleLabel,
   getRoleColor,
-  type UserRole,
+  hasPermission,
 } from './rolePermissions';
+
+// ---- Asset URLs ----
+export { resolveAssetUrl } from './resolveAssetUrl';
+
+// ---- Greeting ----
+export { getUserGreeting, getGreetingForUser } from './userGreeting';

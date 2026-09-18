@@ -1,116 +1,43 @@
+// src/utils/rolePermissions.ts
+
 /**
- * Role-based route configuration
- * Maps user roles to their allowed features and permissions
+ * Display metadata for each role — label and color for badges, dropdowns,
+ * and filters.
+ *
+ * Authorization is enforced by the backend and exposed to the client via
+ * `permissionKeys` on `/auth/me`. UI gating uses those keys, not a
+ * hardcoded feature map.
+ *
+ * `UserRole` is derived from the keys of `ROLE_PERMISSIONS` — this is the
+ * single source of truth for the four roles. If the backend ever adds a
+ * role, extend the map here and the type follows.
  */
 
 export const ROLE_PERMISSIONS = {
-  admin: {
-    label: 'Administrator',
-    color: 'blue',
-    canAccess: [
-      'dashboard',
-      'setup',
-      'academic',
-      'students',
-      'teachers',
-      'communication',
-      'reports',
-    ],
-    features: [
-      'manage_users',
-      'manage_roles',
-      'manage_subjects',
-      'manage_schedules',
-      'manage_school',
-      'view_all_reports',
-      'manage_announcements',
-      'manage_notifications',
-    ],
-  },
-  teacher: {
-    label: 'Teacher',
-    color: 'green',
-    canAccess: [
-      'dashboard',
-      'academic',
-      'students',
-      'communication',
-    ],
-    features: [
-      'manage_classes',
-      'manage_lessons',
-      'manage_homework',
-      'manage_quizzes',
-      'manage_grades',
-      'mark_attendance',
-      'view_announcements',
-    ],
-  },
-  student: {
-    label: 'Student',
-    color: 'purple',
-    canAccess: [
-      'dashboard',
-      'academic',
-      'communication',
-    ],
-    features: [
-      'view_classes',
-      'view_homework',
-      'view_quizzes',
-      'view_grades',
-      'view_attendance',
-      'request_leave',
-      'view_announcements',
-      'view_notifications',
-    ],
-  },
-  parent: {
-    label: 'Parent',
-    color: 'orange',
-    canAccess: [
-      'dashboard',
-      'academic',
-      'communication',
-    ],
-    features: [
-      'view_classes',
-      'view_grades',
-      'view_attendance',
-      'view_announcements',
-      'view_notifications',
-    ],
-  },
-} as const;
+  admin: { label: 'Admin', color: 'blue' },
+  teacher: { label: 'Teacher', color: 'green' },
+  student: { label: 'Student', color: 'purple' },
+  parent: { label: 'Parent', color: 'orange' },
+} as const
 
-export type UserRole = keyof typeof ROLE_PERMISSIONS;
+export type UserRole = keyof typeof ROLE_PERMISSIONS
+
+export const getRoleLabel = (role: UserRole): string =>
+  ROLE_PERMISSIONS[role]?.label ?? 'Unknown'
+
+export const getRoleColor = (role: UserRole): string =>
+  ROLE_PERMISSIONS[role]?.color ?? 'gray'
 
 /**
- * Check if a user role has access to a specific feature
+ * Legacy helper — kept so existing imports don't break. The real permission
+ * check is done server-side; UI gating should read `permissionKeys` from
+ * the current user (see `useAuth`) instead of a hardcoded feature map.
+ *
+ * Returns `false` for everything to make the deprecation visible: any UI
+ * gated on this will hide itself, which is safer than showing content the
+ * server may then reject.
  */
-export const hasPermission = (role: UserRole, feature: string): boolean => {
-  const rolePermissions = ROLE_PERMISSIONS[role];
-  return (rolePermissions?.features as readonly string[] | undefined)?.includes(feature) ?? false;
-};
-
-/**
- * Check if a user role can access a specific section
- */
-export const canAccessSection = (role: UserRole, section: string): boolean => {
-  const rolePermissions = ROLE_PERMISSIONS[role];
-  return (rolePermissions?.canAccess as readonly string[] | undefined)?.includes(section) ?? false;
-};
-
-/**
- * Get display label for a role
- */
-export const getRoleLabel = (role: UserRole): string => {
-  return ROLE_PERMISSIONS[role]?.label ?? 'Unknown';
-};
-
-/**
- * Get color for a role
- */
-export const getRoleColor = (role: UserRole): string => {
-  return ROLE_PERMISSIONS[role]?.color ?? 'gray';
-};
+export const hasPermission = (
+  _role: UserRole,
+  _feature: string
+): boolean => false

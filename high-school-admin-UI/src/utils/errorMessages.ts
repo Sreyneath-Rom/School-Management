@@ -1,5 +1,9 @@
 /**
- * Authentication errors
+ * Authentication errors.
+ *
+ * These mirror what the backend returns so the UI can show a message even
+ * when the response body is empty (e.g. a network error before the request
+ * reaches the server).
  */
 export const AUTH_ERRORS = {
   INVALID_CREDENTIALS: 'Invalid email or password',
@@ -8,15 +12,22 @@ export const AUTH_ERRORS = {
   TOKEN_EXPIRED: 'Session expired. Please login again',
   UNAUTHORIZED: 'Unauthorized access',
   INVALID_TOKEN: 'Invalid token',
+  SESSION_EXPIRED: 'Your session has expired. Please log in again.',
+  REFRESH_FAILED: 'Could not refresh session. Please log in again.',
 } as const;
 
 /**
- * Validation errors
+ * Validation errors.
+ *
+ * The password message matches the backend's actual rule — 8 to 128
+ * characters, no composition requirements. Do not add "must contain an
+ * uppercase letter" here without also adding it server-side; the mismatch
+ * rejects valid passwords.
  */
 export const VALIDATION_ERRORS = {
   REQUIRED_FIELD: 'This field is required',
   INVALID_EMAIL: 'Please enter a valid email address',
-  INVALID_PASSWORD: 'Password must contain at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 special character',
+  INVALID_PASSWORD: 'Password must be at least 8 characters',
   PASSWORD_MISMATCH: 'Passwords do not match',
   INVALID_PHONE: 'Please enter a valid phone number',
   INVALID_URL: 'Please enter a valid URL',
@@ -24,18 +35,12 @@ export const VALIDATION_ERRORS = {
   MAX_LENGTH: (max: number) => `Must not exceed ${max} characters`,
 } as const;
 
-/**
- * Form errors
- */
 export const FORM_ERRORS = {
   SUBMISSION_FAILED: 'Failed to submit form. Please try again',
   REQUIRED_FIELDS: 'Please fill out all required fields',
   INVALID_DATA: 'Invalid data provided',
 } as const;
 
-/**
- * Student errors
- */
 export const STUDENT_ERRORS = {
   STUDENT_NOT_FOUND: 'Student not found',
   INVALID_STUDENT_ID: 'Invalid student ID',
@@ -43,36 +48,24 @@ export const STUDENT_ERRORS = {
   CANNOT_DELETE_STUDENT: 'Cannot delete student with active enrollments',
 } as const;
 
-/**
- * Teacher errors
- */
 export const TEACHER_ERRORS = {
   TEACHER_NOT_FOUND: 'Teacher not found',
   INVALID_TEACHER_ID: 'Invalid teacher ID',
   ASSIGNMENT_FAILED: 'Failed to assign class to teacher',
 } as const;
 
-/**
- * Attendance errors
- */
 export const ATTENDANCE_ERRORS = {
   ATTENDANCE_NOT_FOUND: 'Attendance record not found',
   INVALID_ATTENDANCE_DATE: 'Invalid attendance date',
   MARK_FAILED: 'Failed to mark attendance',
 } as const;
 
-/**
- * Grade errors
- */
 export const GRADE_ERRORS = {
   GRADE_NOT_FOUND: 'Grade not found',
   INVALID_GRADE_VALUE: 'Invalid grade value',
   SUBMISSION_FAILED: 'Failed to submit grades',
 } as const;
 
-/**
- * Leave errors
- */
 export const LEAVE_ERRORS = {
   LEAVE_NOT_FOUND: 'Leave request not found',
   INVALID_DATES: 'Invalid leave dates',
@@ -80,9 +73,6 @@ export const LEAVE_ERRORS = {
   SUBMISSION_FAILED: 'Failed to submit leave request',
 } as const;
 
-/**
- * Server errors
- */
 export const SERVER_ERRORS = {
   INTERNAL_ERROR: 'An internal server error occurred',
   DATABASE_ERROR: 'Database error. Please try again later',
@@ -90,9 +80,6 @@ export const SERVER_ERRORS = {
   TIMEOUT: 'Request timeout. Please try again',
 } as const;
 
-/**
- * Success messages
- */
 export const SUCCESS_MESSAGES = {
   SAVED_SUCCESSFULLY: 'Saved successfully',
   DELETED_SUCCESSFULLY: 'Deleted successfully',
@@ -103,9 +90,6 @@ export const SUCCESS_MESSAGES = {
   LOGOUT_SUCCESSFUL: 'Logout successful',
 } as const;
 
-/**
- * Warning messages
- */
 export const WARNING_MESSAGES = {
   CONFIRM_DELETE: 'Are you sure you want to delete this item?',
   UNSAVED_CHANGES: 'You have unsaved changes',

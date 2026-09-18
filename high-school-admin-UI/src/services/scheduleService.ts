@@ -1,54 +1,34 @@
 // src/services/scheduleService.ts
 import { apiClient } from '@/lib/apiClient'
+import type {
+  CreateSchedulePayload,
+  ListSchedulesQuery,
+  Schedule,
+  UpdateSchedulePayload,
+} from '@/types/schedule'
 
-export interface ScheduleSlot {
-  id: string
-  classId: string
-  className: string
-  subjectId: string
-  subjectName: string
-  teacherId: string
-  teacherName: string
-  dayOfWeek: number // 0 = Mon, 1 = Tue, 2 = Wed, 3 = Thu, 4 = Fri, 5 = Sat
-  startTime: string // "08:00"
-  endTime: string // "09:30"
-  room: string
-  colorTheme?: 'sky' | 'emerald' | 'amber' | 'violet' | 'rose' | 'indigo'
-  conflict?: boolean
-  conflictReason?: string
-}
-
-export interface CreateSchedulePayload {
-  classId: string
-  className?: string
-  subjectId: string
-  subjectName?: string
-  teacherId: string
-  teacherName?: string
-  dayOfWeek: number
-  startTime: string
-  endTime: string
-  room?: string
-  colorTheme?: 'sky' | 'emerald' | 'amber' | 'violet' | 'rose' | 'indigo'
-}
-
-export interface UpdateSchedulePayload extends Partial<CreateSchedulePayload> {
-  id?: string
-}
+export type ScheduleSlot = Schedule
+export type { CreateSchedulePayload, UpdateSchedulePayload }
 
 export const scheduleService = {
-  list: (params?: { classId?: string; teacherId?: string; dayOfWeek?: number }) => {
+  list: (params?: ListSchedulesQuery) => {
     const query = new URLSearchParams()
-    if (params?.classId) query.append('classId', params.classId)
-    if (params?.teacherId) query.append('teacherId', params.teacherId)
-    if (params?.dayOfWeek !== undefined) query.append('dayOfWeek', String(params.dayOfWeek))
+    if (params?.classId) query.set('classId', params.classId)
+    if (params?.teacherId) query.set('teacherId', params.teacherId)
+    if (params?.subjectId) query.set('subjectId', params.subjectId)
+    if (params?.room) query.set('room', params.room)
+    if (params?.dayOfWeek !== undefined)
+      query.set('dayOfWeek', String(params.dayOfWeek))
+    if (params?.page) query.set('page', String(params.page))
+    if (params?.limit) query.set('limit', String(params.limit))
     const qs = query.toString() ? `?${query.toString()}` : ''
     return apiClient.get<ScheduleSlot[]>(`/schedules${qs}`)
   },
 
   getById: (id: string) => apiClient.get<ScheduleSlot>(`/schedules/${id}`),
 
-  create: (payload: CreateSchedulePayload) => apiClient.post<ScheduleSlot>('/schedules', payload),
+  create: (payload: CreateSchedulePayload) =>
+    apiClient.post<ScheduleSlot>('/schedules', payload),
 
   update: (id: string, payload: UpdateSchedulePayload) =>
     apiClient.patch<ScheduleSlot>(`/schedules/${id}`, payload),
