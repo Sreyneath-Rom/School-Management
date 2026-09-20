@@ -1,52 +1,121 @@
-import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { 
-  ArrowLeft, 
-  Calendar as CalendarIcon, 
-  Clock, 
-  MapPin, 
-  Users, 
-  Tag, 
-  Save, 
-  Bell, 
+// src/pages/Calendar/EventForm.tsx
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import {
+  ArrowLeft,
+  Save,
+  Bell,
   RotateCw,
-  Sparkles
-} from "lucide-react";
-import { useToast } from "@/components/common/ToastProvider";
+  Loader2,
+} from 'lucide-react'
+import { useToast } from '@/components/common/ToastProvider'
+import {
+  eventService,
+  type EventCategory,
+  type EventAudience,
+  type EventPayload,
+} from '@/services/eventService'
+
+type FormState = EventPayload
+
+const EMPTY_FORM: FormState = {
+  title: '',
+  category: 'Meeting',
+  targetAudience: 'All',
+  date: new Date().toISOString().slice(0, 10),
+  isAllDay: false,
+  startTime: '09:00',
+  endTime: '10:00',
+  location: '',
+  organizer: '',
+  description: '',
+}
 
 export default function EventForm() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { showToast } = useToast();
-  const isEditing = Boolean(id);
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+  const isEditing = Boolean(id)
 
-  // Form states
-  const [title, setTitle] = useState(isEditing ? "Parent-Teacher Advisory Conference (PTA)" : "");
-  const [category, setCategory] = useState<"Academic" | "Exam" | "Holiday" | "Extracurricular" | "Meeting">("Meeting");
-  const [targetAudience, setTargetAudience] = useState<"All" | "Students" | "Teachers" | "Parents" | "Staff">("Parents");
-  const [date, setDate] = useState("2026-03-06");
-  const [isAllDay, setIsAllDay] = useState(false);
-  const [startTime, setStartTime] = useState("14:00");
-  const [endTime, setEndTime] = useState("18:00");
-  const [location, setLocation] = useState("Main Auditorium & Classrooms");
-  const [organizer, setOrganizer] = useState("Principal's Office");
-  const [description, setDescription] = useState(
-    "Term 2 midterm feedback session between parents, subject leads, and counselors. Light refreshments provided."
-  );
-  const [notifyAttendees, setNotifyAttendees] = useState(true);
-  const [isRecurring, setIsRecurring] = useState(false);
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM })
+  const [loading, setLoading] = useState(isEditing)
+  const [saving, setSaving] = useState(false)
+  const [notifyAttendees, setNotifyAttendees] = useState(true)
+  const [isRecurring, setIsRecurring] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) {
-      showToast("Event title is required", "error");
-      return;
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const evt = await eventService.getById(id)
+        if (cancelled) return
+        setForm({
+          title: evt.title,
+          category: evt.category,
+          targetAudience: evt.targetAudience,
+          date: evt.date.slice(0, 10),
+          isAllDay: evt.isAllDay,
+          startTime: evt.startTime,
+          endTime: evt.endTime,
+          location: evt.location,
+          organizer: evt.organizer,
+          description: evt.description,
+        })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unable to load event.'
+        showToast(msg, 'error')
+        navigate('/calendar')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
     }
-    showToast(isEditing ? "Event details updated successfully" : "New calendar event scheduled", "success");
-    setTimeout(() => {
-      navigate("/calendar");
-    }, 400);
-  };
+  }, [id, navigate, showToast])
+
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.title.trim()) {
+      showToast('Title is required', 'error')
+      return
+    }
+    if (!form.date) {
+      showToast('Date is required', 'error')
+      return
+    }
+
+    setSaving(true)
+    try {
+      if (isEditing && id) {
+        await eventService.update(id, form)
+        showToast('Event updated', 'success')
+      } else {
+        await eventService.create(form)
+        showToast('Event created', 'success')
+      }
+      navigate('/calendar')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unable to save event.'
+      showToast(msg, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto py-16 text-center text-secondary text-sm flex items-center justify-center gap-2">
+        <Loader2 size={16} className="animate-spin" />
+        Loading event...
+      </div>
+    )
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto pb-12">
@@ -54,16 +123,18 @@ export default function EventForm() {
         <div className="flex items-center gap-3">
           <Link
             to="/calendar"
-            className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-stone-300 transition"
+            className="p-2 rounded-xl bg-surface hover:bg-surface-strong text-secondary transition"
           >
             <ArrowLeft size={18} />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-stone-900 dark:text-white">
-              {isEditing ? "Edit School Event" : "Create New School Event"}
+            <h1 className="text-xl font-bold text-color">
+              {isEditing ? 'Edit Event' : 'Create Event'}
             </h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              Schedule school activities, holidays, tests, or assemblies on the calendar.
+            <p className="text-xs text-secondary">
+              {isEditing
+                ? 'Update this event and save your changes.'
+                : 'Schedule an activity on the school calendar.'}
             </p>
           </div>
         </div>
@@ -71,109 +142,116 @@ export default function EventForm() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => navigate("/calendar")}
-            className="px-4 py-2 rounded-xl border border-stone-200 dark:border-white/10 text-stone-600 dark:text-stone-300 text-xs font-semibold hover:bg-stone-100 dark:hover:bg-white/5"
+            onClick={() => navigate('/calendar')}
+            className="px-4 py-2 rounded-xl border border-surface text-secondary text-xs font-semibold hover:bg-surface"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer"
+            disabled={saving}
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition disabled:opacity-50"
           >
-            <Save size={15} />
-            <span>{isEditing ? "Update Event" : "Publish Event"}</span>
+            {saving ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Save size={15} />
+            )}
+            <span>{isEditing ? 'Update' : 'Publish'}</span>
           </button>
         </div>
       </div>
 
-      <div className="p-6 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 space-y-4 bg-white/40 dark:bg-stone-900/40 text-xs">
+      <div className="p-6 rounded-2xl glass-sm border border-surface space-y-4 bg-surface/40 text-xs">
         <div>
-          <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-            Event Title *
+          <label className="block font-semibold text-secondary mb-1">
+            Event title *
           </label>
           <input
             type="text"
             required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Annual Interscholastic Track & Field Championship"
-            className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+            value={form.title}
+            onChange={(e) => set('title', e.target.value)}
+            placeholder="e.g. Annual Sports Day"
+            className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+            <label className="block font-semibold text-secondary mb-1">
               Category
             </label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as any)}
-              className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+              value={form.category}
+              onChange={(e) => set('category', e.target.value as EventCategory)}
+              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
             >
-              <option value="Academic" className="dark:bg-stone-900">Academic Milestone</option>
-              <option value="Exam" className="dark:bg-stone-900">Exam / Assessment</option>
-              <option value="Holiday" className="dark:bg-stone-900">Holiday / Break</option>
-              <option value="Extracurricular" className="dark:bg-stone-900">Extracurricular / Sports</option>
-              <option value="Meeting" className="dark:bg-stone-900">Meeting / Conference</option>
+              <option value="Academic">Academic Milestone</option>
+              <option value="Exam">Exam / Assessment</option>
+              <option value="Holiday">Holiday / Break</option>
+              <option value="Extracurricular">Extracurricular / Sports</option>
+              <option value="Meeting">Meeting / Conference</option>
             </select>
           </div>
 
           <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Target Audience
+            <label className="block font-semibold text-secondary mb-1">
+              Target audience
             </label>
             <select
-              value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value as any)}
-              className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+              value={form.targetAudience}
+              onChange={(e) =>
+                set('targetAudience', e.target.value as EventAudience)
+              }
+              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
             >
-              <option value="All" className="dark:bg-stone-900">All School Community</option>
-              <option value="Students" className="dark:bg-stone-900">Students Only</option>
-              <option value="Teachers" className="dark:bg-stone-900">Faculty / Teachers Only</option>
-              <option value="Parents" className="dark:bg-stone-900">Parents & Guardians</option>
-              <option value="Staff" className="dark:bg-stone-900">Administrative Staff</option>
+              <option value="All">All School Community</option>
+              <option value="Students">Students Only</option>
+              <option value="Teachers">Faculty / Teachers Only</option>
+              <option value="Parents">Parents &amp; Guardians</option>
+              <option value="Staff">Administrative Staff</option>
             </select>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-stone-200/50 dark:border-white/5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-surface">
           <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Date
+            <label className="block font-semibold text-secondary mb-1">
+              Date *
             </label>
             <input
               type="date"
               required
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+              value={form.date}
+              onChange={(e) => set('date', e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Start Time
+            <label className="block font-semibold text-secondary mb-1">
+              Start time
             </label>
             <input
               type="time"
-              disabled={isAllDay}
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none disabled:opacity-50"
+              disabled={form.isAllDay}
+              value={form.startTime}
+              onChange={(e) => set('startTime', e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none disabled:opacity-50"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              End Time
+            <label className="block font-semibold text-secondary mb-1">
+              End time
             </label>
             <input
               type="time"
-              disabled={isAllDay}
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none disabled:opacity-50"
+              disabled={form.isAllDay}
+              value={form.endTime}
+              onChange={(e) => set('endTime', e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none disabled:opacity-50"
             />
           </div>
         </div>
@@ -182,86 +260,99 @@ export default function EventForm() {
           <input
             type="checkbox"
             id="allDayCheck"
-            checked={isAllDay}
-            onChange={(e) => setIsAllDay(e.target.checked)}
-            className="rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+            checked={form.isAllDay}
+            onChange={(e) => set('isAllDay', e.target.checked)}
+            className="rounded border-surface text-brand-600 focus:ring-brand-500"
           />
-          <label htmlFor="allDayCheck" className="text-stone-700 dark:text-stone-300 font-medium">
-            All Day Event (No specific timing)
+          <label
+            htmlFor="allDayCheck"
+            className="text-color font-medium"
+          >
+            All-day event (no specific time)
           </label>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-stone-200/50 dark:border-white/5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-surface">
           <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Location / Room
+            <label className="block font-semibold text-secondary mb-1">
+              Location
             </label>
             <input
               type="text"
-              required
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Science Wing Hall 1 or Online Zoom"
-              className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+              value={form.location}
+              onChange={(e) => set('location', e.target.value)}
+              placeholder="e.g. Main Auditorium"
+              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+            <label className="block font-semibold text-secondary mb-1">
               Organizer / Host
             </label>
             <input
               type="text"
-              required
-              value={organizer}
-              onChange={(e) => setOrganizer(e.target.value)}
+              value={form.organizer}
+              onChange={(e) => set('organizer', e.target.value)}
               placeholder="e.g. Athletics Department"
-              className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
             />
           </div>
         </div>
 
         <div>
-          <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-            Event Description & Details
+          <label className="block font-semibold text-secondary mb-1">
+            Description
           </label>
           <textarea
             rows={4}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Detailed description, expectations, materials needed, dress code..."
-            className="w-full px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+            value={form.description}
+            onChange={(e) => set('description', e.target.value)}
+            placeholder="What attendees should expect, materials needed, dress code..."
+            className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
           />
         </div>
 
-        <div className="space-y-2 pt-2 border-t border-stone-200/50 dark:border-white/5">
-          <label className="flex items-center gap-2.5 cursor-pointer">
+        {/*
+          Notifications and recurrence are not stored on the backend yet.
+          Shown disabled with a note rather than faked as working toggles.
+        */}
+        <div className="space-y-2 pt-2 border-t border-surface opacity-60">
+          <label className="flex items-center gap-2.5 cursor-not-allowed">
             <input
               type="checkbox"
               checked={notifyAttendees}
+              disabled
               onChange={(e) => setNotifyAttendees(e.target.checked)}
-              className="rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+              className="rounded border-surface"
             />
-            <span className="text-stone-700 dark:text-stone-300 font-medium flex items-center gap-1.5">
+            <span className="text-color font-medium flex items-center gap-1.5">
               <Bell size={13} className="text-brand-500" />
-              Send automated broadcast notification to targeted audience
+              Notify targeted audience
+              <span className="text-secondary text-[10px] font-normal">
+                (not yet supported)
+              </span>
             </span>
           </label>
 
-          <label className="flex items-center gap-2.5 cursor-pointer">
+          <label className="flex items-center gap-2.5 cursor-not-allowed">
             <input
               type="checkbox"
               checked={isRecurring}
+              disabled
               onChange={(e) => setIsRecurring(e.target.checked)}
-              className="rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+              className="rounded border-surface"
             />
-            <span className="text-stone-700 dark:text-stone-300 font-medium flex items-center gap-1.5">
+            <span className="text-color font-medium flex items-center gap-1.5">
               <RotateCw size={13} className="text-brand-500" />
-              Repeat this event on a weekly cadence throughout the academic term
+              Weekly recurrence
+              <span className="text-secondary text-[10px] font-normal">
+                (not yet supported)
+              </span>
             </span>
           </label>
         </div>
       </div>
     </form>
-  );
+  )
 }

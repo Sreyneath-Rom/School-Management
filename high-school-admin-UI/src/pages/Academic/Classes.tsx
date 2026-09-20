@@ -1,5 +1,5 @@
 // src/pages/Academic/Classes.tsx
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   School,
@@ -10,341 +10,211 @@ import {
   DoorOpen,
   BookOpen,
   CalendarDays,
-  ShieldCheck,
   Eye,
   Edit,
   Trash2,
   X,
   AlertTriangle,
-  Clock,
   GraduationCap,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
-import { Link } from 'react-router-dom'
-import { classService, type ClassRecord } from '@/services/classService'
+import {
+  classService,
+  type ClassRecord,
+  type CreateClassPayload,
+  type UpdateClassPayload,
+} from '@/services/classService'
 
-export interface ClassItem {
+/**
+ * Row shape the page renders. Built from `ClassRecord` — anything the
+ * backend doesn't return is derived or shown as a dash, never fabricated.
+ */
+interface ClassRow {
   id: string
   name: string
-  gradeLevel: string
-  section: string
+  gradeLevel: string   // "Grade 10" for display
+  section: string      // "A"
   room: string
   classTeacher: string
   studentCount: number
   maxCapacity: number
   subjectsCount: number
-  schedulePeriod: string
-  academicYear?: string
-  status?: 'Active' | 'Archived'
 }
 
-const INITIAL_CLASSES: ClassItem[] = [
-  {
-    id: 'cls-7a',
-    name: 'Grade 7-A (អនុវិទ្យាល័យ)',
-    gradeLevel: 'Grade 7',
-    section: 'A',
-    room: 'Room 101',
-    classTeacher: 'Sokha Chea',
-    studentCount: 35,
-    maxCapacity: 40,
-    subjectsCount: 7,
-    schedulePeriod: '07:30 - 16:30',
-    status: 'Active',
-  },
-  {
-    id: 'cls-8a',
-    name: 'Grade 8-A (អនុវិទ្យាល័យ)',
-    gradeLevel: 'Grade 8',
-    section: 'A',
-    room: 'Room 102',
-    classTeacher: 'Rithy Chan',
-    studentCount: 34,
-    maxCapacity: 40,
-    subjectsCount: 7,
-    schedulePeriod: '07:30 - 16:30',
-    status: 'Active',
-  },
-  {
-    id: 'cls-9a',
-    name: 'Grade 9-A (ត្រៀមប្រឡងឌីប្លូម Dip. 9)',
-    gradeLevel: 'Grade 9',
-    section: 'A',
-    room: 'Room 103',
-    classTeacher: 'Vannak Yin',
-    studentCount: 35,
-    maxCapacity: 40,
-    subjectsCount: 7,
-    schedulePeriod: '07:30 - 16:30',
-    status: 'Active',
-  },
-  {
-    id: 'cls-10a',
-    name: 'Grade 10-A (មូលដ្ឋានវិទ្យាល័យ)',
-    gradeLevel: 'Grade 10',
-    section: 'A',
-    room: 'Room 201',
-    classTeacher: 'Dr. John Whitfield',
-    studentCount: 32,
-    maxCapacity: 35,
-    subjectsCount: 9,
-    schedulePeriod: '07:30 - 16:30',
-    status: 'Active',
-  },
-  {
-    id: 'cls-11a',
-    name: 'Grade 11-A (ថ្នាក់វិទ្យាសាស្ត្រ Science Track)',
-    gradeLevel: 'Grade 11',
-    section: 'A',
-    room: 'Lab 201',
-    classTeacher: 'Dr. Vicheth Keo',
-    studentCount: 30,
-    maxCapacity: 35,
-    subjectsCount: 8,
-    schedulePeriod: '07:30 - 16:30',
-    status: 'Active',
-  },
-  {
-    id: 'cls-11b',
-    name: 'Grade 11-B (ថ្នាក់វិទ្យាសាស្ត្រសង្គម Social Science)',
-    gradeLevel: 'Grade 11',
-    section: 'B',
-    room: 'Room 203',
-    classTeacher: 'Vicheka Nhem',
-    studentCount: 29,
-    maxCapacity: 35,
-    subjectsCount: 7,
-    schedulePeriod: '07:30 - 16:30',
-    status: 'Active',
-  },
-  {
-    id: 'cls-12a',
-    name: 'Grade 12-A (ត្រៀមបាក់ឌុប Bac II - Science)',
-    gradeLevel: 'Grade 12',
-    section: 'A',
-    room: 'Room 301',
-    classTeacher: 'Prof. Marcus Kane',
-    studentCount: 28,
-    maxCapacity: 32,
-    subjectsCount: 8,
-    schedulePeriod: '07:30 - 16:30',
-    status: 'Active',
-  },
-  {
-    id: 'cls-12b',
-    name: 'Grade 12-B (ត្រៀមបាក់ឌុប Bac II - Social Science)',
-    gradeLevel: 'Grade 12',
-    section: 'B',
-    room: 'Room 302',
-    classTeacher: 'Elena Vance',
-    studentCount: 27,
-    maxCapacity: 32,
-    subjectsCount: 7,
-    schedulePeriod: '07:30 - 16:30',
-    status: 'Active',
-  },
-]
+interface ClassFormState {
+  name: string
+  gradeLevel: string   // "Grade 10"
+  section: string
+  room: string
+  classTeacher: string
+  maxCapacity: number
+}
+
+const DEFAULT_FORM: ClassFormState = {
+  name: '',
+  gradeLevel: 'Grade 10',
+  section: 'A',
+  room: '',
+  classTeacher: '',
+  maxCapacity: 35,
+}
+
+function sectionFromName(name: string): string {
+  // "Grade 10-A" → "A"
+  const part = name.split('-').pop()?.trim()
+  return part && part.length <= 3 ? part.toUpperCase() : 'A'
+}
+
+function teacherFullName(
+  teacher: ClassRecord['homeroomTeacher'] | undefined
+): string {
+  const user = teacher?.user
+  if (!user) return ''
+  return `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
+}
+
+function recordToRow(record: ClassRecord): ClassRow {
+  return {
+    id: record.id,
+    name: record.name,
+    gradeLevel: `Grade ${record.gradeLevel}`,
+    section: sectionFromName(record.name),
+    room: (record as ClassRecord & { room?: string }).room ?? '—',
+    classTeacher: teacherFullName(record.homeroomTeacher) || 'Unassigned',
+    studentCount: (record as ClassRecord & { studentCount?: number }).studentCount ?? 0,
+    maxCapacity: (record as ClassRecord & { maxCapacity?: number }).maxCapacity ?? 0,
+    subjectsCount:
+      (record as ClassRecord & { subjectsCount?: number }).subjectsCount ?? 0,
+  }
+}
 
 export default function Classes() {
   const { showToast } = useToast()
-  const [classes, setClasses] = useState<ClassItem[]>(INITIAL_CLASSES)
+
+  const [rows, setRows] = useState<ClassRow[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [gradeFilter, setGradeFilter] = useState('All')
 
-  // Modals state
-  const [detailClass, setDetailClass] = useState<ClassItem | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingClass, setEditingClass] = useState<ClassItem | null>(null)
-  const [deleteCandidate, setDeleteCandidate] = useState<ClassItem | null>(null)
+  const [detailRow, setDetailRow] = useState<ClassRow | null>(null)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleteCandidate, setDeleteCandidate] = useState<ClassRow | null>(null)
+  const [formData, setFormData] = useState<ClassFormState>({ ...DEFAULT_FORM })
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    gradeLevel: 'Grade 10',
-    section: 'A',
-    room: 'Room 101',
-    classTeacher: 'Dr. John Whitfield',
-    maxCapacity: 35,
-    schedulePeriod: '08:00 - 15:30',
-    status: 'Active' as 'Active' | 'Archived',
-  })
-
-  useEffect(() => {
-    let mounted = true
-    classService.list()
-      .then((records) => {
-        if (!mounted) return
-        setClasses(records.map((record: ClassRecord): ClassItem => ({
-          id: record.id,
-          name: record.name,
-          gradeLevel: `Grade ${record.gradeLevel}`,
-          section: record.name.split('-').pop()?.trim() || 'A',
-          room: '—',
-          classTeacher: record.homeroomTeacher?.user
-            ? `${record.homeroomTeacher.user.firstName || ''} ${record.homeroomTeacher.user.lastName || ''}`.trim()
-            : 'Unassigned',
-          studentCount: record.studentCount || 0,
-          maxCapacity: record.maxCapacity || 0,
-          subjectsCount: record.subjectsCount || 0,
-          schedulePeriod: record.schedulePeriod || '—',
-          status: record.status || 'Active',
-        })))
-      })
-      .catch(() => showToast('Could not load classes from the API. Showing local data.', 'error'))
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
-
-    return () => {
-      mounted = false
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const records = await classService.list()
+      setRows(Array.isArray(records) ? records.map(recordToRow) : [])
+    } catch {
+      showToast('Could not load classes', 'error')
+      setRows([])
+    } finally {
+      setLoading(false)
     }
   }, [showToast])
 
-  // Filtered classes (UC-CLASS-01)
-  const filteredClasses = useMemo(() => {
-    return classes.filter((c) => {
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const filtered = useMemo(() => {
+    return rows.filter((c) => {
       const q = searchTerm.toLowerCase()
       const matchesSearch =
+        !q ||
         c.name.toLowerCase().includes(q) ||
         c.classTeacher.toLowerCase().includes(q) ||
         c.room.toLowerCase().includes(q)
       const matchesGrade = gradeFilter === 'All' || c.gradeLevel === gradeFilter
       return matchesSearch && matchesGrade
     })
-  }, [classes, searchTerm, gradeFilter])
+  }, [rows, searchTerm, gradeFilter])
 
-  // Aggregate stats
   const stats = useMemo(() => {
-    const total = classes.length
-    const totalStudents = classes.reduce((sum, c) => sum + c.studentCount, 0)
-    const totalCapacity = classes.reduce((sum, c) => sum + c.maxCapacity, 0)
+    const totalStudents = rows.reduce((sum, c) => sum + c.studentCount, 0)
+    const totalCapacity = rows.reduce((sum, c) => sum + c.maxCapacity, 0)
     const fillRate =
       totalCapacity > 0 ? Math.round((totalStudents / totalCapacity) * 100) : 0
-    return { total, totalStudents, totalCapacity, fillRate }
-  }, [classes])
+    return { total: rows.length, totalStudents, totalCapacity, fillRate }
+  }, [rows])
 
   const kpiCards: StatCard[] = [
-    { id: 'active-classes', label: 'Active Classes', value: stats.total.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'sections', icon: 'School', tint: 'blue' },
+    { id: 'active-classes', label: 'Active Classes', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'sections', icon: 'School', tint: 'blue' },
     { id: 'enrolled-students', label: 'Enrolled Students', value: stats.totalStudents.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'enrolled', icon: 'Users', tint: 'green' },
     { id: 'desk-capacity', label: 'Total Desk Capacity', value: stats.totalCapacity.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'available seats', icon: 'DoorOpen', tint: 'amber' },
     { id: 'fill-rate', label: 'Average Fill Rate', value: `${stats.fillRate}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'capacity used', icon: 'GraduationCap', tint: 'violet' },
   ]
 
-  // Reset form
   const resetForm = () => {
-    setFormData({
-      name: '',
-      gradeLevel: 'Grade 10',
-      section: 'A',
-      room: 'Room 101',
-      classTeacher: 'Dr. John Whitfield',
-      maxCapacity: 35,
-      schedulePeriod: '08:00 - 15:30',
-      status: 'Active',
-    })
-    setEditingClass(null)
+    setFormData({ ...DEFAULT_FORM })
+    setEditingId(null)
   }
 
-  // Open Create Modal (UC-CLASS-03)
   const handleOpenCreate = () => {
     resetForm()
-    setIsModalOpen(true)
+    setIsFormOpen(true)
   }
 
-  // Open Edit Modal (UC-CLASS-04)
-  const handleOpenEdit = (cls: ClassItem) => {
-    setEditingClass(cls)
+  const handleOpenEdit = (row: ClassRow) => {
+    setEditingId(row.id)
     setFormData({
-      name: cls.name,
-      gradeLevel: cls.gradeLevel,
-      section: cls.section,
-      room: cls.room,
-      classTeacher: cls.classTeacher,
-      maxCapacity: cls.maxCapacity,
-      schedulePeriod: cls.schedulePeriod,
-      status: cls.status || 'Active',
+      name: row.name,
+      gradeLevel: row.gradeLevel,
+      section: row.section,
+      room: row.room === '—' ? '' : row.room,
+      classTeacher: row.classTeacher === 'Unassigned' ? '' : row.classTeacher,
+      maxCapacity: row.maxCapacity || 35,
     })
-    setIsModalOpen(true)
+    setIsFormOpen(true)
   }
 
-  // Submit Create or Edit
-  const handleSaveClass = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // 400 Bad Request prevention
-    if (!formData.section.trim()) {
+    const section = formData.section.trim().toUpperCase()
+    if (!section) {
       showToast('Section identifier is required', 'error')
       return
     }
 
-    if (editingClass) {
-      // UC-CLASS-04: Edit
-      const updated: ClassItem = {
-        ...editingClass,
-        name: formData.name.trim() || `${formData.gradeLevel}-${formData.section}`,
-        gradeLevel: formData.gradeLevel,
-        section: formData.section.toUpperCase(),
-        room: formData.room,
-        classTeacher: formData.classTeacher,
-        maxCapacity: Number(formData.maxCapacity) || 35,
-        schedulePeriod: formData.schedulePeriod,
-        status: formData.status,
-      }
-      try {
-        await classService.update(updated.id, {
-          name: updated.name,
-          gradeLevel: Number(updated.gradeLevel.replace(/\D/g, '')) || 10,
-        })
-        setClasses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
-      } catch {
-        showToast('Could not update the class on the server.', 'error')
-        return
-      }
-      if (detailClass?.id === updated.id) setDetailClass(updated)
-      showToast(`Class "${updated.name}" updated successfully`, 'success')
-    } else {
-      // UC-CLASS-03: Create
-      const newCls: ClassItem = {
-        id: `cls-${Date.now()}`,
-        name: formData.name.trim() || `${formData.gradeLevel}-${formData.section}`,
-        gradeLevel: formData.gradeLevel,
-        section: formData.section.toUpperCase(),
-        room: formData.room,
-        classTeacher: formData.classTeacher,
-        studentCount: 0,
-        maxCapacity: Number(formData.maxCapacity) || 35,
-        subjectsCount: 6,
-        schedulePeriod: formData.schedulePeriod,
-        status: 'Active',
-      }
-      try {
-        const created = await classService.create({
-          name: newCls.name,
-          gradeLevel: Number(newCls.gradeLevel.replace(/\D/g, '')) || 10,
-        })
-        setClasses((prev) => [{ ...newCls, id: created.id }, ...prev])
-      } catch {
-        showToast('Could not create the class on the server.', 'error')
-        return
-      }
-      showToast(`Class "${newCls.name}" created successfully`, 'success')
-    }
+    const gradeLevelNumber = Number(formData.gradeLevel.replace(/\D/g, '')) || 10
+    const composedName =
+      formData.name.trim() || `Grade ${gradeLevelNumber}-${section}`
 
-    setIsModalOpen(false)
-    resetForm()
+    try {
+      if (editingId) {
+        const payload: UpdateClassPayload = {
+          name: composedName,
+          gradeLevel: gradeLevelNumber,
+        }
+        await classService.update(editingId, payload)
+        showToast(`Class "${composedName}" updated`, 'success')
+      } else {
+        const payload: CreateClassPayload = {
+          name: composedName,
+          gradeLevel: gradeLevelNumber,
+        }
+        await classService.create(payload)
+        showToast(`Class "${composedName}" created`, 'success')
+      }
+      setIsFormOpen(false)
+      resetForm()
+      await load()
+    } catch {
+      showToast('Could not save the class', 'error')
+    }
   }
 
-  // Delete Handler (UC-CLASS-05) with 409 Conflict check
   const handleDelete = async () => {
     if (!deleteCandidate) return
 
-    // Precondition check: If class has enrolled students, reject deletion (409 Conflict)
     if (deleteCandidate.studentCount > 0) {
       showToast(
-        `Conflict (409): Cannot delete class "${deleteCandidate.name}" because it has ${deleteCandidate.studentCount} active enrolled students. Reassign students first.`,
+        `Cannot delete "${deleteCandidate.name}" — ${deleteCandidate.studentCount} students enrolled. Reassign them first.`,
         'error'
       )
       setDeleteCandidate(null)
@@ -353,371 +223,268 @@ export default function Classes() {
 
     try {
       await classService.delete(deleteCandidate.id)
-      setClasses((prev) => prev.filter((c) => c.id !== deleteCandidate.id))
-    } catch {
-      showToast('Could not delete the class on the server.', 'error')
+      if (detailRow?.id === deleteCandidate.id) setDetailRow(null)
+      showToast(`Class "${deleteCandidate.name}" deleted`, 'success')
       setDeleteCandidate(null)
-      return
+      await load()
+    } catch {
+      showToast('Could not delete the class', 'error')
+      setDeleteCandidate(null)
     }
-    if (detailClass?.id === deleteCandidate.id) setDetailClass(null)
-    showToast(`Class "${deleteCandidate.name}" deleted successfully`, 'success')
-    setDeleteCandidate(null)
   }
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Split CRUD Use Case Badges */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <PageHeading
-            title="Classes & Sections"
-            subtitle="Cohort sections, homeroom faculty assignments, capacity limits, and course distribution"
-          />
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-800/40">
-              <ShieldCheck size={12} /> Standard: Split CRUD Use Cases
-            </span>
-            <span className="text-xs text-stone-500 font-mono">
-              [UC-CLASS-01 to 05] • RBAC: classes.view | create | edit | delete
-            </span>
-          </div>
-        </div>
+        <PageHeading
+          title="Classes & Sections"
+          subtitle="Cohort sections, homeroom assignments, capacity, and course distribution"
+        />
 
         <button
           id="btn-create-class"
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition shrink-0"
         >
           <Plus size={16} />
-          <span>Create New Class</span>
+          <span>Create Class</span>
         </button>
       </div>
 
       <StatsGrid cards={kpiCards} columns={4} />
-      {loading && <div className="text-xs text-text-main/55">Loading classes from the school database...</div>}
-      {/* Legacy KPI markup kept out of the render path during migration.
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-            <School size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.total}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Active Classes</div>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-            <Users size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.totalStudents}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Enrolled Students</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-            <DoorOpen size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.totalCapacity}
-            </div>
-            <div className="text-xs font-medium text-stone-500">Total Desk Capacity</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/80 dark:border-white/10 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
-            <GraduationCap size={20} />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-stone-900 dark:text-white">
-              {stats.fillRate}%
-            </div>
-            <div className="text-xs font-medium text-stone-500">Average Fill Rate</div>
-          </div>
-        </div>
-      </div> */}
-
-      {/* Filter and Search Bar (UC-CLASS-01) */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
+      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-surface">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3.5 top-3 text-stone-400" />
+          <Search size={16} className="absolute left-3.5 top-3 text-secondary" />
           <input
             type="text"
             placeholder="Search class name, homeroom teacher, or room..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500 text-stone-900 dark:text-white"
+            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-surface border border-surface focus:outline-none focus:ring-1 focus:ring-brand-500 text-color"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <select
-            value={gradeFilter}
-            onChange={(e) => setGradeFilter(e.target.value)}
-            className="px-3 py-2 text-xs font-medium rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500 text-stone-800 dark:text-stone-200 cursor-pointer w-full sm:w-44"
-          >
-            <option value="All">All Grade Levels</option>
-            <option value="Grade 7">Grade 7 (អនុវិទ្យាល័យ)</option>
-            <option value="Grade 8">Grade 8 (អនុវិទ្យាល័យ)</option>
-            <option value="Grade 9">Grade 9 (ត្រៀមឌីប្លូម)</option>
-            <option value="Grade 10">Grade 10 (មូលដ្ឋាន)</option>
-            <option value="Grade 11">Grade 11 (បំបែកថ្នាក់)</option>
-            <option value="Grade 12">Grade 12 (ត្រៀមបាក់ឌុប)</option>
-          </select>
-        </div>
+        <select
+          value={gradeFilter}
+          onChange={(e) => setGradeFilter(e.target.value)}
+          className="px-3 py-2 text-xs font-medium rounded-xl bg-surface border border-surface focus:outline-none focus:ring-1 focus:ring-brand-500 text-color cursor-pointer w-full sm:w-44"
+        >
+          <option value="All">All Grade Levels</option>
+          {[7, 8, 9, 10, 11, 12].map((g) => (
+            <option key={g} value={`Grade ${g}`}>
+              Grade {g}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Classes Grid (UC-CLASS-01) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredClasses.map((cls) => {
-          const fillPercentage = Math.round(
-            (cls.studentCount / cls.maxCapacity) * 100
-          )
-          return (
-            <div
-              key={cls.id}
-              className="rounded-2xl p-5 glass-sm border border-stone-200/70 dark:border-white/10 flex flex-col justify-between hover:shadow-md transition group"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
-                      <School size={20} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-base text-stone-900 dark:text-white">
-                        {cls.name}
-                      </h3>
-                      <div className="text-xs text-stone-500 font-medium">
-                        {cls.gradeLevel} • Section {cls.section}
+      {loading ? (
+        <div className="py-16 text-center text-sm text-secondary">
+          Loading classes...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="glass-sm rounded-2xl border border-surface p-12 text-center">
+          <School className="mx-auto mb-3 h-12 w-12 text-secondary" />
+          <h3 className="text-base font-semibold text-color">
+            {rows.length === 0 ? 'No classes yet' : 'No matches'}
+          </h3>
+          <p className="text-sm text-secondary mt-1 max-w-md mx-auto">
+            {rows.length === 0
+              ? 'Click "Create Class" to add the first section.'
+              : 'Try a different search or grade filter.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map((cls) => {
+            const fillPct =
+              cls.maxCapacity > 0
+                ? Math.round((cls.studentCount / cls.maxCapacity) * 100)
+                : 0
+
+            return (
+              <div
+                key={cls.id}
+                className="rounded-2xl p-5 glass-sm border border-surface flex flex-col justify-between hover:shadow-md transition"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2.5 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                        <School size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-color">
+                          {cls.name}
+                        </h3>
+                        <div className="text-xs text-secondary font-medium">
+                          {cls.gradeLevel} • Section {cls.section}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                    {cls.status || 'Active'}
-                  </span>
-                </div>
-
-                <div className="space-y-2 py-3 border-y border-stone-200/50 dark:border-white/10 text-xs">
-                  <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
-                    <span className="flex items-center gap-1.5 text-stone-500">
-                      <User size={13} /> Class Teacher:
-                    </span>
-                    <span className="font-semibold text-stone-900 dark:text-white">
-                      {cls.classTeacher}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
-                    <span className="flex items-center gap-1.5 text-stone-500">
-                      <DoorOpen size={13} /> Assigned Room:
-                    </span>
-                    <span className="font-medium">{cls.room}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
-                    <span className="flex items-center gap-1.5 text-stone-500">
-                      <BookOpen size={13} /> Subjects:
-                    </span>
-                    <span className="font-medium">{cls.subjectsCount} Subjects</span>
-                  </div>
-
-                  {/* Student Capacity Progress Bar */}
-                  <div className="pt-1.5">
-                    <div className="flex items-center justify-between text-[11px] mb-1">
-                      <span className="text-stone-500">Student Capacity</span>
-                      <span className="font-bold text-stone-800 dark:text-stone-200">
-                        {cls.studentCount} / {cls.maxCapacity} ({fillPercentage}%)
+                  <div className="space-y-2 py-3 border-y border-surface text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-secondary">
+                        <User size={13} /> Class Teacher:
+                      </span>
+                      <span className="font-semibold text-color">
+                        {cls.classTeacher}
                       </span>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-stone-200/70 dark:bg-white/10 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          fillPercentage > 90
-                            ? 'bg-amber-500'
-                            : fillPercentage > 75
-                            ? 'bg-brand-500'
-                            : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${Math.min(fillPercentage, 100)}%` }}
-                      />
+
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-secondary">
+                        <DoorOpen size={13} /> Room:
+                      </span>
+                      <span className="font-medium text-color">{cls.room}</span>
                     </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-secondary">
+                        <BookOpen size={13} /> Subjects:
+                      </span>
+                      <span className="font-medium text-color">
+                        {cls.subjectsCount}
+                      </span>
+                    </div>
+
+                    {cls.maxCapacity > 0 && (
+                      <div className="pt-1.5">
+                        <div className="flex items-center justify-between text-[11px] mb-1">
+                          <span className="text-secondary">Capacity</span>
+                          <span className="font-bold text-color">
+                            {cls.studentCount} / {cls.maxCapacity} ({fillPct}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-surface overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              fillPct > 90
+                                ? 'bg-warning'
+                                : fillPct > 75
+                                  ? 'bg-brand-500'
+                                  : 'bg-success'
+                            }`}
+                            style={{ width: `${Math.min(fillPct, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setDetailRow(cls)}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-surface hover:bg-brand-500/10 hover:text-brand-600 text-color transition flex items-center gap-1"
+                    >
+                      <Eye size={13} /> Details
+                    </button>
+                    <Link
+                      to="/academic/schedules"
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-surface hover:bg-brand-500 hover:text-white text-color transition flex items-center gap-1"
+                    >
+                      <CalendarDays size={13} /> Timetable
+                    </Link>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleOpenEdit(cls)}
+                      className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                      title="Edit"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={() => setDeleteCandidate(cls)}
+                      className="p-1.5 rounded-lg text-secondary hover:text-error hover:bg-error/10 transition"
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               </div>
+            )
+          })}
+        </div>
+      )}
 
-              {/* Action Buttons (UC-CLASS-02, 04, 05) */}
-              <div className="pt-3.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setDetailClass(cls)}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 dark:bg-white/10 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/40 dark:hover:text-brand-400 transition flex items-center gap-1"
-                    title="View Class Details (UC-CLASS-02)"
-                  >
-                    <Eye size={13} /> Details
-                  </button>
-                  <Link
-                    to="/academic/schedules"
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 dark:bg-white/10 hover:bg-brand-500 hover:text-white text-stone-700 dark:text-stone-200 transition cursor-pointer flex items-center gap-1"
-                  >
-                    <CalendarDays size={13} /> Timetable
-                  </Link>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleOpenEdit(cls)}
-                    className="p-1.5 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-white/10 transition"
-                    title="Edit Class (UC-CLASS-04)"
-                  >
-                    <Edit size={14} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteCandidate(cls)}
-                    className="p-1.5 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
-                    title="Delete Class (UC-CLASS-05)"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* ========================================================= */}
-      {/* MODAL: VIEW CLASS DETAILS (UC-CLASS-02) */}
-      {/* ========================================================= */}
-      {detailClass && (
+      {/* Detail modal */}
+      {detailRow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            {/* Header */}
+          <div className="w-full max-w-lg rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-5">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
                   <School size={28} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                    {detailClass.name}
-                  </h3>
-                  <p className="text-xs text-stone-500">
-                    {detailClass.gradeLevel} • Section {detailClass.section} • {detailClass.room}
+                  <h3 className="text-lg font-bold text-color">{detailRow.name}</h3>
+                  <p className="text-xs text-secondary">
+                    {detailRow.gradeLevel} • Section {detailRow.section}
                   </p>
                 </div>
               </div>
-
               <button
-                onClick={() => setDetailClass(null)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white"
+                onClick={() => setDetailRow(null)}
+                className="p-1 rounded-lg text-secondary hover:text-color"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Use Case & Permission Badge */}
-            <div className="px-3 py-1.5 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-between text-xs">
-              <span className="font-semibold text-brand-700 dark:text-brand-300">
-                Use Case: UC-CLASS-02 (View Class Details)
-              </span>
-              <span className="font-mono text-[11px] text-brand-600 dark:text-brand-400">
-                Permission: classes.view
-              </span>
-            </div>
-
-            {/* Details Grid */}
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400 flex items-center gap-1">
-                  <User size={12} /> Homeroom Teacher
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary flex items-center gap-1">
+                  <User size={12} /> Homeroom
                 </span>
-                <span className="font-semibold text-stone-800 dark:text-stone-200">
-                  {detailClass.classTeacher}
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400 flex items-center gap-1">
-                  <DoorOpen size={12} /> Assigned Classroom
-                </span>
-                <span className="font-semibold text-stone-800 dark:text-stone-200">
-                  {detailClass.room}
+                <span className="font-semibold text-color">
+                  {detailRow.classTeacher}
                 </span>
               </div>
-
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400 flex items-center gap-1">
-                  <Clock size={12} /> Daily Schedule
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary flex items-center gap-1">
+                  <DoorOpen size={12} /> Room
                 </span>
-                <span className="font-semibold text-stone-800 dark:text-stone-200">
-                  {detailClass.schedulePeriod}
+                <span className="font-semibold text-color">{detailRow.room}</span>
+              </div>
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary flex items-center gap-1">
+                  <BookOpen size={12} /> Subjects
+                </span>
+                <span className="font-semibold text-color">
+                  {detailRow.subjectsCount}
                 </span>
               </div>
-
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400 flex items-center gap-1">
-                  <BookOpen size={12} /> Registered Subjects
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary flex items-center gap-1">
+                  <Users size={12} /> Enrollment
                 </span>
-                <span className="font-semibold text-stone-800 dark:text-stone-200">
-                  {detailClass.subjectsCount} Subject Courses
+                <span className="font-semibold text-color">
+                  {detailRow.studentCount} / {detailRow.maxCapacity || '—'}
                 </span>
               </div>
             </div>
 
-            {/* Capacity Meter */}
-            <div className="p-3.5 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-stone-700 dark:text-stone-300">
-                  Roster Occupancy
-                </span>
-                <span className="font-bold text-stone-900 dark:text-white">
-                  {detailClass.studentCount} / {detailClass.maxCapacity} Students (
-                  {Math.round((detailClass.studentCount / detailClass.maxCapacity) * 100)}%)
-                </span>
-              </div>
-              <div className="h-2.5 w-full rounded-full bg-stone-200/80 dark:bg-white/10 overflow-hidden">
-                <div
-                  className="h-full bg-brand-500 rounded-full"
-                  style={{
-                    width: `${Math.min(
-                      (detailClass.studentCount / detailClass.maxCapacity) * 100,
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
-              <p className="text-[11px] text-stone-400">
-                {detailClass.maxCapacity - detailClass.studentCount > 0
-                  ? `${detailClass.maxCapacity - detailClass.studentCount} open seats available in this section.`
-                  : 'Section is at maximum seat capacity.'}
-              </p>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-200/60 dark:border-white/10">
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-surface">
               <button
                 onClick={() => {
-                  const c = detailClass
-                  setDetailClass(null)
-                  handleOpenEdit(c)
+                  const r = detailRow
+                  setDetailRow(null)
+                  handleOpenEdit(r)
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
               >
-                Edit Class
+                Edit
               </button>
               <button
-                onClick={() => setDetailClass(null)}
+                onClick={() => setDetailRow(null)}
                 className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition"
               >
                 Close
@@ -727,73 +494,72 @@ export default function Classes() {
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* MODAL: CREATE / EDIT CLASS (UC-CLASS-03 & 04) */}
-      {/* ========================================================= */}
-      {isModalOpen && (
+      {/* Create / edit modal */}
+      {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200/60 dark:border-white/10">
-              <div>
-                <h3 className="text-base font-bold text-stone-900 dark:text-white">
-                  {editingClass ? 'Edit Class Division' : 'Create New Class'}
-                </h3>
-                <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
-                  {editingClass
-                    ? 'UC-CLASS-04 (Edit Class) • classes.edit'
-                    : 'UC-CLASS-03 (Create Class) • classes.create'}
-                </span>
-              </div>
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-surface">
+              <h3 className="text-base font-bold text-color">
+                {editingId ? 'Edit Class' : 'Create Class'}
+              </h3>
               <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white"
+                onClick={() => {
+                  setIsFormOpen(false)
+                  resetForm()
+                }}
+                className="p-1 rounded-lg text-secondary hover:text-color"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveClass} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSave} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Class Label (Optional Override)
+                <label className="block font-semibold text-secondary mb-1">
+                  Class Label (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Grade 10-A (Honors STEM)"
+                  placeholder="e.g. Grade 10-A"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  <label className="block font-semibold text-secondary mb-1">
                     Grade Level
                   </label>
                   <select
                     value={formData.gradeLevel}
-                    onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    onChange={(e) =>
+                      setFormData({ ...formData, gradeLevel: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                   >
-                    <option value="Grade 7">Grade 7 (Lower Secondary)</option>
-                    <option value="Grade 8">Grade 8 (Lower Secondary)</option>
-                    <option value="Grade 9">Grade 9 (Dip. 9 Prep)</option>
-                    <option value="Grade 10">Grade 10 (Foundation)</option>
-                    <option value="Grade 11">Grade 11 (Streams)</option>
-                    <option value="Grade 12">Grade 12 (Bac II Prep)</option>
+                    {[7, 8, 9, 10, 11, 12].map((g) => (
+                      <option key={g} value={`Grade ${g}`}>
+                        Grade {g}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Section Code *
+                  <label className="block font-semibold text-secondary mb-1">
+                    Section *
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. A, B, C"
+                    placeholder="A, B, C"
                     value={formData.section}
-                    onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
+                    onChange={(e) =>
+                      setFormData({ ...formData, section: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color font-mono focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -801,66 +567,46 @@ export default function Classes() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Room Number
+                  <label className="block font-semibold text-secondary mb-1">
+                    Room
                   </label>
                   <input
                     type="text"
                     value={formData.room}
-                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    placeholder="Room 101"
+                    onChange={(e) =>
+                      setFormData({ ...formData, room: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Max Student Capacity
+                  <label className="block font-semibold text-secondary mb-1">
+                    Max Capacity
                   </label>
                   <input
                     type="number"
-                    min="1"
-                    max="60"
+                    min={1}
+                    max={60}
                     value={formData.maxCapacity}
                     onChange={(e) =>
-                      setFormData({ ...formData, maxCapacity: Number(e.target.value) })
+                      setFormData({
+                        ...formData,
+                        maxCapacity: Number(e.target.value),
+                      })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    required
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Homeroom / Class Teacher
-                </label>
-                <input
-                  type="text"
-                  value={formData.classTeacher}
-                  onChange={(e) => setFormData({ ...formData, classTeacher: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="e.g. Dr. John Whitfield"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Daily Schedule Window
-                </label>
-                <input
-                  type="text"
-                  value={formData.schedulePeriod}
-                  onChange={(e) => setFormData({ ...formData, schedulePeriod: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
-                  placeholder="08:00 - 15:30"
-                />
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-stone-200/60 dark:border-white/10">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-surface">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
+                  onClick={() => {
+                    setIsFormOpen(false)
+                    resetForm()
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
                 >
                   Cancel
                 </button>
@@ -868,7 +614,7 @@ export default function Classes() {
                   type="submit"
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition shadow-sm"
                 >
-                  {editingClass ? 'Save Changes' : 'Create Class'}
+                  {editingId ? 'Save' : 'Create'}
                 </button>
               </div>
             </form>
@@ -876,51 +622,42 @@ export default function Classes() {
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* MODAL: DELETE CONFIRMATION (UC-CLASS-05) */}
-      {/* ========================================================= */}
+      {/* Delete confirmation */}
       {deleteCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
-              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40">
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-error">
+              <div className="p-3 rounded-xl bg-error/10 border border-error/30">
                 <AlertTriangle size={24} />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-stone-900 dark:text-white">
-                  Delete Class Cohort
-                </h3>
-                <span className="text-xs text-rose-600 font-mono">
-                  UC-CLASS-05 • classes.delete
-                </span>
-              </div>
+              <h3 className="text-base font-bold text-color">Delete Class</h3>
             </div>
 
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-              Are you sure you want to permanently delete class section{' '}
-              <span className="font-bold text-stone-900 dark:text-white">
+            <p className="text-xs text-secondary leading-relaxed">
+              Permanently delete{' '}
+              <span className="font-bold text-color">
                 "{deleteCandidate.name}"
               </span>
               ?
             </p>
 
             {deleteCandidate.studentCount > 0 && (
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300">
-                <span className="font-bold block mb-0.5">Precondition Warning (409 Conflict):</span>
-                This class currently has {deleteCandidate.studentCount} enrolled students. Deleting it without reassigning students will be blocked.
+              <div className="p-3 rounded-xl bg-warning/10 border border-warning/30 text-xs text-warning">
+                This class has {deleteCandidate.studentCount} enrolled students.
+                Deletion will be blocked until they are reassigned.
               </div>
             )}
 
             <div className="pt-2 flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteCandidate(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition shadow-sm"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-error hover:opacity-90 text-white transition"
               >
                 Confirm Delete
               </button>

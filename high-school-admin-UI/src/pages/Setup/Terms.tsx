@@ -1,5 +1,5 @@
 // src/pages/Setup/Terms.tsx
-import { useState, useMemo, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   Clock,
@@ -11,259 +11,240 @@ import {
   AlertTriangle,
   Eye,
   X,
-  ShieldCheck,
+  RefreshCw,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
-import { INITIAL_TERMS, type TermItem } from '@/data/terms'
-import { academicYearService, type AcademicYearRecord } from '@/services/academicYearService'
-import { termService, type TermRecord, type TermPayload } from '@/services/termService'
-import { ApiError } from '@/lib/apiClient'
+import {
+  academicYearService,
+  type AcademicYearRecord,
+} from '@/services/academicYearService'
+import {
+  termService,
+  type TermRecord,
+  type TermPayload,
+} from '@/services/termService'
 
-export type { TermItem }
+interface FormState {
+  name: string
+  startDate: string
+  endDate: string
+  gradingDeadline: string
+  weightPercentage: number
+  status: TermRecord['status']
+  description: string
+}
+
+const EMPTY_FORM: FormState = {
+  name: '',
+  startDate: '',
+  endDate: '',
+  gradingDeadline: '',
+  weightPercentage: 35,
+  status: 'Upcoming',
+  description: '',
+}
 
 export default function Terms() {
   const { showToast } = useToast()
-  const [selectedYear, setSelectedYear] = useState('')
-  const [selectedYearId, setSelectedYearId] = useState('')
   const [academicYears, setAcademicYears] = useState<AcademicYearRecord[]>([])
-  const [terms, setTerms] = useState<TermItem[]>([])
+  const [selectedYearId, setSelectedYearId] = useState('')
+  const [terms, setTerms] = useState<TermRecord[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const toTermItem = (term: TermRecord): TermItem => ({
-    id: term.id,
-    name: term.name,
-    academicYear: term.academicYear.name,
-    startDate: term.startDate.slice(0, 10),
-    endDate: term.endDate.slice(0, 10),
-    gradingDeadline: term.gradingDeadline.slice(0, 10),
-    status: term.status,
-    examCount: term.examCount,
-    weightPercentage: term.weightPercentage,
-    description: term.description ?? undefined,
-  })
-
-  useEffect(() => {
-    void loadAcademicYears()
-  }, [])
-
-  useEffect(() => {
-    if (selectedYearId) void loadTerms(selectedYearId)
-  }, [selectedYearId])
-
-  async function loadAcademicYears() {
-    try {
-      const years = await academicYearService.list()
-      setAcademicYears(years)
-      const current = years.find((year) => year.isCurrent) ?? years[0]
-      if (current) {
-        setSelectedYearId(current.id)
-        setSelectedYear(current.name)
-      }
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to load academic years', 'error')
-    }
-  }
-
-  async function loadTerms(academicYearId: string) {
-    try {
-      const records = await termService.list(academicYearId)
-      setTerms(records.map(toTermItem))
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to load terms', 'error')
-    }
-  }
-
-  // Modals state
-  const [detailTerm, setDetailTerm] = useState<TermItem | null>(null)
+  const [detailTerm, setDetailTerm] = useState<TermRecord | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [editingTerm, setEditingTerm] = useState<TermItem | null>(null)
-  const [deleteCandidate, setDeleteCandidate] = useState<TermItem | null>(null)
+  const [editingTerm, setEditingTerm] = useState<TermRecord | null>(null)
+  const [deleteCandidate, setDeleteCandidate] = useState<TermRecord | null>(null)
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM })
+  const [saving, setSaving] = useState(false)
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    startDate: '',
-    endDate: '',
-    gradingDeadline: '',
-    weightPercentage: 35,
-    status: 'Upcoming' as 'Active' | 'Completed' | 'Upcoming',
-    description: '',
-  })
+  // Load years once, pick current
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const years = await academicYearService.list()
+        if (cancelled) return
+        setAcademicYears(Array.isArray(years) ? years : [])
+        const current = years.find((y) => y.isCurrent) ?? years[0]
+        if (current) setSelectedYearId(current.id)
+      } catch {
+        if (!cancelled) {
+          showToast('Failed to load academic years', 'error')
+          setAcademicYears([])
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [showToast])
 
-  // Filtered terms
-  const filteredTerms = useMemo(() => {
-    return terms.filter((t) => t.academicYear === selectedYear)
-  }, [terms, selectedYear])
+  const loadTerms = useCallback(async () => {
+    if (!selectedYearId) {
+      setTerms([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    try {
+      const records = await termService.list({ academicYearId: selectedYearId })
+      setTerms(Array.isArray(records) ? records : [])
+    } catch {
+      showToast('Failed to load terms', 'error')
+      setTerms([])
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedYearId, showToast])
 
-  // Stats calculation
-  const stats = useMemo(() => {
-    const total = filteredTerms.length
-    const active = filteredTerms.find((t) => t.status === 'Active')?.name || 'None'
-    const totalWeight = filteredTerms.reduce((sum, t) => sum + t.weightPercentage, 0)
-    const totalExams = filteredTerms.reduce((sum, t) => sum + t.examCount, 0)
-    return { total, active, totalWeight, totalExams }
-  }, [filteredTerms])
+  useEffect(() => {
+    loadTerms()
+  }, [loadTerms])
+
+  const selectedYear = academicYears.find((y) => y.id === selectedYearId)
+  const selectedYearName = selectedYear?.name ?? ''
+
+  const stats = {
+    total: terms.length,
+    active: terms.find((t) => t.status === 'Active')?.name ?? 'None',
+    totalWeight: terms.reduce((s, t) => s + (t.weightPercentage ?? 0), 0),
+  }
 
   const kpiCards: StatCard[] = [
-    { id: 'configured-terms', label: 'Configured Terms', value: stats.total.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'selected year', icon: 'Layers', tint: 'blue' },
-    { id: 'active-term', label: 'Active Term', value: stats.active, delta: '-', deltaDirection: 'neutral', deltaLabel: 'current cycle', icon: 'CheckCircle2', tint: 'green' },
-    { id: 'aggregate-weight', label: 'Aggregate Weight', value: `${stats.totalWeight}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'final GPA', icon: 'Award', tint: 'amber' },
-    { id: 'examinations', label: 'Examinations', value: stats.totalExams.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'registered', icon: 'FileText', tint: 'violet' },
+    { id: 'terms', label: 'Configured Terms', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: selectedYearName || 'selected year', icon: 'Layers', tint: 'blue' },
+    { id: 'active', label: 'Active Term', value: stats.active, delta: '-', deltaDirection: 'neutral', deltaLabel: 'current cycle', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'weight', label: 'Aggregate Weight', value: `${stats.totalWeight}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'toward final', icon: 'Award', tint: 'amber' },
+    { id: 'years', label: 'Academic Years', value: String(academicYears.length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'configured', icon: 'Calendar', tint: 'violet' },
   ]
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      startDate: '',
-      endDate: '',
-      gradingDeadline: '',
-      weightPercentage: 35,
-      status: 'Upcoming',
-      description: '',
-    })
+    setForm({ ...EMPTY_FORM })
     setEditingTerm(null)
   }
 
   const handleOpenCreate = () => {
+    if (!selectedYearId) {
+      showToast('Select an academic year first', 'error')
+      return
+    }
     resetForm()
     setModalOpen(true)
   }
 
-  const handleOpenEdit = (t: TermItem) => {
+  const handleOpenEdit = (t: TermRecord) => {
     setEditingTerm(t)
-    setFormData({
+    setForm({
       name: t.name,
-      startDate: t.startDate,
-      endDate: t.endDate,
-      gradingDeadline: t.gradingDeadline,
+      startDate: t.startDate.slice(0, 10),
+      endDate: t.endDate.slice(0, 10),
+      gradingDeadline: t.gradingDeadline.slice(0, 10),
       weightPercentage: t.weightPercentage,
       status: t.status,
-      description: t.description || '',
+      description: t.description ?? '',
     })
     setModalOpen(true)
   }
 
   const handleSetActive = async (id: string) => {
     try {
-      const updated = await termService.setActive(id)
-      setTerms((prev) => prev.map((term) => term.id === updated.id ? toTermItem(updated) : { ...term, status: term.status === 'Active' ? 'Completed' : term.status }))
-      showToast('Active term cycle updated successfully', 'success')
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to activate term', 'error')
+      await termService.setActive(id)
+      await loadTerms()
+      showToast('Active term updated', 'success')
+    } catch {
+      showToast('Failed to activate term', 'error')
     }
   }
 
-  // UC-TERM-03 & 04 Save Handler
-  const handleSaveTerm = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // 400 Bad Request prevention
-    if (!formData.name.trim() || !formData.startDate || !formData.endDate) {
-      showToast('Please fill in all mandatory fields: Term Name, Start Date, and End Date.', 'error')
+    if (!form.name.trim() || !form.startDate || !form.endDate) {
+      showToast('Name, start date, and end date are required', 'error')
+      return
+    }
+    if (new Date(form.startDate) >= new Date(form.endDate)) {
+      showToast('Start date must precede end date', 'error')
       return
     }
 
-    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-      showToast('Start date must precede the end date.', 'error')
-      return
-    }
-
-    const payload: TermPayload = {
-      name: formData.name.trim(),
-      academicYearId: selectedYearId,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      gradingDeadline: formData.gradingDeadline || formData.endDate,
-      status: formData.status,
-      weightPercentage: Number(formData.weightPercentage) || 30,
-      description: formData.description,
-    }
+    setSaving(true)
     try {
-      const saved = editingTerm ? await termService.update(editingTerm.id, payload) : await termService.create(payload)
-      const updated = toTermItem(saved)
-      setTerms((prev) => editingTerm ? prev.map((term) => term.id === updated.id ? updated : term) : [...prev, updated])
-      if (detailTerm?.id === updated.id) setDetailTerm(updated)
-      showToast(`Term "${updated.name}" ${editingTerm ? 'updated' : 'created'} successfully.`, 'success')
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to save term', 'error')
-      return
+      const payload: TermPayload = {
+        name: form.name.trim(),
+        academicYearId: selectedYearId,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        gradingDeadline: form.gradingDeadline || form.endDate,
+        status: form.status,
+        weightPercentage: form.weightPercentage,
+        description: form.description.trim() || undefined,
+      }
+      if (editingTerm) {
+        await termService.update(editingTerm.id, payload)
+        showToast(`"${payload.name}" updated`, 'success')
+      } else {
+        await termService.create(payload)
+        showToast(`"${payload.name}" created`, 'success')
+      }
+      setModalOpen(false)
+      resetForm()
+      await loadTerms()
+    } catch {
+      showToast('Failed to save term', 'error')
+    } finally {
+      setSaving(false)
     }
-
-    setModalOpen(false)
-    resetForm()
   }
 
-  // UC-TERM-05: Delete with 409 Conflict check
   const handleDelete = async () => {
     if (!deleteCandidate) return
-
-    // Precondition check: Cannot delete active term
     if (deleteCandidate.status === 'Active') {
-      showToast('Conflict (409): Cannot delete the currently active term cycle.', 'error')
+      showToast('Cannot delete the active term', 'error')
       setDeleteCandidate(null)
       return
     }
-
-    // Precondition check: Cannot delete term with recorded exams
-    if (deleteCandidate.examCount > 0) {
-      showToast(
-        `Conflict (409): Cannot delete "${deleteCandidate.name}" because it contains ${deleteCandidate.examCount} registered exams.`,
-        'error'
-      )
-      setDeleteCandidate(null)
-      return
-    }
-
     try {
       await termService.delete(deleteCandidate.id)
-      setTerms((prev) => prev.filter((term) => term.id !== deleteCandidate.id))
+      setTerms((prev) => prev.filter((t) => t.id !== deleteCandidate.id))
       if (detailTerm?.id === deleteCandidate.id) setDetailTerm(null)
-      showToast(`Term "${deleteCandidate.name}" deleted.`, 'success')
+      showToast('Term deleted', 'success')
+    } catch {
+      showToast('Failed to delete term', 'error')
+    } finally {
       setDeleteCandidate(null)
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to delete term', 'error')
     }
   }
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Split CRUD Use Case Badges */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <PageHeading
-            title="Terms & Grading Cycles"
-            subtitle="Define academic evaluation periods, grade submission deadlines, and GPA weight allocations."
-          />
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-800/40">
-              <ShieldCheck size={12} /> Standard: Split CRUD Use Cases
-            </span>
-            <span className="text-xs text-stone-500 font-mono">
-              [UC-TERM-01 to 05] • RBAC: terms.view | create | edit | delete
-            </span>
-          </div>
-        </div>
-
+        <PageHeading
+          title="Terms & Grading Cycles"
+          subtitle="Evaluation periods, grading deadlines, and GPA weights."
+        />
         <div className="flex items-center gap-3">
           <select
             value={selectedYearId}
-            onChange={(e) => {
-              const year = academicYears.find((item) => item.id === e.target.value)
-              setSelectedYearId(e.target.value)
-              setSelectedYear(year?.name ?? '')
-            }}
-            className="px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/10 border border-stone-200 dark:border-white/10 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+            onChange={(e) => setSelectedYearId(e.target.value)}
+            className="px-3 py-2 rounded-xl bg-surface border border-surface text-xs font-semibold text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
-            {academicYears.map((year) => (
-              <option key={year.id} value={year.id}>{year.name}{year.isCurrent ? ' (Current)' : ''}</option>
+            {academicYears.length === 0 && (
+              <option value="">No academic years</option>
+            )}
+            {academicYears.map((y) => (
+              <option key={y.id} value={y.id}>
+                {y.name}
+                {y.isCurrent ? ' (Current)' : ''}
+              </option>
             ))}
           </select>
 
           <button
-            id="btn-add-term"
             onClick={handleOpenCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer shrink-0"
+            disabled={!selectedYearId}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition disabled:opacity-50"
           >
             <Plus size={16} />
             <span>Add Term</span>
@@ -273,198 +254,202 @@ export default function Terms() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      {/* Grid of Terms (UC-TERM-01) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {filteredTerms.map((term) => (
-          <div
-            key={term.id}
-            className={`rounded-2xl p-5 glass-sm border transition flex flex-col justify-between hover:shadow-md ${
-              term.status === 'Active'
-                ? 'border-brand-500/50 dark:border-brand-400/30 ring-2 ring-brand-500/10'
-                : 'border-stone-200/70 dark:border-white/10'
-            }`}
-          >
-            <div>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <h3 className="font-bold text-base text-stone-900 dark:text-white">
-                    {term.name}
-                  </h3>
-                  <div className="text-xs text-stone-400 flex items-center gap-1.5 font-medium mt-0.5">
-                    <Calendar size={12} />
-                    <span>
-                      {term.startDate} to {term.endDate}
+      {loading ? (
+        <div className="py-16 text-center text-secondary text-sm rounded-2xl glass-sm border border-surface">
+          <RefreshCw size={16} className="inline animate-spin mr-2" />
+          Loading terms...
+        </div>
+      ) : !selectedYearId ? (
+        <div className="py-16 text-center rounded-2xl glass-sm border border-surface">
+          <Calendar className="mx-auto mb-3 h-10 w-10 text-secondary" />
+          <p className="text-sm font-semibold text-color">
+            No academic year selected
+          </p>
+          <p className="text-xs text-secondary mt-1">
+            Create an academic year first, then add terms to it.
+          </p>
+        </div>
+      ) : terms.length === 0 ? (
+        <div className="py-16 text-center rounded-2xl glass-sm border border-surface">
+          <Clock className="mx-auto mb-3 h-10 w-10 text-secondary" />
+          <p className="text-sm font-semibold text-color">
+            No terms in {selectedYearName}
+          </p>
+          <p className="text-xs text-secondary mt-1">
+            Click "Add Term" to define the first evaluation period.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {terms.map((term) => (
+            <div
+              key={term.id}
+              className={`rounded-2xl p-5 glass-sm border transition flex flex-col justify-between hover:shadow-md ${
+                term.status === 'Active'
+                  ? 'border-brand-500/50 ring-2 ring-brand-500/10'
+                  : 'border-surface'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <h3 className="font-bold text-base text-color">
+                      {term.name}
+                    </h3>
+                    <div className="text-xs text-secondary flex items-center gap-1.5 mt-0.5">
+                      <Calendar size={12} />
+                      <span>
+                        {term.startDate.slice(0, 10)} → {term.endDate.slice(0, 10)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                      term.status === 'Active'
+                        ? 'bg-success/15 text-success'
+                        : term.status === 'Completed'
+                          ? 'bg-surface-strong text-secondary'
+                          : 'bg-info/15 text-info'
+                    }`}
+                  >
+                    {term.status}
+                  </span>
+                </div>
+
+                <div className="space-y-2 py-3 border-y border-surface my-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-secondary">Grading deadline:</span>
+                    <span className="font-semibold text-error">
+                      {term.gradingDeadline.slice(0, 10)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-secondary">GPA weight:</span>
+                    <span className="font-bold text-brand-600 dark:text-brand-400">
+                      {term.weightPercentage}%
                     </span>
                   </div>
                 </div>
-
-                <span
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${
-                    term.status === 'Active'
-                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                      : term.status === 'Completed'
-                      ? 'bg-stone-500/15 text-stone-700 dark:text-stone-300 border border-stone-500/30'
-                      : 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30'
-                  }`}
-                >
-                  {term.status}
-                </span>
               </div>
 
-              <div className="space-y-2 py-3 border-y border-stone-200/50 dark:border-white/10 my-3 text-xs">
-                <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
-                  <span className="text-stone-400">Grading Deadline:</span>
-                  <span className="font-semibold text-rose-600 dark:text-rose-400">
-                    {term.gradingDeadline}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
-                  <span className="text-stone-400">Grade Weight Contribution:</span>
-                  <span className="font-bold text-brand-600 dark:text-brand-400">
-                    {term.weightPercentage}% of Final GPA
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-stone-600 dark:text-stone-300">
-                  <span className="text-stone-400">Registered Exams:</span>
-                  <span className="font-semibold">{term.examCount} assessments</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-3 flex items-center justify-between gap-2">
-              {term.status !== 'Active' ? (
-                <button
-                  type="button"
-                  onClick={() => handleSetActive(term.id)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 dark:bg-white/10 hover:bg-brand-500 hover:text-white text-stone-700 dark:text-stone-200 transition cursor-pointer"
-                >
-                  Set as Active
-                </button>
-              ) : (
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> Current Term
-                </span>
-              )}
-
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setDetailTerm(term)}
-                  className="p-1.5 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-white/10 transition"
-                  title="View Term Details (UC-TERM-02)"
-                >
-                  <Eye size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOpenEdit(term)}
-                  className="p-1.5 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-white/10 transition"
-                  title="Edit Term (UC-TERM-04)"
-                >
-                  <Edit3 size={15} />
-                </button>
-                {term.status !== 'Active' && (
+              <div className="pt-3 flex items-center justify-between gap-2">
+                {term.status !== 'Active' ? (
                   <button
-                    type="button"
-                    onClick={() => setDeleteCandidate(term)}
-                    className="p-1.5 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
-                    title="Delete Term (UC-TERM-05)"
+                    onClick={() => handleSetActive(term.id)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface hover:bg-brand-500 hover:text-white text-color transition"
                   >
-                    <Trash2 size={15} />
+                    Set as Active
                   </button>
+                ) : (
+                  <span className="text-xs font-semibold text-success flex items-center gap-1">
+                    <CheckCircle2 size={14} /> Current Term
+                  </span>
                 )}
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setDetailTerm(term)}
+                    className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                    title="Details"
+                  >
+                    <Eye size={15} />
+                  </button>
+                  <button
+                    onClick={() => handleOpenEdit(term)}
+                    className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                    title="Edit"
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                  {term.status !== 'Active' && (
+                    <button
+                      onClick={() => setDeleteCandidate(term)}
+                      className="p-1.5 rounded-lg text-secondary hover:text-error hover:bg-error/10 transition"
+                      title="Delete"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* ========================================================= */}
-      {/* MODAL: VIEW TERM DETAILS (UC-TERM-02) */}
-      {/* ========================================================= */}
+      {/* Detail modal */}
       {detailTerm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-5">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
                   <Clock size={26} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-stone-900 dark:text-white">
+                  <h3 className="text-lg font-bold text-color">
                     {detailTerm.name}
                   </h3>
-                  <p className="text-xs text-stone-500">
-                    Academic Year: {detailTerm.academicYear}
+                  <p className="text-xs text-secondary">
+                    {detailTerm.academicYear?.name ?? selectedYearName}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setDetailTerm(null)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white"
+                className="p-1 rounded-lg text-secondary hover:text-color"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Use Case & Permission Badge */}
-            <div className="px-3 py-1.5 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-between text-xs">
-              <span className="font-semibold text-brand-700 dark:text-brand-300">
-                Use Case: UC-TERM-02 (View Term Details)
-              </span>
-              <span className="font-mono text-[11px] text-brand-600 dark:text-brand-400">
-                Permission: terms.view
-              </span>
-            </div>
-
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400">Term Schedule</span>
-                <span className="font-bold text-stone-800 dark:text-stone-200 block">
-                  {detailTerm.startDate} – {detailTerm.endDate}
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary">Schedule</span>
+                <span className="font-bold text-color block">
+                  {detailTerm.startDate.slice(0, 10)} – {detailTerm.endDate.slice(0, 10)}
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400">Marks Due Date</span>
-                <span className="font-bold text-rose-600 dark:text-rose-400 block">
-                  {detailTerm.gradingDeadline}
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary">Grading deadline</span>
+                <span className="font-bold text-error block">
+                  {detailTerm.gradingDeadline.slice(0, 10)}
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400">GPA Weighting</span>
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary">GPA weight</span>
                 <span className="font-bold text-brand-600 dark:text-brand-400 block">
-                  {detailTerm.weightPercentage}% Total Weight
+                  {detailTerm.weightPercentage}%
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400">Assigned Assessments</span>
-                <span className="font-bold text-stone-800 dark:text-stone-200 block">
-                  {detailTerm.examCount} Formal Exams
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary">Status</span>
+                <span className="font-bold text-color block">
+                  {detailTerm.status}
                 </span>
               </div>
             </div>
 
             {detailTerm.description && (
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-xs">
-                <span className="font-semibold text-stone-700 dark:text-stone-300 block mb-1">
-                  Scope & Pedagogical Focus
+              <div className="p-3 rounded-xl bg-surface border border-surface text-xs">
+                <span className="font-semibold text-color block mb-1">
+                  Description
                 </span>
-                <p className="text-stone-600 dark:text-stone-400">
-                  {detailTerm.description}
-                </p>
+                <p className="text-secondary">{detailTerm.description}</p>
               </div>
             )}
 
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-200/60 dark:border-white/10">
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-surface">
               <button
                 onClick={() => {
                   const t = detailTerm
                   setDetailTerm(null)
                   handleOpenEdit(t)
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
               >
-                Edit Term
+                Edit
               </button>
               <button
                 onClick={() => setDetailTerm(null)}
@@ -477,68 +462,61 @@ export default function Terms() {
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* MODAL: CREATE / EDIT TERM (UC-TERM-03 & 04) */}
-      {/* ========================================================= */}
+      {/* Create / edit modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200/60 dark:border-white/10">
-              <div>
-                <h3 className="text-base font-bold text-stone-900 dark:text-white">
-                  {editingTerm ? 'Edit Term Cycle' : 'Add New Term Cycle'}
-                </h3>
-                <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
-                  {editingTerm
-                    ? 'UC-TERM-04 (Edit) • terms.edit'
-                    : 'UC-TERM-03 (Create) • terms.create'}
-                </span>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-surface">
+              <h3 className="text-base font-bold text-color">
+                {editingTerm ? 'Edit Term' : 'New Term'}
+              </h3>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white"
+                className="p-1 rounded-lg text-secondary hover:text-color"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveTerm} className="space-y-4 mt-3">
+            <form onSubmit={handleSave} className="space-y-4 mt-3">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Term Name / Cycle *
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  Term name *
                 </label>
                 <input
                   type="text"
                   placeholder="e.g. Term 4 (Summer Intensive)"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Start Date *
+                  <label className="block text-xs font-semibold text-secondary mb-1">
+                    Start *
                   </label>
                   <input
                     type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    value={form.startDate}
+                    onChange={(e) =>
+                      setForm({ ...form, startDate: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    End Date *
+                  <label className="block text-xs font-semibold text-secondary mb-1">
+                    End *
                   </label>
                   <input
                     type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    value={form.endDate}
+                    onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -546,47 +524,52 @@ export default function Terms() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Grading Deadline
+                  <label className="block text-xs font-semibold text-secondary mb-1">
+                    Grading deadline
                   </label>
                   <input
                     type="date"
-                    value={formData.gradingDeadline}
-                    onChange={(e) => setFormData({ ...formData, gradingDeadline: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    value={form.gradingDeadline}
+                    onChange={(e) =>
+                      setForm({ ...form, gradingDeadline: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    GPA Weight (%)
+                  <label className="block text-xs font-semibold text-secondary mb-1">
+                    GPA weight (%)
                   </label>
                   <input
                     type="number"
-                    min="1"
-                    max="100"
-                    value={formData.weightPercentage}
+                    min={1}
+                    max={100}
+                    value={form.weightPercentage}
                     onChange={(e) =>
-                      setFormData({ ...formData, weightPercentage: Number(e.target.value) })
+                      setForm({
+                        ...form,
+                        weightPercentage: Number(e.target.value),
+                      })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Status State
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  Status
                 </label>
                 <select
-                  value={formData.status}
+                  value={form.status}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as any,
+                    setForm({
+                      ...form,
+                      status: e.target.value as FormState['status'],
                     })
                   }
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none"
                 >
                   <option value="Upcoming">Upcoming</option>
                   <option value="Active">Active</option>
@@ -594,19 +577,34 @@ export default function Terms() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-200/60 dark:border-white/10">
+              <div>
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-surface">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10 transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-secondary hover:bg-surface transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-md transition cursor-pointer"
+                  disabled={saving}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-md transition disabled:opacity-50"
                 >
-                  {editingTerm ? 'Save Changes' : 'Create Term'}
+                  {editingTerm ? 'Save' : 'Create'}
                 </button>
               </div>
             </form>
@@ -614,51 +612,31 @@ export default function Terms() {
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* MODAL: DELETE CONFIRMATION (UC-TERM-05) */}
-      {/* ========================================================= */}
+      {/* Delete confirmation */}
       {deleteCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
-              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40">
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-error">
+              <div className="p-3 rounded-xl bg-error/10 border border-error/30">
                 <AlertTriangle size={24} />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-stone-900 dark:text-white">
-                  Delete Term Cycle
-                </h3>
-                <span className="text-xs text-rose-600 font-mono">
-                  UC-TERM-05 • terms.delete
-                </span>
-              </div>
+              <h3 className="text-base font-bold text-color">Delete Term</h3>
             </div>
 
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-              Are you sure you want to delete term cycle{' '}
-              <span className="font-bold text-stone-900 dark:text-white">
-                "{deleteCandidate.name}"
-              </span>
-              ?
+            <p className="text-xs text-secondary">
+              Delete <span className="font-bold text-color">"{deleteCandidate.name}"</span>?
             </p>
-
-            {deleteCandidate.examCount > 0 && (
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300">
-                <span className="font-bold block mb-0.5">Precondition Warning (409 Conflict):</span>
-                This term cycle has {deleteCandidate.examCount} registered examinations. Removing it will invalidate term GPA aggregates.
-              </div>
-            )}
 
             <div className="pt-2 flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteCandidate(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition shadow-sm"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-error hover:opacity-90 text-white transition"
               >
                 Confirm Delete
               </button>

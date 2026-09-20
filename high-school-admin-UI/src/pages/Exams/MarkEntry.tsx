@@ -1,364 +1,214 @@
-import { useState } from "react";
-import PageHeading from "@/components/common/PageHeading";
-import StatsGrid from "@/components/cards/StatsGrid";
-import type { StatCard } from "@/types";
-import { 
-  FileSpreadsheet, 
-  Save, 
-  Search, 
-  CheckCircle2, 
-  AlertCircle, 
-  Download, 
-  Sparkles,
+// src/pages/Exams/MarkEntry.tsx
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import PageHeading from '@/components/common/PageHeading'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
+import {
+  Save,
+  Search,
+  Download,
+  RefreshCw,
+  Info,
   Award,
-  BookOpen
-} from "lucide-react";
-import { useToast } from "@/components/common/ToastProvider";
-
-interface StudentMark {
-  id: string;
-  studentId: string;
-  name: string;
-  rollNo: string;
-  score: number | string;
-  maxScore: number;
-  grade: string;
-  feedback: string;
-  status: "Graded" | "Pending" | "Absent";
-}
+} from 'lucide-react'
+import { useToast } from '@/components/common/ToastProvider'
+import { examService, type MarkEntryRecord } from '@/services/examService'
 
 export default function MarkEntry() {
-  const { showToast } = useToast();
-  const [selectedExam, setSelectedExam] = useState("Midterm Term 2");
-  const [selectedClass, setSelectedClass] = useState("Grade 10-A");
-  const [selectedSubject, setSelectedSubject] = useState("Advanced Biology");
-  const [searchTerm, setSearchTerm] = useState("");
+  const { showToast } = useToast()
 
-  const [marks, setMarks] = useState<StudentMark[]>([
-    {
-      id: "m-1",
-      studentId: "STU-001",
-      name: "Ethan Walker",
-      rollNo: "10A-01",
-      score: 94,
-      maxScore: 100,
-      grade: "A+",
-      feedback: "Exceptional mastery of genetics concepts.",
-      status: "Graded",
-    },
-    {
-      id: "m-2",
-      studentId: "STU-002",
-      name: "Sophia Martinez",
-      rollNo: "10A-02",
-      score: 88,
-      maxScore: 100,
-      grade: "A",
-      feedback: "Strong analytical lab report writeup.",
-      status: "Graded",
-    },
-    {
-      id: "m-3",
-      studentId: "STU-003",
-      name: "Liam Chen",
-      rollNo: "10A-03",
-      score: 76,
-      maxScore: 100,
-      grade: "B",
-      feedback: "Needs additional practice in cellular respiration diagrams.",
-      status: "Graded",
-    },
-    {
-      id: "m-4",
-      studentId: "STU-004",
-      name: "Olivia Robinson",
-      rollNo: "10A-04",
-      score: 92,
-      maxScore: 100,
-      grade: "A+",
-      feedback: "Very thorough answer explanations.",
-      status: "Graded",
-    },
-    {
-      id: "m-5",
-      studentId: "STU-005",
-      name: "Noah Patel",
-      rollNo: "10A-05",
-      score: "",
-      maxScore: 100,
-      grade: "-",
-      feedback: "",
-      status: "Pending",
-    },
-    {
-      id: "m-6",
-      studentId: "STU-006",
-      name: "Emma Watson",
-      rollNo: "10A-06",
-      score: "ABS",
-      maxScore: 100,
-      grade: "ABS",
-      feedback: "Excused medical absence. Retest pending.",
-      status: "Absent",
-    },
-  ]);
+  const [records, setRecords] = useState<MarkEntryRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
 
-  const computeGrade = (score: number) => {
-    if (score >= 90) return "A+";
-    if (score >= 80) return "A";
-    if (score >= 70) return "B";
-    if (score >= 60) return "C";
-    if (score >= 50) return "D";
-    return "F";
-  };
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await examService.marks()
+      setRecords(Array.isArray(data) ? data : [])
+    } catch {
+      setRecords([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  const handleScoreChange = (id: string, newScoreStr: string) => {
-    setMarks((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        if (newScoreStr === "" || newScoreStr.toUpperCase() === "ABS") {
-          return {
-            ...item,
-            score: newScoreStr,
-            grade: newScoreStr === "" ? "-" : "ABS",
-            status: newScoreStr === "" ? "Pending" : "Absent",
-          };
-        }
-        const numeric = Math.min(Math.max(Number(newScoreStr) || 0, 0), item.maxScore);
-        return {
-          ...item,
-          score: numeric,
-          grade: computeGrade(numeric),
-          status: "Graded",
-        };
-      })
-    );
-  };
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const handleFeedbackChange = (id: string, fb: string) => {
-    setMarks((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, feedback: fb } : item))
-    );
-  };
+  const filtered = useMemo(
+    () =>
+      records.filter((m) => {
+        if (!search.trim()) return true
+        const q = search.toLowerCase()
+        return (
+          m.studentName.toLowerCase().includes(q) ||
+          m.rollNumber.toLowerCase().includes(q) ||
+          m.subject.toLowerCase().includes(q)
+        )
+      }),
+    [records, search]
+  )
 
-  const handleSaveAll = () => {
-    showToast("All student examination marks saved successfully", "success");
-  };
-
-  const gradedCount = marks.filter((m) => m.status === "Graded").length;
-  const gradedScores = marks
-    .filter((m) => typeof m.score === "number")
-    .map((m) => m.score as number);
-  const averageScore =
-    gradedScores.length > 0
-      ? (gradedScores.reduce((a, b) => a + b, 0) / gradedScores.length).toFixed(1)
-      : "0";
-
-  const filteredMarks = marks.filter(
-    (m) =>
-      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.rollNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.studentId.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const stats = useMemo(() => {
+    const scored = records.filter((r) => r.marksObtained > 0)
+    const avg =
+      scored.length > 0
+        ? scored.reduce((sum, r) => sum + r.marksObtained, 0) / scored.length
+        : 0
+    const max =
+      scored.length > 0
+        ? Math.max(...scored.map((r) => r.marksObtained))
+        : 0
+    return { total: records.length, avg, max, graded: scored.length }
+  }, [records])
 
   const kpiCards: StatCard[] = [
-    { id: "total-students", label: "Total Students", value: marks.length.toString(), delta: "-", deltaDirection: "neutral", deltaLabel: "enrolled", icon: "Users", tint: "blue" },
-    { id: "completed-marks", label: "Completed Marks", value: `${gradedCount} / ${marks.length}`, delta: "-", deltaDirection: "neutral", deltaLabel: "graded", icon: "CheckCircle2", tint: "green" },
-    { id: "class-average", label: "Class Average", value: `${averageScore} / 100`, delta: "-", deltaDirection: "neutral", deltaLabel: "current average", icon: "TrendingUp", tint: "sky" },
-    { id: "highest-mark", label: "Highest Mark", value: `${gradedScores.length > 0 ? Math.max(...gradedScores) : 0} pts`, delta: "-", deltaDirection: "neutral", deltaLabel: "top score", icon: "Award", tint: "amber" },
-  ];
+    { id: 'total', label: 'Records', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'marks entered', icon: 'Users', tint: 'blue' },
+    { id: 'graded', label: 'Graded', value: `${stats.graded} / ${stats.total}`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'complete', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'avg', label: 'Average', value: stats.avg.toFixed(1), delta: '-', deltaDirection: 'neutral', deltaLabel: 'class average', icon: 'TrendingUp', tint: 'sky' },
+    { id: 'max', label: 'Highest', value: stats.max.toFixed(0), delta: '-', deltaDirection: 'neutral', deltaLabel: 'top score', icon: 'Award', tint: 'amber' },
+  ]
+
+  const handleExportCsv = () => {
+    if (filtered.length === 0) {
+      showToast('Nothing to export', 'info')
+      return
+    }
+    const header = 'Student,Roll,Subject,Marks,Max,Grade,Remarks'
+    const rows = filtered.map((m) =>
+      [
+        m.studentName,
+        m.rollNumber,
+        m.subject,
+        m.marksObtained,
+        m.maxMarks,
+        m.grade,
+        (m.remarks ?? '').replace(/,/g, ';'),
+      ].join(',')
+    )
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `marks-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleSave = () => {
+    // Writes go through examService.updateMarkEntry once that endpoint
+    // exists. For now, surface the stub status rather than pretending.
+    showToast(examService.stubMessage, 'info')
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeading
-          title="Mark Entry Spreadsheet"
-          subtitle="Record and calculate test marks, letter grades, teacher feedback, and exam results."
+          title="Mark Entry"
+          subtitle="Record marks, letter grades, and feedback for exam papers."
         />
         <div className="flex items-center gap-3 shrink-0">
           <button
-            onClick={() => showToast("Exporting marks CSV", "info")}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-white/10 hover:bg-stone-200 dark:hover:bg-white/15 text-stone-700 dark:text-stone-200 text-xs font-semibold transition cursor-pointer"
+            onClick={handleExportCsv}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface hover:bg-surface-strong text-color text-xs font-semibold transition"
           >
             <Download size={14} />
-            <span>Export CSV</span>
+            Export CSV
           </button>
           <button
-            onClick={handleSaveAll}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer"
+            onClick={handleSave}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition"
           >
             <Save size={16} />
-            <span>Save Marks</span>
+            Save
           </button>
         </div>
       </div>
 
-      {/* Selector Filters Header */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
-        <div>
-          <label className="block text-[11px] font-semibold text-stone-500 mb-1">
-            Exam Session
-          </label>
-          <select
-            value={selectedExam}
-            onChange={(e) => setSelectedExam(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-medium rounded-xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          >
-            <option value="Midterm Term 2">Midterm Term 2 (2025 - 2026)</option>
-            <option value="Final Term 1">Final Comprehensive Exam Term 1</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[11px] font-semibold text-stone-500 mb-1">
-            Class & Section
-          </label>
-          <select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-medium rounded-xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          >
-            <option value="Grade 10-A">Grade 10-A</option>
-            <option value="Grade 10-B">Grade 10-B</option>
-            <option value="Grade 11-A">Grade 11-A</option>
-            <option value="Grade 12-A">Grade 12-A</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[11px] font-semibold text-stone-500 mb-1">
-            Subject Paper
-          </label>
-          <select
-            value={selectedSubject}
-            onChange={(e) => setSelectedSubject(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-medium rounded-xl bg-stone-100/80 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          >
-            <option value="Advanced Biology">Advanced Biology (SCI-301)</option>
-            <option value="Calculus BC">Calculus BC (MTH-402)</option>
-            <option value="Modern World History">Modern World History (HUM-201)</option>
-            <option value="Literature & Composition II">Literature & Composition II (ENG-202)</option>
-          </select>
-        </div>
+      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+        <Info size={16} className="text-info shrink-0 mt-0.5" />
+        <p className="text-secondary">
+          The mark-entry endpoint is part of the exams stub. Saving returns a
+          501 until the MarkEntry model is added.
+        </p>
       </div>
 
       <StatsGrid cards={kpiCards} columns={4} />
-      {/* Legacy KPI markup retained below only as migration reference.
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="p-3.5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
-          <div className="text-xs text-stone-500 font-medium">Total Students</div>
-          <div className="text-xl font-bold text-stone-900 dark:text-white mt-1">
-            {marks.length}
-          </div>
-        </div>
-        <div className="p-3.5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
-          <div className="text-xs text-stone-500 font-medium">Completed Marks</div>
-          <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-            {gradedCount} / {marks.length}
-          </div>
-        </div>
-        <div className="p-3.5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
-          <div className="text-xs text-stone-500 font-medium">Class Average</div>
-          <div className="text-xl font-bold text-brand-600 dark:text-brand-400 mt-1">
-            {averageScore} / 100
-          </div>
-        </div>
-        <div className="p-3.5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
-          <div className="text-xs text-stone-500 font-medium">Highest Mark</div>
-          <div className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">
-            {gradedScores.length > 0 ? Math.max(...gradedScores) : 0} pts
-          </div>
-        </div>
-      </div> */}
 
-      {/* Marks Table */}
-      <div className="overflow-hidden rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
-        <div className="p-3.5 border-b border-stone-200/50 dark:border-white/10 flex items-center gap-3">
-          <Search size={16} className="text-stone-400" />
+      <div className="overflow-hidden rounded-2xl glass-sm border border-surface">
+        <div className="p-3.5 border-b border-surface flex items-center gap-3">
+          <Search size={16} className="text-secondary" />
           <input
             type="text"
-            placeholder="Search candidate name or roll number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full text-xs bg-transparent text-stone-800 dark:text-stone-200 placeholder:text-stone-400 focus:outline-none"
+            placeholder="Search student, roll number, or subject..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full text-xs bg-transparent text-color placeholder:text-secondary focus:outline-none"
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-stone-50/80 dark:bg-white/5 text-stone-500 font-semibold border-b border-stone-200/50 dark:border-white/10">
-              <tr>
-                <th className="p-3.5">Roll No</th>
-                <th className="p-3.5">Student Name</th>
-                <th className="p-3.5 w-32">Score (Max 100)</th>
-                <th className="p-3.5">Grade</th>
-                <th className="p-3.5">Status</th>
-                <th className="p-3.5">Teacher Feedback / Notes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-200/40 dark:divide-white/5">
-              {filteredMarks.map((m) => (
-                <tr
-                  key={m.id}
-                  className="hover:bg-stone-50/50 dark:hover:bg-white/5 transition"
-                >
-                  <td className="p-3.5 font-mono text-stone-500 font-medium">{m.rollNo}</td>
-                  <td className="p-3.5 font-semibold text-stone-900 dark:text-white">
-                    {m.name}
-                    <div className="text-[10px] text-stone-400 font-mono">{m.studentId}</div>
-                  </td>
-                  <td className="p-3.5">
-                    <input
-                      type="text"
-                      value={m.score}
-                      placeholder="0-100"
-                      onChange={(e) => handleScoreChange(m.id, e.target.value)}
-                      className="w-24 px-2.5 py-1.5 rounded-lg bg-stone-100/90 dark:bg-white/10 border border-stone-200 dark:border-white/15 text-center font-bold text-sm text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    />
-                  </td>
-                  <td className="p-3.5">
-                    <span
-                      className={`px-2.5 py-1 rounded-md text-xs font-bold ${
-                        m.grade === "A+" || m.grade === "A"
-                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                          : m.grade === "B" || m.grade === "C"
-                          ? "bg-brand-500/15 text-brand-700 dark:text-brand-300"
-                          : m.grade === "ABS"
-                          ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
-                          : "bg-stone-200 dark:bg-white/10 text-stone-500"
-                      }`}
-                    >
-                      {m.grade}
-                    </span>
-                  </td>
-                  <td className="p-3.5">
-                    <span
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase ${
-                        m.status === "Graded"
-                          ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                          : m.status === "Absent"
-                          ? "text-rose-600 dark:text-rose-400 bg-rose-500/10"
-                          : "text-amber-600 dark:text-amber-400 bg-amber-500/10"
-                      }`}
-                    >
-                      {m.status}
-                    </span>
-                  </td>
-                  <td className="p-3.5">
-                    <input
-                      type="text"
-                      value={m.feedback}
-                      placeholder="Enter remarks..."
-                      onChange={(e) => handleFeedbackChange(m.id, e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-transparent border border-stone-200/60 dark:border-white/10 focus:bg-stone-50 dark:focus:bg-white/5 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    />
-                  </td>
+        {loading ? (
+          <div className="py-16 text-center text-secondary text-sm">
+            <RefreshCw size={16} className="inline animate-spin mr-2" />
+            Loading marks...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center">
+            <Award className="mx-auto mb-3 h-10 w-10 text-secondary" />
+            <p className="text-sm font-semibold text-color">
+              {records.length === 0 ? 'No marks recorded yet' : 'No matches'}
+            </p>
+            <p className="text-xs text-secondary mt-1">
+              {records.length === 0
+                ? 'Marks will appear here once the backend module is implemented.'
+                : 'Try a different search.'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-surface-strong text-secondary font-semibold border-b border-surface">
+                <tr>
+                  <th className="p-3.5">Roll</th>
+                  <th className="p-3.5">Student</th>
+                  <th className="p-3.5">Subject</th>
+                  <th className="p-3.5 text-center">Marks</th>
+                  <th className="p-3.5 text-center">Grade</th>
+                  <th className="p-3.5">Remarks</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-surface">
+                {filtered.map((m) => (
+                  <tr key={m.id} className="hover:bg-surface/40 transition">
+                    <td className="p-3.5 font-mono text-secondary">
+                      {m.rollNumber}
+                    </td>
+                    <td className="p-3.5 font-semibold text-color">
+                      {m.studentName}
+                    </td>
+                    <td className="p-3.5 text-color">{m.subject}</td>
+                    <td className="p-3.5 text-center font-bold text-color">
+                      {m.marksObtained} / {m.maxMarks}
+                    </td>
+                    <td className="p-3.5 text-center">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-brand-500/15 text-brand-700 dark:text-brand-300">
+                        {m.grade}
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-secondary italic">
+                      {m.remarks || '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }

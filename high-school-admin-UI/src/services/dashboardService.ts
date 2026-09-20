@@ -10,10 +10,7 @@ export interface DashboardStats {
   pendingLeaveRequests: number
 }
 
-export type Cohort =
-  | 'all'
-  | 'lower-secondary'
-  | 'upper-secondary'
+export type Cohort = 'all' | 'lower-secondary' | 'upper-secondary'
 
 export const dashboardService = {
   getStats: (cohort?: Cohort) =>
@@ -21,18 +18,11 @@ export const dashboardService = {
       `/dashboard/stats${cohort ? `?cohort=${encodeURIComponent(cohort)}` : ''}`
     ),
 
-  /**
-   * Attendance summary returned by the dashboard endpoint. Backend returns
-   * a fixed-shape object, not a raw groupBy array.
-   */
-  // in src/services/dashboardService.ts
-
-
-getAttendanceSummary: (from?: string, to?: string) => {
-  const query = new URLSearchParams()
-  if (from) query.set('from', from)
-  if (to) query.set('to', to)
-  const qs = query.toString() ? `?${query.toString()}` : ''
-  return apiClient.get<AttendanceStats>(`/dashboard/attendance-summary${qs}`)
-},
+  getAttendanceSummary: (from?: string, to?: string) => {
+    const query = new URLSearchParams()
+    if (from) query.set('from', from)
+    if (to) query.set('to', to)
+    const qs = query.toString() ? `?${query.toString()}` : ''
+    return apiClient.get<AttendanceStats>(`/dashboard/attendance-summary${qs}`)
+  },
 }

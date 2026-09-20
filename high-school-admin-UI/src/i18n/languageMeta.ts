@@ -1,11 +1,12 @@
+// src/i18n/languageMeta.ts
 // ============================================================================
 // LANGUAGE METADATA
 //
 // Single source of truth for flag/locale lookups. Previously this map was
-// duplicated in Header.tsx and TranslationManager.tsx with different entries
-// (Header was missing sk, bg, is, ga, ca, mx, br, mi) which meant the same
+// duplicated in Header.tsx and TranslationManager.tsx with divergent entries
+// (Header was missing sk, bg, is, ga, ca, mx, br, mi), which meant the same
 // language code could render a different flag depending on which component
-// rendered it. Keeping one map removes that class of bug entirely.
+// rendered it. One map removes that class of bug entirely.
 // ============================================================================
 
 const FLAGS_BY_CODE: Record<string, string> = {
@@ -118,17 +119,27 @@ const LOCALES_BY_CODE: Record<string, string> = {
   mi: 'mi-NZ',
 }
 
+const DEFAULT_FLAG = '🌐'
+
 export function getFlagFromLanguageCode(code: string): string {
-  return FLAGS_BY_CODE[code.toLowerCase()] ?? '🌐'
+  return FLAGS_BY_CODE[code.toLowerCase()] ?? DEFAULT_FLAG
 }
 
 export function getLocaleFromCode(code: string): string {
   const normalized = code.toLowerCase()
-  return LOCALES_BY_CODE[normalized] ?? `${normalized}-${normalized.toUpperCase()}`
+  return (
+    LOCALES_BY_CODE[normalized] ?? `${normalized}-${normalized.toUpperCase()}`
+  )
 }
 
 export function slugifyCode(input: string): string {
-  return input.trim().toLowerCase().replace(/[^a-z]/g, '').slice(0, 5) || 'xx'
+  return (
+    input
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z]/g, '')
+      .slice(0, 5) || 'xx'
+  )
 }
 
 export function isValidLanguageCode(code: string): boolean {

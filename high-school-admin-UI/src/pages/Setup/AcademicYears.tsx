@@ -1,149 +1,92 @@
 // src/pages/Setup/AcademicYears.tsx
-import { useState, useMemo, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   CalendarRange,
   Plus,
   CheckCircle2,
   Clock,
-  Calendar,
   Edit3,
   Trash2,
-  AlertCircle,
   Eye,
   X,
   AlertTriangle,
-  ShieldCheck,
+  RefreshCw,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
-import { academicYearService, type AcademicYearRecord } from '@/services/academicYearService'
-import { ApiError } from '@/lib/apiClient'
+import {
+  academicYearService,
+  type AcademicYearRecord,
+} from '@/services/academicYearService'
 
-export interface AcademicYear {
-  id: string
+function fmtDate(iso: string): string {
+  return iso ? iso.slice(0, 10) : ''
+}
+
+interface FormState {
   name: string
   startDate: string
   endDate: string
-  status: 'Active' | 'Upcoming' | 'Archived'
-  termsCount: number
-  classesCount: number
-  studentsCount: number
-  isCurrent: boolean
-  description?: string
-  createdAt?: string
+  status: AcademicYearRecord['status']
+  description: string
 }
 
-const INITIAL_YEARS: AcademicYear[] = [
-  {
-    id: 'ay-1',
-    name: '2025 - 2026',
-    startDate: '2025-08-15',
-    endDate: '2026-06-20',
-    status: 'Active',
-    termsCount: 3,
-    classesCount: 48,
-    studentsCount: 1284,
-    isCurrent: true,
-    description: 'Current standard secondary academic year covering fall, winter, and spring trimesters.',
-    createdAt: '2025-06-01',
-  },
-  {
-    id: 'ay-2',
-    name: '2026 - 2027',
-    startDate: '2026-08-20',
-    endDate: '2027-06-25',
-    status: 'Upcoming',
-    termsCount: 3,
-    classesCount: 50,
-    studentsCount: 0,
-    isCurrent: false,
-    description: 'Upcoming scheduled academic cycle with planned expansion into STEM honors sections.',
-    createdAt: '2026-01-15',
-  },
-  {
-    id: 'ay-3',
-    name: '2024 - 2025',
-    startDate: '2024-08-18',
-    endDate: '2025-06-18',
-    status: 'Archived',
-    termsCount: 3,
-    classesCount: 46,
-    studentsCount: 1210,
-    isCurrent: false,
-    description: 'Completed historical academic session. Archived for auditing and transcript generation.',
-    createdAt: '2024-05-10',
-  },
-]
-
-function toPageYear(year: AcademicYearRecord): AcademicYear {
-  return {
-    ...year,
-    startDate: year.startDate.slice(0, 10),
-    endDate: year.endDate.slice(0, 10),
-    description: year.description ?? undefined,
-  }
+const EMPTY_FORM: FormState = {
+  name: '',
+  startDate: '',
+  endDate: '',
+  status: 'Upcoming',
+  description: '',
 }
 
 export default function AcademicYears() {
   const { showToast } = useToast()
-  const [years, setYears] = useState<AcademicYear[]>([])
+  const [years, setYears] = useState<AcademicYearRecord[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Modals
-  const [detailYear, setDetailYear] = useState<AcademicYear | null>(null)
+  const [detailYear, setDetailYear] = useState<AcademicYearRecord | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [editingYear, setEditingYear] = useState<AcademicYear | null>(null)
-  const [deleteCandidate, setDeleteCandidate] = useState<AcademicYear | null>(null)
+  const [editingYear, setEditingYear] = useState<AcademicYearRecord | null>(null)
+  const [deleteCandidate, setDeleteCandidate] = useState<AcademicYearRecord | null>(null)
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM })
+  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    void loadYears()
-  }, [])
-
-  async function loadYears() {
+  const load = useCallback(async () => {
+    setLoading(true)
     try {
       const records = await academicYearService.list()
-      setYears(records.map(toPageYear))
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to load academic years', 'error')
+      setYears(Array.isArray(records) ? records : [])
+    } catch {
+      showToast('Failed to load academic years', 'error')
+      setYears([])
+    } finally {
+      setLoading(false)
     }
-  }
+  }, [showToast])
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    startDate: '',
-    endDate: '',
-    termsCount: 3,
-    status: 'Upcoming' as 'Active' | 'Upcoming' | 'Archived',
-    description: '',
-  })
+  useEffect(() => {
+    load()
+  }, [load])
 
-  // Aggregate stats
   const stats = useMemo(() => {
     const total = years.length
-    const current = years.find((y) => y.isCurrent)?.name || 'None'
-    const totalClasses = years.reduce((s, y) => s + y.classesCount, 0)
-    const totalStudents = years.reduce((s, y) => s + y.studentsCount, 0)
+    const current = years.find((y) => y.isCurrent)?.name ?? 'None'
+    const totalClasses = years.reduce((s, y) => s + (y.classesCount ?? 0), 0)
+    const totalStudents = years.reduce((s, y) => s + (y.studentsCount ?? 0), 0)
     return { total, current, totalClasses, totalStudents }
   }, [years])
 
   const kpiCards: StatCard[] = [
-    { id: 'academic-sessions', label: 'Academic Sessions', value: stats.total.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'configured', icon: 'CalendarRange', tint: 'blue' },
-    { id: 'current-session', label: 'Current Session', value: stats.current, delta: '-', deltaDirection: 'neutral', deltaLabel: 'active cycle', icon: 'CheckCircle2', tint: 'green' },
-    { id: 'classes-held', label: 'Total Classes Held', value: stats.totalClasses.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across sessions', icon: 'School', tint: 'amber' },
-    { id: 'enrolled-students', label: 'Enrolled Students', value: stats.totalStudents.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across sessions', icon: 'Users', tint: 'violet' },
+    { id: 'sessions', label: 'Academic Sessions', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'configured', icon: 'CalendarRange', tint: 'blue' },
+    { id: 'current', label: 'Current Session', value: stats.current, delta: '-', deltaDirection: 'neutral', deltaLabel: 'active cycle', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'classes', label: 'Classes Held', value: stats.totalClasses.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across sessions', icon: 'School', tint: 'amber' },
+    { id: 'students', label: 'Enrolled Students', value: stats.totalStudents.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across sessions', icon: 'Users', tint: 'violet' },
   ]
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      startDate: '',
-      endDate: '',
-      termsCount: 3,
-      status: 'Upcoming',
-      description: '',
-    })
+    setForm({ ...EMPTY_FORM })
     setEditingYear(null)
   }
 
@@ -152,15 +95,14 @@ export default function AcademicYears() {
     setModalOpen(true)
   }
 
-  const handleOpenEdit = (y: AcademicYear) => {
+  const handleOpenEdit = (y: AcademicYearRecord) => {
     setEditingYear(y)
-    setFormData({
+    setForm({
       name: y.name,
-      startDate: y.startDate,
-      endDate: y.endDate,
-      termsCount: y.termsCount,
+      startDate: fmtDate(y.startDate),
+      endDate: fmtDate(y.endDate),
       status: y.status,
-      description: y.description || '',
+      description: y.description ?? '',
     })
     setModalOpen(true)
   }
@@ -168,68 +110,61 @@ export default function AcademicYears() {
   const handleSetActive = async (id: string) => {
     try {
       await academicYearService.setCurrent(id)
-      await loadYears()
-      showToast('Academic Year set to Active successfully', 'success')
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to set academic year', 'error')
+      await load()
+      showToast('Set as current academic year', 'success')
+    } catch {
+      showToast('Failed to set academic year', 'error')
     }
   }
 
-  // UC-ACADEMIC-03 & 04 Save Handler
-  const handleSaveYear = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // 400 Bad Request prevention
-    if (!formData.name.trim() || !formData.startDate || !formData.endDate) {
-      showToast('Please fill in all mandatory fields: Session Name, Start Date, and End Date.', 'error')
+    if (!form.name.trim() || !form.startDate || !form.endDate) {
+      showToast('Name, start date, and end date are required', 'error')
+      return
+    }
+    if (new Date(form.startDate) >= new Date(form.endDate)) {
+      showToast('Start date must be earlier than end date', 'error')
       return
     }
 
-    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-      showToast('Start date must be earlier than end date.', 'error')
-      return
-    }
-
+    setSaving(true)
     try {
       const payload = {
-        name: formData.name.trim(),
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        termsCount: Number(formData.termsCount) || 3,
-        status: formData.status,
-        description: formData.description,
+        name: form.name.trim(),
+        startDate: form.startDate,
+        endDate: form.endDate,
+        status: form.status,
+        description: form.description.trim() || undefined,
       }
-      const saved = editingYear
-        ? await academicYearService.update(editingYear.id, payload)
-        : await academicYearService.create(payload)
-      const updated = toPageYear(saved)
-      setYears((prev) => editingYear ? prev.map((year) => year.id === updated.id ? updated : year) : [updated, ...prev])
-      if (detailYear?.id === updated.id) setDetailYear(updated)
-      showToast(`Academic Year "${updated.name}" ${editingYear ? 'updated' : 'created'} successfully.`, 'success')
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to save academic year', 'error')
-      return
+      if (editingYear) {
+        await academicYearService.update(editingYear.id, payload)
+        showToast(`"${payload.name}" updated`, 'success')
+      } else {
+        await academicYearService.create(payload)
+        showToast(`"${payload.name}" created`, 'success')
+      }
+      setModalOpen(false)
+      resetForm()
+      await load()
+    } catch {
+      showToast('Failed to save academic year', 'error')
+    } finally {
+      setSaving(false)
     }
-
-    setModalOpen(false)
-    resetForm()
   }
 
-  // UC-ACADEMIC-05: Delete with 409 Conflict check
   const handleDelete = async () => {
     if (!deleteCandidate) return
 
-    // Precondition check: Cannot delete active current year
     if (deleteCandidate.isCurrent) {
-      showToast('Conflict (409): Cannot delete the currently active Academic Year.', 'error')
+      showToast('Cannot delete the current academic year', 'error')
       setDeleteCandidate(null)
       return
     }
-
-    // Precondition check: Cannot delete year with active classes or students
-    if (deleteCandidate.classesCount > 0 || deleteCandidate.studentsCount > 0) {
+    if ((deleteCandidate.classesCount ?? 0) > 0 || (deleteCandidate.studentsCount ?? 0) > 0) {
       showToast(
-        `Conflict (409): Cannot delete "${deleteCandidate.name}" because it contains ${deleteCandidate.classesCount} classes and ${deleteCandidate.studentsCount} enrolled students.`,
+        `Cannot delete "${deleteCandidate.name}" — it has ${deleteCandidate.classesCount} classes and ${deleteCandidate.studentsCount} students`,
         'error'
       )
       setDeleteCandidate(null)
@@ -240,36 +175,24 @@ export default function AcademicYears() {
       await academicYearService.delete(deleteCandidate.id)
       setYears((prev) => prev.filter((y) => y.id !== deleteCandidate.id))
       if (detailYear?.id === deleteCandidate.id) setDetailYear(null)
-      showToast(`Academic Year "${deleteCandidate.name}" deleted.`, 'success')
+      showToast('Academic year deleted', 'success')
+    } catch {
+      showToast('Failed to delete', 'error')
+    } finally {
       setDeleteCandidate(null)
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : 'Failed to delete academic year', 'error')
     }
   }
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Split CRUD Use Case Badges */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <PageHeading
-            title="Academic Years"
-            subtitle="Configure school academic sessions, session timelines, and active term cycles."
-          />
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-800/40">
-              <ShieldCheck size={12} /> Standard: Split CRUD Use Cases
-            </span>
-            <span className="text-xs text-stone-500 font-mono">
-              [UC-ACADEMIC-01 to 05] • RBAC: academicYears.view | create | edit | delete
-            </span>
-          </div>
-        </div>
-
+        <PageHeading
+          title="Academic Years"
+          subtitle="Configure school sessions and active cycles."
+        />
         <button
-          id="btn-add-academic-year"
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition shrink-0"
         >
           <Plus size={16} />
           <span>New Academic Year</span>
@@ -278,217 +201,210 @@ export default function AcademicYears() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      {/* Grid of Academic Years (UC-ACADEMIC-01) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {years.map((year) => (
-          <div
-            key={year.id}
-            className={`rounded-2xl p-5 glass-sm border transition flex flex-col justify-between hover:shadow-md ${
-              year.isCurrent
-                ? 'border-brand-500/50 dark:border-brand-400/30 ring-2 ring-brand-500/10'
-                : 'border-stone-200/70 dark:border-white/10'
-            }`}
-          >
-            <div>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`p-2.5 rounded-xl ${
-                      year.isCurrent
-                        ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
-                        : 'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-stone-300'
+      {loading ? (
+        <div className="py-16 text-center text-secondary text-sm rounded-2xl glass-sm border border-surface">
+          <RefreshCw size={16} className="inline animate-spin mr-2" />
+          Loading academic years...
+        </div>
+      ) : years.length === 0 ? (
+        <div className="py-16 text-center rounded-2xl glass-sm border border-surface">
+          <CalendarRange className="mx-auto mb-3 h-10 w-10 text-secondary" />
+          <p className="text-sm font-semibold text-color">No academic years yet</p>
+          <p className="text-xs text-secondary mt-1">
+            Click "New Academic Year" to create the first session.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {years.map((year) => (
+            <div
+              key={year.id}
+              className={`rounded-2xl p-5 glass-sm border transition flex flex-col justify-between hover:shadow-md ${
+                year.isCurrent
+                  ? 'border-brand-500/50 ring-2 ring-brand-500/10'
+                  : 'border-surface'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`p-2.5 rounded-xl ${
+                        year.isCurrent
+                          ? 'bg-brand-500 text-white'
+                          : 'bg-surface text-secondary'
+                      }`}
+                    >
+                      <CalendarRange size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base text-color flex items-center gap-2">
+                        {year.name}
+                        {year.isCurrent && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                            CURRENT
+                          </span>
+                        )}
+                      </h3>
+                      <div className="text-xs text-secondary flex items-center gap-1.5 mt-0.5">
+                        <Clock size={12} />
+                        <span>
+                          {fmtDate(year.startDate)} → {fmtDate(year.endDate)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                      year.status === 'Active'
+                        ? 'bg-success/15 text-success'
+                        : year.status === 'Upcoming'
+                          ? 'bg-info/15 text-info'
+                          : 'bg-surface-strong text-secondary'
                     }`}
                   >
-                    <CalendarRange size={20} />
+                    {year.status}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 py-3 border-y border-surface text-center">
+                  <div className="p-2 rounded-xl bg-surface">
+                    <div className="text-[11px] text-secondary">Terms</div>
+                    <div className="text-sm font-bold text-color">
+                      {year.termsCount ?? 0}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-base text-stone-900 dark:text-white flex items-center gap-2">
-                      {year.name}
-                      {year.isCurrent && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
-                          CURRENT
-                        </span>
-                      )}
-                    </h3>
-                    <div className="text-xs text-stone-400 flex items-center gap-1.5 font-medium mt-0.5">
-                      <Clock size={12} />
-                      <span>
-                        {year.startDate} to {year.endDate}
-                      </span>
+                  <div className="p-2 rounded-xl bg-surface">
+                    <div className="text-[11px] text-secondary">Classes</div>
+                    <div className="text-sm font-bold text-color">
+                      {year.classesCount ?? 0}
+                    </div>
+                  </div>
+                  <div className="p-2 rounded-xl bg-surface">
+                    <div className="text-[11px] text-secondary">Students</div>
+                    <div className="text-sm font-bold text-color">
+                      {year.studentsCount ?? 0}
                     </div>
                   </div>
                 </div>
-
-                <span
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${
-                    year.status === 'Active'
-                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                      : year.status === 'Upcoming'
-                      ? 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30'
-                      : 'bg-stone-500/15 text-stone-700 dark:text-stone-300 border border-stone-500/30'
-                  }`}
-                >
-                  {year.status}
-                </span>
               </div>
 
-              {/* Metrics */}
-              <div className="grid grid-cols-3 gap-2 py-3 border-y border-stone-200/50 dark:border-white/10 my-3 text-center">
-                <div className="p-2 rounded-xl bg-stone-50/50 dark:bg-white/5">
-                  <div className="text-xs text-stone-400 font-medium">Terms</div>
-                  <div className="text-sm font-bold text-stone-800 dark:text-stone-200">
-                    {year.termsCount}
-                  </div>
-                </div>
-                <div className="p-2 rounded-xl bg-stone-50/50 dark:bg-white/5">
-                  <div className="text-xs text-stone-400 font-medium">Classes</div>
-                  <div className="text-sm font-bold text-stone-800 dark:text-stone-200">
-                    {year.classesCount}
-                  </div>
-                </div>
-                <div className="p-2 rounded-xl bg-stone-50/50 dark:bg-white/5">
-                  <div className="text-xs text-stone-400 font-medium">Students</div>
-                  <div className="text-sm font-bold text-stone-800 dark:text-stone-200">
-                    {year.studentsCount}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-3 flex items-center justify-between gap-2">
-              {!year.isCurrent ? (
-                <button
-                  type="button"
-                  onClick={() => handleSetActive(year.id)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 dark:bg-white/10 hover:bg-brand-500 hover:text-white text-stone-700 dark:text-stone-200 transition cursor-pointer"
-                >
-                  Set as Current
-                </button>
-              ) : (
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> Active Session
-                </span>
-              )}
-
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setDetailYear(year)}
-                  className="p-1.5 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-white/10 transition"
-                  title="View Session Details (UC-ACADEMIC-02)"
-                >
-                  <Eye size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOpenEdit(year)}
-                  className="p-1.5 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-white/10 transition"
-                  title="Edit Academic Session (UC-ACADEMIC-04)"
-                >
-                  <Edit3 size={15} />
-                </button>
-                {!year.isCurrent && (
+              <div className="pt-3 flex items-center justify-between gap-2">
+                {!year.isCurrent ? (
                   <button
-                    type="button"
-                    onClick={() => setDeleteCandidate(year)}
-                    className="p-1.5 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
-                    title="Delete Academic Session (UC-ACADEMIC-05)"
+                    onClick={() => handleSetActive(year.id)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface hover:bg-brand-500 hover:text-white text-color transition"
                   >
-                    <Trash2 size={15} />
+                    Set as Current
                   </button>
+                ) : (
+                  <span className="text-xs font-semibold text-success flex items-center gap-1">
+                    <CheckCircle2 size={14} /> Active Session
+                  </span>
                 )}
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setDetailYear(year)}
+                    className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                    title="Details"
+                  >
+                    <Eye size={15} />
+                  </button>
+                  <button
+                    onClick={() => handleOpenEdit(year)}
+                    className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                    title="Edit"
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                  {!year.isCurrent && (
+                    <button
+                      onClick={() => setDeleteCandidate(year)}
+                      className="p-1.5 rounded-lg text-secondary hover:text-error hover:bg-error/10 transition"
+                      title="Delete"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* ========================================================= */}
-      {/* MODAL: VIEW DETAILS (UC-ACADEMIC-02) */}
-      {/* ========================================================= */}
+      {/* Detail modal */}
       {detailYear && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-5">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
                   <CalendarRange size={26} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                    Academic Session {detailYear.name}
-                  </h3>
-                  <p className="text-xs text-stone-500">
-                    {detailYear.startDate} through {detailYear.endDate}
+                  <h3 className="text-lg font-bold text-color">{detailYear.name}</h3>
+                  <p className="text-xs text-secondary">
+                    {fmtDate(detailYear.startDate)} – {fmtDate(detailYear.endDate)}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setDetailYear(null)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white"
+                className="p-1 rounded-lg text-secondary hover:text-color"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Use Case & Permission Badge */}
-            <div className="px-3 py-1.5 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-between text-xs">
-              <span className="font-semibold text-brand-700 dark:text-brand-300">
-                Use Case: UC-ACADEMIC-02 (View Academic Year Details)
-              </span>
-              <span className="font-mono text-[11px] text-brand-600 dark:text-brand-400">
-                Permission: academicYears.view
-              </span>
-            </div>
-
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400">Status State</span>
-                <span className="font-bold text-stone-800 dark:text-stone-200 block">
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary">Status</span>
+                <span className="font-bold text-color block">
                   {detailYear.status} {detailYear.isCurrent && '(CURRENT)'}
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400">Term Divisions</span>
-                <span className="font-bold text-stone-800 dark:text-stone-200 block">
-                  {detailYear.termsCount} Distinct Terms
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary">Terms</span>
+                <span className="font-bold text-color block">
+                  {detailYear.termsCount ?? 0}
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400">Classes Configured</span>
-                <span className="font-bold text-stone-800 dark:text-stone-200 block">
-                  {detailYear.classesCount} Class Cohorts
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary">Classes</span>
+                <span className="font-bold text-color block">
+                  {detailYear.classesCount ?? 0}
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 space-y-1">
-                <span className="text-stone-400">Total Enrolled</span>
-                <span className="font-bold text-stone-800 dark:text-stone-200 block">
-                  {detailYear.studentsCount} Active Students
+              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
+                <span className="text-secondary">Students</span>
+                <span className="font-bold text-color block">
+                  {detailYear.studentsCount ?? 0}
                 </span>
               </div>
             </div>
 
             {detailYear.description && (
-              <div className="p-3 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200/60 dark:border-white/10 text-xs">
-                <span className="font-semibold text-stone-700 dark:text-stone-300 block mb-1">
-                  Session Description & Notes
+              <div className="p-3 rounded-xl bg-surface border border-surface text-xs">
+                <span className="font-semibold text-color block mb-1">
+                  Description
                 </span>
-                <p className="text-stone-600 dark:text-stone-400">
-                  {detailYear.description}
-                </p>
+                <p className="text-secondary">{detailYear.description}</p>
               </div>
             )}
 
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-200/60 dark:border-white/10">
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-surface">
               <button
                 onClick={() => {
                   const y = detailYear
                   setDetailYear(null)
                   handleOpenEdit(y)
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
               >
-                Edit Session
+                Edit
               </button>
               <button
                 onClick={() => setDetailYear(null)}
@@ -501,139 +417,108 @@ export default function AcademicYears() {
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* MODAL: CREATE / EDIT YEAR (UC-ACADEMIC-03 & 04) */}
-      {/* ========================================================= */}
+      {/* Create / edit modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200/60 dark:border-white/10">
-              <div>
-                <h3 className="text-base font-bold text-stone-900 dark:text-white">
-                  {editingYear ? 'Edit Academic Year' : 'Add New Academic Year'}
-                </h3>
-                <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
-                  {editingYear
-                    ? 'UC-ACADEMIC-04 (Edit) • academicYears.edit'
-                    : 'UC-ACADEMIC-03 (Create) • academicYears.create'}
-                </span>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-surface">
+              <h3 className="text-base font-bold text-color">
+                {editingYear ? 'Edit Academic Year' : 'New Academic Year'}
+              </h3>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white"
+                className="p-1 rounded-lg text-secondary hover:text-color"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveYear} className="space-y-4 mt-3">
+            <form onSubmit={handleSave} className="space-y-4 mt-3">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Session Name / Identifier *
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  Session name *
                 </label>
                 <input
                   type="text"
                   placeholder="e.g. 2027 - 2028"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-xs text-color font-semibold focus:outline-none focus:ring-1 focus:ring-brand-500"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Start Date *
+                  <label className="block text-xs font-semibold text-secondary mb-1">
+                    Start date *
                   </label>
                   <input
                     type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    value={form.startDate}
+                    onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    End Date *
+                  <label className="block text-xs font-semibold text-secondary mb-1">
+                    End date *
                   </label>
                   <input
                     type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    value={form.endDate}
+                    onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Terms Structure
-                  </label>
-                  <select
-                    value={formData.termsCount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, termsCount: Number(e.target.value) })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value={2}>2 Semesters</option>
-                    <option value={3}>3 Trimesters</option>
-                    <option value={4}>4 Quarters</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Status Lifecycle
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        status: e.target.value as any,
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="Upcoming">Upcoming</option>
-                    <option value="Active">Active</option>
-                    <option value="Archived">Archived</option>
-                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Description / Administrative Notes
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  Status
+                </label>
+                <select
+                  value={form.status}
+                  onChange={(e) =>
+                    setForm({ ...form, status: e.target.value as FormState['status'] })
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none"
+                >
+                  <option value="Upcoming">Upcoming</option>
+                  <option value="Active">Active</option>
+                  <option value="Archived">Archived</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  Description
                 </label>
                 <textarea
-                  rows={2}
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="e.g. Focus on curriculum modernization..."
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100/70 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Optional notes about this session..."
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-200/60 dark:border-white/10">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-surface">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10 transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-secondary hover:bg-surface transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-md transition cursor-pointer"
+                  disabled={saving}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-md transition disabled:opacity-50"
                 >
-                  {editingYear ? 'Save Changes' : 'Create Session'}
+                  {editingYear ? 'Save' : 'Create'}
                 </button>
               </div>
             </form>
@@ -641,51 +526,40 @@ export default function AcademicYears() {
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* MODAL: DELETE CONFIRMATION (UC-ACADEMIC-05) */}
-      {/* ========================================================= */}
+      {/* Delete confirmation */}
       {deleteCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-stone-200 dark:border-white/15 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
-              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40">
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-error">
+              <div className="p-3 rounded-xl bg-error/10 border border-error/30">
                 <AlertTriangle size={24} />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-stone-900 dark:text-white">
-                  Delete Academic Session
-                </h3>
-                <span className="text-xs text-rose-600 font-mono">
-                  UC-ACADEMIC-05 • academicYears.delete
-                </span>
-              </div>
+              <h3 className="text-base font-bold text-color">Delete Academic Year</h3>
             </div>
 
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-              Are you sure you want to permanently delete academic session{' '}
-              <span className="font-bold text-stone-900 dark:text-white">
-                "{deleteCandidate.name}"
-              </span>
-              ?
+            <p className="text-xs text-secondary leading-relaxed">
+              Permanently delete{' '}
+              <span className="font-bold text-color">"{deleteCandidate.name}"</span>?
             </p>
 
-            {(deleteCandidate.classesCount > 0 || deleteCandidate.studentsCount > 0) && (
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300">
-                <span className="font-bold block mb-0.5">Precondition Warning (409 Conflict):</span>
-                This academic session contains {deleteCandidate.classesCount} active classes and {deleteCandidate.studentsCount} enrolled students. Deletion will be rejected by the server until emptied.
+            {((deleteCandidate.classesCount ?? 0) > 0 || (deleteCandidate.studentsCount ?? 0) > 0) && (
+              <div className="p-3 rounded-xl bg-warning/10 border border-warning/30 text-xs text-warning">
+                This session has {deleteCandidate.classesCount} classes and{' '}
+                {deleteCandidate.studentsCount} students. Deletion will be rejected
+                by the server.
               </div>
             )}
 
             <div className="pt-2 flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteCandidate(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-800 dark:text-stone-200 transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition shadow-sm"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-error hover:opacity-90 text-white transition"
               >
                 Confirm Delete
               </button>

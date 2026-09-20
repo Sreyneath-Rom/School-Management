@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+// src/i18n/useTranslations.ts
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { getFlagFromLanguageCode, getLocaleFromCode } from './languageMeta'
 import { EN_TRANSLATIONS, STRINGS, type TranslationKey } from './strings'
@@ -16,6 +17,7 @@ import {
 } from './storage'
 import { languagesService } from '@/services/languagesService'
 import { translationsService } from '@/services/translationsService'
+import { useAuth } from '@/hooks/useAuth'
 
 // Built-in supported languages. Exported so TranslationManager can treat
 // these codes as reserved — without this, an admin adding a custom
@@ -69,7 +71,10 @@ const BUILT_IN_TRANSLATIONS = buildBuiltInTranslations()
 // back to raw translation keys instead of their shipped translations.
 // Merging per-key, per-language keeps built-ins as the base and lets
 // `stored` override only the specific keys someone actually edited.
-function mergeTranslations(builtIn: TranslationMap, stored: TranslationMap): TranslationMap {
+function mergeTranslations(
+  builtIn: TranslationMap,
+  stored: TranslationMap
+): TranslationMap {
   const result: TranslationMap = {}
   const codes = new Set([...Object.keys(builtIn), ...Object.keys(stored)])
 
@@ -88,13 +93,21 @@ function mergeTranslations(builtIn: TranslationMap, stored: TranslationMap): Tra
 // only appears in the switcher once someone has explicitly added it.
 function withDefaultLanguage(languages: LanguageDef[]): LanguageDef[] {
   if (!Array.isArray(languages)) return [DEFAULT_LANGUAGE]
-  const additional = languages.filter((language) => language && language.code !== 'en')
+  const additional = languages.filter(
+    (language) => language && language.code !== 'en'
+  )
   return [DEFAULT_LANGUAGE, ...additional]
 }
 
 function sameLanguages(a: LanguageDef[], b: LanguageDef[]): boolean {
   if (!Array.isArray(a) || !Array.isArray(b)) return false
-  return a.length === b.length && a.every((lang, i) => lang && b[i] && lang.code === b[i].code && lang.name === b[i].name)
+  return (
+    a.length === b.length &&
+    a.every(
+      (lang, i) =>
+        lang && b[i] && lang.code === b[i].code && lang.name === b[i].name
+    )
+  )
 }
 
 export interface UseTranslationsResult {
@@ -111,8 +124,10 @@ export interface UseTranslationsResult {
  * cross-tab storage event), and exposes a `t()` lookup function.
  */
 export function useTranslations(): UseTranslationsResult {
+  const { isAuthenticated } = useAuth()
+
   const [languages, setLanguages] = useState<LanguageDef[]>(() =>
-    withDefaultLanguage(loadLanguages()),
+    withDefaultLanguage(loadLanguages())
   )
 
   const [translationData, setTranslationData] = useState<TranslationMap>(() => {
@@ -136,9 +151,11 @@ export function useTranslations(): UseTranslationsResult {
       const stored = loadTranslationData()
       const nextData = mergeTranslations(BUILT_IN_TRANSLATIONS, stored)
 
-      setLanguages((prev) => (sameLanguages(prev, nextLanguages) ? prev : nextLanguages))
+      setLanguages((prev) =>
+        sameLanguages(prev, nextLanguages) ? prev : nextLanguages
+      )
       setTranslationData((prev) =>
-        JSON.stringify(prev) === JSON.stringify(nextData) ? prev : nextData,
+        JSON.stringify(prev) === JSON.stringify(nextData) ? prev : nextData
       )
 
       setLanguageState((current) => {
@@ -156,26 +173,22 @@ export function useTranslations(): UseTranslationsResult {
   }, [])
 
   // --------------------------------------------------------------------------
-  // Load from the backend on mount.
+  // Load from the backend whenever the user becomes authenticated.
   //
-  // localStorage (via the state initializers above and the `sync` effect)
-  // gives an instant, offline-safe first paint using whatever was cached
-  // from the last successful fetch. This effect then tries the real API
-  // and, if it succeeds, overwrites both React state and the localStorage
-  // cache with the authoritative server data.
+  // The dependency on `isAuthenticated` matters: the header (and therefore
+  // this hook) renders before auth finishes initializing, so the very
+  // first `/languages` call would 401. Depending on the flag means the
+  // fetch runs once the user is actually logged in, and re-runs if the
+  // user logs out and back in as someone else — carrying fresh data for
+  // the new session.
   //
-  // Any failure here — logged out, no `translations.view` permission,
-  // offline, backend down — is swallowed on purpose: this hook is used
-  // app-wide (e.g. from Header), including on pages rendered before login,
-  // so it must never throw or block rendering. Worst case, the UI just
-  // falls back to the built-in translations plus whatever was last cached.
+  // Failures are swallowed on purpose: offline, missing permission, or a
+  // backend that's down should leave the UI running on the localStorage
+  // cache and built-in translations. This hook must never block render.
   // --------------------------------------------------------------------------
 
-  const hasFetchedRef = useRef(false)
-
   useEffect(() => {
-    if (hasFetchedRef.current) return
-    hasFetchedRef.current = true
+    if (!isAuthenticated) return
 
     let cancelled = false
 
@@ -188,7 +201,7 @@ export function useTranslations(): UseTranslationsResult {
             code: (record.code || '').toLowerCase(),
             name: record.name || '',
             flag: getFlagFromLanguageCode(record.code || ''),
-          })),
+          }))
         )
 
         const additionalCodes = fetchedLanguages
@@ -204,17 +217,20 @@ export function useTranslations(): UseTranslationsResult {
               // down the rest — just fall back to built-ins for that code.
               return [code, {}] as const
             }
-          }),
+          })
         )
 
         if (cancelled) return
 
-        const storedFromApi: TranslationMap = Object.fromEntries(fetchedEntries)
+        const storedFromApi: TranslationMap =
+          Object.fromEntries(fetchedEntries)
         const nextData = mergeTranslations(BUILT_IN_TRANSLATIONS, storedFromApi)
 
-        setLanguages((prev) => (sameLanguages(prev, fetchedLanguages) ? prev : fetchedLanguages))
+        setLanguages((prev) =>
+          sameLanguages(prev, fetchedLanguages) ? prev : fetchedLanguages
+        )
         setTranslationData((prev) =>
-          JSON.stringify(prev) === JSON.stringify(nextData) ? prev : nextData,
+          JSON.stringify(prev) === JSON.stringify(nextData) ? prev : nextData
         )
 
         // Refresh the offline cache so the next page load (or a failed
@@ -232,7 +248,7 @@ export function useTranslations(): UseTranslationsResult {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isAuthenticated])
 
   // --------------------------------------------------------------------------
   // Persist + broadcast whenever the user picks a different language.
@@ -241,7 +257,9 @@ export function useTranslations(): UseTranslationsResult {
   const setLanguage = useCallback((code: string) => {
     const nextCode = (code || 'en').trim().toLowerCase()
     const available = withDefaultLanguage(loadLanguages())
-    const resolved = available.some((lang) => lang.code === nextCode) ? nextCode : 'en'
+    const resolved = available.some((lang) => lang.code === nextCode)
+      ? nextCode
+      : 'en'
 
     setLanguageState(resolved)
     saveActiveLanguageCode(resolved)
@@ -252,7 +270,8 @@ export function useTranslations(): UseTranslationsResult {
   // --------------------------------------------------------------------------
 
   const activeLanguage = useMemo(() => {
-    const match = languages.find((lang) => lang.code === language) ?? DEFAULT_LANGUAGE
+    const match =
+      languages.find((lang) => lang.code === language) ?? DEFAULT_LANGUAGE
     return { ...match, locale: getLocaleFromCode(match.code) }
   }, [languages, language])
 
@@ -261,7 +280,7 @@ export function useTranslations(): UseTranslationsResult {
       const translated = translationData[language]?.[key]?.trim()
       return translated || fallback || EN_TRANSLATIONS[key] || key
     },
-    [language, translationData],
+    [language, translationData]
   )
 
   return { language, setLanguage, languages, activeLanguage, t }

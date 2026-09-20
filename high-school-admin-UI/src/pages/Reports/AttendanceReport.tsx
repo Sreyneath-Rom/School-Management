@@ -1,30 +1,43 @@
-import { useState, useMemo } from 'react'
+// src/pages/Reports/AttendanceReport.tsx
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
 import {
-  ClipboardCheck,
   Filter,
   Download,
   Printer,
   Search,
-  Calendar,
-  AlertTriangle,
+  RefreshCw,
   CheckCircle2,
-  Clock,
-  FileQuestion,
-  Users,
-  TrendingDown,
-  TrendingUp,
+  AlertTriangle,
+  Info,
 } from 'lucide-react'
-import { useToast } from '@/components/common/ToastProvider'
 import { useAuth } from '@/hooks/useAuth'
+import { useToast } from '@/components/common/ToastProvider'
+import { reportService } from '@/services/reportService'
+import { classService, type ClassRecord } from '@/services/classService'
+import type { AttendanceStatus } from '@/types/attendance'
 
-interface StudentAttendanceSummary {
+/**
+ * Row shape assumed for `/reports/attendance`. If the backend's
+ * `AttendanceReportRow` differs, this is the only place that changes.
+ */
+interface ReportRow {
+  id: string
+  studentId: string
+  studentName?: string
+  studentCode?: string
+  className?: string
+  date: string
+  status: AttendanceStatus
+}
+
+interface StudentSummary {
   studentId: string
   name: string
-  class: string
-  grade: string
+  studentCode: string
+  className: string
   totalDays: number
   presentDays: number
   lateDays: number
@@ -34,222 +47,234 @@ interface StudentAttendanceSummary {
   chronicAlert: boolean
 }
 
-const SAMPLE_ATTENDANCE_DATA: StudentAttendanceSummary[] = [
-  {
-    studentId: 'STU-1001',
-    name: 'Emily Watson',
-    class: 'Grade 10-A',
-    grade: 'Grade 10',
-    totalDays: 60,
-    presentDays: 58,
-    lateDays: 1,
-    excusedDays: 1,
-    absentDays: 0,
-    attendanceRate: 98.3,
-    chronicAlert: false,
-  },
-  {
-    studentId: 'STU-1002',
-    name: 'Michael Chen',
-    class: 'Grade 10-A',
-    grade: 'Grade 10',
-    totalDays: 60,
-    presentDays: 55,
-    lateDays: 3,
-    excusedDays: 2,
-    absentDays: 0,
-    attendanceRate: 95.0,
-    chronicAlert: false,
-  },
-  {
-    studentId: 'STU-1003',
-    name: 'Sophia Rodriguez',
-    class: 'Grade 10-A',
-    grade: 'Grade 10',
-    totalDays: 60,
-    presentDays: 59,
-    lateDays: 1,
-    excusedDays: 0,
-    absentDays: 0,
-    attendanceRate: 99.2,
-    chronicAlert: false,
-  },
-  {
-    studentId: 'STU-1004',
-    name: 'James Wilson',
-    class: 'Grade 10-B',
-    grade: 'Grade 10',
-    totalDays: 60,
-    presentDays: 48,
-    lateDays: 4,
-    excusedDays: 2,
-    absentDays: 6,
-    attendanceRate: 83.3,
-    chronicAlert: true,
-  },
-  {
-    studentId: 'STU-1005',
-    name: 'Olivia Martinez',
-    class: 'Grade 10-B',
-    grade: 'Grade 10',
-    totalDays: 60,
-    presentDays: 56,
-    lateDays: 2,
-    excusedDays: 1,
-    absentDays: 1,
-    attendanceRate: 94.5,
-    chronicAlert: false,
-  },
-  {
-    studentId: 'STU-1006',
-    name: 'Ethan Brown',
-    class: 'Grade 11-A',
-    grade: 'Grade 11',
-    totalDays: 60,
-    presentDays: 57,
-    lateDays: 2,
-    excusedDays: 1,
-    absentDays: 0,
-    attendanceRate: 96.7,
-    chronicAlert: false,
-  },
-  {
-    studentId: 'STU-1007',
-    name: 'Ava Taylor',
-    class: 'Grade 11-A',
-    grade: 'Grade 11',
-    totalDays: 60,
-    presentDays: 46,
-    lateDays: 5,
-    excusedDays: 3,
-    absentDays: 6,
-    attendanceRate: 80.0,
-    chronicAlert: true,
-  },
-  {
-    studentId: 'STU-1008',
-    name: 'Lucas Garcia',
-    class: 'Grade 12-A',
-    grade: 'Grade 12',
-    totalDays: 60,
-    presentDays: 60,
-    lateDays: 0,
-    excusedDays: 0,
-    absentDays: 0,
-    attendanceRate: 100.0,
-    chronicAlert: false,
-  },
-]
+const CHRONIC_THRESHOLD = 85
+
+function normalise(raw: unknown): ReportRow | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  if (typeof r.id !== 'string' || typeof r.studentId !== 'string') return null
+  if (typeof r.date !== 'string') return null
+  const status = String(r.status ?? '').toUpperCase()
+  if (
+    status !== 'PRESENT' &&
+    status !== 'ABSENT' &&
+    status !== 'LATE' &&
+    status !== 'EXCUSED'
+  ) {
+    return null
+  }
+  const student = (r.student as Record<string, unknown> | undefined) ?? undefined
+  const user = (student?.user as Record<string, unknown> | undefined) ?? undefined
+  const studentClass =
+    (student?.class as Record<string, unknown> | undefined) ?? undefined
+
+  const firstName = typeof user?.firstName === 'string' ? user.firstName : ''
+  const lastName = typeof user?.lastName === 'string' ? user.lastName : ''
+  const name = `${firstName} ${lastName}`.trim()
+
+  return {
+    id: r.id,
+    studentId: r.studentId,
+    studentName: name || undefined,
+    studentCode:
+      typeof student?.studentCode === 'string' ? student.studentCode : undefined,
+    className:
+      typeof studentClass?.name === 'string' ? studentClass.name : undefined,
+    date: r.date,
+    status: status as AttendanceStatus,
+  }
+}
+
+function aggregate(rows: ReportRow[]): StudentSummary[] {
+  const byStudent = new Map<string, ReportRow[]>()
+  for (const row of rows) {
+    const list = byStudent.get(row.studentId) ?? []
+    list.push(row)
+    byStudent.set(row.studentId, list)
+  }
+
+  const out: StudentSummary[] = []
+  for (const [studentId, list] of byStudent) {
+    const first = list[0]
+    let present = 0
+    let late = 0
+    let excused = 0
+    let absent = 0
+    for (const r of list) {
+      if (r.status === 'PRESENT') present += 1
+      else if (r.status === 'LATE') late += 1
+      else if (r.status === 'EXCUSED') excused += 1
+      else absent += 1
+    }
+    const total = list.length
+    const attendanceRate =
+      total > 0 ? Number((((present + late) / total) * 100).toFixed(1)) : 0
+
+    out.push({
+      studentId,
+      name: first.studentName ?? first.studentCode ?? studentId,
+      studentCode: first.studentCode ?? '',
+      className: first.className ?? '—',
+      totalDays: total,
+      presentDays: present,
+      lateDays: late,
+      excusedDays: excused,
+      absentDays: absent,
+      attendanceRate,
+      chronicAlert: attendanceRate < CHRONIC_THRESHOLD,
+    })
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name))
+}
 
 export default function AttendanceReport() {
   const { user } = useAuth()
   const { showToast } = useToast()
   const isTeacher = user?.role === 'teacher'
 
-  // Filter States (UC-REPORT-02)
-  const [fromDate, setFromDate] = useState('2025-09-01')
-  const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0])
-  const [selectedClass, setSelectedClass] = useState<string>(isTeacher ? 'Grade 10-A' : 'All')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10))
+  const [classId, setClassId] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<'All' | 'Chronic Alert' | 'Regular'>('All')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [search, setSearch] = useState('')
+  const [classes, setClasses] = useState<ClassRecord[]>([])
+  const [rows, setRows] = useState<ReportRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
 
-  const filteredData = useMemo(() => {
-    return SAMPLE_ATTENDANCE_DATA.filter((s) => {
-      if (isTeacher && s.class !== 'Grade 10-A') return false
-      const matchClass = selectedClass === 'All' || s.class === selectedClass
-      const matchStatus =
-        statusFilter === 'All' ||
-        (statusFilter === 'Chronic Alert' && s.chronicAlert) ||
-        (statusFilter === 'Regular' && !s.chronicAlert)
-      const matchSearch =
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.studentId.toLowerCase().includes(searchQuery.toLowerCase())
-      return matchClass && matchStatus && matchSearch
+  useEffect(() => {
+    if (isTeacher) return
+    classService
+      .list()
+      .then((c) => setClasses(Array.isArray(c) ? c : []))
+      .catch(() => setClasses([]))
+  }, [isTeacher])
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const raw = await reportService.attendance({
+        classId: classId || undefined,
+        from: fromDate || undefined,
+        to: toDate || undefined,
+        limit: 2000,
+      })
+      const list = Array.isArray(raw) ? raw : []
+      const normalised = list.map(normalise).filter((r): r is ReportRow => r !== null)
+      setRows(normalised)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)))
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [classId, fromDate, toDate])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const summaries = useMemo(() => aggregate(rows), [rows])
+
+  const filtered = useMemo(() => {
+    return summaries.filter((s) => {
+      if (statusFilter === 'Chronic Alert' && !s.chronicAlert) return false
+      if (statusFilter === 'Regular' && s.chronicAlert) return false
+      if (search.trim()) {
+        const q = search.toLowerCase()
+        return (
+          s.name.toLowerCase().includes(q) ||
+          s.studentCode.toLowerCase().includes(q)
+        )
+      }
+      return true
     })
-  }, [isTeacher, selectedClass, statusFilter, searchQuery])
+  }, [summaries, statusFilter, search])
 
-  // Summary Metrics
-  const totalStudents = filteredData.length
-  const avgAttendanceRate = totalStudents
-    ? (filteredData.reduce((acc, s) => acc + s.attendanceRate, 0) / totalStudents).toFixed(1)
-    : '0.0'
-  const totalAbsences = filteredData.reduce((acc, s) => acc + s.absentDays, 0)
-  const chronicCount = filteredData.filter((s) => s.chronicAlert).length
+  const stats = useMemo(() => {
+    const total = filtered.length
+    const avg = total
+      ? filtered.reduce((sum, s) => sum + s.attendanceRate, 0) / total
+      : 0
+    const unexcused = filtered.reduce((sum, s) => sum + s.absentDays, 0)
+    const chronic = filtered.filter((s) => s.chronicAlert).length
+    return { total, avg, unexcused, chronic }
+  }, [filtered])
+
+  const kpiCards: StatCard[] = [
+    { id: 'avg-rate', label: 'Average Attendance Rate', value: `${stats.avg.toFixed(1)}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'filtered students', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'students', label: 'Students', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'in scope', icon: 'Users', tint: 'blue' },
+    { id: 'unexcused', label: 'Unexcused Absences', value: String(stats.unexcused), delta: '-', deltaDirection: 'neutral', deltaLabel: 'days total', icon: 'CalendarDays', tint: 'amber' },
+    { id: 'chronic', label: 'Chronic Alerts', value: String(stats.chronic), delta: '-', deltaDirection: 'neutral', deltaLabel: `below ${CHRONIC_THRESHOLD}%`, icon: 'AlertCircle', tint: 'red' },
+  ]
 
   const handleExportCSV = () => {
+    if (filtered.length === 0) {
+      showToast('Nothing to export', 'info')
+      return
+    }
     const headers = [
       'Student ID',
-      'Student Name',
+      'Name',
       'Class',
-      'Grade',
-      'Enrolled Days',
+      'Sessions',
       'Present',
       'Late',
-      'Permission/Excused',
+      'Excused',
       'Unexcused Absent',
-      'Attendance Rate (%)',
-      'Chronic Alert Status',
+      'Attendance %',
+      'Status',
     ]
-
-    const rows = filteredData.map((s) => [
-      s.studentId,
+    const data = filtered.map((s) => [
+      s.studentCode || s.studentId,
       `"${s.name}"`,
-      s.class,
-      s.grade,
+      s.className,
       s.totalDays,
       s.presentDays,
       s.lateDays,
       s.excusedDays,
       s.absentDays,
-      `${s.attendanceRate}%`,
-      s.chronicAlert ? 'CHRONIC ALERT (<85%)' : 'NORMAL',
+      s.attendanceRate,
+      s.chronicAlert ? 'CHRONIC' : 'NORMAL',
     ])
-
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `Attendance_Report_${fromDate}_to_${toDate}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    showToast('Attendance report exported to CSV successfully', 'success')
+    const csv = [headers.join(','), ...data.map((r) => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Attendance_Report_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    showToast('Report exported', 'success')
   }
-
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const kpiCards: StatCard[] = [
-    { id: 'avg-attendance', label: 'Average Attendance Rate', value: `${avgAttendanceRate}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'filtered students', icon: 'UserCheck', tint: 'green' },
-    { id: 'filtered-students', label: 'Total Filtered Students', value: totalStudents.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'enrolled', icon: 'Users', tint: 'blue' },
-    { id: 'unexcused-absences', label: 'Unexcused Absences', value: totalAbsences.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'days lost', icon: 'CalendarDays', tint: 'amber' },
-    { id: 'chronic-alerts', label: 'Chronic Absenteeism Alerts', value: chronicCount.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'requires intervention', icon: 'AlertCircle', tint: 'red' },
-  ]
 
   return (
-    <div className="space-y-6 pb-12 print:p-0 print:m-0">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
+    <div className="space-y-6 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeading
-          title="Attendance & Punctuality Report"
+          title="Attendance Report"
           subtitle={
             isTeacher
-              ? 'Attendance compliance and tracking report for your assigned classes (UC-REPORT-02).'
-              : 'School-wide attendance analytics, absenteeism alerts, and verification records (UC-REPORT-02).'
+              ? 'Attendance compliance for your assigned classes.'
+              : 'School-wide attendance and absenteeism analytics.'
           }
         />
         <div className="flex items-center gap-2.5">
           <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-50 transition shadow-2xs"
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-medium hover:bg-surface-strong transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-medium hover:bg-surface-strong transition"
           >
             <Printer className="w-4 h-4" />
-            Print Report
+            Print
           </button>
           <button
             onClick={handleExportCSV}
@@ -261,198 +286,182 @@ export default function AttendanceReport() {
         </div>
       </div>
 
-      {/* Filter Parameters Ribbon */}
-      <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3 print:hidden">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+        <Info size={16} className="text-info shrink-0 mt-0.5" />
+        <p className="text-secondary">
+          This report aggregates raw attendance rows from `/reports/attendance`
+          client-side. Per-student summaries are computed from the events in
+          the selected range.
+        </p>
+      </div>
+
+      <div className="p-4 rounded-2xl border border-surface bg-surface shadow-sm space-y-3 print:hidden">
+        <div className="flex items-center gap-2 text-xs font-bold text-color">
           <Filter className="w-4 h-4 text-brand-600" />
-          <span>Report Date Range & Criteria</span>
+          <span>Filters</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">From Date</label>
+            <label className="block text-[11px] font-medium text-secondary mb-1">
+              From date
+            </label>
             <input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+              className="w-full text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color"
             />
           </div>
-
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">To Date</label>
+            <label className="block text-[11px] font-medium text-secondary mb-1">
+              To date
+            </label>
             <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+              className="w-full text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color"
             />
           </div>
-
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Class</label>
+            <label className="block text-[11px] font-medium text-secondary mb-1">
+              Class
+            </label>
             <select
-              value={selectedClass}
+              value={classId}
               disabled={isTeacher}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 disabled:opacity-60"
+              onChange={(e) => setClassId(e.target.value)}
+              className="w-full text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color disabled:opacity-60"
             >
-              {!isTeacher && <option value="All">All Classes</option>}
-              <option value="Grade 10-A">Grade 10-A</option>
-              <option value="Grade 10-B">Grade 10-B</option>
-              <option value="Grade 11-A">Grade 11-A</option>
-              <option value="Grade 12-A">Grade 12-A</option>
+              <option value="">All classes</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </div>
-
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Status Filter</label>
+            <label className="block text-[11px] font-medium text-secondary mb-1">
+              Status
+            </label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+              onChange={(e) =>
+                setStatusFilter(e.target.value as typeof statusFilter)
+              }
+              className="w-full text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color"
             >
-              <option value="All">All Students</option>
-              <option value="Chronic Alert">Chronic Absenteeism (&lt; 85%)</option>
-              <option value="Regular">Normal Attendance (&ge; 85%)</option>
+              <option value="All">All students</option>
+              <option value="Chronic Alert">{`Chronic (< ${CHRONIC_THRESHOLD}%)`}</option>
+              <option value="Regular">{`Regular (≥ ${CHRONIC_THRESHOLD}%)`}</option>
             </select>
           </div>
         </div>
       </div>
 
       <StatsGrid cards={kpiCards} columns={4} />
-      {/* Legacy KPI markup retained below only as migration reference.
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Average Attendance Rate</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgAttendanceRate}%</span>
-            <span className="text-xs text-emerald-600 font-medium">Compliance Target &ge; 90%</span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">Across filtered students</p>
-        </div>
 
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Filtered Students</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalStudents}</span>
-            <span className="text-xs text-slate-400 font-medium">Students</span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">Enrolled across class scope</p>
-        </div>
-
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Unexcused Absences</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalAbsences}</span>
-            <span className="text-xs text-rose-500 font-medium">Days Lost</span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">Excludes excused sick leaves</p>
-        </div>
-
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Chronic Absenteeism Alerts</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className={`text-2xl font-bold ${chronicCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600'}`}>
-              {chronicCount}
-            </span>
-            <span className="text-xs text-slate-400 font-medium">Students &lt; 85%</span>
-          </div>
-          <p className="text-[11px] text-rose-500 font-medium mt-1">Requires pastoral intervention</p>
-        </div>
-      </div> */}
-
-      {/* Attendance Summary Roster Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-surface rounded-2xl border border-surface shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-surface flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-              Student Attendance Breakdown
-            </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
-              {filteredData.length} Students
+            <h3 className="font-bold text-sm text-color">Student Breakdown</h3>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-surface-strong text-secondary font-medium">
+              {filtered.length} students
             </span>
           </div>
-
           <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
             <input
               type="text"
               placeholder="Search student or ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-surface bg-surface text-color"
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50/75 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                <th className="py-3 px-4 font-semibold">Student</th>
-                <th className="py-3 px-3 font-semibold">Class</th>
-                <th className="py-3 px-3 font-semibold text-center">Sessions</th>
-                <th className="py-3 px-3 font-semibold text-center text-emerald-600 dark:text-emerald-400">Present</th>
-                <th className="py-3 px-3 font-semibold text-center text-amber-600 dark:text-amber-400">Late</th>
-                <th className="py-3 px-3 font-semibold text-center text-blue-600 dark:text-blue-400">Permission</th>
-                <th className="py-3 px-3 font-semibold text-center text-rose-600 dark:text-rose-400">Absent</th>
-                <th className="py-3 px-3 font-semibold text-center">Attendance %</th>
-                <th className="py-3 px-4 font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filteredData.map((s) => (
-                <tr key={s.studentId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                  <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
-                    <div>{s.name}</div>
-                    <span className="text-[10px] text-slate-400 font-mono">{s.studentId}</span>
-                  </td>
-                  <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{s.class}</td>
-                  <td className="py-3 px-3 text-center text-slate-600 dark:text-slate-400 font-mono">{s.totalDays}</td>
-                  <td className="py-3 px-3 text-center text-emerald-600 dark:text-emerald-400 font-bold font-mono">
-                    {s.presentDays}
-                  </td>
-                  <td className="py-3 px-3 text-center text-amber-600 dark:text-amber-400 font-bold font-mono">
-                    {s.lateDays}
-                  </td>
-                  <td className="py-3 px-3 text-center text-blue-600 dark:text-blue-400 font-bold font-mono">
-                    {s.excusedDays}
-                  </td>
-                  <td className="py-3 px-3 text-center text-rose-600 dark:text-rose-400 font-bold font-mono">
-                    {s.absentDays}
-                  </td>
-                  <td className="py-3 px-3 text-center font-bold font-mono">
-                    <span
-                      className={`px-2 py-0.5 rounded-md text-[11px] ${
-                        s.attendanceRate >= 95
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
-                          : s.attendanceRate >= 85
-                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400'
-                          : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'
-                      }`}
-                    >
-                      {s.attendanceRate}%
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    {s.chronicAlert ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
-                        <AlertTriangle className="w-3 h-3" />
-                        Chronic Warning
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Compliant
-                      </span>
-                    )}
-                  </td>
+        {loading ? (
+          <div className="py-16 text-center text-secondary text-sm">
+            <RefreshCw size={16} className="inline animate-spin mr-2" />
+            Loading attendance...
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center">
+            <p className="text-sm font-bold text-error">Couldn't load report</p>
+            <p className="mt-1 text-xs text-secondary">{error.message}</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-secondary text-sm">
+            {summaries.length === 0
+              ? 'No attendance records in the selected range.'
+              : 'No students match these filters.'}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-surface-strong text-secondary font-semibold border-b border-surface">
+                <tr>
+                  <th className="py-3 px-4">Student</th>
+                  <th className="py-3 px-3">Class</th>
+                  <th className="py-3 px-3 text-center">Sessions</th>
+                  <th className="py-3 px-3 text-center text-success">Present</th>
+                  <th className="py-3 px-3 text-center text-warning">Late</th>
+                  <th className="py-3 px-3 text-center text-info">Excused</th>
+                  <th className="py-3 px-3 text-center text-error">Absent</th>
+                  <th className="py-3 px-3 text-center">Rate</th>
+                  <th className="py-3 px-4">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-surface">
+                {filtered.map((s) => (
+                  <tr key={s.studentId} className="hover:bg-surface/50 transition">
+                    <td className="py-3 px-4 font-medium text-color">
+                      <div>{s.name}</div>
+                      {s.studentCode && (
+                        <span className="text-[10px] text-secondary font-mono">
+                          {s.studentCode}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-secondary">{s.className}</td>
+                    <td className="py-3 px-3 text-center font-mono">{s.totalDays}</td>
+                    <td className="py-3 px-3 text-center text-success font-bold font-mono">
+                      {s.presentDays}
+                    </td>
+                    <td className="py-3 px-3 text-center text-warning font-bold font-mono">
+                      {s.lateDays}
+                    </td>
+                    <td className="py-3 px-3 text-center text-info font-bold font-mono">
+                      {s.excusedDays}
+                    </td>
+                    <td className="py-3 px-3 text-center text-error font-bold font-mono">
+                      {s.absentDays}
+                    </td>
+                    <td className="py-3 px-3 text-center font-bold font-mono text-color">
+                      {s.attendanceRate}%
+                    </td>
+                    <td className="py-3 px-4">
+                      {s.chronicAlert ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-error/10 text-error">
+                          <AlertTriangle className="w-3 h-3" />
+                          Chronic
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-success/10 text-success">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Compliant
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

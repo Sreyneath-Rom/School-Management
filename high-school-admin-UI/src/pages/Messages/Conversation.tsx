@@ -1,262 +1,278 @@
-import { useState, useRef, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { 
-  ArrowLeft, 
-  Send, 
-  Paperclip, 
-  MoreVertical, 
-  Star, 
-  Trash2, 
-  FileText, 
-  Download, 
-  Check, 
+// src/pages/Messages/Conversation.tsx
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import {
+  ArrowLeft,
+  Send,
+  MoreVertical,
+  Star,
+  FileText,
+  Download,
   CheckCheck,
-  User,
-  Phone,
-  Mail,
-  Clock
-} from "lucide-react";
-import { useToast } from "@/components/common/ToastProvider";
+  RefreshCw,
+  Info,
+} from 'lucide-react'
+import { useToast } from '@/components/common/ToastProvider'
+import {
+  messageService,
+  type MessageItem,
+  type MessageThread,
+} from '@/services/messageService'
 
-interface MessageItem {
-  id: string;
-  senderId: string; // 'me' or 'other'
-  text: string;
-  timestamp: string;
-  attachment?: {
-    name: string;
-    size: string;
-    type: string;
-  };
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+function timeOf(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function Conversation() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { showToast } = useToast();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Participant info (mocked based on ID or default)
-  const participant = {
-    name: "Dr. Sarah Jenkins",
-    role: "Department Chair - Mathematics",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-    email: "sarah.jenkins@oakridge.edu",
-    phone: "+1 (555) 234-8901",
-    status: "Online",
-    subject: "Midterm Grade Moderation & Marking Rubric",
-  };
+  const [thread, setThread] = useState<MessageThread | null>(null)
+  const [messages, setMessages] = useState<MessageItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [replyText, setReplyText] = useState('')
 
-  const [messages, setMessages] = useState<MessageItem[]>([
-    {
-      id: "m-1",
-      senderId: "other",
-      text: "Good morning! I have finalized the moderation guidelines and grading scheme for the Term 2 Calculus and Statistics exams.",
-      timestamp: "09:42 AM",
-    },
-    {
-      id: "m-2",
-      senderId: "other",
-      text: "Could you review the attached rubric to ensure it aligns with the state board accreditation standards?",
-      timestamp: "09:43 AM",
-      attachment: {
-        name: "Term2_Calculus_Rubric_v2.pdf",
-        size: "1.4 MB",
-        type: "pdf",
-      },
-    },
-    {
-      id: "m-3",
-      senderId: "me",
-      text: "Thank you Dr. Jenkins. I've taken a quick glance; the breakdown between theoretical proofs and computational questions is very well balanced.",
-      timestamp: "10:15 AM",
-    },
-    {
-      id: "m-4",
-      senderId: "other",
-      text: "Excellent! When should I distribute the physical papers to the assigned examination proctors?",
-      timestamp: "10:24 AM",
-    },
-  ]);
+  const load = useCallback(async () => {
+    if (!id) return
+    setLoading(true)
+    try {
+      const detail = await messageService.getThread(id)
+      if (!detail) {
+        setThread(null)
+        setMessages([])
+        return
+      }
+      setThread(detail.thread)
+      setMessages(detail.messages)
+      // Mark read once loaded — best-effort, ignore failure.
+      if (detail.thread.unread) {
+        messageService.setRead(id, true).catch(() => {})
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unable to load conversation.'
+      showToast(msg, 'error')
+      setThread(null)
+      setMessages([])
+    } finally {
+      setLoading(false)
+    }
+  }, [id, showToast])
 
-  const [replyText, setReplyText] = useState("");
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const quickReplies = [
-    "Papers can be collected from Room 102 by 8:00 AM.",
-    "Approved! Please proceed with distribution.",
-    "Let's schedule a brief 10-minute briefing.",
-  ];
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages.length])
 
-  const handleSend = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!replyText.trim()) return;
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!id || !replyText.trim()) return
 
-    const newMsg: MessageItem = {
-      id: `m-${Date.now()}`,
-      senderId: "me",
-      text: replyText.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+    const text = replyText.trim()
+    setSending(true)
+    try {
+      const sent = await messageService.sendMessage(id, { body: text })
+      setMessages((prev) => [...prev, sent])
+      setReplyText('')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unable to send.'
+      showToast(msg, 'error')
+    } finally {
+      setSending(false)
+    }
+  }
 
-    setMessages(prev => [...prev, newMsg]);
-    setReplyText("");
-    showToast("Reply sent", "success");
-  };
+  const toggleStar = async () => {
+    if (!thread) return
+    const next = !thread.starred
+    setThread({ ...thread, starred: next })
+    try {
+      await messageService.setStarred(thread.id, next)
+    } catch (err) {
+      setThread({ ...thread, starred: !next })
+      const msg = err instanceof Error ? err.message : 'Unable to update.'
+      showToast(msg, 'error')
+    }
+  }
 
-  const handleQuickReply = (text: string) => {
-    setReplyText(text);
-  };
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 text-center text-secondary text-sm flex items-center justify-center gap-2">
+        <RefreshCw size={16} className="animate-spin" />
+        Loading conversation...
+      </div>
+    )
+  }
+
+  if (!thread) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 text-center">
+        <Info className="mx-auto mb-3 h-10 w-10 text-secondary" />
+        <p className="text-sm font-semibold text-color">
+          Conversation not available
+        </p>
+        <p className="mt-1 text-xs text-secondary max-w-md mx-auto">
+          The messaging module is not yet implemented on the backend, or this
+          conversation no longer exists.
+        </p>
+        <Link
+          to="/messages"
+          className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:underline"
+        >
+          <ArrowLeft size={14} />
+          Back to inbox
+        </Link>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto flex flex-col h-[calc(100vh-140px)] min-h-[580px]">
-      {/* Top Participant Header */}
-      <div className="flex items-center justify-between p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 bg-white/40 dark:bg-stone-900/40">
+    <div className="space-y-4 max-w-4xl mx-auto flex flex-col h-[calc(100vh-140px)] min-h-145">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 rounded-2xl glass-sm border border-surface bg-surface/40">
         <div className="flex items-center gap-3">
           <Link
             to="/messages"
-            className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-stone-300 transition"
+            className="p-2 rounded-xl bg-surface hover:bg-surface-strong text-secondary transition"
           >
             <ArrowLeft size={18} />
           </Link>
-          <div className="relative">
+          {thread.counterpartyAvatarUrl ? (
             <img
-              src={participant.avatar}
-              alt={participant.name}
-              className="w-10 h-10 rounded-full object-cover border border-stone-200 dark:border-white/10"
+              src={thread.counterpartyAvatarUrl}
+              alt={thread.counterpartyName}
+              className="w-10 h-10 rounded-full object-cover ring-1 ring-surface"
             />
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-stone-900" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-stone-900 dark:text-white">
-                {participant.name}
-              </h2>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                {participant.status}
-              </span>
+          ) : (
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black text-white bg-linear-to-tr from-brand-600 to-brand-400 ring-1 ring-surface">
+              {initials(thread.counterpartyName)}
             </div>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              {participant.role} • {participant.subject}
+          )}
+          <div>
+            <h2 className="text-sm font-bold text-color">
+              {thread.counterpartyName}
+            </h2>
+            <p className="text-xs text-secondary truncate max-w-md">
+              {thread.subject}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
-          <a
-            href={`mailto:${participant.email}`}
-            className="p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-white/10 text-stone-600 dark:text-stone-300 transition"
-            title="Send Email"
-          >
-            <Mail size={16} />
-          </a>
-          <button
-            onClick={() => showToast("Conversation archived", "info")}
-            className="p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-white/10 text-stone-600 dark:text-stone-300 transition"
-            title="Archive"
-          >
-            <Star size={16} />
-          </button>
-        </div>
+        <button
+          onClick={toggleStar}
+          className={`p-2 rounded-xl transition ${
+            thread.starred
+              ? 'text-warning'
+              : 'text-secondary hover:text-color hover:bg-surface'
+          }`}
+          title={thread.starred ? 'Unstar' : 'Star'}
+        >
+          <Star size={16} className={thread.starred ? 'fill-current' : ''} />
+        </button>
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 bg-white/30 dark:bg-stone-950/20 space-y-4">
-        {messages.map((m) => {
-          const isMe = m.senderId === "me";
-          return (
-            <div
-              key={m.id}
-              className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
-            >
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 rounded-2xl glass-sm border border-surface bg-surface/30 space-y-4">
+        {messages.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-secondary text-xs">
+            No messages in this conversation yet.
+          </div>
+        ) : (
+          messages.map((m) => {
+            const isMe = m.senderId === 'me'
+            return (
               <div
-                className={`max-w-[78%] sm:max-w-md rounded-2xl px-4 py-3 text-xs leading-relaxed shadow-sm ${
-                  isMe
-                    ? "bg-brand-600 text-white rounded-br-none"
-                    : "bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border border-stone-200/60 dark:border-white/5 rounded-bl-none"
-                }`}
+                key={m.id}
+                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
               >
-                <p>{m.text}</p>
-
-                {m.attachment && (
-                  <div className={`mt-2.5 flex items-center justify-between p-2.5 rounded-xl border ${
+                <div
+                  className={`max-w-[78%] sm:max-w-md rounded-2xl px-4 py-3 text-xs leading-relaxed shadow-sm ${
                     isMe
-                      ? "bg-white/10 border-white/20 text-white"
-                      : "bg-stone-50 dark:bg-stone-900 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white"
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      <FileText size={16} className="text-brand-400" />
-                      <div>
-                        <div className="font-semibold text-[11px] truncate max-w-[180px]">
-                          {m.attachment.name}
-                        </div>
-                        <div className="text-[10px] opacity-75">{m.attachment.size}</div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => showToast(`Downloaded ${m.attachment?.name}`, "success")}
-                      className="p-1 rounded hover:bg-black/10 transition"
-                    >
-                      <Download size={14} />
-                    </button>
-                  </div>
-                )}
-              </div>
+                      ? 'bg-brand-600 text-white rounded-br-none'
+                      : 'bg-surface text-color border border-surface rounded-bl-none'
+                  }`}
+                >
+                  <p className="whitespace-pre-line">{m.body}</p>
 
-              <span className="text-[10px] text-stone-400 mt-1 px-1 flex items-center gap-1">
-                {m.timestamp}
-                {isMe && <CheckCheck size={12} className="text-brand-500" />}
-              </span>
-            </div>
-          );
-        })}
+                  {m.attachment && (
+                    <a
+                      href={m.attachment.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={`mt-2.5 flex items-center justify-between p-2.5 rounded-xl border ${
+                        isMe
+                          ? 'bg-white/10 border-white/20 text-white'
+                          : 'bg-surface-strong border-surface text-color'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={16} className="text-brand-400 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-[11px] truncate">
+                            {m.attachment.name}
+                          </div>
+                          <div className="text-[10px] opacity-75">
+                            {m.attachment.size}
+                          </div>
+                        </div>
+                      </div>
+                      <Download size={14} className="shrink-0" />
+                    </a>
+                  )}
+                </div>
+
+                <span className="text-[10px] text-secondary mt-1 px-1 flex items-center gap-1">
+                  {timeOf(m.createdAt)}
+                  {isMe && (
+                    <CheckCheck size={12} className="text-brand-500" />
+                  )}
+                </span>
+              </div>
+            )
+          })
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Reply Prompts */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-        <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider shrink-0">
-          Suggested:
-        </span>
-        {quickReplies.map((qr, i) => (
-          <button
-            key={i}
-            onClick={() => handleQuickReply(qr)}
-            className="px-3 py-1 rounded-xl glass-sm border border-stone-200 dark:border-white/10 text-stone-600 dark:text-stone-300 hover:border-brand-500 hover:text-brand-600 whitespace-nowrap transition cursor-pointer text-[11px]"
-          >
-            {qr}
-          </button>
-        ))}
-      </div>
-
-      {/* Input Bar */}
-      <form onSubmit={handleSend} className="p-2.5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 bg-white dark:bg-stone-900 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => showToast("Upload attachment dialog", "info")}
-          className="p-2 rounded-xl text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 transition"
-          title="Attach file"
-        >
-          <Paperclip size={18} />
-        </button>
-
+      {/* Input */}
+      <form
+        onSubmit={handleSend}
+        className="p-2.5 rounded-2xl glass-sm border border-surface bg-surface flex items-center gap-2"
+      >
         <input
           type="text"
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
           placeholder="Type your message..."
-          className="flex-1 bg-transparent text-xs text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none px-2"
+          className="flex-1 bg-transparent text-xs text-color placeholder:text-secondary focus:outline-none px-2"
         />
-
         <button
           type="submit"
-          disabled={!replyText.trim()}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-40 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer"
+          disabled={!replyText.trim() || sending}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-40 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition"
         >
+          {sending ? (
+            <RefreshCw size={14} className="animate-spin" />
+          ) : (
+            <Send size={14} />
+          )}
           <span>Send</span>
-          <Send size={14} />
         </button>
       </form>
     </div>
-  );
+  )
 }

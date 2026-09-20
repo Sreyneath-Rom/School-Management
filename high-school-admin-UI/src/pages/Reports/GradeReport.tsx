@@ -1,260 +1,195 @@
-import { useState, useMemo } from 'react'
+// src/pages/Reports/GradeReport.tsx
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
 import {
-  LineChart as LineChartIcon,
   Filter,
   Download,
   Printer,
   Search,
+  RefreshCw,
+  Info,
   Award,
-  BookOpen,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle2,
-  Users,
-  GraduationCap,
-  Sparkles,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
+import { academicService } from '@/services/academicService'
+import { classService, type ClassRecord } from '@/services/classService'
+import type { GradeRecord } from '@/types/academic'
 
-interface ReportStudentGrade {
-  id: string
+interface StudentSummary {
   studentId: string
   name: string
-  class: string
-  gradeLevel: string
-  assignmentScore: number // 20%
-  quizScore: number // 20%
-  midtermScore: number // 25%
-  finalExamScore: number // 35%
-  totalScore: number
-  letterGrade: string
-  gpa: number
-  status: 'Honor Roll' | 'Dean\'s List' | 'Good Standing' | 'Academic Warning'
+  studentCode: string
+  className: string
+  records: number
+  averagePercentage: number
+  averageGpa: number
+  letterGrade: GradeRecord['letterGrade']
 }
 
-const SAMPLE_STUDENTS: ReportStudentGrade[] = [
-  {
-    id: '1',
-    studentId: 'STU-1001',
-    name: 'Emily Watson',
-    class: 'Grade 10-A',
-    gradeLevel: 'Grade 10',
-    assignmentScore: 94,
-    quizScore: 92,
-    midtermScore: 95,
-    finalExamScore: 96,
-    totalScore: 94.5,
-    letterGrade: 'A',
-    gpa: 4.0,
-    status: 'Honor Roll',
-  },
-  {
-    id: '2',
-    studentId: 'STU-1002',
-    name: 'Michael Chen',
-    class: 'Grade 10-A',
-    gradeLevel: 'Grade 10',
-    assignmentScore: 88,
-    quizScore: 85,
-    midtermScore: 90,
-    finalExamScore: 89,
-    totalScore: 88.3,
-    letterGrade: 'B+',
-    gpa: 3.5,
-    status: 'Dean\'s List',
-  },
-  {
-    id: '3',
-    studentId: 'STU-1003',
-    name: 'Sophia Rodriguez',
-    class: 'Grade 10-A',
-    gradeLevel: 'Grade 10',
-    assignmentScore: 98,
-    quizScore: 95,
-    midtermScore: 97,
-    finalExamScore: 98,
-    totalScore: 97.2,
-    letterGrade: 'A+',
-    gpa: 4.0,
-    status: 'Honor Roll',
-  },
-  {
-    id: '4',
-    studentId: 'STU-1004',
-    name: 'James Wilson',
-    class: 'Grade 10-B',
-    gradeLevel: 'Grade 10',
-    assignmentScore: 78,
-    quizScore: 74,
-    midtermScore: 80,
-    finalExamScore: 76,
-    totalScore: 77.0,
-    letterGrade: 'C+',
-    gpa: 2.5,
-    status: 'Good Standing',
-  },
-  {
-    id: '5',
-    studentId: 'STU-1005',
-    name: 'Olivia Martinez',
-    class: 'Grade 10-B',
-    gradeLevel: 'Grade 10',
-    assignmentScore: 85,
-    quizScore: 82,
-    midtermScore: 88,
-    finalExamScore: 86,
-    totalScore: 85.5,
-    letterGrade: 'B',
-    gpa: 3.0,
-    status: 'Good Standing',
-  },
-  {
-    id: '6',
-    studentId: 'STU-1006',
-    name: 'Ethan Brown',
-    class: 'Grade 11-A',
-    gradeLevel: 'Grade 11',
-    assignmentScore: 92,
-    quizScore: 90,
-    midtermScore: 94,
-    finalExamScore: 91,
-    totalScore: 91.8,
-    letterGrade: 'A',
-    gpa: 3.8,
-    status: 'Honor Roll',
-  },
-  {
-    id: '7',
-    studentId: 'STU-1007',
-    name: 'Ava Taylor',
-    class: 'Grade 11-A',
-    gradeLevel: 'Grade 11',
-    assignmentScore: 65,
-    quizScore: 58,
-    midtermScore: 62,
-    finalExamScore: 64,
-    totalScore: 62.5,
-    letterGrade: 'D',
-    gpa: 1.5,
-    status: 'Academic Warning',
-  },
-  {
-    id: '8',
-    studentId: 'STU-1008',
-    name: 'Lucas Garcia',
-    class: 'Grade 12-A',
-    gradeLevel: 'Grade 12',
-    assignmentScore: 96,
-    quizScore: 94,
-    midtermScore: 96,
-    finalExamScore: 98,
-    totalScore: 96.3,
-    letterGrade: 'A+',
-    gpa: 4.0,
-    status: 'Honor Roll',
-  },
-]
+function letterFor(pct: number): GradeRecord['letterGrade'] {
+  if (pct >= 90) return 'A'
+  if (pct >= 80) return 'B'
+  if (pct >= 70) return 'C'
+  if (pct >= 60) return 'D'
+  return 'F'
+}
+
+function aggregate(rows: GradeRecord[]): StudentSummary[] {
+  const byStudent = new Map<string, GradeRecord[]>()
+  for (const row of rows) {
+    const list = byStudent.get(row.studentId) ?? []
+    list.push(row)
+    byStudent.set(row.studentId, list)
+  }
+
+  const out: StudentSummary[] = []
+  for (const [studentId, list] of byStudent) {
+    const first = list[0]
+    const avgPct =
+      list.reduce((sum, r) => sum + r.percentage, 0) / list.length
+    const avgGpa = list.reduce((sum, r) => sum + r.gpa, 0) / list.length
+    out.push({
+      studentId,
+      name: first.studentName || first.studentCode || studentId,
+      studentCode: first.studentCode,
+      className: first.className,
+      records: list.length,
+      averagePercentage: Number(avgPct.toFixed(1)),
+      averageGpa: Number(avgGpa.toFixed(2)),
+      letterGrade: letterFor(avgPct),
+    })
+  }
+  return out.sort((a, b) => b.averagePercentage - a.averagePercentage)
+}
 
 export default function GradeReport() {
   const { showToast } = useToast()
 
-  // Filter States (UC-REPORT-01: academic year, term, class, student)
-  const [academicYear, setAcademicYear] = useState('2025 - 2026')
-  const [term, setTerm] = useState('Semester 1')
-  const [gradeLevel, setGradeLevel] = useState('All')
-  const [selectedClass, setSelectedClass] = useState('All')
-  const [selectedSubject, setSelectedSubject] = useState('All')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [classId, setClassId] = useState('')
+  const [search, setSearch] = useState('')
+  const [classes, setClasses] = useState<ClassRecord[]>([])
+  const [records, setRecords] = useState<GradeRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
 
-  // Filtered dataset
-  const filteredStudents = useMemo(() => {
-    return SAMPLE_STUDENTS.filter((s) => {
-      const matchGrade = gradeLevel === 'All' || s.gradeLevel === gradeLevel
-      const matchClass = selectedClass === 'All' || s.class === selectedClass
-      const matchSearch =
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.studentId.toLowerCase().includes(searchQuery.toLowerCase())
-      return matchGrade && matchClass && matchSearch
-    })
-  }, [gradeLevel, selectedClass, searchQuery])
+  useEffect(() => {
+    classService
+      .list()
+      .then((c) => setClasses(Array.isArray(c) ? c : []))
+      .catch(() => setClasses([]))
+  }, [])
 
-  // Calculated Statistics
-  const totalStudents = filteredStudents.length
-  const avgGpa = totalStudents
-    ? (filteredStudents.reduce((acc, s) => acc + s.gpa, 0) / totalStudents).toFixed(2)
-    : '0.00'
-  const avgTotalScore = totalStudents
-    ? (filteredStudents.reduce((acc, s) => acc + s.totalScore, 0) / totalStudents).toFixed(1)
-    : '0.0'
-  const passCount = filteredStudents.filter((s) => s.totalScore >= 60).length
-  const passRate = totalStudents ? Math.round((passCount / totalStudents) * 100) : 100
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const raw = await academicService.getAllGrades(
+        classId ? { classId } : undefined
+      )
+      setRecords(Array.isArray(raw) ? raw : [])
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)))
+      setRecords([])
+    } finally {
+      setLoading(false)
+    }
+  }, [classId])
 
-  // Grade Brackets count
-  const gradeBrackets = {
-    A: filteredStudents.filter((s) => s.letterGrade.startsWith('A')).length,
-    B: filteredStudents.filter((s) => s.letterGrade.startsWith('B')).length,
-    C: filteredStudents.filter((s) => s.letterGrade.startsWith('C')).length,
-    D: filteredStudents.filter((s) => s.letterGrade.startsWith('D')).length,
-    F: filteredStudents.filter((s) => s.letterGrade.startsWith('F')).length,
-  }
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const handleExportCSV = () => {
-    const headers = ['Student ID', 'Full Name', 'Class', 'Assignments (20%)', 'Quizzes (20%)', 'Midterm (25%)', 'Final (35%)', 'Total Score', 'Letter Grade', 'GPA', 'Academic Standing']
-    const rows = filteredStudents.map((s) => [
-      s.studentId,
-      `"${s.name}"`,
-      s.class,
-      s.assignmentScore,
-      s.quizScore,
-      s.midtermScore,
-      s.finalExamScore,
-      s.totalScore,
-      s.letterGrade,
-      s.gpa,
-      s.status,
-    ])
+  const summaries = useMemo(() => aggregate(records), [records])
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `Academic_Report_${academicYear.replace(/\s+/g, '_')}_${term.replace(/\s+/g, '_')}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  const filtered = useMemo(
+    () =>
+      summaries.filter((s) => {
+        if (!search.trim()) return true
+        const q = search.toLowerCase()
+        return (
+          s.name.toLowerCase().includes(q) ||
+          s.studentCode.toLowerCase().includes(q)
+        )
+      }),
+    [summaries, search]
+  )
 
-    showToast('Academic report exported to CSV successfully', 'success')
-  }
+  const stats = useMemo(() => {
+    const total = filtered.length
+    const avgGpa = total
+      ? filtered.reduce((sum, s) => sum + s.averageGpa, 0) / total
+      : 0
+    const avgPct = total
+      ? filtered.reduce((sum, s) => sum + s.averagePercentage, 0) / total
+      : 0
+    const passing = filtered.filter((s) => s.averagePercentage >= 60).length
+    const honorRoll = filtered.filter((s) => s.averageGpa >= 3.8).length
+    return { total, avgGpa, avgPct, passing, honorRoll }
+  }, [filtered])
 
-  const handlePrint = () => {
-    window.print()
-  }
+  const brackets = useMemo(() => {
+    const b = { A: 0, B: 0, C: 0, D: 0, F: 0 }
+    for (const s of filtered) b[s.letterGrade] += 1
+    return b
+  }, [filtered])
 
   const kpiCards: StatCard[] = [
-    { id: 'avg-gpa', label: 'Average Cumulative GPA', value: avgGpa, delta: '-', deltaDirection: 'neutral', deltaLabel: 'weighted evaluation', icon: 'Award', tint: 'blue' },
-    { id: 'avg-score', label: 'Average Total Score', value: `${avgTotalScore}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'assignments and exams', icon: 'TrendingUp', tint: 'green' },
-    { id: 'pass-rate', label: 'Institutional Pass Rate', value: `${passRate}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: `${passCount}/${totalStudents} passing`, icon: 'CheckCircle2', tint: 'amber' },
-    { id: 'honor-roll', label: 'Honor Roll Candidates', value: filteredStudents.filter((s) => s.status === 'Honor Roll').length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'GPA >= 3.8', icon: 'GraduationCap', tint: 'violet' },
+    { id: 'avg-gpa', label: 'Average GPA', value: stats.avgGpa.toFixed(2), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across students', icon: 'Award', tint: 'blue' },
+    { id: 'avg-score', label: 'Average Score', value: `${stats.avgPct.toFixed(1)}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'across subjects', icon: 'TrendingUp', tint: 'green' },
+    { id: 'pass-rate', label: 'Pass Rate', value: `${stats.total ? Math.round((stats.passing / stats.total) * 100) : 0}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: `${stats.passing} / ${stats.total}`, icon: 'CheckCircle2', tint: 'amber' },
+    { id: 'honor', label: 'Honor Roll', value: String(stats.honorRoll), delta: '-', deltaDirection: 'neutral', deltaLabel: 'GPA ≥ 3.8', icon: 'GraduationCap', tint: 'violet' },
   ]
 
+  const handleExportCSV = () => {
+    if (filtered.length === 0) {
+      showToast('Nothing to export', 'info')
+      return
+    }
+    const headers = ['Student ID', 'Name', 'Class', 'Records', 'Average %', 'Letter', 'GPA']
+    const data = filtered.map((s) => [
+      s.studentCode || s.studentId,
+      `"${s.name}"`,
+      s.className,
+      s.records,
+      s.averagePercentage,
+      s.letterGrade,
+      s.averageGpa,
+    ])
+    const csv = [headers.join(','), ...data.map((r) => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Grade_Report_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    showToast('Report exported', 'success')
+  }
+
   return (
-    <div className="space-y-6 pb-12 print:p-0 print:m-0">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
+    <div className="space-y-6 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeading
           title="Academic Performance Report"
-          subtitle="Comprehensive institutional academic report cross-referencing GPAs, grade distributions, and weighted evaluation components (UC-REPORT-01)."
+          subtitle="Grade distribution, averages, and standing by student."
         />
         <div className="flex items-center gap-2.5">
           <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-50 transition shadow-2xs"
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-medium hover:bg-surface-strong transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-medium hover:bg-surface-strong transition"
           >
             <Printer className="w-4 h-4" />
-            Print Report
+            Print
           </button>
           <button
             onClick={handleExportCSV}
@@ -266,157 +201,94 @@ export default function GradeReport() {
         </div>
       </div>
 
-      {/* Filter Parameters Ribbon */}
-      <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3 print:hidden">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+        <Info size={16} className="text-info shrink-0 mt-0.5" />
+        <p className="text-secondary">
+          Report is computed from recorded grade rows. Each row is one
+          student&times;subject&times;period score — averages are per student
+          across all recorded subjects.
+        </p>
+      </div>
+
+      <div className="p-4 rounded-2xl border border-surface bg-surface shadow-sm space-y-3 print:hidden">
+        <div className="flex items-center gap-2 text-xs font-bold text-color">
           <Filter className="w-4 h-4 text-brand-600" />
-          <span>Report Scope & Filters</span>
+          <span>Filters</span>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Academic Year</label>
+            <label className="block text-[11px] font-medium text-secondary mb-1">
+              Class
+            </label>
             <select
-              value={academicYear}
-              onChange={(e) => setAcademicYear(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
+              className="w-full text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color"
             >
-              <option value="2025 - 2026">2025 - 2026</option>
-              <option value="2024 - 2025">2024 - 2025</option>
+              <option value="">All classes</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </div>
-
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Academic Term</label>
-            <select
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
-            >
-              <option value="Semester 1">Semester 1</option>
-              <option value="Semester 2">Semester 2</option>
-              <option value="Annual Cumulative">Annual Cumulative</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Grade Level</label>
-            <select
-              value={gradeLevel}
-              onChange={(e) => {
-                setGradeLevel(e.target.value)
-                setSelectedClass('All')
-              }}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
-            >
-              <option value="All">All Grade Levels</option>
-              <option value="Grade 10">Grade 10 (Sophomore)</option>
-              <option value="Grade 11">Grade 11 (Junior)</option>
-              <option value="Grade 12">Grade 12 (Senior)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Class Section</label>
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
-            >
-              <option value="All">All Classes</option>
-              <option value="Grade 10-A">Grade 10-A</option>
-              <option value="Grade 10-B">Grade 10-B</option>
-              <option value="Grade 11-A">Grade 11-A</option>
-              <option value="Grade 12-A">Grade 12-A</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Subject</label>
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
-            >
-              <option value="All">All Subjects (Overall GPA)</option>
-              <option value="Biology">Advanced Biology</option>
-              <option value="Calculus">Calculus BC</option>
-              <option value="History">Modern World History</option>
-            </select>
+            <label className="block text-[11px] font-medium text-secondary mb-1">
+              Search student
+            </label>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Name or ID..."
+              className="w-full text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color"
+            />
           </div>
         </div>
       </div>
 
       <StatsGrid cards={kpiCards} columns={4} />
-      {/* Legacy KPI markup retained below only as migration reference.
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Average Cumulative GPA</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgGpa}</span>
-            <span className="text-xs text-slate-400 font-medium">/ 4.0 Scale</span>
-          </div>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">Standard Weighted Evaluation</p>
-        </div>
 
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Average Total Score</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgTotalScore}%</span>
-            <span className="text-xs text-emerald-600 font-medium">Grade B+</span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">Assignments + Quizzes + Exams</p>
-        </div>
-
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Institutional Pass Rate</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{passRate}%</span>
-            <span className="text-xs text-slate-400 font-medium">({passCount}/{totalStudents})</span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">Passing threshold: &ge; 60%</p>
-        </div>
-
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Honor Roll Candidates</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-              {filteredStudents.filter((s) => s.status === 'Honor Roll').length}
-            </span>
-            <span className="text-xs text-slate-400 font-medium">Students</span>
-          </div>
-          <p className="text-[11px] text-violet-600 font-medium mt-1">GPA &ge; 3.8 Distinction</p>
-        </div>
-      </div> */}
-
-      {/* Grade Bracket Distribution & Weighted Engine Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Grade Distribution Bar */}
-        <div className="lg:col-span-2 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+        <div className="lg:col-span-2 p-5 rounded-2xl border border-surface bg-surface shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-              Grade Distribution Brackets
+            <h3 className="font-bold text-sm text-color">
+              Grade Distribution
             </h3>
-            <span className="text-xs text-slate-400">Total: {totalStudents} Enrolled</span>
+            <span className="text-xs text-secondary">
+              {filtered.length} students
+            </span>
           </div>
-
           <div className="space-y-3">
-            {[
-              { label: 'Grade A (90 - 100%)', count: gradeBrackets.A, color: 'bg-emerald-500', barColor: 'bg-emerald-500' },
-              { label: 'Grade B (80 - 89%)', count: gradeBrackets.B, color: 'bg-blue-500', barColor: 'bg-blue-500' },
-              { label: 'Grade C (70 - 79%)', count: gradeBrackets.C, color: 'bg-amber-500', barColor: 'bg-amber-500' },
-              { label: 'Grade D (60 - 69%)', count: gradeBrackets.D, color: 'bg-orange-500', barColor: 'bg-orange-500' },
-              { label: 'Grade F (< 60%)', count: gradeBrackets.F, color: 'bg-rose-500', barColor: 'bg-rose-500' },
-            ].map((br) => {
-              const pct = totalStudents ? Math.round((br.count / totalStudents) * 100) : 0
+            {(['A', 'B', 'C', 'D', 'F'] as const).map((letter) => {
+              const count = brackets[letter]
+              const pct = filtered.length
+                ? Math.round((count / filtered.length) * 100)
+                : 0
+              const color =
+                letter === 'A'
+                  ? 'bg-success'
+                  : letter === 'B'
+                    ? 'bg-info'
+                    : letter === 'C'
+                      ? 'bg-warning'
+                      : letter === 'D'
+                        ? 'bg-warning/60'
+                        : 'bg-error'
               return (
-                <div key={br.label} className="space-y-1">
+                <div key={letter} className="space-y-1">
                   <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-600 dark:text-slate-300">{br.label}</span>
-                    <span className="text-slate-500">{br.count} students ({pct}%)</span>
+                    <span className="text-color">Grade {letter}</span>
+                    <span className="text-secondary">
+                      {count} ({pct}%)
+                    </span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                    <div className={`h-full ${br.barColor} transition-all duration-300`} style={{ width: `${pct}%` }} />
+                  <div className="w-full h-2 rounded-full bg-surface-strong overflow-hidden">
+                    <div
+                      className={`h-full ${color} transition-all`}
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
                 </div>
               )
@@ -424,124 +296,100 @@ export default function GradeReport() {
           </div>
         </div>
 
-        {/* Weighted Formula Summary Card */}
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
-          <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-brand-600" />
-            Evaluation Weights
+        <div className="p-5 rounded-2xl border border-surface bg-surface shadow-sm space-y-3">
+          <h3 className="font-bold text-sm text-color flex items-center gap-1.5">
+            <Award className="w-4 h-4 text-brand-600" />
+            Grading Scale
           </h3>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            High school standardized grading weights applied across active semesters (BR-11):
-          </p>
-
-          <div className="space-y-2 pt-2">
-            <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
-              <span className="font-medium text-slate-700 dark:text-slate-300">Homework & Assignments</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">20%</span>
-            </div>
-            <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
-              <span className="font-medium text-slate-700 dark:text-slate-300">Quizzes & Unit Checks</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">20%</span>
-            </div>
-            <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
-              <span className="font-medium text-slate-700 dark:text-slate-300">Midterm Examination</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">25%</span>
-            </div>
-            <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
-              <span className="font-medium text-slate-700 dark:text-slate-300">Final Term Examination</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">35%</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between text-xs font-bold text-brand-600">
-            <span>Cumulative Total</span>
-            <span>100%</span>
+          <div className="space-y-2 text-xs">
+            {[
+              ['A', '90 – 100%', '4.0'],
+              ['B', '80 – 89%', '3.0'],
+              ['C', '70 – 79%', '2.0'],
+              ['D', '60 – 69%', '1.0'],
+              ['F', '< 60%', '0.0'],
+            ].map(([letter, range, gpa]) => (
+              <div
+                key={letter}
+                className="flex justify-between p-2.5 rounded-xl bg-surface-strong"
+              >
+                <span className="font-medium text-color">
+                  {letter} ({range})
+                </span>
+                <span className="font-bold text-color">{gpa}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Student Academic Roster Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-              Student Academic Roster
-            </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
-              {filteredStudents.length} Records
-            </span>
-          </div>
-
-          <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search student or ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
-            />
-          </div>
+      <div className="bg-surface rounded-2xl border border-surface shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-surface">
+          <h3 className="font-bold text-sm text-color">
+            Student Roster
+          </h3>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50/75 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                <th className="py-3 px-4 font-semibold">Student</th>
-                <th className="py-3 px-3 font-semibold">Class</th>
-                <th className="py-3 px-3 font-semibold text-center">HW (20%)</th>
-                <th className="py-3 px-3 font-semibold text-center">Quiz (20%)</th>
-                <th className="py-3 px-3 font-semibold text-center">Midterm (25%)</th>
-                <th className="py-3 px-3 font-semibold text-center">Final (35%)</th>
-                <th className="py-3 px-3 font-semibold text-center">Total Score</th>
-                <th className="py-3 px-3 font-semibold text-center">Grade</th>
-                <th className="py-3 px-3 font-semibold text-center">GPA</th>
-                <th className="py-3 px-4 font-semibold">Academic Standing</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filteredStudents.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                  <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
-                    <div>{s.name}</div>
-                    <span className="text-[10px] text-slate-400 font-mono">{s.studentId}</span>
-                  </td>
-                  <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{s.class}</td>
-                  <td className="py-3 px-3 text-center text-slate-600 dark:text-slate-400 font-mono">{s.assignmentScore}</td>
-                  <td className="py-3 px-3 text-center text-slate-600 dark:text-slate-400 font-mono">{s.quizScore}</td>
-                  <td className="py-3 px-3 text-center text-slate-600 dark:text-slate-400 font-mono">{s.midtermScore}</td>
-                  <td className="py-3 px-3 text-center text-slate-600 dark:text-slate-400 font-mono">{s.finalExamScore}</td>
-                  <td className="py-3 px-3 text-center font-bold text-slate-900 dark:text-slate-100 font-mono">
-                    {s.totalScore}%
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300">
-                      {s.letterGrade}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-center font-bold text-slate-900 dark:text-slate-100 font-mono">
-                    {s.gpa.toFixed(1)}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
-                        s.status === 'Honor Roll'
-                          ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300'
-                          : s.status === 'Dean\'s List'
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                          : s.status === 'Academic Warning'
-                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                      }`}
-                    >
-                      {s.status}
-                    </span>
-                  </td>
+        {loading ? (
+          <div className="py-16 text-center text-secondary text-sm">
+            <RefreshCw size={16} className="inline animate-spin mr-2" />
+            Loading grades...
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center">
+            <p className="text-sm font-bold text-error">Couldn't load report</p>
+            <p className="mt-1 text-xs text-secondary">{error.message}</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-secondary text-sm">
+            {summaries.length === 0
+              ? 'No grade records available.'
+              : 'No students match the search.'}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-surface-strong text-secondary font-semibold border-b border-surface">
+                <tr>
+                  <th className="py-3 px-4">Student</th>
+                  <th className="py-3 px-3">Class</th>
+                  <th className="py-3 px-3 text-center">Records</th>
+                  <th className="py-3 px-3 text-center">Average %</th>
+                  <th className="py-3 px-3 text-center">Letter</th>
+                  <th className="py-3 px-3 text-center">GPA</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-surface">
+                {filtered.map((s) => (
+                  <tr key={s.studentId} className="hover:bg-surface/50">
+                    <td className="py-3 px-4 font-medium text-color">
+                      <div>{s.name}</div>
+                      {s.studentCode && (
+                        <span className="text-[10px] text-secondary font-mono">
+                          {s.studentCode}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-secondary">{s.className}</td>
+                    <td className="py-3 px-3 text-center font-mono">
+                      {s.records}
+                    </td>
+                    <td className="py-3 px-3 text-center font-bold font-mono text-color">
+                      {s.averagePercentage}%
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-brand-500/15 text-brand-700 dark:text-brand-300">
+                        {s.letterGrade}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-center font-bold font-mono text-color">
+                      {s.averageGpa.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

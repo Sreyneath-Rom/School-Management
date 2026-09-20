@@ -1,576 +1,432 @@
-import StatsGrid from '@/components/cards/StatsGrid'
-import type { StatCard } from '@/types'
-import { useState } from "react";
-import PageHeading from "@/components/common/PageHeading";
-import { 
-  Calendar, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  AlertCircle, 
-  Search, 
-  Filter, 
-  FileText, 
-  Plus, 
-  User, 
-  Paperclip,
+// src/pages/Students/LeaveRequests.tsx
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import PageHeading from '@/components/common/PageHeading'
+import {
+  Calendar,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Search,
+  FileText,
+  Plus,
   Check,
   X,
   Eye,
-  CalendarDays
-} from "lucide-react";
-import { useToast } from "@/components/common/ToastProvider";
+  RefreshCw,
+  Info,
+} from 'lucide-react'
+import { useToast } from '@/components/common/ToastProvider'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
+import { leaveRequestService } from '@/services/leaveRequestService'
+import type { LeaveRequest } from '@/types/leaveRequest'
 
-interface LeaveRequest {
-  id: string;
-  studentId: string;
-  studentName: string;
-  studentAvatar: string;
-  rollNumber: string;
-  gradeClass: string;
-  leaveType: "Medical" | "Family Emergency" | "School Representative" | "Personal";
-  startDate: string;
-  endDate: string;
-  daysCount: number;
-  reason: string;
-  hasAttachment: boolean;
-  attachmentName?: string;
-  submittedBy: string; // e.g. "Parent (Helen Davis)" or "Student"
-  submittedAt: string;
-  status: "Pending" | "Approved" | "Rejected";
-  adminRemarks?: string;
+// STRIPPED: LeaveRequest has no studentName, studentCode, attachmentUrl,
+// reviewNote. Rows display the raw studentId. Review payload accepts only
+// the fields the backend defines — no note is sent.
+
+type StatusTab = 'All' | 'PENDING' | 'APPROVED' | 'REJECTED'
+
+function initials(value: string): string {
+  const parts = value.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-const INITIAL_REQUESTS: LeaveRequest[] = [
-  {
-    id: "lr-1",
-    studentId: "stu-101",
-    studentName: "Lucas Vance",
-    studentAvatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
-    rollNumber: "STD-2025-041",
-    gradeClass: "Grade 11A",
-    leaveType: "Medical",
-    startDate: "2026-03-05",
-    endDate: "2026-03-07",
-    daysCount: 3,
-    reason: "Severe viral fever and advised strict rest by pediatrician.",
-    hasAttachment: true,
-    attachmentName: "doctor_certificate_mar2026.pdf",
-    submittedBy: "Parent (Helen Vance)",
-    submittedAt: "2026-03-04 18:30",
-    status: "Pending",
-  },
-  {
-    id: "lr-2",
-    studentId: "stu-102",
-    studentName: "Chloe Dupont",
-    studentAvatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-    rollNumber: "STD-2025-018",
-    gradeClass: "Grade 10B",
-    leaveType: "School Representative",
-    startDate: "2026-03-08",
-    endDate: "2026-03-10",
-    daysCount: 3,
-    reason: "Selected for the National Interscholastic Robotics Olympiad finals in Chicago.",
-    hasAttachment: true,
-    attachmentName: "robotics_invitation_letter.pdf",
-    submittedBy: "Coach / Student",
-    submittedAt: "2026-03-03 11:20",
-    status: "Approved",
-    adminRemarks: "Approved by Principal. Excused from regular quizzes; make-up allowed.",
-  },
-  {
-    id: "lr-3",
-    studentId: "stu-103",
-    studentName: "Ethan Miller",
-    studentAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    rollNumber: "STD-2025-089",
-    gradeClass: "Grade 12A",
-    leaveType: "Family Emergency",
-    startDate: "2026-03-06",
-    endDate: "2026-03-06",
-    daysCount: 1,
-    reason: "Attending memorial service out of town with family.",
-    hasAttachment: false,
-    submittedBy: "Parent (Robert Miller)",
-    submittedAt: "2026-03-04 09:15",
-    status: "Pending",
-  },
-  {
-    id: "lr-4",
-    studentId: "stu-104",
-    studentName: "Sophia Chen",
-    studentAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-    rollNumber: "STD-2025-032",
-    gradeClass: "Grade 9A",
-    leaveType: "Personal",
-    startDate: "2026-02-28",
-    endDate: "2026-03-01",
-    daysCount: 2,
-    reason: "Attending older sister's university graduation ceremony in Boston.",
-    hasAttachment: false,
-    submittedBy: "Parent (Grace Chen)",
-    submittedAt: "2026-02-25 14:10",
-    status: "Approved",
-    adminRemarks: "Approved. All coursework to be submitted prior.",
-  },
-  {
-    id: "lr-5",
-    studentId: "stu-105",
-    studentName: "Noah Patel",
-    studentAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-    rollNumber: "STD-2025-067",
-    gradeClass: "Grade 11B",
-    leaveType: "Personal",
-    startDate: "2026-03-02",
-    endDate: "2026-03-05",
-    daysCount: 4,
-    reason: "Vacation extension beyond mid-term break without prior authorization.",
-    hasAttachment: false,
-    submittedBy: "Student",
-    submittedAt: "2026-02-28 20:45",
-    status: "Rejected",
-    adminRemarks: "Leaves during examination revision week cannot be approved for leisure.",
-  },
-];
+function daysBetween(start: string, end: string): number {
+  const s = new Date(start).getTime()
+  const e = new Date(end).getTime()
+  if (Number.isNaN(s) || Number.isNaN(e)) return 0
+  return Math.max(1, Math.round((e - s) / 86400000) + 1)
+}
 
 export default function LeaveRequests() {
-  const { showToast } = useToast();
-  const [requests, setRequests] = useState<LeaveRequest[]>(INITIAL_REQUESTS);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusTab, setStatusTab] = useState<"All" | "Pending" | "Approved" | "Rejected">("All");
-  const [typeFilter, setTypeFilter] = useState("All");
+  const { showToast } = useToast()
 
-  // Detail Modal & Action Dialog
-  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [requests, setRequests] = useState<LeaveRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const [search, setSearch] = useState('')
+  const [tab, setTab] = useState<StatusTab>('All')
+  const [selected, setSelected] = useState<LeaveRequest | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [newOpen, setNewOpen] = useState(false)
+  const [busyId, setBusyId] = useState<string | null>(null)
 
-  // New Request Form State
   const [newForm, setNewForm] = useState({
-    studentName: "",
-    rollNumber: "",
-    gradeClass: "Grade 10A",
-    leaveType: "Medical" as LeaveRequest["leaveType"],
-    startDate: "2026-03-10",
-    endDate: "2026-03-11",
-    reason: "",
-    submittedBy: "Parent",
-  });
+    studentId: '',
+    startDate: new Date().toISOString().slice(0, 10),
+    endDate: new Date().toISOString().slice(0, 10),
+    reason: '',
+  })
+  const [submitting, setSubmitting] = useState(false)
 
-  const filtered = requests.filter((r) => {
-    const matchesSearch =
-      r.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.rollNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.reason.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = statusTab === "All" || r.status === statusTab;
-    const matchesType = typeFilter === "All" || r.leaveType === typeFilter;
-    return matchesSearch && matchesTab && matchesType;
-  });
-
-  const pendingCount = requests.filter(r => r.status === "Pending").length;
-  const approvedCount = requests.filter(r => r.status === "Approved").length;
-  const onLeaveToday = requests.filter(r => r.status === "Approved" && r.daysCount > 0).length;
-
-  const handleApprove = (id: string) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "Approved", adminRemarks: "Approved by administration." } : r));
-    showToast("Leave request approved", "success");
-    if (selectedRequest?.id === id) {
-      setSelectedRequest(prev => prev ? { ...prev, status: "Approved", adminRemarks: "Approved by administration." } : null);
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const list = await leaveRequestService.list()
+      setRequests(Array.isArray(list) ? list : [])
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)))
+      setRequests([])
+    } finally {
+      setLoading(false)
     }
-  };
+  }, [])
 
-  const handleReject = (id: string) => {
-    const reason = prompt("Enter reason for rejection (optional):", "Incomplete documentation or schedule conflict");
-    if (reason === null) return;
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "Rejected", adminRemarks: reason || "Declined by administration." } : r));
-    showToast("Leave request rejected", "info");
-    if (selectedRequest?.id === id) {
-      setSelectedRequest(prev => prev ? { ...prev, status: "Rejected", adminRemarks: reason || "Declined by administration." } : null);
-    }
-  };
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const start = new Date(newForm.startDate);
-    const end = new Date(newForm.endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  const filtered = useMemo(() => {
+    return requests.filter((r) => {
+      if (tab !== 'All' && r.status !== tab) return false
+      if (search.trim()) {
+        const q = search.toLowerCase()
+        return (
+          r.studentId.toLowerCase().includes(q) ||
+          (r.reason ?? '').toLowerCase().includes(q)
+        )
+      }
+      return true
+    })
+  }, [requests, tab, search])
 
-    const newReq: LeaveRequest = {
-      id: `lr-${Date.now()}`,
-      studentId: `stu-${Date.now()}`,
-      studentName: newForm.studentName,
-      studentAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-      rollNumber: newForm.rollNumber || "STD-2025-099",
-      gradeClass: newForm.gradeClass,
-      leaveType: newForm.leaveType,
-      startDate: newForm.startDate,
-      endDate: newForm.endDate,
-      daysCount: diffDays,
-      reason: newForm.reason,
-      hasAttachment: false,
-      submittedBy: `${newForm.submittedBy} Direct`,
-      submittedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      status: "Pending",
-    };
-
-    setRequests(prev => [newReq, ...prev]);
-    setIsNewModalOpen(false);
-    showToast("Leave request recorded successfully", "success");
-    setNewForm({
-      studentName: "",
-      rollNumber: "",
-      gradeClass: "Grade 10A",
-      leaveType: "Medical",
-      startDate: "2026-03-10",
-      endDate: "2026-03-11",
-      reason: "",
-      submittedBy: "Parent",
-    });
-  };
+  const stats = useMemo(() => {
+    const pending = requests.filter((r) => r.status === 'PENDING').length
+    const approved = requests.filter((r) => r.status === 'APPROVED').length
+    const rejected = requests.filter((r) => r.status === 'REJECTED').length
+    return { pending, approved, rejected, total: requests.length }
+  }, [requests])
 
   const kpiCards: StatCard[] = [
-    { id: 'pending-approvals', label: 'Pending Approvals', value: pendingCount.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'needs review', icon: 'Clock', tint: 'amber' },
-    { id: 'approved-term', label: 'Approved This Term', value: approvedCount.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'approved', icon: 'CheckCircle2', tint: 'green' },
-    { id: 'on-leave-today', label: 'On Leave Active', value: onLeaveToday.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'today', icon: 'CalendarDays', tint: 'blue' },
-    { id: 'total-applications', label: 'Total Applications', value: requests.length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'submitted', icon: 'FileText', tint: 'violet' },
-  ];
+    { id: 'pending', label: 'Pending', value: String(stats.pending), delta: '-', deltaDirection: 'neutral', deltaLabel: 'awaiting review', icon: 'Clock', tint: 'amber' },
+    { id: 'approved', label: 'Approved', value: String(stats.approved), delta: '-', deltaDirection: 'neutral', deltaLabel: 'this term', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'rejected', label: 'Rejected', value: String(stats.rejected), delta: '-', deltaDirection: 'neutral', deltaLabel: 'declined', icon: 'XCircle', tint: 'red' },
+    { id: 'total', label: 'Total', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'submitted', icon: 'FileText', tint: 'violet' },
+  ]
+
+  const handleApprove = async (id: string) => {
+    setBusyId(id)
+    try {
+      await leaveRequestService.review(id, { status: 'APPROVED' })
+      showToast('Leave request approved', 'success')
+      setDetailOpen(false)
+      setSelected(null)
+      await load()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unable to approve'
+      showToast(msg, 'error')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  const handleReject = async (id: string) => {
+    setBusyId(id)
+    try {
+      await leaveRequestService.review(id, { status: 'REJECTED' })
+      showToast('Leave request rejected', 'info')
+      setDetailOpen(false)
+      setSelected(null)
+      await load()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unable to reject'
+      showToast(msg, 'error')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newForm.studentId.trim() || !newForm.reason.trim()) {
+      showToast('Student ID and reason are required', 'error')
+      return
+    }
+    if (new Date(newForm.startDate) > new Date(newForm.endDate)) {
+      showToast('Start date must not be after end date', 'error')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      await leaveRequestService.createForStudent({
+        studentId: newForm.studentId.trim(),
+        startDate: newForm.startDate,
+        endDate: newForm.endDate,
+        reason: newForm.reason.trim(),
+      })
+      showToast('Leave request recorded', 'success')
+      setNewOpen(false)
+      setNewForm({
+        studentId: '',
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: new Date().toISOString().slice(0, 10),
+        reason: '',
+      })
+      await load()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unable to save'
+      showToast(msg, 'error')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
-      {/* Heading */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeading
           title="Student Leave Requests"
-          subtitle="Review, approve, and track student absence applications and medical certificates."
+          subtitle="Review and track student absence applications."
         />
-        <button
-          onClick={() => setIsNewModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer self-start sm:self-auto"
-        >
-          <Plus size={16} />
-          <span>Record Leave Request</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-semibold hover:bg-surface-strong transition disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+          <button
+            onClick={() => setNewOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition"
+          >
+            <Plus size={16} />
+            <span>Record Request</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+        <Info size={16} className="text-info shrink-0 mt-0.5" />
+        <p className="text-secondary">
+          Requests are loaded from <code className="font-mono">/leaves</code>. Rows
+          show raw student IDs — a directory join is not yet available.
+        </p>
       </div>
 
       <StatsGrid cards={kpiCards} columns={4} />
-      {/* Legacy stats markup retained below only as migration reference.
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <Clock size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">{pendingCount}</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Pending Approvals</div>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <CheckCircle2 size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">{approvedCount}</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Approved This Term</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <CalendarDays size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">{onLeaveToday}</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">On Leave Active</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-stone-500/10 text-stone-600 dark:text-stone-400 flex items-center justify-center shrink-0">
-            <FileText size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">{requests.length}</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Total Applications</div>
-          </div>
-        </div>
-      </div> */}
-
-      {/* Tabs & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
-        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          {(["All", "Pending", "Approved", "Rejected"] as const).map((tab) => (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl glass-sm border border-surface">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+          {(['All', 'PENDING', 'APPROVED', 'REJECTED'] as const).map((t) => (
             <button
-              key={tab}
-              onClick={() => setStatusTab(tab)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
-                statusTab === tab
-                  ? "bg-stone-900 dark:bg-white text-white dark:text-stone-900 shadow-sm"
-                  : "text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/5"
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+                tab === t
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-secondary hover:bg-surface'
               }`}
             >
-              {tab}
+              {t === 'All' ? 'All' : t.charAt(0) + t.slice(1).toLowerCase()}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search size={15} className="absolute left-3 top-2.5 text-stone-400" />
-            <input
-              type="text"
-              placeholder="Search student, roll, or reason..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-stone-100 dark:bg-white/5 rounded-xl text-xs text-stone-800 dark:text-stone-100 placeholder-stone-400 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-100 dark:bg-white/5 text-xs text-stone-600 dark:text-stone-400 shrink-0">
-            <Filter size={13} />
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="bg-transparent focus:outline-none cursor-pointer"
-            >
-              <option value="All" className="dark:bg-stone-900">All Types</option>
-              <option value="Medical" className="dark:bg-stone-900">Medical</option>
-              <option value="Family Emergency" className="dark:bg-stone-900">Family Emergency</option>
-              <option value="School Representative" className="dark:bg-stone-900">Representative</option>
-              <option value="Personal" className="dark:bg-stone-900">Personal</option>
-            </select>
-          </div>
+        <div className="relative w-full sm:w-64">
+          <Search size={15} className="absolute left-3 top-2.5 text-secondary" />
+          <input
+            type="text"
+            placeholder="Search student ID or reason..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 bg-surface rounded-xl text-xs text-color placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-stone-200/70 dark:border-white/10 bg-stone-50/50 dark:bg-white/[0.02] text-[11px] font-semibold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
-                <th className="py-3.5 px-4">Student</th>
-                <th className="py-3.5 px-4">Leave Category</th>
-                <th className="py-3.5 px-4">Period & Duration</th>
-                <th className="py-3.5 px-4">Reason Details</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-200/50 dark:divide-white/5 text-xs text-stone-700 dark:text-stone-200">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-stone-400">
-                    No leave requests match the current selection.
-                  </td>
+      <div className="rounded-2xl glass-sm border border-surface overflow-hidden shadow-sm">
+        {loading ? (
+          <div className="py-16 text-center text-secondary text-sm">
+            <RefreshCw size={16} className="inline animate-spin mr-2" />
+            Loading leave requests...
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center">
+            <p className="text-sm font-bold text-error">Couldn't load requests</p>
+            <p className="mt-1 text-xs text-secondary">{error.message}</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-secondary text-sm">
+            {requests.length === 0
+              ? 'No leave requests yet.'
+              : 'No requests match the current filters.'}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-surface bg-surface/50 text-[11px] font-semibold uppercase tracking-wider text-secondary">
+                  <th className="py-3.5 px-4">Student</th>
+                  <th className="py-3.5 px-4">Period</th>
+                  <th className="py-3.5 px-4">Reason</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
-              ) : (
-                filtered.map((req) => (
-                  <tr key={req.id} className="hover:bg-stone-500/5 transition">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={req.studentAvatar}
-                          alt={req.studentName}
-                          className="w-9 h-9 rounded-full object-cover border border-stone-200 dark:border-white/10 shrink-0"
-                        />
-                        <div>
-                          <div className="font-semibold text-stone-900 dark:text-white">{req.studentName}</div>
-                          <div className="text-[11px] text-stone-500 dark:text-stone-400">
-                            {req.gradeClass} • <span className="font-mono">{req.rollNumber}</span>
+              </thead>
+              <tbody className="divide-y divide-surface text-xs text-color">
+                {filtered.map((req) => {
+                  const days = daysBetween(req.startDate, req.endDate)
+                  return (
+                    <tr key={req.id} className="hover:bg-surface/40 transition">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black text-white bg-linear-to-tr from-brand-600 to-brand-400 shrink-0">
+                            {initials(req.studentId)}
+                          </div>
+                          <div className="font-mono text-[11px] text-secondary">
+                            {req.studentId}
                           </div>
                         </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
-                        req.leaveType === 'Medical'
-                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                          : req.leaveType === 'School Representative'
-                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                          : req.leaveType === 'Family Emergency'
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                          : 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
-                      }`}>
-                        {req.leaveType}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <div className="font-medium text-stone-900 dark:text-white">
-                        {req.startDate} {req.startDate !== req.endDate && `to ${req.endDate}`}
-                      </div>
-                      <div className="text-[11px] text-stone-500 dark:text-stone-400">
-                        {req.daysCount} {req.daysCount === 1 ? 'day' : 'days'}
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <p className="line-clamp-1 text-stone-600 dark:text-stone-300">{req.reason}</p>
-                      <div className="flex items-center gap-2 mt-0.5 text-[10px] text-stone-400">
-                        <span>By {req.submittedBy}</span>
-                        {req.hasAttachment && (
-                          <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400">
-                            <Paperclip size={10} /> Document attached
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                        req.status === 'Approved'
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                          : req.status === 'Pending'
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                      }`}>
-                        {req.status === 'Approved' && <CheckCircle2 size={12} />}
-                        {req.status === 'Pending' && <Clock size={12} />}
-                        {req.status === 'Rejected' && <XCircle size={12} />}
-                        <span>{req.status}</span>
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          onClick={() => {
-                            setSelectedRequest(req);
-                            setIsDetailOpen(true);
-                          }}
-                          className="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/10 text-stone-600 dark:text-stone-400 hover:text-brand-600 transition cursor-pointer"
-                          title="View Details"
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-medium text-color flex items-center gap-1.5">
+                          <Calendar size={12} className="text-secondary" />
+                          {req.startDate}
+                          {req.startDate !== req.endDate && ` → ${req.endDate}`}
+                        </div>
+                        <div className="text-[11px] text-secondary">
+                          {days} {days === 1 ? 'day' : 'days'}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <p className="line-clamp-2 text-secondary">
+                          {req.reason || '—'}
+                        </p>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                            req.status === 'APPROVED'
+                              ? 'bg-success/15 text-success'
+                              : req.status === 'PENDING'
+                                ? 'bg-warning/15 text-warning'
+                                : 'bg-error/15 text-error'
+                          }`}
                         >
-                          <Eye size={15} />
-                        </button>
-                        {req.status === "Pending" && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(req.id)}
-                              className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 transition cursor-pointer"
-                              title="Approve Leave"
-                            >
-                              <Check size={15} />
-                            </button>
-                            <button
-                              onClick={() => handleReject(req.id)}
-                              className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 transition cursor-pointer"
-                              title="Reject Leave"
-                            >
-                              <X size={15} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                          {req.status === 'APPROVED' && <CheckCircle2 size={12} />}
+                          {req.status === 'PENDING' && <Clock size={12} />}
+                          {req.status === 'REJECTED' && <XCircle size={12} />}
+                          {req.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setSelected(req)
+                              setDetailOpen(true)
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-surface text-secondary hover:text-brand-600 transition"
+                          >
+                            <Eye size={15} />
+                          </button>
+                          {req.status === 'PENDING' && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(req.id)}
+                                disabled={busyId === req.id}
+                                className="p-1.5 rounded-lg bg-success/10 hover:bg-success/20 text-success transition disabled:opacity-50"
+                              >
+                                <Check size={15} />
+                              </button>
+                              <button
+                                onClick={() => handleReject(req.id)}
+                                disabled={busyId === req.id}
+                                className="p-1.5 rounded-lg bg-error/10 hover:bg-error/20 text-error transition disabled:opacity-50"
+                              >
+                                <X size={15} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Details Modal */}
-      {isDetailOpen && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl glass border border-stone-200/80 dark:border-white/10 p-6 shadow-2xl bg-white dark:bg-stone-900 space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-200 dark:border-white/10 pb-3">
-              <h3 className="text-base font-bold text-stone-900 dark:text-white flex items-center gap-2">
+      {detailOpen && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-surface pb-3">
+              <h3 className="text-base font-bold text-color flex items-center gap-2">
                 <FileText size={18} className="text-brand-500" />
-                <span>Leave Application Details</span>
+                Leave Application
               </h3>
               <button
-                onClick={() => setIsDetailOpen(false)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition"
+                onClick={() => {
+                  setDetailOpen(false)
+                  setSelected(null)
+                }}
+                className="p-1 rounded-lg text-secondary hover:text-color"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-50 dark:bg-white/5">
-                <img
-                  src={selectedRequest.studentAvatar}
-                  alt={selectedRequest.studentName}
-                  className="w-11 h-11 rounded-full object-cover"
-                />
-                <div>
-                  <div className="font-bold text-sm text-stone-900 dark:text-white">{selectedRequest.studentName}</div>
-                  <div className="text-stone-500">{selectedRequest.gradeClass} • Roll: {selectedRequest.rollNumber}</div>
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-surface">
+                <div className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-black text-white bg-linear-to-tr from-brand-600 to-brand-400">
+                  {initials(selected.studentId)}
+                </div>
+                <div className="font-mono text-[11px] text-secondary">
+                  {selected.studentId}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-stone-600 dark:text-stone-300">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-stone-400 block text-[11px]">Leave Type</span>
-                  <span className="font-semibold text-stone-900 dark:text-white">{selectedRequest.leaveType}</span>
+                  <span className="text-secondary block text-[11px]">Start</span>
+                  <span className="font-semibold text-color">{selected.startDate}</span>
                 </div>
                 <div>
-                  <span className="text-stone-400 block text-[11px]">Total Days</span>
-                  <span className="font-semibold text-stone-900 dark:text-white">{selectedRequest.daysCount} Day(s)</span>
-                </div>
-                <div>
-                  <span className="text-stone-400 block text-[11px]">Start Date</span>
-                  <span className="font-semibold text-stone-900 dark:text-white">{selectedRequest.startDate}</span>
-                </div>
-                <div>
-                  <span className="text-stone-400 block text-[11px]">End Date</span>
-                  <span className="font-semibold text-stone-900 dark:text-white">{selectedRequest.endDate}</span>
+                  <span className="text-secondary block text-[11px]">End</span>
+                  <span className="font-semibold text-color">{selected.endDate}</span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-stone-50 dark:bg-white/5">
-                <div className="text-stone-400 text-[11px] mb-1">Stated Reason</div>
-                <div className="text-stone-800 dark:text-stone-100">{selectedRequest.reason}</div>
+              <div className="p-3 rounded-xl bg-surface">
+                <div className="text-secondary text-[11px] mb-1">Reason</div>
+                <div className="text-color">{selected.reason || '—'}</div>
               </div>
-
-              {selectedRequest.hasAttachment && (
-                <div className="flex items-center justify-between p-2.5 rounded-xl border border-stone-200 dark:border-white/10 bg-brand-50/30 dark:bg-brand-900/10">
-                  <div className="flex items-center gap-2 text-stone-700 dark:text-stone-300">
-                    <Paperclip size={14} className="text-brand-600 dark:text-brand-400" />
-                    <span className="font-medium text-[11px]">{selectedRequest.attachmentName}</span>
-                  </div>
-                  <span className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold cursor-pointer">View</span>
-                </div>
-              )}
-
-              {selectedRequest.adminRemarks && (
-                <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-900/30">
-                  <div className="text-amber-800 dark:text-amber-300 font-semibold text-[11px] mb-0.5">Admin Remark</div>
-                  <div className="text-stone-700 dark:text-stone-300">{selectedRequest.adminRemarks}</div>
-                </div>
-              )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-200 dark:border-white/10">
-              {selectedRequest.status === "Pending" ? (
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface">
+              {selected.status === 'PENDING' ? (
                 <>
                   <button
-                    onClick={() => {
-                      handleReject(selectedRequest.id);
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition"
+                    onClick={() => handleReject(selected.id)}
+                    disabled={busyId === selected.id}
+                    className="px-3.5 py-1.5 rounded-xl border border-error/40 text-error hover:bg-error/10 text-xs font-semibold transition disabled:opacity-50"
                   >
                     Reject
                   </button>
                   <button
-                    onClick={() => {
-                      handleApprove(selectedRequest.id);
-                    }}
-                    className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition"
+                    onClick={() => handleApprove(selected.id)}
+                    disabled={busyId === selected.id}
+                    className="px-4 py-1.5 rounded-xl bg-success hover:opacity-90 text-white text-xs font-semibold shadow-sm transition disabled:opacity-50"
                   >
-                    Approve Leave
+                    Approve
                   </button>
                 </>
               ) : (
                 <button
-                  onClick={() => setIsDetailOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-stone-100 dark:bg-white/10 text-stone-700 dark:text-stone-200 text-xs font-semibold transition"
+                  onClick={() => {
+                    setDetailOpen(false)
+                    setSelected(null)
+                  }}
+                  className="px-4 py-2 rounded-xl bg-surface text-color text-xs font-semibold hover:bg-surface-strong"
                 >
                   Close
                 </button>
@@ -580,116 +436,92 @@ export default function LeaveRequests() {
         </div>
       )}
 
-      {/* Record Leave Modal */}
-      {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl glass border border-stone-200/80 dark:border-white/10 p-6 shadow-2xl bg-white dark:bg-stone-900 space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-200 dark:border-white/10 pb-3">
-              <h3 className="text-base font-bold text-stone-900 dark:text-white flex items-center gap-2">
+      {newOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-surface pb-3">
+              <h3 className="text-base font-bold text-color flex items-center gap-2">
                 <Plus size={18} className="text-brand-500" />
-                <span>Record New Leave Request</span>
+                Record Leave Request
               </h3>
               <button
-                onClick={() => setIsNewModalOpen(false)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition"
+                onClick={() => setNewOpen(false)}
+                className="p-1 rounded-lg text-secondary hover:text-color"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleCreate} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Student Full Name</label>
+                <label className="block font-semibold text-secondary mb-1">
+                  Student ID *
+                </label>
                 <input
                   type="text"
                   required
-                  value={newForm.studentName}
-                  onChange={(e) => setNewForm({ ...newForm, studentName: e.target.value })}
-                  placeholder="e.g. Brandon Walsh"
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+                  value={newForm.studentId}
+                  onChange={(e) => setNewForm({ ...newForm, studentId: e.target.value })}
+                  placeholder="student id"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color font-mono focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Class Section</label>
-                  <select
-                    value={newForm.gradeClass}
-                    onChange={(e) => setNewForm({ ...newForm, gradeClass: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
-                  >
-                    <option value="Grade 9A" className="dark:bg-stone-900">Grade 9A</option>
-                    <option value="Grade 9B" className="dark:bg-stone-900">Grade 9B</option>
-                    <option value="Grade 10A" className="dark:bg-stone-900">Grade 10A</option>
-                    <option value="Grade 10B" className="dark:bg-stone-900">Grade 10B</option>
-                    <option value="Grade 11A" className="dark:bg-stone-900">Grade 11A</option>
-                    <option value="Grade 12A" className="dark:bg-stone-900">Grade 12A</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Category</label>
-                  <select
-                    value={newForm.leaveType}
-                    onChange={(e) => setNewForm({ ...newForm, leaveType: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
-                  >
-                    <option value="Medical" className="dark:bg-stone-900">Medical</option>
-                    <option value="Family Emergency" className="dark:bg-stone-900">Family Emergency</option>
-                    <option value="School Representative" className="dark:bg-stone-900">School Representative</option>
-                    <option value="Personal" className="dark:bg-stone-900">Personal</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Start Date</label>
+                  <label className="block font-semibold text-secondary mb-1">
+                    Start date *
+                  </label>
                   <input
                     type="date"
                     required
                     value={newForm.startDate}
                     onChange={(e) => setNewForm({ ...newForm, startDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">End Date</label>
+                  <label className="block font-semibold text-secondary mb-1">
+                    End date *
+                  </label>
                   <input
                     type="date"
                     required
                     value={newForm.endDate}
                     onChange={(e) => setNewForm({ ...newForm, endDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Reason for Absence</label>
+                <label className="block font-semibold text-secondary mb-1">
+                  Reason *
+                </label>
                 <textarea
                   rows={3}
                   required
                   value={newForm.reason}
                   onChange={(e) => setNewForm({ ...newForm, reason: e.target.value })}
-                  placeholder="Provide clinical or domestic explanation for absence..."
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-200 dark:border-white/10">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface">
                 <button
                   type="button"
-                  onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-stone-200 dark:border-white/10 text-stone-600 dark:text-stone-300"
+                  onClick={() => setNewOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-surface text-secondary text-xs font-semibold hover:bg-surface"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-md shadow-brand-500/20"
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-md shadow-brand-500/20 disabled:opacity-50"
                 >
-                  Submit Application
+                  {submitting && <RefreshCw size={13} className="animate-spin" />}
+                  Submit
                 </button>
               </div>
             </form>
@@ -697,5 +529,5 @@ export default function LeaveRequests() {
         </div>
       )}
     </div>
-  );
+  )
 }

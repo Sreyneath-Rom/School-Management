@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+// src/pages/Academic/Homework.tsx
+import { useState, useEffect, useCallback } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   FileCheck2,
@@ -21,9 +22,30 @@ import { useAuth } from '@/hooks/useAuth'
 import { academicService } from '@/services/academicService'
 import type { Homework, HomeworkSubmission } from '@/types/academic'
 import { useToast } from '@/components/common/ToastProvider'
-import FileUploadZone from '@/components/common/FileUploadZone'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
+import { classService, type ClassRecord } from '@/services/classService'
+import { subjectService } from '@/services/subjectService'
+
+interface HomeworkForm {
+  title: string
+  description: string
+  classId: string
+  subjectId: string
+  dueDate: string
+  maxScore: number
+  allowLateSubmissions: boolean
+}
+
+const DEFAULT_FORM: HomeworkForm = {
+  title: '',
+  description: '',
+  classId: '',
+  subjectId: '',
+  dueDate: '',
+  maxScore: 100,
+  allowLateSubmissions: true,
+}
 
 export default function HomeworkPage() {
   const { user } = useAuth()
@@ -31,193 +53,204 @@ export default function HomeworkPage() {
   const isTeacherOrAdmin = user?.role === 'teacher' || user?.role === 'admin'
   const isStudent = user?.role === 'student'
 
-  const currentStudentId = user?.id || '3'
-  const currentStudentName = user?.name || 'Emily Watson'
-
   const [homeworkList, setHomeworkList] = useState<Homework[]>([])
-  const [submissions, setSubmissions] = useState<HomeworkSubmission[]>([])
+  const [classes, setClasses] = useState<ClassRecord[]>([])
+  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([])
+  const [mySubmissions, setMySubmissions] = useState<HomeworkSubmission[]>([])
   const [loading, setLoading] = useState(true)
-
   const [search, setSearch] = useState('')
-  const [selectedClass, setSelectedClass] = useState<string>(isStudent ? 'Grade 10-A' : 'all')
-  const [selectedSubject, setSelectedSubject] = useState<string>('all')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  // Modals
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [activeReviewHomework, setActiveReviewHomework] = useState<Homework | null>(null)
-  const [activeSubmitHomework, setActiveSubmitHomework] = useState<Homework | null>(null)
+  // Create form
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [form, setForm] = useState<HomeworkForm>({ ...DEFAULT_FORM })
 
-  // Student submission form
+  // Review / submit modals
+  const [reviewHomework, setReviewHomework] = useState<Homework | null>(null)
+  const [reviewSubmissions, setReviewSubmissions] = useState<HomeworkSubmission[]>([])
+  const [reviewLoading, setReviewLoading] = useState(false)
+
+  const [submitHomework, setSubmitHomework] = useState<Homework | null>(null)
   const [submissionText, setSubmissionText] = useState('')
-  const [submissionAttachment, setSubmissionAttachment] = useState('')
+  const [submissionFileUrl, setSubmissionFileUrl] = useState('')
 
-  // Teacher grading state
-  const [selectedSubmissionToGrade, setSelectedSubmissionToGrade] = useState<HomeworkSubmission | null>(null)
-  const [gradeInput, setGradeInput] = useState<number>(90)
-  const [feedbackInput, setFeedbackInput] = useState<string>('')
+  const [gradingSubmission, setGradingSubmission] = useState<HomeworkSubmission | null>(null)
+  const [gradeInput, setGradeInput] = useState(0)
+  const [feedbackInput, setFeedbackInput] = useState('')
 
-  // Teacher Create Homework form
-  const [createForm, setCreateForm] = useState({
-    title: '',
-    description: '',
-    className: 'Grade 10-A',
-    subjectName: 'Mathematics',
-    assignedDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-    maxPoints: 100,
-    status: 'Published' as 'Draft' | 'Published',
-    materialName: '',
-  })
-
-  const loadData = async () => {
+  const load = useCallback(async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const [hw, subs] = await Promise.all([
+      const [list, cls, subj] = await Promise.all([
         academicService.getHomeworkList(),
-        academicService.getSubmissions(),
+        classService.list().catch(() => []),
+        subjectService.list().catch(() => []),
       ])
-      setHomeworkList(hw)
-      setSubmissions(subs)
+      setHomeworkList(Array.isArray(list) ? list : [])
+      setClasses(Array.isArray(cls) ? cls : [])
+      setSubjects(
+        Array.isArray(subj)
+          ? subj.map((s) => ({ id: s.id, name: s.name }))
+          : []
+      )
     } catch {
-      showToast('Failed to load homework assignments', 'error')
+      showToast('Failed to load homework', 'error')
+      setHomeworkList([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [showToast])
 
   useEffect(() => {
-    loadData()
-  }, [])
+    load()
+  }, [load])
 
-  // Helper for student's submission status for a specific homework
-  const getStudentSubmission = (hwId: string): HomeworkSubmission | undefined => {
-    return submissions.find((s) => s.homeworkId === hwId && s.studentId === currentStudentId)
-  }
-
-  const filteredHomework = homeworkList.filter((hw) => {
-    if (isStudent && hw.className !== 'Grade 10-A') return false
-    if (selectedClass !== 'all' && hw.className !== selectedClass) return false
-    if (selectedSubject !== 'all' && hw.subjectName.toLowerCase() !== selectedSubject.toLowerCase()) return false
-
-    if (isStudent) {
-      const sub = getStudentSubmission(hw.id)
-      const studentStatus = sub ? sub.status : 'Pending'
-      if (statusFilter !== 'all' && studentStatus !== statusFilter) return false
-    } else {
-      if (statusFilter !== 'all' && hw.status !== statusFilter) return false
+  // Load the student's own submissions across all homework. There is no
+  // bulk endpoint, so we query each homework in parallel.
+  useEffect(() => {
+    if (!isStudent) {
+      setMySubmissions([])
+      return
     }
+    let cancelled = false
+    ;(async () => {
+      const all: HomeworkSubmission[] = []
+      await Promise.all(
+        homeworkList.map(async (hw) => {
+          try {
+            const subs = await academicService.getSubmissions(hw.id)
+            for (const s of subs) if (s.studentId === user?.id) all.push(s)
+          } catch {
+            /* endpoint may be missing for some homework */
+          }
+        })
+      )
+      if (!cancelled) setMySubmissions(all)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [homeworkList, isStudent, user?.id])
 
+  const mySubmissionFor = (hwId: string) =>
+    mySubmissions.find((s) => s.homeworkId === hwId)
+
+  const filtered = homeworkList.filter((hw) => {
     if (search.trim()) {
       const q = search.toLowerCase()
-      const matchTitle = hw.title.toLowerCase().includes(q)
-      const matchDesc = hw.description.toLowerCase().includes(q)
-      const matchSub = hw.subjectName.toLowerCase().includes(q)
-      if (!matchTitle && !matchDesc && !matchSub) return false
+      return (
+        hw.title.toLowerCase().includes(q) ||
+        hw.description.toLowerCase().includes(q) ||
+        hw.subjectName.toLowerCase().includes(q)
+      )
     }
     return true
   })
 
-  const homeworkKpiCards: StatCard[] = [
-    { id: 'available-homework', label: 'Available Assignments', value: filteredHomework.length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'matching filters', icon: 'FileCheck2', tint: 'blue' },
-    { id: 'submitted-homework', label: 'Submitted Work', value: submissions.filter((submission) => filteredHomework.some((homework) => homework.id === submission.homeworkId) && (!isStudent || submission.studentId === currentStudentId)).length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: isStudent ? 'your submissions' : 'student submissions', icon: 'CheckCircle2', tint: 'green' },
-    { id: 'graded-homework', label: 'Graded Work', value: submissions.filter((submission) => submission.status === 'Graded' && filteredHomework.some((homework) => homework.id === submission.homeworkId) && (!isStudent || submission.studentId === currentStudentId)).length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'feedback available', icon: 'Award', tint: 'amber' },
-    { id: 'homework-points', label: 'Available Points', value: filteredHomework.reduce((total, homework) => total + homework.maxPoints, 0).toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'assessment value', icon: 'TrendingUp', tint: 'violet' },
+  const kpiCards: StatCard[] = [
+    { id: 'available', label: 'Assignments', value: String(filtered.length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'matching filters', icon: 'FileCheck2', tint: 'blue' },
+    { id: 'submitted', label: isStudent ? 'Your Submissions' : 'Total Submissions', value: String(mySubmissions.length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'this term', icon: 'CheckCircle2', tint: 'green' },
+    { id: 'graded', label: 'Graded', value: String(mySubmissions.filter((s) => s.status === 'Graded').length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'feedback available', icon: 'Award', tint: 'amber' },
+    { id: 'points', label: 'Available Points', value: String(filtered.reduce((sum, h) => sum + h.maxPoints, 0)), delta: '-', deltaDirection: 'neutral', deltaLabel: 'assessment value', icon: 'Layers', tint: 'violet' },
   ]
 
-  const handleCreateHomework = async (e: React.FormEvent) => {
+  const openCreate = () => {
+    setForm({
+      ...DEFAULT_FORM,
+      classId: classes[0]?.id ?? '',
+      subjectId: subjects[0]?.id ?? '',
+      dueDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    })
+    setIsCreateOpen(true)
+  }
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!createForm.title.trim()) {
-      showToast('Title is required', 'error')
+    if (!form.title.trim() || !form.subjectId || !form.dueDate) {
+      showToast('Title, subject, and due date are required', 'error')
       return
     }
-
     try {
       await academicService.createHomework({
-        title: createForm.title,
-        description: createForm.description,
-        classId: createForm.className === 'Grade 10-A' ? 'cls-1' : 'cls-2',
-        className: createForm.className,
-        subjectId: `sub-${createForm.subjectName.toLowerCase().slice(0, 3)}`,
-        subjectName: createForm.subjectName,
-        teacherId: user?.id || '2',
-        teacherName: user?.name || 'Faculty Instructor',
-        assignedDate: createForm.assignedDate,
-        dueDate: createForm.dueDate,
-        maxPoints: Number(createForm.maxPoints) || 100,
-        status: createForm.status,
-        materials: createForm.materialName
-          ? [{ id: `mat-${Date.now()}`, name: createForm.materialName, type: 'pdf', url: '#' }]
-          : [],
+        title: form.title.trim(),
+        description: form.description.trim() || undefined,
+        subjectId: form.subjectId,
+        classId: form.classId || undefined,
+        dueDate: new Date(form.dueDate).toISOString(),
+        maxScore: form.maxScore,
+        allowLateSubmissions: form.allowLateSubmissions,
       })
-      showToast('Assignment published successfully', 'success')
-      setIsCreateModalOpen(false)
-      loadData()
+      showToast('Assignment published', 'success')
+      setIsCreateOpen(false)
+      await load()
     } catch {
       showToast('Failed to create assignment', 'error')
     }
   }
 
-  const handleSubmitHomework = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!activeSubmitHomework) return
-
+  const openReview = async (hw: Homework) => {
+    setReviewHomework(hw)
+    setReviewLoading(true)
     try {
-      await academicService.submitHomework({
-        homeworkId: activeSubmitHomework.id,
-        studentId: currentStudentId,
-        studentName: currentStudentName,
-        studentCode: 'STU123456',
-        content: submissionText || 'Work completed as instructed.',
-        attachments: submissionAttachment
-          ? [{ name: submissionAttachment, url: '#' }]
-          : [{ name: `${currentStudentName.replace(' ', '_')}_Assignment.pdf`, url: '#' }],
+      const subs = await academicService.getSubmissions(hw.id)
+      setReviewSubmissions(Array.isArray(subs) ? subs : [])
+    } catch {
+      setReviewSubmissions([])
+    } finally {
+      setReviewLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!submitHomework) return
+    try {
+      await academicService.submitHomework(submitHomework.id, {
+        content: submissionText.trim() || undefined,
+        fileUrl: submissionFileUrl.trim() || undefined,
       })
-      showToast('Assignment submitted successfully!', 'success')
-      setActiveSubmitHomework(null)
+      showToast('Assignment submitted', 'success')
+      setSubmitHomework(null)
       setSubmissionText('')
-      setSubmissionAttachment('')
-      loadData()
+      setSubmissionFileUrl('')
+      await load()
     } catch {
       showToast('Error submitting assignment', 'error')
     }
   }
 
-  const handleGradeSubmission = async (e: React.FormEvent) => {
+  const handleGrade = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedSubmissionToGrade) return
-
+    if (!gradingSubmission) return
     try {
       await academicService.gradeSubmission(
-        selectedSubmissionToGrade.id,
+        gradingSubmission.id,
         gradeInput,
-        feedbackInput
+        feedbackInput || undefined
       )
-      showToast('Grade and feedback saved successfully', 'success')
-      setSelectedSubmissionToGrade(null)
-      loadData()
+      showToast('Grade saved', 'success')
+      setGradingSubmission(null)
+      if (reviewHomework) await openReview(reviewHomework)
     } catch {
       showToast('Error saving grade', 'error')
     }
   }
 
   return (
-    <div id="homework-page-container" className="space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeading
-          title={isStudent ? 'My Homework & Assignments' : 'Homework & Assignments'}
+          title={isStudent ? 'My Homework' : 'Homework & Assignments'}
           subtitle={
             isStudent
-              ? 'Track deadlines, review instructor rubrics, and submit your homework online.'
-              : 'Create homework assignments, set grading rubrics, and review student submissions.'
+              ? 'Track deadlines, submit work, and review feedback.'
+              : 'Create assignments and review student submissions.'
           }
         />
 
         {isTeacherOrAdmin && (
           <button
-            id="create-homework-btn"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm transition"
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium shadow-sm transition"
           >
             <Plus className="w-4 h-4" />
             Assign Homework
@@ -225,217 +258,162 @@ export default function HomeworkPage() {
         )}
       </div>
 
-      <StatsGrid cards={homeworkKpiCards} columns={4} />
+      <StatsGrid cards={kpiCards} columns={4} />
 
-      {/* Filter and Search Bar */}
-      <div className="glass-sm rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="glass-sm rounded-2xl p-4 border border-surface flex flex-col md:flex-row gap-3 items-center">
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" />
           <input
-            id="search-homework-input"
             type="text"
             placeholder="Search assignments..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-sm border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-sm border border-surface bg-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          {!isStudent && (
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
-            >
-              <option value="all">All Classes</option>
-              <option value="Grade 10-A">Grade 10-A</option>
-              <option value="Grade 10-B">Grade 10-B</option>
-              <option value="Grade 11-A">Grade 11-A</option>
-            </select>
-          )}
-
-          <select
-            value={selectedSubject}
-            onChange={(e) => setSelectedSubject(e.target.value)}
-            className="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
-          >
-            <option value="all">All Subjects</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Physics">Physics</option>
-            <option value="English Literature">English Literature</option>
-            <option value="Chemistry">Chemistry</option>
-            <option value="Computer Science">Computer Science</option>
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
-          >
-            <option value="all">All Statuses</option>
-            {isStudent ? (
-              <>
-                <option value="Pending">Pending Submission</option>
-                <option value="Submitted">Submitted</option>
-                <option value="Graded">Graded</option>
-              </>
-            ) : (
-              <>
-                <option value="Published">Published</option>
-                <option value="Draft">Draft</option>
-              </>
-            )}
-          </select>
         </div>
       </div>
 
-      {/* Homework Grid */}
       {loading ? (
-        <div className="py-16 text-center text-slate-500">Loading assignments...</div>
-      ) : filteredHomework.length === 0 ? (
-        <div className="glass-sm rounded-2xl p-12 text-center border border-slate-200/80 dark:border-slate-800">
-          <FileCheck2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">No homework found</h3>
-          <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+        <div className="py-16 text-center text-sm text-secondary">
+          Loading assignments...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="glass-sm rounded-2xl p-12 text-center border border-surface">
+          <FileCheck2 className="w-12 h-12 text-secondary mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-color">No assignments</h3>
+          <p className="text-sm text-secondary mt-1 max-w-md mx-auto">
             {isTeacherOrAdmin
-              ? 'Click "Assign Homework" to create a new assignment for your students.'
-              : 'You have no homework assignments matching these filters. Great job!'}
+              ? 'Click "Assign Homework" to create the first assignment.'
+              : 'No homework assignments match your filters.'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filteredHomework.map((hw) => {
-            const studentSub = isStudent ? getStudentSubmission(hw.id) : undefined
-            const isDueSoon = new Date(hw.dueDate).getTime() - Date.now() < 3 * 86400000
+          {filtered.map((hw) => {
+            const sub = isStudent ? mySubmissionFor(hw.id) : undefined
+            const isDueSoon =
+              new Date(hw.dueDate).getTime() - Date.now() < 3 * 86400000 &&
+              new Date(hw.dueDate).getTime() > Date.now()
 
             return (
               <div
                 key={hw.id}
-                id={`hw-card-${hw.id}`}
-                className="glass-sm rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500/40 hover:shadow-md transition flex flex-col justify-between"
+                className="glass-sm rounded-2xl p-5 border border-surface hover:border-brand-500/40 hover:shadow-md transition flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-500/10 text-brand-600 dark:text-brand-300">
                       <BookOpen className="w-3 h-3" />
                       {hw.subjectName}
                     </span>
 
                     {isStudent ? (
-                      studentSub?.status === 'Graded' ? (
-                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      sub?.status === 'Graded' ? (
+                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-success/15 text-success">
                           <CheckCircle2 className="w-3 h-3" />
-                          Graded: {studentSub.grade}/{hw.maxPoints}
+                          {sub.grade ?? 0} / {hw.maxPoints}
                         </span>
-                      ) : studentSub?.status === 'Submitted' ? (
-                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+                      ) : sub?.status === 'Submitted' ? (
+                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-info/15 text-info">
                           <Clock className="w-3 h-3" />
                           Submitted
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium bg-warning/15 text-warning">
                           <AlertCircle className="w-3 h-3" />
                           Pending
                         </span>
                       )
-                    ) : (
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                        {hw.status}
-                      </span>
-                    )}
+                    ) : null}
                   </div>
 
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base line-clamp-1">
+                  <h3 className="font-semibold text-color text-base line-clamp-1">
                     {hw.title}
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                  <p className="text-sm text-secondary mt-1 line-clamp-2">
                     {hw.description}
                   </p>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs text-slate-500">
+                  <div className="mt-4 pt-3 border-t border-surface space-y-2 text-xs text-secondary">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <Calendar className="w-3.5 h-3.5" />
                         Due: {hw.dueDate}
                       </span>
-                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                      <span className="font-medium text-color">
                         Max: {hw.maxPoints} pts
                       </span>
                     </div>
-
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-                        <Layers className="w-3.5 h-3.5 text-slate-400" />
-                        {hw.className}
+                      <span className="flex items-center gap-1">
+                        <Layers className="w-3.5 h-3.5" />
+                        {hw.className || '—'}
                       </span>
-
                       {!isStudent && (
                         <span className="text-brand-600 font-medium">
-                          {hw.submissionsCount || 0}/{hw.totalStudents || 32} submitted
+                          {hw.submissionsCount} submitted
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Student feedback display if graded */}
-                  {isStudent && studentSub?.status === 'Graded' && studentSub.feedback && (
-                    <div className="mt-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-xs">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 mb-1">
-                        <MessageSquare className="w-3 h-3 text-brand-600" /> Teacher Feedback:
+                  {isStudent && sub?.status === 'Graded' && sub.feedback && (
+                    <div className="mt-3 p-2.5 rounded-xl bg-surface border border-surface text-xs">
+                      <span className="font-semibold text-color flex items-center gap-1 mb-1">
+                        <MessageSquare className="w-3 h-3 text-brand-600" />
+                        Feedback:
                       </span>
-                      <p className="text-slate-600 dark:text-slate-300 italic">"{studentSub.feedback}"</p>
+                      <p className="text-secondary italic">
+                        "{sub.feedback}"
+                      </p>
                     </div>
                   )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">
-                    {isDueSoon && !studentSub ? (
-                      <span className="text-rose-600 font-medium">Deadline soon</span>
+                <div className="mt-4 pt-3 border-t border-surface flex items-center justify-between">
+                  <span className="text-xs text-secondary">
+                    {isDueSoon && !sub ? (
+                      <span className="text-error font-medium">Due soon</span>
                     ) : (
-                      `By ${hw.teacherName}`
+                      `By ${hw.teacherName || '—'}`
                     )}
                   </span>
 
                   {isStudent ? (
-                    studentSub?.status === 'Graded' ? (
+                    sub?.status === 'Graded' ? (
+                      <span className="text-xs px-3 py-1.5 rounded-xl font-medium bg-surface text-secondary">
+                        Graded
+                      </span>
+                    ) : sub?.status === 'Submitted' ? (
                       <button
                         onClick={() => {
-                          showToast(`Submitted on ${studentSub.submittedAt}`, 'info')
+                          setSubmitHomework(hw)
+                          setSubmissionText(sub.content)
+                          setSubmissionFileUrl(sub.attachments[0]?.url ?? '')
                         }}
-                        className="text-xs px-3 py-1.5 rounded-xl font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition"
+                        className="text-xs px-3 py-1.5 rounded-xl font-medium bg-surface text-color hover:bg-surface-strong transition"
                       >
-                        View Submission
-                      </button>
-                    ) : studentSub?.status === 'Submitted' ? (
-                      <button
-                        onClick={() => setActiveSubmitHomework(hw)}
-                        className="text-xs px-3 py-1.5 rounded-xl font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition"
-                      >
-                        Resubmit Work
+                        Resubmit
                       </button>
                     ) : (
                       <button
-                        id={`submit-hw-${hw.id}`}
                         onClick={() => {
-                          setActiveSubmitHomework(hw)
+                          setSubmitHomework(hw)
                           setSubmissionText('')
-                          setSubmissionAttachment('')
+                          setSubmissionFileUrl('')
                         }}
                         className="text-xs px-3.5 py-1.5 rounded-xl font-medium bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition inline-flex items-center gap-1.5"
                       >
                         <Upload className="w-3.5 h-3.5" />
-                        Submit Work
+                        Submit
                       </button>
                     )
                   ) : (
                     <button
-                      id={`review-submissions-${hw.id}`}
-                      onClick={() => setActiveReviewHomework(hw)}
-                      className="text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 hover:text-brand-600 text-slate-700 dark:text-slate-200 transition inline-flex items-center gap-1"
+                      onClick={() => openReview(hw)}
+                      className="text-xs px-3.5 py-1.5 rounded-xl font-medium bg-surface hover:bg-brand-500/10 hover:text-brand-600 text-color transition inline-flex items-center gap-1"
                     >
-                      Review Submissions <ChevronRight className="w-3.5 h-3.5" />
+                      Review <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
@@ -445,69 +423,74 @@ export default function HomeworkPage() {
         </div>
       )}
 
-      {/* Student Submit Modal */}
-      {activeSubmitHomework && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      {/* Student submit modal */}
+      {submitHomework && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <form
-            id="student-submit-homework-modal"
-            onSubmit={handleSubmitHomework}
-            className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4"
+            onSubmit={handleSubmit}
+            className="bg-surface rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-surface space-y-4"
           >
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
-                  {activeSubmitHomework.subjectName}
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-300">
+                  {submitHomework.subjectName}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">
-                  Submit: {activeSubmitHomework.title}
+                <h3 className="text-lg font-bold text-color mt-1">
+                  Submit: {submitHomework.title}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Due: {activeSubmitHomework.dueDate} • Worth {activeSubmitHomework.maxPoints} pts
+                <p className="text-xs text-secondary mt-0.5">
+                  Due {submitHomework.dueDate} • {submitHomework.maxPoints} pts
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setActiveSubmitHomework(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600"
+                onClick={() => setSubmitHomework(null)}
+                className="p-1.5 rounded-lg text-secondary hover:text-color"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
-              <span className="font-semibold text-slate-700 dark:text-slate-200 block mb-1">Instructions:</span>
-              {activeSubmitHomework.description}
-            </div>
+            {submitHomework.description && (
+              <div className="p-3 bg-surface-strong rounded-xl border border-surface text-xs text-secondary">
+                <span className="font-semibold text-color block mb-1">
+                  Instructions:
+                </span>
+                {submitHomework.description}
+              </div>
+            )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Student Notes / Submission Content
+              <label className="block text-xs font-semibold text-secondary mb-1">
+                Your Answer
               </label>
               <textarea
                 rows={4}
-                required
-                placeholder="Write your explanation or notes on how you solved the problems..."
                 value={submissionText}
                 onChange={(e) => setSubmissionText(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                placeholder="Write your solution or notes..."
+                className="w-full px-3.5 py-2 text-sm rounded-xl border border-surface bg-surface-strong text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
 
             <div>
-              <FileUploadZone
-                id="student-homework-file-upload"
-                label="Attach Assignment File (Optional)"
-                value={submissionAttachment}
-                onChange={(file) => setSubmissionAttachment(file ? file.name : '')}
-                helperText="Supports PDF, DOCX, ZIP, PNG, JPG up to 25MB (UC-FILE-01)"
+              <label className="block text-xs font-semibold text-secondary mb-1">
+                Attachment URL (optional)
+              </label>
+              <input
+                type="url"
+                placeholder="https://..."
+                value={submissionFileUrl}
+                onChange={(e) => setSubmissionFileUrl(e.target.value)}
+                className="w-full px-3.5 py-2 text-sm rounded-xl border border-surface bg-surface-strong text-color"
               />
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
+            <div className="pt-3 border-t border-surface flex justify-end gap-2.5">
               <button
                 type="button"
-                onClick={() => setActiveSubmitHomework(null)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                onClick={() => setSubmitHomework(null)}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-secondary hover:bg-surface-strong transition"
               >
                 Cancel
               </button>
@@ -516,136 +499,120 @@ export default function HomeworkPage() {
                 className="px-5 py-2 rounded-xl text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition inline-flex items-center gap-1.5"
               >
                 <Upload className="w-4 h-4" />
-                Turn In Assignment
+                Turn In
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Teacher Review Submissions Drawer / Modal */}
-      {activeReviewHomework && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div
-            id="review-homework-modal"
-            className="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5"
-          >
-            <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+      {/* Review modal */}
+      {reviewHomework && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-surface rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-surface space-y-5">
+            <div className="flex items-start justify-between pb-3 border-b border-surface">
               <div>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
-                  {activeReviewHomework.className} • {activeReviewHomework.subjectName}
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-300">
+                  {reviewHomework.className || '—'} • {reviewHomework.subjectName}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">
-                  Submissions: {activeReviewHomework.title}
+                <h3 className="text-lg font-bold text-color mt-1">
+                  Submissions: {reviewHomework.title}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Max: {activeReviewHomework.maxPoints} pts • Due {activeReviewHomework.dueDate}
+                <p className="text-xs text-secondary mt-0.5">
+                  Max {reviewHomework.maxPoints} pts • Due {reviewHomework.dueDate}
                 </p>
               </div>
               <button
                 onClick={() => {
-                  setActiveReviewHomework(null)
-                  setSelectedSubmissionToGrade(null)
+                  setReviewHomework(null)
+                  setGradingSubmission(null)
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600"
+                className="p-1.5 rounded-lg text-secondary hover:text-color"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* List of submissions for this assignment */}
-            {submissions.filter((s) => s.homeworkId === activeReviewHomework.id).length === 0 ? (
-              <div className="py-12 text-center text-slate-400">
-                <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                <p>No student submissions received yet for this assignment.</p>
+            {reviewLoading ? (
+              <div className="py-12 text-center text-secondary text-sm">
+                Loading submissions...
+              </div>
+            ) : reviewSubmissions.length === 0 ? (
+              <div className="py-12 text-center text-secondary">
+                <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">No submissions yet.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {submissions
-                  .filter((s) => s.homeworkId === activeReviewHomework.id)
-                  .map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
-                            {sub.studentName} ({sub.studentCode})
-                          </h4>
-                          <span className="text-xs text-slate-400">
-                            Submitted: {sub.submittedAt}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
-                              sub.status === 'Graded'
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                : 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
-                            }`}
-                          >
-                            {sub.status === 'Graded' ? `Graded: ${sub.grade}/${activeReviewHomework.maxPoints}` : 'Pending Grade'}
-                          </span>
-
-                          <button
-                            id={`grade-btn-${sub.id}`}
-                            onClick={() => {
-                              setSelectedSubmissionToGrade(sub)
-                              setGradeInput(sub.grade || 90)
-                              setFeedbackInput(sub.feedback || '')
-                            }}
-                            className="text-xs px-3 py-1.5 rounded-xl font-medium bg-brand-600 hover:bg-brand-700 text-white transition"
-                          >
-                            {sub.status === 'Graded' ? 'Edit Grade' : 'Assign Grade'}
-                          </button>
-                        </div>
+                {reviewSubmissions.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="p-4 rounded-2xl border border-surface bg-surface-strong space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-color text-sm">
+                          {sub.studentName} ({sub.studentCode})
+                        </h4>
+                        <span className="text-xs text-secondary">
+                          {sub.submittedAt}
+                        </span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                            sub.status === 'Graded'
+                              ? 'bg-success/15 text-success'
+                              : 'bg-info/15 text-info'
+                          }`}
+                        >
+                          {sub.status === 'Graded'
+                            ? `${sub.grade}/${reviewHomework.maxPoints}`
+                            : 'Pending'}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setGradingSubmission(sub)
+                            setGradeInput(sub.grade ?? 0)
+                            setFeedbackInput(sub.feedback ?? '')
+                          }}
+                          className="text-xs px-3 py-1.5 rounded-xl font-medium bg-brand-600 hover:bg-brand-700 text-white transition"
+                        >
+                          {sub.status === 'Graded' ? 'Edit' : 'Grade'}
+                        </button>
+                      </div>
+                    </div>
 
-                      <p className="text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                    {sub.content && (
+                      <p className="text-xs text-secondary bg-surface p-3 rounded-xl border border-surface">
                         {sub.content}
                       </p>
+                    )}
 
-                      {sub.attachments.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          {sub.attachments.map((att, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center gap-1.5 text-xs text-brand-600 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800"
-                            >
-                              <FileText className="w-3 h-3" />
-                              {att.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {sub.feedback && (
-                        <div className="text-xs text-slate-500 italic bg-amber-50/60 dark:bg-amber-950/20 p-2 rounded-lg border border-amber-200/50 dark:border-amber-900/40">
-                          Teacher Feedback: "{sub.feedback}"
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    {sub.feedback && (
+                      <div className="text-xs text-secondary italic bg-warning/10 p-2 rounded-lg border border-warning/30">
+                        Feedback: "{sub.feedback}"
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* Grading Drawer/Form if selected */}
-            {selectedSubmissionToGrade && (
+            {gradingSubmission && (
               <form
-                onSubmit={handleGradeSubmission}
-                className="p-4 rounded-2xl bg-white dark:bg-slate-900 border-2 border-brand-500/40 space-y-3"
+                onSubmit={handleGrade}
+                className="p-4 rounded-2xl bg-surface border-2 border-brand-500/40 space-y-3"
               >
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <h4 className="font-bold text-sm text-color flex items-center gap-2">
                     <Award className="w-4 h-4 text-brand-600" />
-                    Enter Grade & Feedback for {selectedSubmissionToGrade.studentName}
+                    Grade for {gradingSubmission.studentName}
                   </h4>
                   <button
                     type="button"
-                    onClick={() => setSelectedSubmissionToGrade(null)}
-                    className="text-xs text-slate-400 hover:text-slate-600"
+                    onClick={() => setGradingSubmission(null)}
+                    className="text-xs text-secondary hover:text-color"
                   >
                     Cancel
                   </button>
@@ -653,73 +620,61 @@ export default function HomeworkPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Score (out of {activeReviewHomework.maxPoints})
+                    <label className="block text-xs font-semibold text-secondary mb-1">
+                      Score (of {reviewHomework.maxPoints})
                     </label>
                     <input
                       type="number"
                       min={0}
-                      max={activeReviewHomework.maxPoints}
+                      max={reviewHomework.maxPoints}
                       required
                       value={gradeInput}
                       onChange={(e) => setGradeInput(Number(e.target.value))}
-                      className="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-semibold"
+                      className="w-full px-3 py-1.5 text-sm rounded-xl border border-surface bg-surface-strong text-color font-semibold"
                     />
                   </div>
-
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Constructive Teacher Feedback
+                    <label className="block text-xs font-semibold text-secondary mb-1">
+                      Feedback
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Excellent attention to quadratic roots and step calculations."
                       value={feedbackInput}
                       onChange={(e) => setFeedbackInput(e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                      className="w-full px-3 py-1.5 text-sm rounded-xl border border-surface bg-surface-strong text-color"
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end pt-2">
                   <button
                     type="submit"
                     className="px-4 py-1.5 rounded-xl text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
                   >
-                    Save Grade
+                    Save
                   </button>
                 </div>
               </form>
             )}
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <button
-                onClick={() => setActiveReviewHomework(null)}
-                className="px-5 py-2 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-              >
-                Done
-              </button>
-            </div>
           </div>
         </div>
       )}
 
-      {/* Teacher Create Homework Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      {/* Create modal */}
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <form
-            id="create-homework-form"
-            onSubmit={handleCreateHomework}
-            className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4"
+            onSubmit={handleCreate}
+            className="bg-surface rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-surface space-y-4"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-surface">
+              <h2 className="text-lg font-bold text-color">
                 Assign New Homework
               </h2>
               <button
                 type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600"
+                onClick={() => setIsCreateOpen(false)}
+                className="p-1.5 rounded-lg text-secondary hover:text-color"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -727,120 +682,134 @@ export default function HomeworkPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Assignment Title *
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  Title *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Chapter 4 Problem Set: Quadratics"
-                  value={createForm.title}
-                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-surface bg-surface-strong text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-secondary mb-1">
                     Class
                   </label>
                   <select
-                    value={createForm.className}
-                    onChange={(e) => setCreateForm({ ...createForm, className: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    value={form.classId}
+                    onChange={(e) =>
+                      setForm({ ...form, classId: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-surface bg-surface-strong text-color"
                   >
-                    <option value="Grade 10-A">Grade 10-A</option>
-                    <option value="Grade 10-B">Grade 10-B</option>
-                    <option value="Grade 11-A">Grade 11-A</option>
+                    <option value="">—</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Subject
+                  <label className="block text-xs font-semibold text-secondary mb-1">
+                    Subject *
                   </label>
                   <select
-                    value={createForm.subjectName}
-                    onChange={(e) => setCreateForm({ ...createForm, subjectName: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    required
+                    value={form.subjectId}
+                    onChange={(e) =>
+                      setForm({ ...form, subjectId: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-surface bg-surface-strong text-color"
                   >
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Physics">Physics</option>
-                    <option value="English Literature">English Literature</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Computer Science">Computer Science</option>
+                    <option value="">Select</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-secondary mb-1">
                     Due Date *
                   </label>
                   <input
                     type="date"
                     required
-                    value={createForm.dueDate}
-                    onChange={(e) => setCreateForm({ ...createForm, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    value={form.dueDate}
+                    onChange={(e) =>
+                      setForm({ ...form, dueDate: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-surface bg-surface-strong text-color"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-secondary mb-1">
                     Max Points
                   </label>
                   <input
                     type="number"
-                    min={10}
+                    min={1}
                     max={500}
-                    value={createForm.maxPoints}
-                    onChange={(e) => setCreateForm({ ...createForm, maxPoints: Number(e.target.value) })}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    value={form.maxScore}
+                    onChange={(e) =>
+                      setForm({ ...form, maxScore: Number(e.target.value) })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-surface bg-surface-strong text-color"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Instructions / Description
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  Description
                 </label>
                 <textarea
                   rows={3}
-                  required
-                  placeholder="Detail the questions, expectations, and grading rubric..."
-                  value={createForm.description}
-                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-surface bg-surface-strong text-color"
                 />
               </div>
 
-              <div>
-                <FileUploadZone
-                  id="teacher-homework-material-upload"
-                  label="Reference Material / Rubric (Optional)"
-                  value={createForm.materialName}
-                  onChange={(file) => setCreateForm({ ...createForm, materialName: file ? file.name : '' })}
-                  helperText="Upload supplementary PDF, worksheets, or rubrics (< 25MB)"
+              <label className="flex items-center gap-2 text-xs text-color">
+                <input
+                  type="checkbox"
+                  checked={form.allowLateSubmissions}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      allowLateSubmissions: e.target.checked,
+                    })
+                  }
                 />
-              </div>
+                Allow late submissions
+              </label>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
+            <div className="pt-3 border-t border-surface flex justify-end gap-2.5">
               <button
                 type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                onClick={() => setIsCreateOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-secondary hover:bg-surface-strong transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
+                className="px-5 py-2 rounded-xl text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition"
               >
-                Publish Assignment
+                Publish
               </button>
             </div>
           </form>

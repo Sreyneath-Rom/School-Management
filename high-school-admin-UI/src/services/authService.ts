@@ -58,7 +58,10 @@ export const authService = {
     apiClient.post<void>('/auth/reset-password', { token, newPassword }),
 
   /** Dev helper — quick login by role using the seeded demo accounts. */
-  loginAs: async (role: UserRole): Promise<AuthResult> => {
+    loginAs: async (role: UserRole): Promise<AuthResult> => {
+    if (import.meta.env.PROD) {
+      throw new Error('loginAs is dev-only and disabled in production builds.')
+    }
     const emails: Record<UserRole, string> = {
       admin: 'admin@example.com',
       teacher: 'teacher@example.com',

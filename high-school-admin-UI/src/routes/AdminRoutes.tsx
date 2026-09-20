@@ -62,10 +62,11 @@ import TeacherReport from '@/pages/Reports/TeacherReport'
 // System
 import AuditLogs from '@/pages/System/AuditLogs'
 
+const ADMIN_HOME = '/dashboard'
+
 export const adminRoutes = (): ReactElement => (
   <Route element={<AppLayout />}>
     <Route path="/dashboard" element={<Dashboard />} />
-    <Route path="/admin/dashboard" element={<Dashboard />} />
 
     {/* Setup */}
     <Route path="/setup/school" element={<SchoolSetup />} />
@@ -133,8 +134,12 @@ export const adminRoutes = (): ReactElement => (
     {/* System */}
     <Route path="/system/activity" element={<AuditLogs />} />
 
-    {/* Fallback */}
-    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    {/*
+      Fallback inside AppLayout so redirects preserve the shell — the
+      outlet swaps from the "not found" render to the dashboard without
+      unmounting the sidebar, header, or SchoolProvider. `path="*"` also
+      matches `/`, so a separate `path="/"` route is redundant.
+    */}
+    <Route path="*" element={<Navigate to={ADMIN_HOME} replace />} />
   </Route>
 )

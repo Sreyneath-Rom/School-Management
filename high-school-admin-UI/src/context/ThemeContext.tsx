@@ -1,6 +1,4 @@
-// Suggested path: @/context/ThemeContext.tsx
-
-import { createContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useEffect, useRef, useState, type ReactNode } from 'react'
 
 export type Theme = 'light' | 'dark'
 
@@ -14,38 +12,47 @@ export const ThemeContext = createContext<ThemeContextValue | undefined>(undefin
 
 const STORAGE_KEY = 'theme'
 
+function readStoredTheme(): Theme | null {
+  if (typeof window === 'undefined') return null
+  const stored = window.localStorage.getItem(STORAGE_KEY)
+  return stored === 'light' || stored === 'dark' ? stored : null
+}
+
 function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'light'
-
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark') return stored
-
+  const stored = readStoredTheme()
+  if (stored) return stored
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme)
+  const userChoseRef = useRef(readStoredTheme() !== null)
 
-  // Reflect the current theme onto <html class="dark"> and persist it.
-  // globals.css declares `@custom-variant dark (&:where(.dark, .dark *))`,
-  // so every `dark:` utility in the app keys off this class.
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
-    window.localStorage.setItem(STORAGE_KEY, theme)
+    if (userChoseRef.current) {
+      window.localStorage.setItem(STORAGE_KEY, theme)
+    }
   }, [theme])
 
-  // Follow OS changes, but only until the person picks a theme explicitly.
   useEffect(() => {
-    if (window.localStorage.getItem(STORAGE_KEY)) return
-
+    if (userChoseRef.current) return
     const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = (e: MediaQueryListEvent) => setThemeState(e.matches ? 'dark' : 'light')
+    const handleChange = (e: MediaQueryListEvent) =>
+      setThemeState(e.matches ? 'dark' : 'light')
     media.addEventListener('change', handleChange)
     return () => media.removeEventListener('change', handleChange)
   }, [])
 
-  const setTheme = (next: Theme) => setThemeState(next)
-  const toggleTheme = () => setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'))
+  const setTheme = (next: Theme) => {
+    userChoseRef.current = true
+    setThemeState(next)
+  }
+  const toggleTheme = () => {
+    userChoseRef.current = true
+    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'))
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>

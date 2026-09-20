@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { schoolService, type SchoolModel } from '@/services/schoolService'
 import { ApiError } from '@/lib/apiClient'
 
@@ -9,7 +18,7 @@ interface SchoolContextValue {
   refetch: () => Promise<SchoolModel | undefined>
 }
 
-const SchoolContext = createContext<SchoolContextValue | null>(null)
+export const SchoolContext = createContext<SchoolContextValue | null>(null)
 
 export function SchoolProvider({ children }: { children: ReactNode }) {
   const [school, setSchool] = useState<SchoolModel | null>(null)
@@ -19,7 +28,9 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     isMounted.current = true
-    return () => { isMounted.current = false }
+    return () => {
+      isMounted.current = false
+    }
   }, [])
 
   const refetch = useCallback(async () => {
@@ -35,8 +46,6 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       if (isMounted.current) {
         if (err instanceof ApiError && err.status === 404) {
-          // A first-time setup has no row yet; keep the wizard editable so its
-          // save/upsert endpoint can create the singleton configuration.
           setSchool(null)
           setError(null)
         } else {
@@ -52,15 +61,10 @@ export function SchoolProvider({ children }: { children: ReactNode }) {
     refetch()
   }, [refetch])
 
-  return (
-    <SchoolContext.Provider value={{ school, loading, error, refetch }}>
-      {children}
-    </SchoolContext.Provider>
+  const value = useMemo(
+    () => ({ school, loading, error, refetch }),
+    [school, loading, error, refetch]
   )
-}
 
-export function useSchool(): SchoolContextValue {
-  const ctx = useContext(SchoolContext)
-  if (!ctx) throw new Error('useSchool must be used within <SchoolProvider>')
-  return ctx
+  return <SchoolContext.Provider value={value}>{children}</SchoolContext.Provider>
 }

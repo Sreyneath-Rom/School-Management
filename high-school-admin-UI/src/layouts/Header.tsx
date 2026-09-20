@@ -1,9 +1,5 @@
-import {
-  useState,
-  useRef,
-  useEffect,
-  useMemo,
-} from 'react'
+// src/layouts/Header.tsx
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Bell,
@@ -11,7 +7,6 @@ import {
   Menu,
   LogOut,
   ChevronDown,
-  Check,
   UserCircle,
   Settings,
   CircleHelp,
@@ -19,87 +14,56 @@ import {
 } from 'lucide-react'
 
 import { useAuth } from '@/hooks/useAuth'
+import { useSchool } from '@/hooks/useSchool'
+import { useNotifications } from '@/hooks/useNotifications'
 import ThemeToggle from '@/components/common/ThemeToggle'
+import LanguageSelector from './LanguageSelector'
 import { resolveAssetUrl } from '@/utils/resolveAssetUrl'
 import { useTranslations } from '@/i18n'
-import { getActiveTerm } from '@/data/terms'
-
-interface NotificationItem {
-  id: string
-  title: string
-  message: string
-  time: string
-  read: boolean
-  category?: 'academic' | 'attendance' | 'exam' | 'system'
-  link?: string
-}
-const CURRENT_TERM_NAME = getActiveTerm()?.name ?? ''
-
-
-
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    title: 'Grade 12 Physics Term Exam Marks Ready',
-    message: 'Teacher Sovann has submitted the final semester scores for Class 12-A.',
-    time: '15m ago',
-    read: false,
-    category: 'exam',
-    link: '/academic/grades',
-  },
-  {
-    id: 'notif-2',
-    title: 'Daily Attendance Report Finalized',
-    message: '97.8% attendance recorded across all secondary grades today.',
-    time: '1h ago',
-    read: false,
-    category: 'attendance',
-    link: '/students/attendance',
-  },
-  {
-    id: 'notif-3',
-    title: 'Semester II Schedule Verification',
-    message: 'Academic committee approved the revised room allocations.',
-    time: '3h ago',
-    read: true,
-    category: 'academic',
-    link: '/academic/schedules',
-  },
-]
+import type { Notification } from '@/types/notification'
 
 function getInitials(name?: string | null): string {
   if (!name) return '?'
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return '?'
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase()
-  }
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-export default function Header({
-  onOpenSidebar,
-}: {
-  onOpenSidebar?: () => void
-}) {
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return ''
+  const seconds = Math.max(1, Math.floor((Date.now() - then) / 1000))
+  if (seconds < 60) return `${seconds}s ago`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
+
+export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const navigate = useNavigate()
   const { user, logout, role } = useAuth()
+  const { school } = useSchool()
+  const { t } = useTranslations()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-  const [langOpen, setLangOpen] = useState(false)
-  const [activeFilterCategory, setActiveFilterCategory] = useState<'all' | 'unread'>('all')
+  const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
   const menuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
-  const langRef = useRef<HTMLDivElement>(null)
 
-  const activeRole = (role || 'admin').toLowerCase()
+  const { notifications, unreadCount, isUnread, markRead, markAllRead } =
+    useNotifications()
 
-  // ---------------------------------------------------------------------------
-  // USER META
-  // ---------------------------------------------------------------------------
-  const roleBadgeMap: Record<string, { label: string; badge: string; dot: string }> = {
+  const activeRole = (role ?? 'admin').toLowerCase()
+
+  const roleBadgeMap: Record<
+    string,
+    { label: string; badge: string; dot: string }
+  > = {
     admin: {
       label: 'Administrator',
       badge: 'bg-surface text-brand-600 dark:text-brand-300 border-surface',
@@ -121,95 +85,45 @@ export default function Header({
       dot: 'bg-warning',
     },
   }
+  const roleMeta = roleBadgeMap[activeRole] ?? roleBadgeMap.admin
 
-  const roleMeta = roleBadgeMap[activeRole] || roleBadgeMap.admin
-  const avatarUrl = (user as { avatarUrl?: string } | null)?.avatarUrl
-    ? resolveAssetUrl((user as { avatarUrl?: string }).avatarUrl!)
-    : null
+  const avatarUrl = user?.avatarUrl ? resolveAssetUrl(user.avatarUrl) : null
   const initials = getInitials(user?.name)
 
-  // ---------------------------------------------------------------------------
-  // NOTIFICATIONS STATE
-  // ---------------------------------------------------------------------------
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
-
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.read).length,
-    [notifications]
+  const filteredNotifications = useMemo(
+    () => (filter === 'unread' ? notifications.filter(isUnread) : notifications),
+    [notifications, filter, isUnread]
   )
-
-  const filteredNotifications = useMemo(() => {
-    if (activeFilterCategory === 'unread') {
-      return notifications.filter((n) => !n.read)
-    }
-    return notifications
-  }, [notifications, activeFilterCategory])
-
-  const markOneRead = (id: string, e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    )
-  }
-
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
-
-  const handleNotificationClick = (item: NotificationItem) => {
-    markOneRead(item.id)
-    setNotifOpen(false)
-    if (item.link) {
-      navigate(item.link)
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // LANGUAGE & LOCALIZATION
-  // ---------------------------------------------------------------------------
-  const {
-    language,
-    setLanguage,
-    languages,
-    activeLanguage,
-    t,
-  } = useTranslations()
 
   const formattedDate = useMemo(() => {
     try {
-      return new Date().toLocaleDateString(activeLanguage?.locale || 'en-US', {
+      return new Date().toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
       })
     } catch {
-      return 'Mon, Sep 14'
+      return ''
     }
-  }, [activeLanguage?.locale])
+  }, [])
 
-  // Close menus on outside click & escape
+  // Coerce in case settings shape is loosely typed on the school model.
+  const termName = String(
+    (school?.settings as { academicTerm?: unknown } | undefined)?.academicTerm ?? ''
+  )
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node
-      if (menuRef.current && !menuRef.current.contains(target)) {
-        setMenuOpen(false)
-      }
-      if (notifRef.current && !notifRef.current.contains(target)) {
-        setNotifOpen(false)
-      }
-      if (langRef.current && !langRef.current.contains(target)) {
-        setLangOpen(false)
-      }
+      if (menuRef.current && !menuRef.current.contains(target)) setMenuOpen(false)
+      if (notifRef.current && !notifRef.current.contains(target)) setNotifOpen(false)
     }
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         setMenuOpen(false)
         setNotifOpen(false)
-        setLangOpen(false)
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('touchstart', handleClickOutside)
     document.addEventListener('keydown', handleEscape)
@@ -220,17 +134,18 @@ export default function Header({
     }
   }, [])
 
+  const handleNotificationClick = async (item: Notification) => {
+    if (isUnread(item)) await markRead(item.id)
+    setNotifOpen(false)
+  }
+
   const menuItemClass =
     'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-secondary transition-all duration-150 hover:bg-surface hover:text-color cursor-pointer'
 
   return (
     <header className="app-header sticky top-0 z-30 select-none transition-colors">
       <div className="app-header-inner flex h-14 sm:h-16 items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
-        {/* ================================================================= */}
-        {/* LEFT: MOBILE TOGGLE ONLY (NO REDUNDANT SCHOOL PROFILE/LOGO)       */}
-        {/* ================================================================= */}
         <div className="flex items-center gap-2">
-          {/* Mobile Sidebar Hamburger Toggle (Visible on screens < lg) */}
           <button
             type="button"
             onClick={onOpenSidebar}
@@ -241,106 +156,23 @@ export default function Header({
           </button>
         </div>
 
-        {/* ================================================================= */}
-        {/* RIGHT: LIVE CALENDAR, LANGUAGE, NOTIFICATIONS, THEME, USER MENU   */}
-        {/* ================================================================= */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 ml-auto">
-          {/* Academic Session Date Pill */}
           <div className="hidden sm:flex items-center gap-2 rounded-2xl glass-sm h-9.5 px-3 py-1.5 text-xs font-semibold text-color">
             <Calendar size={13} className="text-brand-600 dark:text-brand-400" />
             <span className="text-color">{formattedDate}</span>
             <span className="h-1.5 w-1.5 rounded-full bg-success" />
-            <span
-              className="max-w-32 truncate text-[10.5px] font-bold text-secondary"
-              title={CURRENT_TERM_NAME}
-            >
-              {CURRENT_TERM_NAME}
-            </span>
+            {termName && (
+              <span
+                className="max-w-32 truncate text-[10.5px] font-bold text-secondary"
+                title={termName}
+              >
+                {termName}
+              </span>
+            )}
           </div>
 
-          {/* ------------------------------------------------------------- */}
-          {/* LANGUAGE SELECTOR                                             */}
-          {/* ------------------------------------------------------------- */}
-          {(() => {
-            const safeLanguages = Array.isArray(languages) ? languages : []
-            const safeActiveLang = activeLanguage || {
-              code: 'en',
-              name: 'English',
-              flag: '🇬🇧',
-            }
+          <LanguageSelector />
 
-            return (
-              <div className="relative" ref={langRef}>
-                <button
-                  type="button"
-                  aria-label={`${t('header.changeLanguage')}: ${safeActiveLang.name}`}
-                  aria-expanded={langOpen}
-                  aria-haspopup="menu"
-                  onClick={() => {
-                    setLangOpen((o) => !o)
-                    setMenuOpen(false)
-                    setNotifOpen(false)
-                  }}
-                  className={`flex h-9.5 items-center gap-1.5 rounded-2xl px-2.5 text-xs font-semibold transition cursor-pointer glass-sm ${
-                    langOpen
-                      ? 'ring-1 ring-brand-500/30 text-color'
-                      : 'text-secondary hover:text-color'
-                  }`}
-                >
-                  <span className="text-sm">{safeActiveLang.flag}</span>
-                  <span className="hidden sm:inline font-bold uppercase text-[10.5px] text-color">
-                    {safeActiveLang.code}
-                  </span>
-                  <ChevronDown
-                    size={13}
-                    className={`transition-transform duration-200 text-secondary ${
-                      langOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-
-                {langOpen && (
-                  <div
-                    role="menu"
-                    className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-150"
-                  >
-                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-secondary">
-                      {t('header.changeLanguage')}
-                    </div>
-
-                    <div className="space-y-0.5">
-                      {safeLanguages.map((lang) => (
-                        <button
-                          key={lang.code}
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            setLanguage(lang.code)
-                            setLangOpen(false)
-                          }}
-                          className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition cursor-pointer ${
-                            lang.code === language
-                              ? 'bg-brand-600 text-white font-semibold shadow-xs'
-                              : 'text-secondary hover:bg-surface hover:text-color'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className="text-sm">{lang.flag}</span>
-                            <span className="font-medium">{lang.name}</span>
-                          </span>
-                          {lang.code === language && <Check size={14} />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })()}
-
-          {/* ------------------------------------------------------------- */}
-          {/* NOTIFICATIONS CENTER                                          */}
-          {/* ------------------------------------------------------------- */}
           <div className="relative" ref={notifRef}>
             <button
               type="button"
@@ -350,7 +182,6 @@ export default function Header({
               onClick={() => {
                 setNotifOpen((o) => !o)
                 setMenuOpen(false)
-                setLangOpen(false)
               }}
               className={`relative flex h-9.5 w-9.5 items-center justify-center rounded-2xl glass-sm transition cursor-pointer ${
                 notifOpen
@@ -368,7 +199,6 @@ export default function Header({
 
             {notifOpen && (
               <div className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-84 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl animate-in fade-in zoom-in-95 duration-150">
-                {/* Notifications Header */}
                 <div className="flex items-center justify-between border-b border-surface px-3.5 py-2.5 bg-surface-strong">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-color">
@@ -380,7 +210,6 @@ export default function Header({
                       </span>
                     )}
                   </div>
-
                   {unreadCount > 0 && (
                     <button
                       type="button"
@@ -393,13 +222,12 @@ export default function Header({
                   )}
                 </div>
 
-                {/* Filter tabs */}
                 <div className="flex gap-1 border-b border-surface px-3 py-1.5 bg-surface">
                   <button
                     type="button"
-                    onClick={() => setActiveFilterCategory('all')}
+                    onClick={() => setFilter('all')}
                     className={`rounded-lg px-2.5 py-1 text-[11px] transition cursor-pointer ${
-                      activeFilterCategory === 'all'
+                      filter === 'all'
                         ? 'bg-surface-strong text-color shadow-xs font-bold'
                         : 'text-secondary hover:text-color'
                     }`}
@@ -408,9 +236,9 @@ export default function Header({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveFilterCategory('unread')}
+                    onClick={() => setFilter('unread')}
                     className={`rounded-lg px-2.5 py-1 text-[11px] transition cursor-pointer ${
-                      activeFilterCategory === 'unread'
+                      filter === 'unread'
                         ? 'bg-surface-strong text-color shadow-xs font-bold'
                         : 'text-secondary hover:text-color'
                     }`}
@@ -419,7 +247,6 @@ export default function Header({
                   </button>
                 </div>
 
-                {/* Notification items list */}
                 <div className="max-h-76 overflow-y-auto divide-y divide-surface">
                   {filteredNotifications.length === 0 ? (
                     <div className="p-8 text-center bg-surface/30">
@@ -436,33 +263,35 @@ export default function Header({
                         key={n.id}
                         onClick={() => handleNotificationClick(n)}
                         className={`group flex gap-2.5 px-3.5 py-2.5 transition cursor-pointer hover:bg-surface ${
-                          !n.read ? 'bg-surface/50' : ''
+                          isUnread(n) ? 'bg-surface/50' : ''
                         }`}
                       >
                         <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs bg-surface text-brand-600 dark:text-brand-400">
                           <Bell size={13} />
                         </div>
-
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-1.5">
                             <p className="text-xs font-bold text-color leading-snug">
                               {n.title}
                             </p>
-                            {!n.read && (
+                            {isUnread(n) && (
                               <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
                             )}
                           </div>
                           <p className="mt-0.5 text-[11px] text-secondary leading-normal line-clamp-2">
-                            {n.message}
+                            {n.body}
                           </p>
                           <div className="mt-1 flex items-center justify-between">
                             <span className="text-[10px] text-secondary">
-                              {n.time}
+                              {relativeTime(n.createdAt)}
                             </span>
-                            {!n.read && (
+                            {isUnread(n) && (
                               <button
                                 type="button"
-                                onClick={(e) => markOneRead(n.id, e)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  markRead(n.id)
+                                }}
                                 className="text-[10px] font-semibold text-brand-600 hover:text-brand-500 hover:underline dark:text-brand-400 cursor-pointer"
                               >
                                 Mark read
@@ -478,12 +307,8 @@ export default function Header({
             )}
           </div>
 
-          {/* Theme Toggle Button */}
           <ThemeToggle />
 
-          {/* ------------------------------------------------------------- */}
-          {/* USER EXECUTIVE PROFILE MENU                                   */}
-          {/* ------------------------------------------------------------- */}
           <div className="relative" ref={menuRef}>
             <button
               type="button"
@@ -493,7 +318,6 @@ export default function Header({
               onClick={() => {
                 setMenuOpen((o) => !o)
                 setNotifOpen(false)
-                setLangOpen(false)
               }}
               className={`group flex items-center gap-2 rounded-2xl glass-sm h-9.5 p-1 pr-2 sm:pr-2.5 transition cursor-pointer ${
                 menuOpen
@@ -501,7 +325,6 @@ export default function Header({
                   : 'text-secondary hover:text-color'
               }`}
             >
-              {/* User Avatar with Presence Badge */}
               <div className="relative">
                 {avatarUrl ? (
                   <img
@@ -517,7 +340,6 @@ export default function Header({
                 <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface-strong" />
               </div>
 
-              {/* User Name & Role Label */}
               <div className="hidden text-left md:block min-w-0">
                 <p className="max-w-28 truncate text-xs font-bold text-color leading-tight">
                   {user?.name ?? 'User'}
@@ -535,13 +357,11 @@ export default function Header({
               />
             </button>
 
-            {/* User Dropdown Panel */}
             {menuOpen && (
               <div
                 role="menu"
                 className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl p-2 animate-in fade-in zoom-in-95 duration-150"
               >
-                {/* Executive Header Identity Card */}
                 <div className="mb-1 rounded-xl p-3 bg-surface-strong border border-surface">
                   <div className="flex items-center gap-2.5">
                     {avatarUrl ? (
@@ -555,10 +375,9 @@ export default function Header({
                         {initials}
                       </div>
                     )}
-
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-bold text-color">
-                        {user?.name ?? 'Administrator'}
+                        {user?.name ?? 'User'}
                       </p>
                       <div className="mt-0.5 flex items-center gap-1.5">
                         <span
@@ -572,7 +391,6 @@ export default function Header({
                   </div>
                 </div>
 
-                {/* Navigation Links */}
                 <div className="px-2 pb-1 pt-1.5 text-[9.5px] font-bold uppercase tracking-wider text-secondary">
                   Account & System
                 </div>
@@ -590,7 +408,9 @@ export default function Header({
                     <UserCircle size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block leading-tight text-color group-hover:text-color">{t('header.myProfile')}</span>
+                    <span className="block leading-tight text-color">
+                      {t('header.myProfile')}
+                    </span>
                     <span className="block text-[10px] text-secondary font-normal">
                       Personal profile & credentials
                     </span>
@@ -610,7 +430,9 @@ export default function Header({
                     <Settings size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block leading-tight text-color group-hover:text-color">{t('header.settings')}</span>
+                    <span className="block leading-tight text-color">
+                      {t('header.settings')}
+                    </span>
                     <span className="block text-[10px] text-secondary font-normal">
                       Preferences & localization
                     </span>
@@ -630,14 +452,15 @@ export default function Header({
                     <CircleHelp size={15} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block leading-tight text-color group-hover:text-color">Help & Knowledge Base</span>
+                    <span className="block leading-tight text-color">
+                      Help & Knowledge Base
+                    </span>
                     <span className="block text-[10px] text-secondary font-normal">
                       Documentation & support
                     </span>
                   </div>
                 </button>
 
-                {/* Sign Out Action */}
                 <div className="my-1.5 border-t border-surface" />
 
                 <button
@@ -653,7 +476,9 @@ export default function Header({
                     <LogOut size={14} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block leading-tight text-error">{t('header.logOut')}</span>
+                    <span className="block leading-tight text-error">
+                      {t('header.logOut')}
+                    </span>
                     <span className="block text-[10px] text-error/80 font-normal">
                       End active session safely
                     </span>

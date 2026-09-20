@@ -1,5 +1,5 @@
-import Login from './Login';
-
+// src/pages/Authentication/AdminLogin.tsx
+import Login from './Login'
 export default function AdminLogin() {
-  return <Login initialRole="admin" />;
+  return <Login initialRole="admin" />
 }

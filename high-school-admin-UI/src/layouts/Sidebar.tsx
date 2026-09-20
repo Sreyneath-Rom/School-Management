@@ -1,3 +1,4 @@
+// src/layouts/Sidebar.tsx
 import {
   useState,
   useEffect,
@@ -54,6 +55,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSchool } from "@/hooks/useSchool";
+import { useBadgeCounts } from "@/hooks/useBadgeCounts";
+import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
 import { useTranslations, type TranslationKey } from "@/i18n";
 
 type Section =
@@ -69,41 +73,89 @@ type Section =
   | "CHILDREN"
   | "SYSTEM";
 
+/**
+ * Sentinel returned by `permissionForPath` for a menu path that has no
+ * explicit rule. No user is ever granted this key, so the item is hidden
+ * rather than shown to everyone. This flips the previous behavior, which
+ * returned `null` and treated the path as public — a new route could
+ * silently leak into every role's sidebar until someone added a rule.
+ */
+const UNKNOWN_PATH_PERMISSION = "__unmatched_path__";
+
+/**
+ * Keys for badge counts sourced from `useBadgeCounts()`. Must stay in sync
+ * with `BadgeCounts` in `@/services/badgeService`.
+ */
+type BadgeKey = "leave-requests" | "messages";
+
 interface MenuItem {
   translationKey: TranslationKey;
   icon: LucideIcon;
   path: string;
-  badge?: string | number;
+  /**
+   * If set, the sidebar renders a live count for this key (from
+   * `useBadgeCounts`). If the count is 0, no badge is shown.
+   */
+  badgeKey?: BadgeKey;
   badgeColor?: string;
   badgePulse?: boolean;
 }
 
-function permissionForPath(path: string): string | null {
-  if (path.includes('/setup/roles')) return 'roles.view'
-  if (path.includes('/setup/users')) return 'users.view'
-  if (path.includes('/setup/school')) return 'school.view'
-  if (path.includes('/setup/academic-years')) return 'academicYears.view'
-  if (path.includes('/setup/rooms')) return 'rooms.view'
-  if (path.includes('/setup/grade-levels')) return 'gradeLevels.view'
-  if (path.includes('/setup/terms')) return 'terms.view'
-  if (path.includes('/setup/translations')) return 'translations.view'
-  if (path.includes('/setup/subjects')) return 'subjects.view'
-  if (path.includes('/academic/exams') || path.includes('/academic/exam-') || path.includes('/academic/mark-') || path.includes('/academic/report-cards')) return 'grades.view'
-  if (path.includes('/academic/classes')) return 'classes.view'
-  if (path.includes('/academic/schedules')) return 'schedules.view'
-  if (path.includes('/academic/lessons')) return 'lessons.view'
-  if (path.includes('/academic/homework')) return 'homework.view'
-  if (path.includes('/academic/quizzes')) return 'quizzes.view'
-  if (path.includes('/academic/grades')) return 'grades.view'
-  if (path.includes('/students/attendance') || path.includes('/teacher/attendance') || path.includes('/student/attendance')) return 'attendance.view'
-  if (path.includes('/students/leave-requests') || path.includes('/student/leave-requests')) return 'leaveRequests.view'
-  if (path === '/students' || path.includes('/students/profiles') || path.includes('/teacher/students')) return 'students.view'
-  if (path === '/teachers' || path.includes('/teachers/')) return 'teachers.view'
-  if (path.includes('/reports/')) return 'reports.view'
-  if (path.includes('/communication/announcements')) return 'announcements.view'
-  if (path.includes('/communication/notifications')) return 'notifications.view'
-  if (path.includes('/messages')) return 'notifications.view'
-  return null
+function permissionForPath(path: string): string {
+  if (path.includes("/setup/roles")) return "roles.view";
+  if (path.includes("/setup/users")) return "users.view";
+  if (path.includes("/setup/school")) return "school.view";
+  if (path.includes("/setup/academic-years")) return "academicYears.view";
+  if (path.includes("/setup/rooms")) return "rooms.view";
+  if (path.includes("/setup/grade-levels")) return "gradeLevels.view";
+  if (path.includes("/setup/terms")) return "terms.view";
+  if (path.includes("/setup/translations")) return "translations.view";
+  if (path.includes("/setup/subjects")) return "subjects.view";
+  if (
+    path.includes("/academic/exams") ||
+    path.includes("/academic/exam-") ||
+    path.includes("/academic/mark-") ||
+    path.includes("/academic/report-cards")
+  )
+    return "grades.view";
+  if (path.includes("/academic/classes")) return "classes.view";
+  if (path.includes("/academic/schedules")) return "schedules.view";
+  if (path.includes("/academic/lessons")) return "lessons.view";
+  if (path.includes("/academic/homework")) return "homework.view";
+  if (path.includes("/academic/quizzes")) return "quizzes.view";
+  if (path.includes("/academic/grades")) return "grades.view";
+  if (
+    path.includes("/students/attendance") ||
+    path.includes("/teacher/attendance") ||
+    path.includes("/student/attendance")
+  )
+    return "attendance.view";
+  if (
+    path.includes("/students/leave-requests") ||
+    path.includes("/student/leave-requests")
+  )
+    return "leaveRequests.view";
+  if (
+    path === "/students" ||
+    path.includes("/students/profiles") ||
+    path.includes("/teacher/students")
+  )
+    return "students.view";
+  if (path === "/teachers" || path.includes("/teachers/")) return "teachers.view";
+  if (path.includes("/reports/")) return "reports.view";
+  if (path.includes("/communication/announcements"))
+    return "announcements.view";
+  if (path.includes("/communication/notifications"))
+    return "notifications.view";
+  if (path.includes("/messages")) return "notifications.view";
+
+  // Fail closed: a path with no rule is hidden rather than shown. Log
+  // in dev so the missing rule is discovered during development instead
+  // of at the moment someone notices a rogue link in production.
+  if (import.meta.env.DEV) {
+    console.warn(`[sidebar] no permission rule for path: ${path}`);
+  }
+  return UNKNOWN_PATH_PERMISSION;
 }
 
 interface MenuSection {
@@ -122,7 +174,9 @@ const categoryGroupLabels: Record<string, string> = {
   system: "Communication & Reports",
 };
 
-// Role-tailored menu configuration (preserved exactly for all roles)
+// Role-tailored menu configuration. Badge counts come from `badgeKey` at
+// render time — the literals here used to be hardcoded strings ("2", "3")
+// which showed the same number to every user regardless of actual data.
 const roleMenus: Record<string, MenuSection[]> = {
   admin: [
     {
@@ -152,11 +206,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           icon: BookMarked,
           path: "/setup/subjects",
         },
-        {
-          translationKey: "sidebar.rooms",
-          icon: DoorOpen,
-          path: "/setup/rooms",
-        },
+        { translationKey: "sidebar.rooms", icon: DoorOpen, path: "/setup/rooms" },
         {
           translationKey: "sidebar.rolesPermissions",
           icon: ShieldCheck,
@@ -266,7 +316,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.leaveRequests",
           icon: FileClock,
           path: "/students/leave-requests",
-          badge: "2",
+          badgeKey: "leave-requests",
           badgeColor: "bg-amber-500 text-white",
           badgePulse: true,
         },
@@ -343,7 +393,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.messages",
           icon: MessageSquare,
           path: "/messages",
-          badge: "3",
+          badgeKey: "messages",
           badgeColor: "bg-teal-500 text-white",
           badgePulse: true,
         },
@@ -476,7 +526,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.inbox",
           icon: MessageSquare,
           path: "/teacher/messages",
-          badge: "3",
+          badgeKey: "messages",
           badgeColor: "bg-teal-500 text-white",
         },
       ],
@@ -611,7 +661,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.inbox",
           icon: MessageSquare,
           path: "/student/messages",
-          badge: "3",
+          badgeKey: "messages",
           badgeColor: "bg-teal-500 text-white",
         },
       ],
@@ -651,7 +701,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.inbox",
           icon: MessageSquare,
           path: "/parent/messages",
-          badge: "3",
+          badgeKey: "messages",
           badgeColor: "bg-teal-500 text-white",
         },
       ],
@@ -661,27 +711,23 @@ const roleMenus: Record<string, MenuSection[]> = {
 
 const roleBadgeColorMap: Record<
   string,
-  { label: string; badgeClass: string; dotClass: string }
+  { label: string; badgeClass: string }
 > = {
   admin: {
     label: "Administrator",
     badgeClass: "bg-surface text-brand-600 dark:text-brand-300 border-surface",
-    dotClass: "bg-brand-500",
   },
   teacher: {
     label: "Faculty",
     badgeClass: "bg-surface text-success border-surface",
-    dotClass: "bg-success",
   },
   student: {
     label: "Scholar",
     badgeClass: "bg-surface text-info border-surface",
-    dotClass: "bg-info",
   },
   parent: {
     label: "Guardian",
     badgeClass: "bg-surface text-warning border-surface",
-    dotClass: "bg-warning",
   },
 };
 
@@ -705,6 +751,8 @@ export default function Sidebar({
 }) {
   const location = useLocation();
   const { role: authRole, user, logout } = useAuth();
+  const { school } = useSchool();
+  const badgeCounts = useBadgeCounts();
   const { t } = useTranslations();
 
   const activeRole = (propRole || authRole || "admin").toLowerCase();
@@ -714,6 +762,40 @@ export default function Sidebar({
   const isDashboardActive =
     location.pathname === dashboardPath ||
     (activeRole === "admin" && location.pathname === "/");
+
+  // ---------------------------------------------------------------------------
+  // School identity — previously hardcoded as "Varin High School" and
+  // "AY 2025–26" in two places, so an admin renaming the school in setup
+  // saw the sidebar still say the old name until a hard reload.
+  // ---------------------------------------------------------------------------
+  const schoolName = school?.name ?? "";
+  const academicYear = school?.academicYear ?? "";
+  const schoolInitials =
+    schoolName
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter(Boolean)
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "HS";
+
+  // ---------------------------------------------------------------------------
+  // Resolve a menu item's live badge from `useBadgeCounts`. Returns null
+  // when the item has no badgeKey or the count is zero, so the caller can
+  // render conditionally.
+  // ---------------------------------------------------------------------------
+  const resolveBadge = (
+    item: MenuItem,
+  ): { text: string; color: string; pulse: boolean } | null => {
+    if (!item.badgeKey) return null;
+    const count = badgeCounts[item.badgeKey];
+    if (!count || count <= 0) return null;
+    return {
+      text: String(count),
+      color: item.badgeColor ?? "bg-brand-600 text-white",
+      pulse: item.badgePulse ?? false,
+    };
+  };
 
   // --- Collapsed State with LocalStorage Persistence ---
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -743,7 +825,13 @@ export default function Sidebar({
   // Quick search filter for menu items
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Active role's menu sections
+  // Active role's menu sections.
+  //
+  // `permissionKeys.length === 0` currently returns the full menu — this
+  // preserves prior behavior during the small window between mount and
+  // `authService.me()` resolving. Once permissions load, the filter kicks
+  // in. The backend is the real authorization boundary; this is only a
+  // UI filter.
   const baseMenu = useMemo(() => {
     const menu = roleMenus[activeRole] || roleMenus.admin;
     const permissionKeys = user?.permissionKeys ?? [];
@@ -754,13 +842,13 @@ export default function Sidebar({
         ...section,
         items: section.items.filter((item) => {
           const requiredPermission = permissionForPath(item.path);
-          return !requiredPermission || permissionKeys.includes(requiredPermission);
+          return permissionKeys.includes(requiredPermission);
         }),
       }))
       .filter((section) => section.items.length > 0);
   }, [activeRole, user?.permissionKeys]);
 
-  // Single Accordion State: Only 1 section expanded at a time ("flow: 1 expand other collapse")
+  // Single Accordion State: Only 1 section expanded at a time
   const [openSection, setOpenSection] = useState<Section | null>(() => {
     if (isDashboardActive) return null;
     return (
@@ -923,6 +1011,9 @@ export default function Sidebar({
       .slice(0, 2)
       .toUpperCase() || "AD";
   const roleConfig = roleBadgeColorMap[activeRole] || roleBadgeColorMap.admin;
+  const userAvatarUrl = user?.avatarUrl
+    ? resolveAssetUrl(user.avatarUrl)
+    : null;
 
   // --- Render Compact Rail Mode for Desktop ---
   const renderCompactMenu = () => (
@@ -930,10 +1021,14 @@ export default function Sidebar({
       <div className="flex flex-col items-center space-y-2 overflow-y-auto no-scrollbar flex-1 py-1.5">
         {/* School Crest mini icon */}
         <div
-          title="Varin High School"
+          title={schoolName || "School"}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-slate-900 to-teal-900 text-white shadow-md border border-teal-500/30"
         >
-          <School2 size={18} className="text-teal-300" />
+          {schoolName ? (
+            <span className="text-xs font-black">{schoolInitials}</span>
+          ) : (
+            <School2 size={18} className="text-teal-300" />
+          )}
         </div>
 
         {/* Expand sidebar trigger button */}
@@ -982,7 +1077,7 @@ export default function Sidebar({
                 location.pathname.startsWith(item.path + "/"),
             );
             const isHovered = hoveredSection === section.key;
-            const hasBadges = section.items.some((item) => !!item.badge);
+            const hasBadges = section.items.some((item) => resolveBadge(item));
 
             return (
               <div
@@ -1035,6 +1130,7 @@ export default function Sidebar({
                         const isItemActive =
                           location.pathname === item.path ||
                           location.pathname.startsWith(item.path + "/");
+                        const badge = resolveBadge(item);
 
                         return (
                           <NavLink
@@ -1053,11 +1149,13 @@ export default function Sidebar({
                                 {t(item.translationKey)}
                               </span>
                             </span>
-                            {item.badge && (
+                            {badge && (
                               <span
-                                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${item.badgeColor || "bg-brand-600 text-white"} ${item.badgePulse ? "animate-pulse" : ""}`}
+                                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${badge.color} ${
+                                  badge.pulse ? "animate-pulse" : ""
+                                }`}
                               >
-                                {item.badge}
+                                {badge.text}
                               </span>
                             )}
                           </NavLink>
@@ -1076,9 +1174,17 @@ export default function Sidebar({
       <div className="flex flex-col items-center space-y-2 pt-2 border-t border-surface shrink-0">
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-surface"
+          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-surface"
         >
-          {userInitials}
+          {userAvatarUrl ? (
+            <img
+              src={userAvatarUrl}
+              alt={userDisplayName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            userInitials
+          )}
         </div>
       </div>
     </div>
@@ -1099,11 +1205,11 @@ export default function Sidebar({
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h2 className="truncate text-xs font-black tracking-tight text-color uppercase">
-                  Varin High School
+                  {schoolName || "School"}
                 </h2>
               </div>
               <p className="truncate text-[10.5px] font-semibold text-brand-600 dark:text-brand-400">
-                វិទ្យាល័យ វ៉ារិន • AY 2025–26
+                {academicYear ? `AY ${academicYear}` : "\u00A0"}
               </p>
             </div>
           </div>
@@ -1184,7 +1290,7 @@ export default function Sidebar({
         </NavLink>
       </div>
 
-      {/* Middle Scrollable Navigation List (Single-Accordion Flow Preserved: 1 expand, others collapse) */}
+      {/* Middle Scrollable Navigation List */}
       <div className="flex-1 overflow-y-auto px-3 py-1 space-y-3 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-surface-strong hover:[&::-webkit-scrollbar-thumb]:bg-surface">
         <nav aria-label="Sidebar Sections">
           {Object.entries(groupedSections).map(([groupKey, sections]) => {
@@ -1230,8 +1336,8 @@ export default function Sidebar({
                           isSectionOpen
                             ? "bg-surface text-color shadow-xs"
                             : hasActiveChild
-                            ? "text-brand-600 bg-surface dark:text-brand-300 font-bold"
-                            : "text-secondary hover:text-color hover:bg-surface"
+                              ? "text-brand-600 bg-surface dark:text-brand-300 font-bold"
+                              : "text-secondary hover:text-color hover:bg-surface"
                         }`}
                       >
                         <span className="flex items-center gap-2.5 truncate">
@@ -1262,13 +1368,15 @@ export default function Sidebar({
                           <ChevronRight
                             size={14}
                             className={`transition-transform duration-200 text-secondary ${
-                              isSectionOpen ? "rotate-90 text-brand-600 dark:text-brand-400" : "rotate-0"
+                              isSectionOpen
+                                ? "rotate-90 text-brand-600 dark:text-brand-400"
+                                : "rotate-0"
                             }`}
                           />
                         </div>
                       </button>
 
-                      {/* Sub-item Accordion Panel (Animated smoothly via CSS grid) */}
+                      {/* Sub-item Accordion Panel */}
                       <div
                         id={panelId}
                         role="region"
@@ -1285,6 +1393,7 @@ export default function Sidebar({
                               const isItemActive =
                                 location.pathname === item.path ||
                                 location.pathname.startsWith(item.path + "/");
+                              const badge = resolveBadge(item);
 
                               return (
                                 <NavLink
@@ -1314,15 +1423,15 @@ export default function Sidebar({
                                       {t(item.translationKey)}
                                     </span>
                                   </span>
-                                  {item.badge && (
+                                  {badge && (
                                     <span
                                       className={`rounded-full px-1.5 py-0.5 text-[9.5px] font-bold ${
                                         isItemActive
                                           ? "bg-white/20 text-white"
-                                          : item.badgeColor || "bg-brand-600 text-white"
-                                      } ${item.badgePulse ? "animate-pulse" : ""}`}
+                                          : badge.color
+                                      } ${badge.pulse ? "animate-pulse" : ""}`}
                                     >
-                                      {item.badge}
+                                      {badge.text}
                                     </span>
                                   )}
                                 </NavLink>
@@ -1344,8 +1453,16 @@ export default function Sidebar({
       <div className="shrink-0 p-3 pt-2 border-t border-surface">
         <div className="flex items-center justify-between gap-2 rounded-2xl bg-surface-strong p-2.5 border border-surface">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none shadow-xs">
-              {userInitials}
+            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none shadow-xs">
+              {userAvatarUrl ? (
+                <img
+                  src={userAvatarUrl}
+                  alt={userDisplayName}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                userInitials
+              )}
               <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface-strong animate-pulse" />
             </div>
             <div className="min-w-0">
@@ -1391,7 +1508,7 @@ export default function Sidebar({
         aria-hidden={!mobileOpen}
       />
 
-      {/* Mobile Drawer (Touch-Optimized for Phones & Tablets < 1024px) */}
+      {/* Mobile Drawer */}
       <div
         className={`fixed left-0 top-0 z-50 h-full w-77.5 max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
@@ -1403,7 +1520,7 @@ export default function Sidebar({
         <div className="h-full overflow-hidden">{renderExpandedMenu(true)}</div>
       </div>
 
-      {/* Desktop / Laptop Sidebar (Fixed viewport height, independent of main view scroll) */}
+      {/* Desktop / Laptop Sidebar */}
       <aside
         className={`app-sidebar hidden h-full shrink-0 flex-col lg:flex overflow-hidden transition-all duration-300 ease-in-out ${
           isCollapsed ? "w-17" : "w-72 xl:w-74"

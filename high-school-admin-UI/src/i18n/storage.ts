@@ -1,3 +1,4 @@
+// src/i18n/storage.ts
 import { getFlagFromLanguageCode } from './languageMeta'
 
 // ============================================================================
@@ -58,7 +59,7 @@ export function loadLanguages(): LanguageDef[] {
         (language): language is { code: string; name: string; flag?: string } =>
           Boolean(language) &&
           typeof language.code === 'string' &&
-          typeof language.name === 'string',
+          typeof language.name === 'string'
       )
       .map((language) => ({
         code: language.code.toLowerCase(),
@@ -148,7 +149,9 @@ export function saveActiveLanguageCode(code: string): void {
 // workaround so it only has to be understood and tested in one place.
 // ============================================================================
 
-export function subscribeToTranslationChanges(onChange: () => void): () => void {
+export function subscribeToTranslationChanges(
+  onChange: () => void
+): () => void {
   if (typeof window === 'undefined') {
     return () => {}
   }

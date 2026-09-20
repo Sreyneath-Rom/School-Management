@@ -1,3 +1,5 @@
+// src/types/academic.ts
+
 export interface LessonMaterial {
   id: string
   name: string
@@ -18,33 +20,13 @@ export interface Lesson {
   teacherName: string
   date: string
   time: string
-  durationMinutes: number
-  objectives: string[]
   content: string
   materials: LessonMaterial[]
-  status: 'Draft' | 'Scheduled' | 'Completed'
 }
 
-export interface HomeworkMaterial {
-  id: string
+export interface HomeworkAttachment {
   name: string
-  type: string
   url: string
-  size?: string
-}
-
-export interface HomeworkSubmission {
-  id: string
-  homeworkId: string
-  studentId: string
-  studentName: string
-  studentCode: string
-  submittedAt: string
-  content: string
-  attachments: { name: string; url: string; size?: string }[]
-  status: 'Pending' | 'Submitted' | 'Graded' | 'Late'
-  grade?: number
-  feedback?: string
 }
 
 export interface Homework {
@@ -60,10 +42,24 @@ export interface Homework {
   assignedDate: string
   dueDate: string
   maxPoints: number
-  materials: HomeworkMaterial[]
-  status: 'Draft' | 'Published'
-  submissionsCount?: number
-  totalStudents?: number
+  allowLateSubmissions: boolean
+  submissionsCount: number
+}
+
+export type HomeworkSubmissionStatus = 'Graded' | 'Submitted' | 'Pending'
+
+export interface HomeworkSubmission {
+  id: string
+  homeworkId: string
+  studentId: string
+  studentName: string
+  studentCode: string
+  submittedAt: string
+  content: string
+  attachments: HomeworkAttachment[]
+  status: HomeworkSubmissionStatus
+  grade?: number
+  feedback?: string
 }
 
 export interface QuizQuestion {
@@ -72,13 +68,11 @@ export interface QuizQuestion {
   options: string[]
   correctAnswer: number
   points: number
-  explanation?: string
 }
 
 export interface Quiz {
   id: string
   title: string
-  description: string
   classId: string
   className: string
   subjectId: string
@@ -87,25 +81,22 @@ export interface Quiz {
   teacherName: string
   durationMinutes: number
   totalPoints: number
-  dueDate: string
-  status: 'Draft' | 'Published'
   questions: QuizQuestion[]
-  attemptsCount?: number
+  attemptsCount: number
 }
 
 export interface QuizSubmission {
   id: string
   quizId: string
   studentId: string
-  studentName: string
-  studentCode: string
-  submittedAt: string
-  answers: Record<string, number>
   score: number
-  totalPoints: number
-  percentage: number
-  passed: boolean
+  maxScore: number
+  submittedAt: string
+  gradedAt?: string
 }
+
+export type GradePeriod = 'MONTHLY' | 'SEMESTER' | 'ANNUAL'
+export type LetterGrade = 'A' | 'B' | 'C' | 'D' | 'F'
 
 export interface GradeRecord {
   id: string
@@ -116,14 +107,14 @@ export interface GradeRecord {
   className: string
   subjectId: string
   subjectName: string
-  assignmentScore: number
-  quizScore: number
-  midtermScore: number
-  finalScore: number
-  totalWeightedScore: number
-  letterGrade: 'A' | 'B' | 'C' | 'D' | 'F'
+  period: GradePeriod
+  periodLabel: string
+  score: number
+  maxScore: number
+  percentage: number
+  letterGrade: LetterGrade
   gpa: number
-  remarks?: string
+  comment: string
 }
 
 export interface StudentProgress {
@@ -131,12 +122,7 @@ export interface StudentProgress {
   studentName: string
   studentCode: string
   className: string
-  attendanceRate: number
   overallGpa: number
-  assignmentAverage: number
-  quizAverage: number
-  midtermAverage: number
-  finalAverage: number
-  homeworkCompletionRate: number
-  academicTrend: 'improving' | 'stable' | 'needs_support'
+  periodAveragePercentage: number
+  gradeRecordCount: number
 }
