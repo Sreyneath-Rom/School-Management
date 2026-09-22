@@ -1,6 +1,21 @@
-import { Skeleton } from '@/components/common/Skeleton'
+import {
+  ChartCardSkeleton,
+  ListCardSkeleton,
+  Skeleton,
+  StatCardSkeleton,
+} from '@/components/common/Skeleton'
 
-export default function PageSkeleton() {
+interface PageSkeletonProps {
+  statCount?: number
+  chartCount?: number
+  listCount?: number
+}
+
+export default function PageSkeleton({
+  statCount = 4,
+  chartCount = 2,
+  listCount = 1,
+}: PageSkeletonProps) {
   return (
     <div className="flex flex-col gap-6" role="status" aria-label="Loading page">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -10,34 +25,25 @@ export default function PageSkeleton() {
         </div>
         <Skeleton className="h-10 w-32 rounded-xl" />
       </div>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="glass-sm flex min-h-36 flex-col justify-between rounded-3xl p-5">
-            <div className="flex items-center justify-between">
-              <Skeleton className="size-10 rounded-2xl" />
-              <Skeleton className="h-4 w-14 rounded-full" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-3.5 w-24 rounded" />
-              <Skeleton className="h-8 w-28 rounded-lg" />
-            </div>
-          </div>
+        {Array.from({ length: statCount }, (_, index) => (
+          <StatCardSkeleton key={`stat-${index}`} />
         ))}
       </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, index) => (
-          <section key={index} className="glass-sm flex min-h-72 flex-col gap-5 rounded-3xl p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-5 w-36 rounded" />
-                <Skeleton className="h-3.5 w-48 rounded" />
-              </div>
-              <Skeleton className="h-8 w-20 rounded-full" />
-            </div>
-            <Skeleton className="h-44 w-full rounded-2xl" />
-          </section>
+        {Array.from({ length: chartCount }, (_, index) => (
+          <ChartCardSkeleton key={`chart-${index}`} type={index % 2 === 1 ? 'donut' : 'area'} />
         ))}
       </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        {Array.from({ length: listCount }, (_, index) => (
+          <ListCardSkeleton key={`list-${index}`} rows={4} />
+        ))}
+      </div>
+
       <span className="sr-only">Loading content</span>
     </div>
   )
@@ -45,9 +51,9 @@ export default function PageSkeleton() {
 
 export function AppLoadingSkeleton() {
   return (
-    <div className="page-theme flex min-h-dvh items-center justify-center p-6">
-      <div className="w-full max-w-2xl">
-        <PageSkeleton />
+    <div className="page-theme min-h-dvh p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto w-full max-w-[1600px]">
+        <PageSkeleton statCount={4} chartCount={2} listCount={2} />
       </div>
     </div>
   )
