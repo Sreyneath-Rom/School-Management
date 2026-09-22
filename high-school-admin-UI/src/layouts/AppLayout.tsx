@@ -1,8 +1,7 @@
 // src/layouts/AppLayout.tsx
 
 import { useState } from "react";
-import { Outlet, useNavigation } from "react-router-dom";
-import { PageSkeleton } from "@/feature";
+import { Outlet } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
 import Header from "./Header";
@@ -15,7 +14,6 @@ import { useAuth } from "@/hooks/useAuth";
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { role } = useAuth();
-  const navigation = useNavigation();
 
   return (
     <SchoolProvider>
@@ -36,7 +34,7 @@ export default function AppLayout() {
               <div className="mb-4">
                 <Breadcrumbs />
               </div>
-              {navigation.state === "loading" ? <PageSkeleton /> : <Outlet />}
+              <Outlet />
             </main>
 
             <Footer />
