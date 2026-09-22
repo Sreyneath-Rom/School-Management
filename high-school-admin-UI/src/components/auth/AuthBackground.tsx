@@ -48,7 +48,7 @@ export default function AuthBackground({ variant }: Props) {
       <div
         className="absolute inset-0 text-fg opacity-[0.035] dark:opacity-[0.05]"
         style={{
-          backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(currentColor 2px, transparent 2px)',
           backgroundSize: '24px 24px',
         }}
       />

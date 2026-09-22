@@ -1,31 +1,27 @@
+// src/pages/Parent/ChildDetails.tsx
 import { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { 
-  ArrowLeft, 
-  GraduationCap, 
-  Award, 
-  Calendar, 
-  CheckCircle2, 
-  Clock, 
-  FileText, 
-  MessageSquare, 
-  Download, 
-  CreditCard, 
-  AlertCircle,
-  BookOpen,
-  UserCheck,
-  ShieldCheck
+import { useParams, Link } from "react-router-dom";
+import {
+  ArrowLeft, Award, Download, MessageSquare,
 } from "lucide-react";
 import { useToast } from "@/components/common/ToastProvider";
 
+/* Neumorphic hairline seams.
+   - SEAM_B / SEAM_T: single-edge divider (bottom / top)
+   - SEAM_X:          inset verticals — used on middle cells of a 3-up
+                      stat row to draw left & right seams without adding
+                      layout borders that would clip. */
+const SEAM_B = "shadow-[0_1px_0_var(--neu-shadow-dark)]";
+const SEAM_T = "shadow-[0_-1px_0_var(--neu-shadow-dark)]";
+const SEAM_X =
+  "shadow-[inset_1px_0_0_var(--neu-shadow-dark),inset_-1px_0_0_var(--neu-shadow-dark)]";
+
 export default function ChildDetails() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<"grades" | "attendance" | "behavior" | "fees">("grades");
 
-  // Mock Student Profile
   const student = {
     id: id || "child-1",
     name: "Lucas Vance",
@@ -43,56 +39,11 @@ export default function ChildDetails() {
   };
 
   const subjectGrades = [
-    {
-      subject: "Advanced Calculus",
-      code: "MATH-401",
-      teacher: "Dr. Sarah Jenkins",
-      quizAvg: "92%",
-      midterm: "95%",
-      finalExam: "Pending",
-      grade: "A",
-      remarks: "Demonstrates exceptional mastery in differential equations and limits.",
-    },
-    {
-      subject: "Quantum Physics & Mechanics",
-      code: "PHYS-301",
-      teacher: "Prof. Marcus Thorne",
-      quizAvg: "89%",
-      midterm: "91%",
-      finalExam: "Pending",
-      grade: "A-",
-      remarks: "Thorough laboratory reports. Excellent collaboration in team experiments.",
-    },
-    {
-      subject: "World Literature & Composition",
-      code: "ENG-201",
-      teacher: "Elena Rostova",
-      quizAvg: "86%",
-      midterm: "88%",
-      finalExam: "Pending",
-      grade: "B+",
-      remarks: "Insightful critical essays; continued focus on stylistic structure advised.",
-    },
-    {
-      subject: "Computer Science - Data Structures",
-      code: "CS-101",
-      teacher: "David Kim",
-      quizAvg: "98%",
-      midterm: "98%",
-      finalExam: "Pending",
-      grade: "A+",
-      remarks: "Outstanding computational logic and software architecture problem solving.",
-    },
-    {
-      subject: "Modern World History",
-      code: "HIST-202",
-      teacher: "Amina Al-Mansoor",
-      quizAvg: "90%",
-      midterm: "92%",
-      finalExam: "Pending",
-      grade: "A",
-      remarks: "Active participant in seminar discussions and historical source analyses.",
-    },
+    { subject: "Advanced Calculus", code: "MATH-401", teacher: "Dr. Sarah Jenkins", quizAvg: "92%", midterm: "95%", finalExam: "Pending", grade: "A", remarks: "Demonstrates exceptional mastery in differential equations and limits." },
+    { subject: "Quantum Physics & Mechanics", code: "PHYS-301", teacher: "Prof. Marcus Thorne", quizAvg: "89%", midterm: "91%", finalExam: "Pending", grade: "A-", remarks: "Thorough laboratory reports. Excellent collaboration in team experiments." },
+    { subject: "World Literature & Composition", code: "ENG-201", teacher: "Elena Rostova", quizAvg: "86%", midterm: "88%", finalExam: "Pending", grade: "B+", remarks: "Insightful critical essays; continued focus on stylistic structure advised." },
+    { subject: "Computer Science - Data Structures", code: "CS-101", teacher: "David Kim", quizAvg: "98%", midterm: "98%", finalExam: "Pending", grade: "A+", remarks: "Outstanding computational logic and software architecture problem solving." },
+    { subject: "Modern World History", code: "HIST-202", teacher: "Amina Al-Mansoor", quizAvg: "90%", midterm: "92%", finalExam: "Pending", grade: "A", remarks: "Active participant in seminar discussions and historical source analyses." },
   ];
 
   const attendanceLog = [
@@ -117,20 +68,21 @@ export default function ChildDetails() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Top Breadcrumb & Return */}
+      {/* Breadcrumb & return */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             to="/parent/children"
-            className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-stone-300 transition"
+            aria-label="Back to children list"
+            className="glass-sm glass-interactive p-2 rounded-xl text-fg-muted hover:text-fg"
           >
             <ArrowLeft size={18} />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-stone-900 dark:text-white">
+            <h1 className="text-xl font-bold text-fg">
               {student.name}'s Academic Profile
             </h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
+            <p className="text-xs text-fg-muted">
               {student.classSection} • Roll No: {student.rollNumber} • Class Advisor: {student.classTeacher}
             </p>
           </div>
@@ -139,14 +91,14 @@ export default function ChildDetails() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={() => showToast("Downloading certified digital transcript...", "success")}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-200 text-xs font-semibold hover:bg-stone-100 dark:hover:bg-white/5 transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold"
           >
             <Download size={14} />
             <span>Official Transcript</span>
           </button>
           <Link
             to="/messages"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold"
           >
             <MessageSquare size={14} />
             <span>Contact Advisor</span>
@@ -154,106 +106,104 @@ export default function ChildDetails() {
         </div>
       </div>
 
-      {/* Hero Student Banner */}
-      <div className="p-6 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 bg-white/40 dark:bg-stone-900/40 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* Hero banner */}
+      <div className="p-6 rounded-2xl glass-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <img
             src={student.avatar}
             alt={student.name}
-            className="w-16 h-16 rounded-2xl object-cover border-2 border-brand-500/30 shadow-md"
+            className="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-500/30"
           />
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-stone-900 dark:text-white">
-                {student.name}
-              </h2>
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border border-brand-200/50">
+              <h2 className="text-lg font-bold text-fg">{student.name}</h2>
+              {/* Grade chip — brand-tinted, matches chips elsewhere */}
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/25">
                 {student.gradeLevel}
               </span>
             </div>
-            <div className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+            <div className="text-xs text-fg-muted mt-1">
               Emergency: {student.emergencyContact}
             </div>
-            <div className="text-xs text-stone-400 mt-0.5">
+            <div className="text-xs text-fg-muted/70 mt-0.5">
               Medical: {student.medicalNotes}
             </div>
           </div>
         </div>
 
-        {/* Highlight Stats */}
-        <div className="flex items-center gap-6 divide-x divide-stone-200 dark:divide-white/10 text-center">
+        {/* Highlight stats — SEAM_X on the middle cell gives vertical seams */}
+        <div className="flex items-center gap-6 text-center">
           <div className="px-3">
-            <div className="text-xs text-stone-400">Term 2 GPA</div>
-            <div className="text-xl font-extrabold text-stone-900 dark:text-white mt-0.5">{student.gpa}</div>
-            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Top 5% Tier</div>
+            <div className="text-xs text-fg-muted">Term 2 GPA</div>
+            <div className="text-xl font-extrabold text-fg mt-0.5">{student.gpa}</div>
+            <div className="text-[10px] text-success font-semibold">Top 5% Tier</div>
+          </div>
+
+          <div className={`px-3 ${SEAM_X}`}>
+            <div className="text-xs text-fg-muted">Attendance</div>
+            <div className="text-xl font-extrabold text-success mt-0.5">{student.attendanceRate}%</div>
+            <div className="text-[10px] text-fg-muted/70">122 / 125 Days</div>
           </div>
 
           <div className="px-3">
-            <div className="text-xs text-stone-400">Attendance</div>
-            <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">{student.attendanceRate}%</div>
-            <div className="text-[10px] text-stone-400">122 / 125 Days</div>
-          </div>
-
-          <div className="px-3">
-            <div className="text-xs text-stone-400">Disciplinary</div>
+            <div className="text-xs text-fg-muted">Disciplinary</div>
             <div className="text-xl font-extrabold text-brand-600 dark:text-brand-400 mt-0.5">Clean</div>
-            <div className="text-[10px] text-stone-400">Zero Infractions</div>
+            <div className="text-[10px] text-fg-muted/70">Zero Infractions</div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-stone-200/70 dark:border-white/10 pb-2 overflow-x-auto text-xs font-semibold">
+      {/* Tabs — active segment is a pressed-in brand well */}
+      <div className={`flex items-center gap-2 pb-2 overflow-x-auto text-xs font-semibold ${SEAM_B}`}>
         {[
-          { id: "grades", label: "Academic Grades & Marks", icon: BookOpen },
-          { id: "attendance", label: "Attendance Record", icon: UserCheck },
-          { id: "behavior", label: "Commendations & Awards", icon: Award },
-          { id: "fees", label: "Tuition & Fee Ledger", icon: CreditCard },
-        ].map(tab => (
+          { id: "grades", label: "Academic Grades & Marks" },
+          { id: "attendance", label: "Attendance Record" },
+          { id: "behavior", label: "Commendations & Awards" },
+          { id: "fees", label: "Tuition & Fee Ledger" },
+        ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl transition cursor-pointer shrink-0 ${
               activeTab === tab.id
-                ? "bg-stone-900 dark:bg-white text-white dark:text-stone-900 shadow-sm"
-                : "text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/5"
+                ? "bg-brand-600 text-white shadow-sunken"
+                : "text-fg-muted hover:text-fg hover:shadow-sunken"
             }`}
           >
-            <tab.icon size={15} />
             <span>{tab.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Tab 1: Grades & Marks */}
+      {/* Tab 1: Grades */}
       {activeTab === "grades" && (
-        <div className="rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 overflow-hidden shadow-sm">
+        <div className="rounded-2xl glass-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-stone-200/70 dark:border-white/10 bg-stone-50/50 dark:bg-white/[0.02] text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4">Subject & Instructor</th>
+                <tr className={`text-[11px] font-semibold text-fg-muted uppercase tracking-wider ${SEAM_B}`}>
+                  <th className="py-3.5 px-4">Subject &amp; Instructor</th>
                   <th className="py-3.5 px-4 text-center">Quiz Avg</th>
                   <th className="py-3.5 px-4 text-center">Midterm Exam</th>
                   <th className="py-3.5 px-4 text-center">Letter Grade</th>
                   <th className="py-3.5 px-4">Instructor Feedback</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-200/50 dark:divide-white/5 text-stone-700 dark:text-stone-200">
+              <tbody className="divide-y divide-(--neu-shadow-dark) text-fg">
                 {subjectGrades.map((sub, i) => (
-                  <tr key={i} className="hover:bg-stone-500/5">
+                  <tr key={i} className="hover:shadow-sunken transition-shadow">
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-stone-900 dark:text-white">{sub.subject}</div>
-                      <div className="text-[11px] text-stone-400">{sub.code} • {sub.teacher}</div>
+                      <div className="font-bold text-fg">{sub.subject}</div>
+                      <div className="text-[11px] text-fg-muted/70">{sub.code} • {sub.teacher}</div>
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono">{sub.quizAvg}</td>
                     <td className="py-3.5 px-4 text-center font-mono font-semibold">{sub.midterm}</td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="inline-block px-2.5 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-extrabold text-sm">
+                      <span className="inline-block px-2.5 py-0.5 rounded-lg bg-success/15 text-success font-extrabold text-sm">
                         {sub.grade}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 max-w-xs text-stone-600 dark:text-stone-300 text-[11px]">
+                    <td className="py-3.5 px-4 max-w-xs text-fg-muted text-[11px]">
                       {sub.remarks}
                     </td>
                   </tr>
@@ -267,44 +217,46 @@ export default function ChildDetails() {
       {/* Tab 2: Attendance */}
       {activeTab === "attendance" && (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center justify-between text-xs">
+          <div className="p-4 rounded-2xl glass-sm flex items-center justify-between text-xs">
             <div>
-              <span className="font-bold text-stone-900 dark:text-white">Recent Attendance Sessions</span>
-              <p className="text-stone-500">Official registry taken at 08:30 AM homeroom daily.</p>
+              <span className="font-bold text-fg">Recent Attendance Sessions</span>
+              <p className="text-fg-muted">Official registry taken at 08:30 AM homeroom daily.</p>
             </div>
             <Link
               to="/students/leave-requests"
-              className="px-3.5 py-1.5 rounded-xl bg-brand-600 text-white font-semibold shadow-sm hover:bg-brand-700 transition"
+              className="px-3.5 py-1.5 rounded-xl theme-button-primary font-semibold"
             >
               Submit Excuse Slip
             </Link>
           </div>
 
-          <div className="rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 overflow-hidden">
+          <div className="rounded-2xl glass-sm overflow-hidden">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-stone-200/70 dark:border-white/10 bg-stone-50/50 dark:bg-white/[0.02] text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
+                <tr className={`text-[11px] font-semibold text-fg-muted uppercase tracking-wider ${SEAM_B}`}>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Homeroom Arrival</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Period Log Notes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-200/50 dark:divide-white/5 text-stone-700 dark:text-stone-200">
+              <tbody className="divide-y divide-(--neu-shadow-dark) text-fg">
                 {attendanceLog.map((log, i) => (
-                  <tr key={i} className="hover:bg-stone-500/5">
-                    <td className="py-3 px-4 font-semibold text-stone-900 dark:text-white">{log.date}</td>
+                  <tr key={i} className="hover:shadow-sunken transition-shadow">
+                    <td className="py-3 px-4 font-semibold text-fg">{log.date}</td>
                     <td className="py-3 px-4 font-mono">{log.arrival}</td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                        log.status === "Present"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                      }`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                          log.status === "Present"
+                            ? "bg-success/15 text-success"
+                            : "bg-warning/15 text-warning"
+                        }`}
+                      >
                         {log.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-stone-500">{log.periods}</td>
+                    <td className="py-3 px-4 text-fg-muted">{log.periods}</td>
                   </tr>
                 ))}
               </tbody>
@@ -313,35 +265,35 @@ export default function ChildDetails() {
         </div>
       )}
 
-      {/* Tab 3: Behavior & Awards */}
+      {/* Tab 3: Awards */}
       {activeTab === "behavior" && (
         <div className="space-y-3">
           {awards.map((aw, i) => (
             <div
               key={i}
-              className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-start gap-3.5 bg-white/40 dark:bg-stone-900/40"
+              className="p-4 rounded-2xl glass-sm flex items-start gap-3.5"
             >
-              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+              <div className="p-2.5 rounded-xl bg-warning/15 text-warning shrink-0 shadow-sunken">
                 <Award size={20} />
               </div>
               <div className="text-xs">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-stone-900 dark:text-white text-sm">{aw.title}</h3>
-                  <span className="text-[10px] font-mono text-stone-400">{aw.date}</span>
+                  <h3 className="font-bold text-fg text-sm">{aw.title}</h3>
+                  <span className="text-[10px] font-mono text-fg-muted/70">{aw.date}</span>
                 </div>
-                <p className="text-stone-600 dark:text-stone-300 mt-1">{aw.desc}</p>
+                <p className="text-fg-muted mt-1">{aw.desc}</p>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Tab 4: Tuition & Billing */}
+      {/* Tab 4: Fees */}
       {activeTab === "fees" && (
-        <div className="rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 overflow-hidden">
+        <div className="rounded-2xl glass-sm overflow-hidden">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-stone-200/70 dark:border-white/10 bg-stone-50/50 dark:bg-white/[0.02] text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
+              <tr className={`text-[11px] font-semibold text-fg-muted uppercase tracking-wider ${SEAM_B}`}>
                 <th className="py-3.5 px-4">Invoice #</th>
                 <th className="py-3.5 px-4">Description</th>
                 <th className="py-3.5 px-4">Amount</th>
@@ -350,15 +302,15 @@ export default function ChildDetails() {
                 <th className="py-3.5 px-4 text-right">Receipt</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-200/50 dark:divide-white/5 text-stone-700 dark:text-stone-200">
+            <tbody className="divide-y divide-(--neu-shadow-dark) text-fg">
               {invoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-stone-500/5">
-                  <td className="py-3.5 px-4 font-mono font-semibold text-stone-900 dark:text-white">{inv.id}</td>
+                <tr key={inv.id} className="hover:shadow-sunken transition-shadow">
+                  <td className="py-3.5 px-4 font-mono font-semibold text-fg">{inv.id}</td>
                   <td className="py-3.5 px-4 font-medium">{inv.term}</td>
-                  <td className="py-3.5 px-4 font-bold text-stone-900 dark:text-white">{inv.amount}</td>
-                  <td className="py-3.5 px-4 text-stone-500">{inv.dueDate}</td>
+                  <td className="py-3.5 px-4 font-bold text-fg">{inv.amount}</td>
+                  <td className="py-3.5 px-4 text-fg-muted">{inv.dueDate}</td>
                   <td className="py-3.5 px-4">
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-success/15 text-success">
                       {inv.status}
                     </span>
                   </td>

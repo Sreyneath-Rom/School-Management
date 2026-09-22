@@ -58,7 +58,7 @@ export default function ExamList() {
           </Link>
           <Link
             to="/academic/exams/create"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold"
           >
             <Plus size={16} />
             <span>New Exam</span>
@@ -66,7 +66,7 @@ export default function ExamList() {
         </div>
       </div>
 
-      {/* Info banner — semantic info signal, tinted (bumped for legibility) */}
+      {/* Info banner — semantic info signal, tinted */}
       <div className="rounded-2xl border border-info/30 bg-info/10 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
         <p className="text-fg-muted">
@@ -76,11 +76,11 @@ export default function ExamList() {
         </p>
       </div>
 
-      {/* Filter bar — border was invisible */}
+      {/* Filter bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3.5 top-3 text-fg-muted z-10" />
-          {/* Inputs inherit the sunken-well look from globals.css */}
+          <Search size={16} className="absolute left-3.5 top-3 text-fg-muted z-10 pointer-events-none" />
+          {/* Inputs inherit the sunken-well look from globals.css (.neu-inset) */}
           <input
             type="text"
             placeholder="Search exam title, term, or year..."
@@ -141,7 +141,7 @@ export default function ExamList() {
                       </div>
                     </div>
                   </div>
-                  {/* Status pill — semantic tints, kept; neutral is sunken */}
+                  {/* Status pill — semantic tints; neutral is sunken */}
                   <span
                     className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${
                       exam.status === 'COMPLETED'
@@ -157,8 +157,7 @@ export default function ExamList() {
                   </span>
                 </div>
 
-                {/* Inner stat rows — top and bottom shadow seams replace
-                    the (invisible) `border-y border-surface` */}
+                {/* Inner stat rows — top & bottom shadow seams */}
                 <div className="space-y-2 py-3 shadow-[0_-1px_0_var(--neu-shadow-dark),0_1px_0_var(--neu-shadow-dark)] text-xs">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-fg-muted">

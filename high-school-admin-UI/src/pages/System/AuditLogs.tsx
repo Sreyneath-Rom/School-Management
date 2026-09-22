@@ -2,23 +2,7 @@ import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
 import { useState } from "react";
 import PageHeading from "@/components/common/PageHeading";
-import { 
-  ShieldCheck, 
-  Search, 
-  Filter, 
-  Download, 
-  Clock, 
-  User, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Info, 
-  Code, 
-  Terminal, 
-  Database,
-  X,
-  Sparkles,
-  Layers
-} from "lucide-react";
+import { Search, Filter, Download, Code, Terminal, X } from "lucide-react";
 import { useToast } from "@/components/common/ToastProvider";
 
 interface AuditLogEntry {
@@ -129,12 +113,10 @@ const INITIAL_LOGS: AuditLogEntry[] = [
 
 export default function AuditLogs() {
   const { showToast } = useToast();
-  const [logs, setLogs] = useState<AuditLogEntry[]>(INITIAL_LOGS);
+  const [logs] = useState<AuditLogEntry[]>(INITIAL_LOGS);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [severityFilter, setSeverityFilter] = useState("All");
-
-  // Raw inspect modal
   const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(null);
 
   const filtered = logs.filter((l) => {
@@ -149,10 +131,14 @@ export default function AuditLogs() {
   });
 
   const handleExport = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filtered, null, 2));
+    const dataStr =
+      "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filtered, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `school_audit_logs_${new Date().toISOString().substring(0,10)}.json`);
+    downloadAnchor.setAttribute(
+      "download",
+      `school_audit_logs_${new Date().toISOString().substring(0, 10)}.json`
+    );
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -176,7 +162,7 @@ export default function AuditLogs() {
         />
         <button
           onClick={handleExport}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-semibold shadow-sm hover:opacity-90 transition cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold self-start sm:self-auto cursor-pointer"
         >
           <Download size={15} />
           <span>Export Logs (JSON)</span>
@@ -184,122 +170,80 @@ export default function AuditLogs() {
       </div>
 
       <StatsGrid cards={kpiCards} columns={4} />
-      {/* Legacy metric markup retained below only as migration reference.
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
-            <Database size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">14,892</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Total Events Logged</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <AlertTriangle size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">1 Warning</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Security Anomalies</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <ShieldCheck size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">100%</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">FERPA / GDPR Compliant</div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <Clock size={20} />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-stone-900 dark:text-white">90 Days</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Retention Window</div>
-          </div>
-        </div>
-      </div> */}
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10">
+      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3.5 top-3 text-stone-400" />
+          <Search size={16} className="absolute left-3.5 top-3 text-fg-muted pointer-events-none" />
           <input
             type="text"
             placeholder="Search action event, actor name, IP address, or resource..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-transparent text-xs text-stone-800 dark:text-stone-100 placeholder-stone-400 focus:outline-none"
+            className="w-full pl-9 pr-4 py-2 text-xs text-fg placeholder:text-fg-muted focus:outline-none"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-white/5 text-xs text-stone-700 dark:text-stone-300">
-            <Filter size={13} className="text-stone-400" />
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl glass-sm text-xs text-fg">
+            <Filter size={13} className="text-fg-muted" />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-transparent focus:outline-none cursor-pointer"
+              className="bg-transparent text-fg focus:outline-none cursor-pointer"
             >
-              <option value="All" className="dark:bg-stone-900">All Categories</option>
-              <option value="Auth" className="dark:bg-stone-900">Authentication</option>
-              <option value="Academic" className="dark:bg-stone-900">Academic & Grades</option>
-              <option value="Student" className="dark:bg-stone-900">Student Records</option>
-              <option value="Faculty" className="dark:bg-stone-900">Faculty & Staff</option>
-              <option value="System" className="dark:bg-stone-900">System Infrastructure</option>
+              <option value="All">All Categories</option>
+              <option value="Auth">Authentication</option>
+              <option value="Academic">Academic &amp; Grades</option>
+              <option value="Student">Student Records</option>
+              <option value="Faculty">Faculty &amp; Staff</option>
+              <option value="System">System Infrastructure</option>
             </select>
           </div>
 
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-white/5 text-xs text-stone-700 dark:text-stone-300">
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl glass-sm text-xs text-fg">
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
-              className="bg-transparent focus:outline-none cursor-pointer"
+              className="bg-transparent text-fg focus:outline-none cursor-pointer"
             >
-              <option value="All" className="dark:bg-stone-900">All Severity</option>
-              <option value="info" className="dark:bg-stone-900">Info</option>
-              <option value="warning" className="dark:bg-stone-900">Warning</option>
-              <option value="critical" className="dark:bg-stone-900">Critical</option>
+              <option value="All">All Severity</option>
+              <option value="info">Info</option>
+              <option value="warning">Warning</option>
+              <option value="critical">Critical</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Logs Table */}
-      <div className="rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 overflow-hidden shadow-sm">
+      <div className="rounded-2xl glass-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-stone-200/70 dark:border-white/10 bg-stone-50/50 dark:bg-white/[0.02] text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                <th className="py-3.5 px-4">Timestamp & ID</th>
+            <thead className="text-[11px] font-semibold text-fg-muted uppercase tracking-wider theme-divider">
+              <tr>
+                <th className="py-3.5 px-4">Timestamp &amp; ID</th>
                 <th className="py-3.5 px-4">Operator / Actor</th>
                 <th className="py-3.5 px-4">Action Event</th>
                 <th className="py-3.5 px-4">Resource Target</th>
-                <th className="py-3.5 px-4">IP & Network</th>
+                <th className="py-3.5 px-4">IP &amp; Network</th>
                 <th className="py-3.5 px-4 text-center">Status</th>
                 <th className="py-3.5 px-4 text-right">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-200/50 dark:divide-white/5 text-stone-700 dark:text-stone-200">
+            <tbody className="divide-y divide-(--neu-shadow-dark) text-fg">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-stone-400">
+                  <td colSpan={7} className="py-12 text-center text-fg-muted">
                     No audit records match the selected parameters.
                   </td>
                 </tr>
               ) : (
                 filtered.map((log) => (
-                  <tr key={log.id} className="hover:bg-stone-500/5 transition">
+                  <tr key={log.id} className="transition-shadow hover:shadow-sunken">
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="font-mono text-stone-900 dark:text-white font-medium">{log.timestamp}</div>
-                      <div className="text-[10px] text-stone-400 font-mono">{log.id}</div>
+                      <div className="font-mono text-fg font-medium">{log.timestamp}</div>
+                      <div className="text-[10px] text-fg-muted font-mono">{log.id}</div>
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -311,38 +255,38 @@ export default function AuditLogs() {
                             className="w-7 h-7 rounded-full object-cover shrink-0"
                           />
                         ) : (
-                          <div className="w-7 h-7 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center shrink-0">
-                            <Terminal size={13} className="text-stone-500" />
+                          <div className="w-7 h-7 rounded-full bg-surface shadow-sunken flex items-center justify-center shrink-0">
+                            <Terminal size={13} className="text-fg-muted" />
                           </div>
                         )}
                         <div>
-                          <div className="font-semibold text-stone-900 dark:text-white">{log.actorName}</div>
-                          <div className="text-[10px] text-stone-400">{log.actorRole}</div>
+                          <div className="font-semibold text-fg">{log.actorName}</div>
+                          <div className="text-[10px] text-fg-muted">{log.actorRole}</div>
                         </div>
                       </div>
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <span className="font-mono font-semibold text-stone-900 dark:text-white">
-                        {log.action}
-                      </span>
-                      <div className="text-[10px] text-stone-400">{log.category}</div>
+                      <span className="font-mono font-semibold text-fg">{log.action}</span>
+                      <div className="text-[10px] text-fg-muted">{log.category}</div>
                     </td>
 
-                    <td className="py-3.5 px-4 max-w-xs truncate text-stone-800 dark:text-stone-200 font-medium">
+                    <td className="py-3.5 px-4 max-w-xs truncate text-fg font-medium">
                       {log.targetResource}
                     </td>
 
-                    <td className="py-3.5 px-4 font-mono text-[11px] text-stone-500">
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-fg-muted">
                       {log.ipAddress}
                     </td>
 
                     <td className="py-3.5 px-4 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        log.status === 'Success'
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          log.status === 'Success'
+                            ? 'bg-success/15 text-success'
+                            : 'bg-error/15 text-error'
+                        }`}
+                      >
                         {log.status}
                       </span>
                     </td>
@@ -350,7 +294,7 @@ export default function AuditLogs() {
                     <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => setSelectedEntry(log)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-stone-200 dark:border-white/10 hover:bg-stone-100 dark:hover:bg-white/10 text-stone-600 dark:text-stone-300 font-medium text-[11px] transition cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg glass-sm glass-interactive text-fg-muted font-medium text-[11px] cursor-pointer"
                       >
                         <Code size={12} />
                         <span>Inspect</span>
@@ -366,53 +310,56 @@ export default function AuditLogs() {
 
       {/* JSON Payload Inspection Modal */}
       {selectedEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-xl rounded-2xl glass border border-stone-200/80 dark:border-white/10 p-6 shadow-2xl bg-white dark:bg-stone-900 space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-200 dark:border-white/10 pb-3">
-              <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2 font-mono">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl glass-strong p-6 space-y-4">
+            <div className="flex items-center justify-between theme-divider pb-3">
+              <h3 className="text-sm font-bold text-fg flex items-center gap-2 font-mono">
                 <Terminal size={16} className="text-brand-500" />
                 <span>Audit Entry: {selectedEntry.id}</span>
               </h3>
               <button
                 onClick={() => setSelectedEntry(null)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+                aria-label="Close inspector"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg transition"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-stone-50 dark:bg-white/5">
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-surface shadow-sunken">
                 <div>
-                  <span className="text-stone-400 block text-[10px]">Action Event</span>
-                  <span className="font-mono font-bold text-stone-900 dark:text-white">{selectedEntry.action}</span>
+                  <span className="text-fg-muted block text-[10px]">Action Event</span>
+                  <span className="font-mono font-bold text-fg">{selectedEntry.action}</span>
                 </div>
                 <div>
-                  <span className="text-stone-400 block text-[10px]">Executed At</span>
-                  <span className="font-mono text-stone-900 dark:text-white">{selectedEntry.timestamp}</span>
+                  <span className="text-fg-muted block text-[10px]">Executed At</span>
+                  <span className="font-mono text-fg">{selectedEntry.timestamp}</span>
                 </div>
                 <div>
-                  <span className="text-stone-400 block text-[10px]">Actor Email</span>
-                  <span className="font-medium text-stone-900 dark:text-white">{selectedEntry.actorEmail}</span>
+                  <span className="text-fg-muted block text-[10px]">Actor Email</span>
+                  <span className="font-medium text-fg">{selectedEntry.actorEmail}</span>
                 </div>
                 <div>
-                  <span className="text-stone-400 block text-[10px]">Client Network IP</span>
-                  <span className="font-mono text-stone-900 dark:text-white">{selectedEntry.ipAddress}</span>
+                  <span className="text-fg-muted block text-[10px]">Client Network IP</span>
+                  <span className="font-mono text-fg">{selectedEntry.ipAddress}</span>
                 </div>
               </div>
 
               <div>
-                <span className="text-stone-500 font-semibold block mb-1">Raw Payload Object (JSON)</span>
-                <pre className="p-3.5 rounded-xl bg-stone-950 text-emerald-400 font-mono text-[11px] overflow-x-auto max-h-60 leading-relaxed border border-stone-800">
+                <span className="text-fg-muted font-semibold block mb-1">
+                  Raw Payload Object (JSON)
+                </span>
+                <pre className="p-3.5 rounded-xl bg-surface shadow-sunken font-mono text-[11px] text-fg overflow-x-auto max-h-60 leading-relaxed">
                   {JSON.stringify(selectedEntry.details, null, 2)}
                 </pre>
               </div>
             </div>
 
-            <div className="flex items-center justify-end pt-3 border-t border-stone-200 dark:border-white/10">
+            <div className="flex items-center justify-end pt-3 theme-divider">
               <button
                 onClick={() => setSelectedEntry(null)}
-                className="px-4 py-2 rounded-xl bg-stone-100 dark:bg-white/10 text-stone-700 dark:text-stone-200 text-xs font-semibold"
+                className="px-4 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold"
               >
                 Close Inspector
               </button>

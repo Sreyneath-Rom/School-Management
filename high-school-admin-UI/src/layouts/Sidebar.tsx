@@ -61,9 +61,7 @@ import { useBadgeCounts } from "@/hooks/useBadgeCounts";
 import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
 import { useTranslations, type TranslationKey } from "@/i18n";
 
-/* Neumorphic hairline seams. Replaces the old `border-* border-surface`
-   and `divide-* divide-surface` rules, which had no visible effect once
-   --glass-bg = --page-background. */
+/* Neumorphic hairline seams. */
 const SEAM_B = "shadow-[0_1px_0_var(--neu-shadow-dark)]";
 const SEAM_T = "shadow-[0_-1px_0_var(--neu-shadow-dark)]";
 
@@ -222,7 +220,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           icon: FileClock,
           path: "/students/leave-requests",
           badgeKey: "leave-requests",
-          badgeColor: "bg-amber-500 text-white",
+          badgeColor: "bg-warning text-white",
           badgePulse: true,
         },
       ],
@@ -263,7 +261,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           icon: MessageSquare,
           path: "/messages",
           badgeKey: "messages",
-          badgeColor: "bg-teal-500 text-white",
+          badgeColor: "bg-info text-white",
           badgePulse: true,
         },
       ],
@@ -334,7 +332,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           icon: MessageSquare,
           path: "/teacher/messages",
           badgeKey: "messages",
-          badgeColor: "bg-teal-500 text-white",
+          badgeColor: "bg-info text-white",
         },
       ],
     },
@@ -407,7 +405,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           icon: MessageSquare,
           path: "/student/messages",
           badgeKey: "messages",
-          badgeColor: "bg-teal-500 text-white",
+          badgeColor: "bg-info text-white",
         },
       ],
     },
@@ -433,7 +431,7 @@ const roleMenus: Record<string, MenuSection[]> = {
           icon: MessageSquare,
           path: "/parent/messages",
           badgeKey: "messages",
-          badgeColor: "bg-teal-500 text-white",
+          badgeColor: "bg-info text-white",
         },
       ],
     },
@@ -443,11 +441,11 @@ const roleMenus: Record<string, MenuSection[]> = {
 const roleBadgeColorMap: Record<string, { label: string; badgeClass: string }> = {
   admin: {
     label: "Administrator",
-    badgeClass: "bg-surface text-brand-600 dark:text-brand-300",
+    badgeClass: "bg-surface text-brand-600 dark:text-brand-300 shadow-sunken",
   },
-  teacher: { label: "Faculty", badgeClass: "bg-surface text-success" },
-  student: { label: "Scholar", badgeClass: "bg-surface text-info" },
-  parent: { label: "Guardian", badgeClass: "bg-surface text-warning" },
+  teacher: { label: "Faculty", badgeClass: "bg-surface text-success shadow-sunken" },
+  student: { label: "Scholar", badgeClass: "bg-surface text-info shadow-sunken" },
+  parent: { label: "Guardian", badgeClass: "bg-surface text-warning shadow-sunken" },
 };
 
 function sectionForPath(pathname: string, menu: MenuSection[]): Section | null {
@@ -705,14 +703,14 @@ export default function Sidebar({
       <div className="flex flex-col items-center space-y-2.5 overflow-y-auto no-scrollbar flex-1 py-2">
         <div
           title={schoolName || "School"}
-          className="relative group flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-600 via-brand-700 to-indigo-800 text-white shadow-md shadow-brand-600/20 ring-1 ring-white/20 transition-transform duration-200 hover:scale-105"
+          className="relative group flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white ring-1 ring-white/20 transition-transform duration-200 hover:scale-105"
         >
           {schoolName ? (
             <span className="text-xs font-black tracking-tight">{schoolInitials}</span>
           ) : (
             <School2 size={18} className="text-white" />
           )}
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-400 ring-2 ring-surface" />
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success ring-2 ring-surface" />
         </div>
 
         <button
@@ -779,7 +777,7 @@ export default function Sidebar({
                     <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface" />
                   )}
                   {!isSectionActive && hasBadges && (
-                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-500 ring-1 ring-surface" />
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning ring-1 ring-surface" />
                   )}
                 </button>
 
@@ -845,7 +843,7 @@ export default function Sidebar({
       <div className={`flex flex-col items-center space-y-2 pt-2 shrink-0 ${SEAM_T}`}>
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-indigo-600 text-white font-bold text-xs select-none ring-1 ring-surface"
+          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none ring-1 ring-surface"
         >
           {userAvatarUrl ? (
             <img src={userAvatarUrl} alt={userDisplayName} className="h-full w-full object-cover" />
@@ -861,16 +859,14 @@ export default function Sidebar({
      Expanded menu (desktop + mobile drawer)
      -------------------------------------------------------------- */
   const renderExpandedMenu = (isMobile = false) => (
-    // `app-sidebar` handles bg + width-0 border. glassmorphism-era
-    // `bg-surface/90 backdrop-blur-md border-r border-surface` removed.
     <div className="app-sidebar flex h-full flex-col justify-between select-none overflow-hidden">
       {/* Top branding + search + dashboard link */}
       <div className="shrink-0 p-3.5 pb-2 space-y-3">
         <div className="flex items-center justify-between gap-2.5 p-2 rounded-2xl shadow-sunken">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-brand-600 via-brand-700 to-indigo-800 text-white shadow-sm shadow-brand-600/20 ring-1 ring-white/10">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white ring-1 ring-white/10">
               <School2 size={19} className="text-white" />
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-400 ring-2 ring-surface" />
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success ring-2 ring-surface" />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-xs font-bold tracking-tight text-color">
@@ -915,9 +911,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Quick search — no longer fights the global `neu-inset` rule
-            that now applies to every text input. We only layer on the
-            padding + focus ring + brand text. */}
+        {/* Quick search — inherits .neu-inset from globals.css */}
         <div className="relative">
           <span className="absolute left-3 top-2.5 text-secondary pointer-events-none z-10">
             <Search size={14} />
@@ -946,7 +940,7 @@ export default function Sidebar({
           onClick={handleLinkClick}
           className={`group flex min-h-9.5 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
             isDashboardActive
-              ? "bg-brand-600 text-white shadow-sm shadow-brand-600/30"
+              ? "bg-brand-600 text-white"
               : "text-secondary hover:text-fg"
           }`}
         >
@@ -1020,7 +1014,7 @@ export default function Sidebar({
                           <div
                             className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-all duration-150 ${
                               isSectionOpen || hasActiveChild
-                                ? "bg-brand-600 text-white shadow-xs shadow-brand-600/20"
+                                ? "bg-brand-600 text-white"
                                 : "bg-surface text-secondary"
                             }`}
                           >
@@ -1060,8 +1054,7 @@ export default function Sidebar({
                         }`}
                       >
                         <div className="overflow-hidden min-h-0">
-                          {/* Left rail — was `border-l border-surface`
-                              (invisible); now a 1px shadow seam. */}
+                          {/* Left rail — 1px shadow seam */}
                           <div className="relative mt-1 mb-1 ml-4 pl-3 space-y-0.5 shadow-[-1px_0_0_var(--neu-shadow-dark)]">
                             {section.items.map((item) => {
                               const Icon = item.icon;
@@ -1078,7 +1071,7 @@ export default function Sidebar({
                                   tabIndex={isSectionOpen ? 0 : -1}
                                   className={`group relative flex min-h-8 items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                                     isItemActive
-                                      ? "font-semibold bg-brand-600 text-white shadow-xs shadow-brand-600/20"
+                                      ? "font-semibold bg-brand-600 text-white"
                                       : "font-normal text-secondary hover:text-fg"
                                   }`}
                                 >
@@ -1124,13 +1117,13 @@ export default function Sidebar({
       <div className={`shrink-0 p-3.5 pt-2 ${SEAM_T}`}>
         <div className="flex items-center justify-between gap-2 rounded-2xl p-2.5 shadow-sunken">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-indigo-600 text-white font-bold text-xs select-none ring-1 ring-surface">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none ring-1 ring-surface">
               {userAvatarUrl ? (
                 <img src={userAvatarUrl} alt={userDisplayName} className="h-full w-full object-cover" />
               ) : (
                 userInitials
               )}
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-surface" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-color leading-tight">
@@ -1152,7 +1145,7 @@ export default function Sidebar({
               onClick={() => logout()}
               title="Sign out"
               aria-label="Sign out"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:text-error transition-colors cursor-pointer"
             >
               <LogOut size={15} />
             </button>
@@ -1164,18 +1157,16 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Mobile backdrop — kept dark scrim, dropped the frosted blur */}
+      {/* Mobile backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-slate-950/60 transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-40 theme-overlay backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => onClose && onClose()}
         aria-hidden={!mobileOpen}
       />
 
-      {/* Mobile drawer — side shadow added because the outer wrapper
-          isn't a `aside.app-sidebar`, so the CSS shadow rule doesn't
-          reach it. */}
+      {/* Mobile drawer — shadow matches `aside.app-sidebar` in globals.css */}
       <div
         className={`fixed left-0 top-0 z-50 h-full w-77.5 max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden shadow-[2px_0_6px_var(--neu-shadow-dark)] ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"

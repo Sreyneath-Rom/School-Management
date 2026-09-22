@@ -1,23 +1,11 @@
+// src/pages/Parent/Dashboard.tsx
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import PageHeading from "@/components/common/PageHeading";
 import StatsGrid from "@/components/cards/StatsGrid";
 import type { StatCard } from "@/types";
-import { 
-  GraduationCap, 
-  Calendar, 
-  CheckCircle2, 
-  Clock, 
-  CreditCard, 
-  FileText, 
-  MessageSquare, 
-  TrendingUp, 
-  Bell, 
-  ArrowRight,
-  UserCheck,
-  AlertCircle,
-  BookOpen,
-  Award
+import {
+  Calendar, MessageSquare, Bell, ArrowRight, Award, FileText, BookOpen,
 } from "lucide-react";
 import { useToast } from "@/components/common/ToastProvider";
 
@@ -62,21 +50,21 @@ const CHILDREN: ChildSummary[] = [
 ];
 
 export default function ParentDashboard() {
-  const navigate = useNavigate();
   const { showToast } = useToast();
   const [selectedChildId, setSelectedChildId] = useState(CHILDREN[0].id);
 
-  const activeChild = CHILDREN.find(c => c.id === selectedChildId) || CHILDREN[0];
+  const activeChild = CHILDREN.find((c) => c.id === selectedChildId) || CHILDREN[0];
+
   const parentStatCards: StatCard[] = [
-    { id: 'child-gpa', label: 'Term 2 GPA', value: `${activeChild.gpa} / 4.0`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Top 5% of class', icon: 'Award', tint: 'blue' },
-    { id: 'child-attendance', label: 'Attendance Rate', value: `${activeChild.attendancePct}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Current term', icon: 'UserCheck', tint: 'green' },
-    { id: 'pending-tasks', label: 'Pending Tasks', value: `${activeChild.pendingTasks} Tasks`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Due this week', icon: 'Clock', tint: 'amber' },
-    { id: 'fee-status', label: 'Tuition Fees', value: 'Up to Date', delta: '-', deltaDirection: 'neutral', deltaLabel: 'School account', icon: 'CreditCard', tint: 'sky' },
+    { id: 'child-gpa',        label: 'Term 2 GPA',      value: `${activeChild.gpa} / 4.0`,      delta: '-', deltaDirection: 'neutral', deltaLabel: 'Top 5% of class', icon: 'Award',    tint: 'blue' },
+    { id: 'child-attendance', label: 'Attendance Rate', value: `${activeChild.attendancePct}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Current term',    icon: 'UserCheck', tint: 'green' },
+    { id: 'pending-tasks',    label: 'Pending Tasks',   value: `${activeChild.pendingTasks} Tasks`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'Due this week', icon: 'Clock',   tint: 'amber' },
+    { id: 'fee-status',       label: 'Tuition Fees',    value: 'Up to Date',                    delta: '-', deltaDirection: 'neutral', deltaLabel: 'School account',  icon: 'CreditCard', tint: 'sky' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Top Banner & Child Switcher */}
+      {/* Top banner & ward selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <PageHeading
@@ -85,16 +73,17 @@ export default function ParentDashboard() {
           />
         </div>
 
-        {/* Ward Selector Chips */}
-        <div className="flex items-center gap-2 p-1.5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 self-start sm:self-auto bg-stone-100/50 dark:bg-white/5">
+        {/* Ward selector — outer tray is a sunken well; the active chip
+            inside is a pressed-in brand well (matches the tab pattern). */}
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl shadow-sunken self-start sm:self-auto">
           {CHILDREN.map((child) => (
             <button
               key={child.id}
               onClick={() => setSelectedChildId(child.id)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                 selectedChildId === child.id
-                  ? "bg-white dark:bg-stone-800 text-stone-900 dark:text-white shadow-sm"
-                  : "text-stone-500 hover:text-stone-900 dark:hover:text-white"
+                  ? "bg-brand-600 text-white shadow-sunken"
+                  : "text-fg-muted hover:text-fg"
               }`}
             >
               <img
@@ -108,21 +97,20 @@ export default function ParentDashboard() {
         </div>
       </div>
 
-      {/* Quick Metrics of Active Child */}
-        <StatsGrid cards={parentStatCards} />
+      <StatsGrid cards={parentStatCards} />
 
-      {/* Main Grid: Subjects & Upcoming Schedule */}
+      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left 8 Cols: Academic Performance & Recent Subjects */}
+        {/* Left: performance + schedule */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="p-5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 space-y-4">
+          <div className="p-5 rounded-2xl glass-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
-                  <BookOpen size={16} className="text-brand-500" />
-                  <span>Subject Performance & Coursework</span>
+                <h3 className="text-sm font-bold text-fg flex items-center gap-2">
+                  <BookOpen size={16} className="text-brand-600 dark:text-brand-400" />
+                  <span>Subject Performance &amp; Coursework</span>
                 </h3>
-                <p className="text-xs text-stone-500 dark:text-stone-400">
+                <p className="text-xs text-fg-muted">
                   Current semester grades and teacher evaluations for {activeChild.name}.
                 </p>
               </div>
@@ -136,6 +124,7 @@ export default function ParentDashboard() {
               </Link>
             </div>
 
+            {/* Subject rows — sunken wells */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               {[
                 { subject: "Advanced Calculus", code: "MATH-401", grade: "A", score: "94%", teacher: "Dr. Sarah Jenkins", status: "Ahead of Pace" },
@@ -145,26 +134,28 @@ export default function ParentDashboard() {
               ].map((sub, i) => (
                 <div
                   key={i}
-                  className="p-3.5 rounded-xl border border-stone-200/50 dark:border-white/5 bg-stone-50/50 dark:bg-white/[0.02] flex items-center justify-between"
+                  className="p-3.5 rounded-xl shadow-sunken flex items-center justify-between"
                 >
                   <div>
-                    <div className="font-bold text-stone-900 dark:text-white">{sub.subject}</div>
-                    <div className="text-[11px] text-stone-500 dark:text-stone-400">{sub.teacher}</div>
-                    <div className="text-[10px] text-brand-600 dark:text-brand-400 mt-1 font-medium">{sub.status}</div>
+                    <div className="font-bold text-fg">{sub.subject}</div>
+                    <div className="text-[11px] text-fg-muted">{sub.teacher}</div>
+                    <div className="text-[10px] text-brand-600 dark:text-brand-400 mt-1 font-medium">
+                      {sub.status}
+                    </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-base font-extrabold text-stone-900 dark:text-white">{sub.grade}</div>
-                    <div className="text-[11px] text-stone-400 font-mono">{sub.score}</div>
+                    <div className="text-base font-extrabold text-fg">{sub.grade}</div>
+                    <div className="text-[11px] text-fg-muted/70 font-mono">{sub.score}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Today's Schedule Card */}
-          <div className="p-5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 space-y-3">
-            <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
-              <Calendar size={16} className="text-brand-500" />
+          {/* Today's schedule */}
+          <div className="p-5 rounded-2xl glass-sm space-y-3">
+            <h3 className="text-sm font-bold text-fg flex items-center gap-2">
+              <Calendar size={16} className="text-brand-600 dark:text-brand-400" />
               <span>Today's Class Timetable</span>
             </h3>
 
@@ -177,24 +168,28 @@ export default function ParentDashboard() {
               ].map((period, i) => (
                 <div
                   key={i}
-                  className={`p-3 rounded-xl border transition flex items-center justify-between ${
+                  className={`p-3 rounded-xl transition-shadow flex items-center justify-between ${
                     period.active
-                      ? "border-brand-500/40 bg-brand-50/40 dark:bg-brand-900/10 text-stone-900 dark:text-white"
-                      : "border-stone-200/50 dark:border-white/5 bg-stone-50/30 dark:bg-white/[0.01] text-stone-700 dark:text-stone-300"
+                      /* "Happening Now" — brand-tinted signal */
+                      ? "bg-brand-500/10 ring-1 ring-brand-500/30"
+                      /* Other periods: sunken well that lifts on hover */
+                      : "shadow-sunken hover:shadow-emboss"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-[11px] text-stone-500 dark:text-stone-400 min-w-[110px]">
+                    <span className="font-mono text-[11px] text-fg-muted min-w-27.5">
                       {period.time}
                     </span>
                     <div>
-                      <div className="font-semibold text-stone-900 dark:text-white">{period.subject}</div>
-                      <div className="text-[11px] text-stone-400">{period.room} • {period.teacher}</div>
+                      <div className="font-semibold text-fg">{period.subject}</div>
+                      <div className="text-[11px] text-fg-muted/70">
+                        {period.room} • {period.teacher}
+                      </div>
                     </div>
                   </div>
 
                   {period.active && (
-                    <span className="px-2 py-0.5 rounded-full bg-brand-500 text-white text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-brand-600 text-white text-[10px] font-bold">
                       Happening Now
                     </span>
                   )}
@@ -204,63 +199,73 @@ export default function ParentDashboard() {
           </div>
         </div>
 
-        {/* Right 4 Cols: Quick Parent Actions & Alerts */}
+        {/* Right: quick actions + notice */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Quick Actions Panel */}
-          <div className="p-5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 space-y-3">
-            <h3 className="text-sm font-bold text-stone-900 dark:text-white">
-              Parent Quick Actions
-            </h3>
-            
+          <div className="p-5 rounded-2xl glass-sm space-y-3">
+            <h3 className="text-sm font-bold text-fg">Parent Quick Actions</h3>
+
             <div className="space-y-2">
+              {/* Action rows: sunken wells that tint brand on hover */}
               <Link
                 to="/students/leave-requests"
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-stone-50 dark:bg-white/5 hover:bg-brand-50 dark:hover:bg-brand-900/10 border border-stone-200/50 dark:border-white/5 text-xs text-stone-800 dark:text-stone-200 font-semibold transition group"
+                className="w-full flex items-center justify-between p-3 rounded-xl shadow-sunken hover:bg-brand-500/10 text-xs text-fg font-semibold transition-colors group"
               >
                 <div className="flex items-center gap-2.5">
                   <FileText size={16} className="text-brand-600 dark:text-brand-400" />
                   <span>Submit Absence Request</span>
                 </div>
-                <ArrowRight size={14} className="text-stone-400 group-hover:translate-x-0.5 transition" />
+                <ArrowRight
+                  size={14}
+                  className="text-fg-muted/70 group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition"
+                />
               </Link>
 
               <Link
                 to="/messages"
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-stone-50 dark:bg-white/5 hover:bg-brand-50 dark:hover:bg-brand-900/10 border border-stone-200/50 dark:border-white/5 text-xs text-stone-800 dark:text-stone-200 font-semibold transition group"
+                className="w-full flex items-center justify-between p-3 rounded-xl shadow-sunken hover:bg-brand-500/10 text-xs text-fg font-semibold transition-colors group"
               >
                 <div className="flex items-center gap-2.5">
-                  <MessageSquare size={16} className="text-blue-600 dark:text-blue-400" />
+                  <MessageSquare size={16} className="text-info" />
                   <span>Message Class Advisor</span>
                 </div>
-                <ArrowRight size={14} className="text-stone-400 group-hover:translate-x-0.5 transition" />
+                <ArrowRight
+                  size={14}
+                  className="text-fg-muted/70 group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition"
+                />
               </Link>
 
               <button
                 onClick={() => showToast("Certified Term 1 Report Card downloading...", "success")}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-stone-50 dark:bg-white/5 hover:bg-brand-50 dark:hover:bg-brand-900/10 border border-stone-200/50 dark:border-white/5 text-xs text-stone-800 dark:text-stone-200 font-semibold transition group cursor-pointer"
+                className="w-full flex items-center justify-between p-3 rounded-xl shadow-sunken hover:bg-brand-500/10 text-xs text-fg font-semibold transition-colors group cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <Award size={16} className="text-purple-600 dark:text-purple-400" />
+                  <Award size={16} className="text-brand-600 dark:text-brand-400" />
                   <span>Download Report Card</span>
                 </div>
-                <ArrowRight size={14} className="text-stone-400 group-hover:translate-x-0.5 transition" />
+                <ArrowRight
+                  size={14}
+                  className="text-fg-muted/70 group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition"
+                />
               </button>
 
               <Link
                 to="/calendar"
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-stone-50 dark:bg-white/5 hover:bg-brand-50 dark:hover:bg-brand-900/10 border border-stone-200/50 dark:border-white/5 text-xs text-stone-800 dark:text-stone-200 font-semibold transition group"
+                className="w-full flex items-center justify-between p-3 rounded-xl shadow-sunken hover:bg-brand-500/10 text-xs text-fg font-semibold transition-colors group"
               >
                 <div className="flex items-center gap-2.5">
-                  <Calendar size={16} className="text-amber-600 dark:text-amber-400" />
+                  <Calendar size={16} className="text-warning" />
                   <span>School Event Calendar</span>
                 </div>
-                <ArrowRight size={14} className="text-stone-400 group-hover:translate-x-0.5 transition" />
+                <ArrowRight
+                  size={14}
+                  className="text-fg-muted/70 group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition"
+                />
               </Link>
             </div>
           </div>
 
-          {/* School Notice Card */}
-          <div className="p-5 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 space-y-3 bg-brand-500/[0.02]">
+          {/* School notice — sunken inner card */}
+          <div className="p-5 rounded-2xl glass-sm space-y-3">
             <div className="flex items-center gap-2 text-brand-600 dark:text-brand-400">
               <Bell size={16} />
               <h3 className="text-xs font-bold uppercase tracking-wider">
@@ -268,12 +273,14 @@ export default function ParentDashboard() {
               </h3>
             </div>
 
-            <div className="p-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200/70 dark:border-white/10 space-y-1.5 text-xs">
-              <div className="font-bold text-stone-900 dark:text-white">PTA Advisory Conference</div>
-              <p className="text-stone-600 dark:text-stone-300 text-[11px] leading-relaxed">
+            <div className="p-3 rounded-xl shadow-sunken space-y-1.5 text-xs">
+              <div className="font-bold text-fg">PTA Advisory Conference</div>
+              <p className="text-fg-muted text-[11px] leading-relaxed">
                 Scheduled for Friday, March 6th from 2:00 PM to 6:00 PM in the Main Auditorium. Please confirm your attendance slot.
               </p>
-              <div className="text-[10px] text-stone-400 pt-1">Posted by Administration Office</div>
+              <div className="text-[10px] text-fg-muted/70 pt-1">
+                Posted by Administration Office
+              </div>
             </div>
           </div>
         </div>

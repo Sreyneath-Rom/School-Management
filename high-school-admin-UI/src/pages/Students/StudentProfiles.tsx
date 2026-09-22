@@ -11,7 +11,8 @@ import type { StudentProfileView } from '@/types/studentProfile'
 
 type Tab = 'overview' | 'academic' | 'attendance' | 'finance'
 
-/* Neumorphic hairline seam. */
+/* Neumorphic hairline seams. `theme-divider` in globals.css is the
+   bottom-edge variant; SEAM_T is its top-edge mirror. */
 const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
 const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
 
@@ -28,9 +29,7 @@ function displayName(s: StudentProfileView): string {
 
 function Field({ label, value }: { label: string; value: string | undefined | null }) {
   return (
-    // Row divider — shadow seam. Was `border-b border-surface` which
-    // resolved to the page color (invisible).
-    <div className="flex justify-between py-2 shadow-[0_1px_0_var(--neu-shadow-dark)] last:shadow-none">
+    <div className={`flex justify-between py-2 ${SEAM_B} last:shadow-none`}>
       <span className="text-fg-muted">{label}:</span>
       <span className="font-medium text-fg text-right max-w-xs truncate">
         {value === undefined || value === null || value === '' ? '—' : value}
@@ -176,21 +175,23 @@ export default function StudentProfiles() {
         </div>
       </div>
 
-      {/* Hero profile card — was a full glassmorphism stack
-          (`border border-surface bg-surface/70 backdrop-blur-md shadow-xs`).
-          `.glass` gives the raised neumorphic surface; the ambient glow
-          stays as a decorative accent ON that surface. */}
+      {/* Hero profile card — `.glass` supplies the raised neumorphic
+          surface. The ambient brand glow stays as a decorative accent
+          blurred onto that surface. */}
       <div className="relative overflow-hidden rounded-3xl glass p-6 sm:p-7">
         <div className="absolute top-0 right-0 h-40 w-40 bg-brand-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
           <div className="relative shrink-0">
-            <div className="flex h-22 w-22 sm:h-24 sm:w-24 items-center justify-center rounded-2xl bg-linear-to-br from-brand-600 via-brand-700 to-indigo-800 text-white text-2xl sm:text-3xl font-black shadow-md shadow-brand-600/25 ring-4 ring-brand-500/15">
+            {/* Gradient ends at brand-900, keeping the ramp self-contained
+                (was indigo-800 — outside the brand token set). */}
+            <div className="flex h-22 w-22 sm:h-24 sm:w-24 items-center justify-center rounded-2xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white text-2xl sm:text-3xl font-black ring-4 ring-brand-500/15">
               {inits}
             </div>
-            {/* Status badge — border in --glass-bg acts as a matte gap,
-                same effect as ring-surface. */}
+            {/* Status badge — `border-surface` (= --glass-bg) acts as a
+                matte gap between the badge and the raised card beneath,
+                matching the neumorphic no-border rule. */}
             <span
-              className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-success shadow-sm"
+              className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-success"
               title="Active Student"
             >
               <CheckCircle2 className="h-3.5 w-3.5 text-white" />
@@ -242,7 +243,7 @@ export default function StudentProfiles() {
         </div>
       </div>
 
-      {/* Tabs — sunken tray with active brand-filled segment */}
+      {/* Tabs — active segment is a pressed-in brand well */}
       <div className={`flex items-center gap-1.5 pb-2 overflow-x-auto text-xs font-semibold no-scrollbar ${SEAM_B}`}>
         {tabs.map(({ key, icon: Icon, label }) => (
           <button
@@ -250,7 +251,7 @@ export default function StudentProfiles() {
             onClick={() => setActiveTab(key)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-150 cursor-pointer ${
               activeTab === key
-                ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25 font-bold'
+                ? 'bg-brand-600 text-white shadow-sunken font-bold'
                 : 'text-fg-muted hover:text-fg hover:shadow-sunken'
             }`}
           >
@@ -283,7 +284,7 @@ export default function StudentProfiles() {
             <div className="space-y-3">
               <h3 className="font-bold text-sm text-fg flex items-center gap-2">
                 <Mail size={16} className="text-brand-600 dark:text-brand-400" />
-                Contact & Records
+                Contact &amp; Records
               </h3>
               <div>
                 <Field label="Email address" value={student.email} />

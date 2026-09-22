@@ -13,7 +13,8 @@ import type { LeaveRequest } from '@/types/leaveRequest'
 
 type StatusTab = 'All' | 'PENDING' | 'APPROVED' | 'REJECTED'
 
-/* Neumorphic hairline seams. */
+/* Neumorphic hairline seams — the same pair globals.css exposes as
+   `theme-divider` (bottom) plus its mirror (top). */
 const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
 const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
 
@@ -31,8 +32,8 @@ function daysBetween(start: string, end: string): number {
   return Math.max(1, Math.round((e - s) / 86400000) + 1)
 }
 
-// Inputs inherit the sunken-well look from globals.css. Only layout
-// and focus ring are set inline.
+// Inputs inherit the sunken-well look from globals.css (.neu-inset).
+// Only layout and focus ring are set inline.
 const inputBase =
   'w-full px-3 py-2 rounded-xl text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
 const labelBase = 'block font-semibold text-fg-muted mb-1'
@@ -181,14 +182,14 @@ export default function LeaveRequests() {
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
           <button
             onClick={() => setNewOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold"
           >
             <Plus size={16} />
             <span>Record Request</span>
@@ -196,7 +197,7 @@ export default function LeaveRequests() {
         </div>
       </div>
 
-      {/* Info banner — semantic info signal (5% tint was imperceptible) */}
+      {/* Info banner — semantic info signal */}
       <div className="rounded-2xl border border-info/30 bg-info/10 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
         <p className="text-fg-muted">
@@ -207,7 +208,7 @@ export default function LeaveRequests() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      {/* Filter bar — border was invisible */}
+      {/* Filter bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl glass-sm">
         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
           {(['All', 'PENDING', 'APPROVED', 'REJECTED'] as const).map((t) => (
@@ -216,7 +217,7 @@ export default function LeaveRequests() {
               onClick={() => setTab(t)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer ${
                 tab === t
-                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+                  ? 'bg-brand-600 text-white shadow-sunken'
                   : 'text-fg-muted hover:text-fg hover:shadow-sunken'
               }`}
             >
@@ -226,7 +227,7 @@ export default function LeaveRequests() {
         </div>
 
         <div className="relative w-full sm:w-64">
-          <Search size={15} className="absolute left-3 top-2.5 text-fg-muted z-10" />
+          <Search size={15} className="absolute left-3 top-2.5 text-fg-muted z-10 pointer-events-none" />
           <input
             type="text"
             placeholder="Search student ID or reason..."
@@ -277,7 +278,6 @@ export default function LeaveRequests() {
                     >
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          {/* Avatar chip — data-driven brand gradient, kept */}
                           <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black text-white bg-linear-to-tr from-brand-600 to-brand-400 shrink-0">
                             {initials(req.studentId)}
                           </div>
@@ -302,7 +302,6 @@ export default function LeaveRequests() {
                         </p>
                       </td>
                       <td className="py-3.5 px-4">
-                        {/* Status chip — semantic tints, kept */}
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold ${
                             req.status === 'APPROVED'
@@ -325,16 +324,17 @@ export default function LeaveRequests() {
                               setSelected(req)
                               setDetailOpen(true)
                             }}
-                            className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 dark:hover:text-brand-300 hover:shadow-sunken transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 hover:shadow-sunken transition cursor-pointer"
+                            aria-label="Inspect request"
                           >
                             <Eye size={15} />
                           </button>
                           {req.status === 'PENDING' && (
                             <>
-                              {/* Semantic action buttons — kept tinted */}
                               <button
                                 onClick={() => handleApprove(req.id)}
                                 disabled={busyId === req.id}
+                                aria-label="Approve request"
                                 className="p-1.5 rounded-lg bg-success/15 hover:bg-success/25 text-success transition disabled:opacity-50 cursor-pointer"
                               >
                                 <Check size={15} />
@@ -342,6 +342,7 @@ export default function LeaveRequests() {
                               <button
                                 onClick={() => handleReject(req.id)}
                                 disabled={busyId === req.id}
+                                aria-label="Reject request"
                                 className="p-1.5 rounded-lg bg-error/15 hover:bg-error/25 text-error transition disabled:opacity-50 cursor-pointer"
                               >
                                 <X size={15} />
@@ -362,7 +363,7 @@ export default function LeaveRequests() {
       {/* Detail modal */}
       {detailOpen && selected && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm animate-in fade-in duration-150"
           role="presentation"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
@@ -382,6 +383,7 @@ export default function LeaveRequests() {
                   setDetailOpen(false)
                   setSelected(null)
                 }}
+                aria-label="Close"
                 className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
@@ -418,17 +420,19 @@ export default function LeaveRequests() {
             <div className={`flex items-center justify-end gap-2 pt-3 ${SEAM_T}`}>
               {selected.status === 'PENDING' ? (
                 <>
+                  {/* Reject: tinted surface, no border — matches the
+                      semantic fill used by the row-level action button. */}
                   <button
                     onClick={() => handleReject(selected.id)}
                     disabled={busyId === selected.id}
-                    className="px-3.5 py-1.5 rounded-xl border border-error/40 text-error hover:bg-error/10 text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-xl bg-error/15 hover:bg-error/25 text-error text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
                   >
                     Reject
                   </button>
                   <button
                     onClick={() => handleApprove(selected.id)}
                     disabled={busyId === selected.id}
-                    className="px-4 py-1.5 rounded-xl bg-success hover:opacity-90 text-white text-xs font-semibold shadow-sm transition disabled:opacity-50 cursor-pointer"
+                    className="px-4 py-1.5 rounded-xl bg-success hover:opacity-90 text-white text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
                   >
                     Approve
                   </button>
@@ -452,7 +456,7 @@ export default function LeaveRequests() {
       {/* Create modal */}
       {newOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm animate-in fade-in duration-150"
           role="presentation"
           onMouseDown={(e) => { if (e.target === e.currentTarget) setNewOpen(false) }}
         >
@@ -464,6 +468,7 @@ export default function LeaveRequests() {
               </h3>
               <button
                 onClick={() => setNewOpen(false)}
+                aria-label="Close"
                 className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
@@ -528,7 +533,7 @@ export default function LeaveRequests() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm shadow-brand-600/25 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl theme-button-primary font-semibold disabled:opacity-50 cursor-pointer"
                 >
                   {submitting && <RefreshCw size={13} className="animate-spin" />}
                   Submit

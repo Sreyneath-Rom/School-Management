@@ -4,13 +4,7 @@ import PageHeading from '@/components/common/PageHeading'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
 import {
-  Filter,
-  Download,
-  Printer,
-  Search,
-  RefreshCw,
-  Info,
-  Award,
+  Filter, Download, Printer, Search, RefreshCw, Info, Award,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import { academicService } from '@/services/academicService'
@@ -27,6 +21,9 @@ interface StudentSummary {
   averageGpa: number
   letterGrade: GradeRecord['letterGrade']
 }
+
+/* Neumorphic hairline seam (bottom edge). */
+const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
 
 function letterFor(pct: number): GradeRecord['letterGrade'] {
   if (pct >= 90) return 'A'
@@ -47,8 +44,7 @@ function aggregate(rows: GradeRecord[]): StudentSummary[] {
   const out: StudentSummary[] = []
   for (const [studentId, list] of byStudent) {
     const first = list[0]
-    const avgPct =
-      list.reduce((sum, r) => sum + r.percentage, 0) / list.length
+    const avgPct = list.reduce((sum, r) => sum + r.percentage, 0) / list.length
     const avgGpa = list.reduce((sum, r) => sum + r.gpa, 0) / list.length
     out.push({
       studentId,
@@ -63,6 +59,10 @@ function aggregate(rows: GradeRecord[]): StudentSummary[] {
   }
   return out.sort((a, b) => b.averagePercentage - a.averagePercentage)
 }
+
+const filterInput =
+  'w-full text-xs px-3 py-2 rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
+const filterLabel = 'block text-[11px] font-medium text-fg-muted mb-1'
 
 export default function GradeReport() {
   const { showToast } = useToast()
@@ -85,9 +85,7 @@ export default function GradeReport() {
     setLoading(true)
     setError(null)
     try {
-      const raw = await academicService.getAllGrades(
-        classId ? { classId } : undefined
-      )
+      const raw = await academicService.getAllGrades(classId ? { classId } : undefined)
       setRecords(Array.isArray(raw) ? raw : [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)))
@@ -97,9 +95,7 @@ export default function GradeReport() {
     }
   }, [classId])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   const summaries = useMemo(() => aggregate(records), [records])
 
@@ -118,12 +114,8 @@ export default function GradeReport() {
 
   const stats = useMemo(() => {
     const total = filtered.length
-    const avgGpa = total
-      ? filtered.reduce((sum, s) => sum + s.averageGpa, 0) / total
-      : 0
-    const avgPct = total
-      ? filtered.reduce((sum, s) => sum + s.averagePercentage, 0) / total
-      : 0
+    const avgGpa = total ? filtered.reduce((sum, s) => sum + s.averageGpa, 0) / total : 0
+    const avgPct = total ? filtered.reduce((sum, s) => sum + s.averagePercentage, 0) / total : 0
     const passing = filtered.filter((s) => s.averagePercentage >= 60).length
     const honorRoll = filtered.filter((s) => s.averageGpa >= 3.8).length
     return { total, avgGpa, avgPct, passing, honorRoll }
@@ -136,26 +128,18 @@ export default function GradeReport() {
   }, [filtered])
 
   const kpiCards: StatCard[] = [
-    { id: 'avg-gpa', label: 'Average GPA', value: stats.avgGpa.toFixed(2), delta: '-', deltaDirection: 'neutral', deltaLabel: 'across students', icon: 'Award', tint: 'blue' },
-    { id: 'avg-score', label: 'Average Score', value: `${stats.avgPct.toFixed(1)}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'across subjects', icon: 'TrendingUp', tint: 'green' },
-    { id: 'pass-rate', label: 'Pass Rate', value: `${stats.total ? Math.round((stats.passing / stats.total) * 100) : 0}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: `${stats.passing} / ${stats.total}`, icon: 'CheckCircle2', tint: 'amber' },
-    { id: 'honor', label: 'Honor Roll', value: String(stats.honorRoll), delta: '-', deltaDirection: 'neutral', deltaLabel: 'GPA ≥ 3.8', icon: 'GraduationCap', tint: 'violet' },
+    { id: 'avg-gpa',   label: 'Average GPA',   value: stats.avgGpa.toFixed(2),                                               delta: '-', deltaDirection: 'neutral', deltaLabel: 'across students', icon: 'Award',         tint: 'blue' },
+    { id: 'avg-score', label: 'Average Score', value: `${stats.avgPct.toFixed(1)}%`,                                              delta: '-', deltaDirection: 'neutral', deltaLabel: 'across subjects', icon: 'TrendingUp',    tint: 'green' },
+    { id: 'pass-rate', label: 'Pass Rate',     value: `${stats.total ? Math.round((stats.passing / stats.total) * 100) : 0}%`,    delta: '-', deltaDirection: 'neutral', deltaLabel: `${stats.passing} / ${stats.total}`,   icon: 'CheckCircle2',  tint: 'amber' },
+    { id: 'honor',     label: 'Honor Roll',    value: String(stats.honorRoll),                                                   delta: '-', deltaDirection: 'neutral', deltaLabel: 'GPA ≥ 3.8',       icon: 'GraduationCap', tint: 'violet' },
   ]
 
   const handleExportCSV = () => {
-    if (filtered.length === 0) {
-      showToast('Nothing to export', 'info')
-      return
-    }
-    const headers = ['Student ID', 'Name', 'Class', 'Records', 'Average %', 'Letter', 'GPA']
+    if (filtered.length === 0) { showToast('Nothing to export', 'info'); return }
+    const headers = ['Student ID','Name','Class','Records','Average %','Letter','GPA']
     const data = filtered.map((s) => [
-      s.studentCode || s.studentId,
-      `"${s.name}"`,
-      s.className,
-      s.records,
-      s.averagePercentage,
-      s.letterGrade,
-      s.averageGpa,
+      s.studentCode || s.studentId, `"${s.name}"`, s.className,
+      s.records, s.averagePercentage, s.letterGrade, s.averageGpa,
     ])
     const csv = [headers.join(','), ...data.map((r) => r.join(','))].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -179,21 +163,21 @@ export default function GradeReport() {
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-medium hover:bg-surface-strong transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-medium hover:bg-surface-strong transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-medium"
           >
             <Printer className="w-4 h-4" />
             Print
           </button>
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium shadow-xs transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl theme-button-primary text-xs font-medium cursor-pointer"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -201,48 +185,41 @@ export default function GradeReport() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+      <div className="rounded-2xl border border-info/30 bg-info/10 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
-        <p className="text-secondary">
+        <p className="text-fg-muted">
           Report is computed from recorded grade rows. Each row is one
           student&times;subject&times;period score — averages are per student
           across all recorded subjects.
         </p>
       </div>
 
-      <div className="p-4 rounded-2xl border border-surface bg-surface shadow-sm space-y-3 print:hidden">
-        <div className="flex items-center gap-2 text-xs font-bold text-color">
-          <Filter className="w-4 h-4 text-brand-600" />
+      {/* Filter card */}
+      <div className="p-4 rounded-2xl glass-sm space-y-3 print:hidden">
+        <div className="flex items-center gap-2 text-xs font-bold text-fg">
+          <Filter className="w-4 h-4 text-brand-600 dark:text-brand-400" />
           <span>Filters</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] font-medium text-secondary mb-1">
-              Class
-            </label>
+            <label className={filterLabel}>Class</label>
             <select
               value={classId}
               onChange={(e) => setClassId(e.target.value)}
-              className="w-full text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color"
+              className={`${filterInput} cursor-pointer`}
             >
               <option value="">All classes</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-secondary mb-1">
-              Search student
-            </label>
+            <label className={filterLabel}>Search student</label>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Name or ID..."
-              className="w-full text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color"
+              className={filterInput}
             />
           </div>
         </div>
@@ -251,44 +228,31 @@ export default function GradeReport() {
       <StatsGrid cards={kpiCards} columns={4} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 p-5 rounded-2xl border border-surface bg-surface shadow-sm space-y-4">
+        {/* Grade Distribution — semantic fill colors carry meaning, kept */}
+        <div className="lg:col-span-2 p-5 rounded-2xl glass-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm text-color">
-              Grade Distribution
-            </h3>
-            <span className="text-xs text-secondary">
-              {filtered.length} students
-            </span>
+            <h3 className="font-bold text-sm text-fg">Grade Distribution</h3>
+            <span className="text-xs text-fg-muted">{filtered.length} students</span>
           </div>
           <div className="space-y-3">
             {(['A', 'B', 'C', 'D', 'F'] as const).map((letter) => {
               const count = brackets[letter]
-              const pct = filtered.length
-                ? Math.round((count / filtered.length) * 100)
-                : 0
+              const pct = filtered.length ? Math.round((count / filtered.length) * 100) : 0
               const color =
-                letter === 'A'
-                  ? 'bg-success'
-                  : letter === 'B'
-                    ? 'bg-info'
-                    : letter === 'C'
-                      ? 'bg-warning'
-                      : letter === 'D'
-                        ? 'bg-warning/60'
-                        : 'bg-error'
+                letter === 'A' ? 'bg-success'
+                : letter === 'B' ? 'bg-info'
+                : letter === 'C' ? 'bg-warning'
+                : letter === 'D' ? 'bg-warning/60'
+                : 'bg-error'
               return (
                 <div key={letter} className="space-y-1">
                   <div className="flex justify-between text-xs font-medium">
-                    <span className="text-color">Grade {letter}</span>
-                    <span className="text-secondary">
-                      {count} ({pct}%)
-                    </span>
+                    <span className="text-fg">Grade {letter}</span>
+                    <span className="text-fg-muted">{count} ({pct}%)</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-surface-strong overflow-hidden">
-                    <div
-                      className={`h-full ${color} transition-all`}
-                      style={{ width: `${pct}%` }}
-                    />
+                  {/* Track: sunken well */}
+                  <div className="w-full h-2 rounded-full shadow-sunken overflow-hidden">
+                    <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               )
@@ -296,9 +260,10 @@ export default function GradeReport() {
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl border border-surface bg-surface shadow-sm space-y-3">
-          <h3 className="font-bold text-sm text-color flex items-center gap-1.5">
-            <Award className="w-4 h-4 text-brand-600" />
+        {/* Grading Scale reference */}
+        <div className="p-5 rounded-2xl glass-sm space-y-3">
+          <h3 className="font-bold text-sm text-fg flex items-center gap-1.5">
+            <Award className="w-4 h-4 text-brand-600 dark:text-brand-400" />
             Grading Scale
           </h3>
           <div className="space-y-2 text-xs">
@@ -311,36 +276,33 @@ export default function GradeReport() {
             ].map(([letter, range, gpa]) => (
               <div
                 key={letter}
-                className="flex justify-between p-2.5 rounded-xl bg-surface-strong"
+                className="flex justify-between p-2.5 rounded-xl shadow-sunken"
               >
-                <span className="font-medium text-color">
-                  {letter} ({range})
-                </span>
-                <span className="font-bold text-color">{gpa}</span>
+                <span className="font-medium text-fg">{letter} ({range})</span>
+                <span className="font-bold text-fg">{gpa}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-surface shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-surface">
-          <h3 className="font-bold text-sm text-color">
-            Student Roster
-          </h3>
+      {/* Roster table */}
+      <div className="glass-sm rounded-2xl overflow-hidden">
+        <div className={`p-4 ${SEAM_B}`}>
+          <h3 className="font-bold text-sm text-fg">Student Roster</h3>
         </div>
         {loading ? (
-          <div className="py-16 text-center text-secondary text-sm">
+          <div className="py-16 text-center text-fg-muted text-sm">
             <RefreshCw size={16} className="inline animate-spin mr-2" />
             Loading grades...
           </div>
         ) : error ? (
           <div className="py-16 text-center">
             <p className="text-sm font-bold text-error">Couldn't load report</p>
-            <p className="mt-1 text-xs text-secondary">{error.message}</p>
+            <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-secondary text-sm">
+          <div className="py-16 text-center text-fg-muted text-sm">
             {summaries.length === 0
               ? 'No grade records available.'
               : 'No students match the search.'}
@@ -348,7 +310,7 @@ export default function GradeReport() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-surface-strong text-secondary font-semibold border-b border-surface">
+              <thead className={`text-fg-muted font-semibold ${SEAM_B}`}>
                 <tr>
                   <th className="py-3 px-4">Student</th>
                   <th className="py-3 px-3">Class</th>
@@ -358,32 +320,25 @@ export default function GradeReport() {
                   <th className="py-3 px-3 text-center">GPA</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface">
+              <tbody className="divide-y divide-(--neu-shadow-dark)">
                 {filtered.map((s) => (
-                  <tr key={s.studentId} className="hover:bg-surface/50">
-                    <td className="py-3 px-4 font-medium text-color">
+                  <tr key={s.studentId} className="hover:shadow-sunken transition-shadow">
+                    <td className="py-3 px-4 font-medium text-fg">
                       <div>{s.name}</div>
                       {s.studentCode && (
-                        <span className="text-[10px] text-secondary font-mono">
-                          {s.studentCode}
-                        </span>
+                        <span className="text-[10px] text-fg-muted font-mono">{s.studentCode}</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-secondary">{s.className}</td>
-                    <td className="py-3 px-3 text-center font-mono">
-                      {s.records}
-                    </td>
-                    <td className="py-3 px-3 text-center font-bold font-mono text-color">
-                      {s.averagePercentage}%
-                    </td>
+                    <td className="py-3 px-3 text-fg-muted">{s.className}</td>
+                    <td className="py-3 px-3 text-center font-mono">{s.records}</td>
+                    <td className="py-3 px-3 text-center font-bold font-mono text-fg">{s.averagePercentage}%</td>
                     <td className="py-3 px-3 text-center">
+                      {/* Letter chip — brand tint, matches GradeBadge elsewhere */}
                       <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-brand-500/15 text-brand-700 dark:text-brand-300">
                         {s.letterGrade}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-center font-bold font-mono text-color">
-                      {s.averageGpa.toFixed(2)}
-                    </td>
+                    <td className="py-3 px-3 text-center font-bold font-mono text-fg">{s.averageGpa.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>

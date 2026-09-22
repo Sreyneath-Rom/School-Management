@@ -1,13 +1,7 @@
 // src/pages/Teachers/TeacherAttendance.tsx
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
-import {
-  CheckCircle2,
-  Search,
-  RefreshCw,
-  Info,
-  AlertCircle,
-} from 'lucide-react'
+import { CheckCircle2, Search, RefreshCw, Info, AlertCircle } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import { apiClient, ApiError } from '@/lib/apiClient'
 import StatsGrid from '@/components/cards/StatsGrid'
@@ -102,9 +96,7 @@ export default function TeacherAttendance() {
   ]
 
   const updateStatus = (id: string, status: FacultyAttendanceRecord['status']) => {
-    setRecords((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status } : r))
-    )
+    setRecords((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)))
   }
 
   const handleSave = () => {
@@ -126,19 +118,19 @@ export default function TeacherAttendance() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 text-xs font-semibold rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="px-3 py-2 text-xs font-semibold rounded-xl text-fg focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-semibold hover:bg-surface-strong transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold"
           >
             <CheckCircle2 size={14} />
             Save
@@ -148,7 +140,7 @@ export default function TeacherAttendance() {
 
       <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
-        <p className="text-secondary">
+        <p className="text-fg-muted">
           The teacher attendance endpoint is not yet implemented on the backend.
           The roster below is empty until that endpoint lands.
         </p>
@@ -156,22 +148,22 @@ export default function TeacherAttendance() {
 
       <StatsGrid cards={statCards} columns={3} loading={loading} />
 
-      <div className="overflow-hidden rounded-2xl glass-sm border border-surface">
-        <div className="p-3.5 border-b border-surface flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-1">
-            <Search size={16} className="text-secondary" />
+      <div className="overflow-hidden rounded-2xl glass-sm">
+        <div className="p-3.5 flex items-center justify-between gap-3 theme-divider">
+          <div className="relative flex items-center gap-2 flex-1">
+            <Search size={16} className="absolute left-3 text-fg-muted pointer-events-none" />
             <input
               type="text"
               placeholder="Search faculty..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full text-xs bg-transparent text-color placeholder:text-secondary focus:outline-none"
+              className="w-full pl-9 pr-3 py-1.5 text-xs text-fg placeholder:text-fg-muted focus:outline-none"
             />
           </div>
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            className="px-3 py-1.5 text-xs rounded-xl bg-surface border border-surface text-color focus:outline-none"
+            className="px-3 py-1.5 text-xs rounded-xl text-fg focus:outline-none"
           >
             {departments.map((d) => (
               <option key={d} value={d}>
@@ -182,29 +174,27 @@ export default function TeacherAttendance() {
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-secondary text-sm">
+          <div className="py-16 text-center text-fg-muted text-sm">
             <RefreshCw size={16} className="inline animate-spin mr-2" />
             Loading...
           </div>
         ) : error ? (
           <div className="py-16 text-center">
             <p className="text-sm font-bold text-error">Couldn't load records</p>
-            <p className="mt-1 text-xs text-secondary">{error.message}</p>
+            <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center">
-            <AlertCircle className="mx-auto mb-3 h-10 w-10 text-secondary" />
-            <p className="text-sm font-semibold text-color">
-              No records for {selectedDate}
-            </p>
-            <p className="text-xs text-secondary mt-1">
+            <AlertCircle className="mx-auto mb-3 h-10 w-10 text-fg-muted" />
+            <p className="text-sm font-semibold text-fg">No records for {selectedDate}</p>
+            <p className="text-xs text-fg-muted mt-1">
               The teacher attendance module is not yet implemented.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-surface-strong text-secondary font-semibold border-b border-surface">
+              <thead className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted theme-divider">
                 <tr>
                   <th className="p-3.5">Faculty</th>
                   <th className="p-3.5">Department</th>
@@ -214,24 +204,16 @@ export default function TeacherAttendance() {
                   <th className="p-3.5">Mark</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface">
+              <tbody className="divide-y divide-(--neu-shadow-dark) text-fg">
                 {filtered.map((r) => (
-                  <tr key={r.id} className="hover:bg-surface/50">
+                  <tr key={r.id} className="transition-shadow hover:shadow-sunken">
                     <td className="p-3.5">
-                      <div className="font-bold text-color">{r.name}</div>
-                      <div className="text-[11px] font-mono text-secondary">
-                        {r.employeeId}
-                      </div>
+                      <div className="font-bold text-fg">{r.name}</div>
+                      <div className="text-[11px] font-mono text-fg-muted">{r.employeeId}</div>
                     </td>
-                    <td className="p-3.5 text-secondary font-medium">
-                      {r.department}
-                    </td>
-                    <td className="p-3.5 font-mono text-secondary">
-                      {r.checkIn || '—'}
-                    </td>
-                    <td className="p-3.5 font-mono text-secondary">
-                      {r.checkOut || '—'}
-                    </td>
+                    <td className="p-3.5 text-fg-muted font-medium">{r.department}</td>
+                    <td className="p-3.5 font-mono text-fg-muted">{r.checkIn || '—'}</td>
+                    <td className="p-3.5 font-mono text-fg-muted">{r.checkOut || '—'}</td>
                     <td className="p-3.5">
                       <span
                         className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
@@ -253,8 +235,8 @@ export default function TeacherAttendance() {
                             onClick={() => updateStatus(r.id, s)}
                             className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition ${
                               r.status === s
-                                ? 'bg-brand-600 text-white'
-                                : 'bg-surface text-secondary hover:bg-surface-strong'
+                                ? 'bg-brand-600 text-white shadow-sunken'
+                                : 'glass-sm glass-interactive text-fg-muted'
                             }`}
                           >
                             {s === 'ON_LEAVE' ? 'Leave' : s.charAt(0) + s.slice(1).toLowerCase()}

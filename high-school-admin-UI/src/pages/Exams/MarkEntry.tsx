@@ -114,7 +114,7 @@ export default function MarkEntry() {
           </button>
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold cursor-pointer"
           >
             <Save size={16} />
             Save
@@ -132,80 +132,79 @@ export default function MarkEntry() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      {/* Container — border removed */}
-     {/* Filter bar — border was invisible */}
+      {/* Filter bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm">
-          <div className="relative flex-1 w-full">
-            <Search
-              size={16}
-              className="absolute left-3.5 top-3 text-fg-muted z-10"
-            />
-            {/* Inputs inherit the sunken-well look from globals.css */}
-            <input
-              type="text"
-              placeholder="Search subject, invigilator, or room..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
+        <div className="relative flex-1 w-full">
+          <Search
+            size={16}
+            className="absolute left-3.5 top-3 text-fg-muted z-10 pointer-events-none"
+          />
+          {/* Inputs inherit the sunken-well look from globals.css (.neu-inset) */}
+          <input
+            type="text"
+            placeholder="Search subject, invigilator, or room..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
         </div>
-
-        {loading ? (
-          <div className="py-16 text-center text-fg-muted text-sm">
-            <RefreshCw size={16} className="inline animate-spin mr-2" />
-            Loading marks...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-16 text-center rounded-2xl glass-sm">
-            <Award className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
-            <p className="text-sm font-semibold text-fg">
-              {records.length === 0 ? 'No marks recorded yet' : 'No matches'}
-            </p>
-            <p className="text-xs text-fg-muted mt-1">
-              {records.length === 0
-                ? 'Marks will appear here once the backend module is implemented.'
-                : 'Try a different search.'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="text-fg-muted font-semibold shadow-[0_1px_0_var(--neu-shadow-dark)]">
-                <tr>
-                  <th className="p-3.5">Roll</th>
-                  <th className="p-3.5">Student</th>
-                  <th className="p-3.5">Subject</th>
-                  <th className="p-3.5 text-center">Marks</th>
-                  <th className="p-3.5 text-center">Grade</th>
-                  <th className="p-3.5">Remarks</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-(--neu-shadow-dark)">
-                {filtered.map((m) => (
-                  <tr
-                    key={m.id}
-                    className="hover:shadow-sunken transition-shadow"
-                  >
-                    <td className="p-3.5 font-mono text-fg-muted">{m.rollNumber}</td>
-                    <td className="p-3.5 font-semibold text-fg">{m.studentName}</td>
-                    <td className="p-3.5 text-fg">{m.subject}</td>
-                    <td className="p-3.5 text-center font-bold text-fg">
-                      {m.marksObtained} / {m.maxMarks}
-                    </td>
-                    <td className="p-3.5 text-center">
-                      {/* Grade badge — brand tint, kept (it's a data chip) */}
-                      <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-brand-500/15 text-brand-700 dark:text-brand-300">
-                        {m.grade}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-fg-muted italic">{m.remarks || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
+
+      {loading ? (
+        <div className="py-16 text-center text-fg-muted text-sm">
+          <RefreshCw size={16} className="inline animate-spin mr-2" />
+          Loading marks...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-16 text-center rounded-2xl glass-sm">
+          <Award className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+          <p className="text-sm font-semibold text-fg">
+            {records.length === 0 ? 'No marks recorded yet' : 'No matches'}
+          </p>
+          <p className="text-xs text-fg-muted mt-1">
+            {records.length === 0
+              ? 'Marks will appear here once the backend module is implemented.'
+              : 'Try a different search.'}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="text-fg-muted font-semibold shadow-[0_1px_0_var(--neu-shadow-dark)]">
+              <tr>
+                <th className="p-3.5">Roll</th>
+                <th className="p-3.5">Student</th>
+                <th className="p-3.5">Subject</th>
+                <th className="p-3.5 text-center">Marks</th>
+                <th className="p-3.5 text-center">Grade</th>
+                <th className="p-3.5">Remarks</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-(--neu-shadow-dark)">
+              {filtered.map((m) => (
+                <tr
+                  key={m.id}
+                  className="hover:shadow-sunken transition-shadow"
+                >
+                  <td className="p-3.5 font-mono text-fg-muted">{m.rollNumber}</td>
+                  <td className="p-3.5 font-semibold text-fg">{m.studentName}</td>
+                  <td className="p-3.5 text-fg">{m.subject}</td>
+                  <td className="p-3.5 text-center font-bold text-fg">
+                    {m.marksObtained} / {m.maxMarks}
+                  </td>
+                  <td className="p-3.5 text-center">
+                    {/* Grade badge — brand tint, matches letter-grade chips elsewhere */}
+                    <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-brand-500/15 text-brand-700 dark:text-brand-300">
+                      {m.grade}
+                    </span>
+                  </td>
+                  <td className="p-3.5 text-fg-muted italic">{m.remarks || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   )
 }

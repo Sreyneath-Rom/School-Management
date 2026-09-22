@@ -67,30 +67,29 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
   const activeRole = (role ?? 'admin').toLowerCase()
 
   // Badges sit on a --glass-bg surface, so a `bg-surface` fill + a
-  // sunken shadow reads as a carved-in chip. `border-surface` removed:
-  // same color as the surface behind it → invisible.
+  // sunken shadow reads as a carved-in chip.
   const roleBadgeMap: Record<
     string,
     { label: string; badge: string; dot: string }
   > = {
     admin: {
       label: 'Administrator',
-      badge: 'bg-surface text-brand-600 dark:text-brand-300 shadow-[var(--shadow-emboss-sunken)]',
+      badge: 'bg-surface text-brand-600 dark:text-brand-300 shadow-sunken',
       dot: 'bg-brand-500',
     },
     teacher: {
       label: 'Faculty Member',
-      badge: 'bg-surface text-success shadow-[var(--shadow-emboss-sunken)]',
+      badge: 'bg-surface text-success shadow-sunken',
       dot: 'bg-success',
     },
     student: {
       label: 'Enrolled Scholar',
-      badge: 'bg-surface text-info shadow-[var(--shadow-emboss-sunken)]',
+      badge: 'bg-surface text-info shadow-sunken',
       dot: 'bg-info',
     },
     parent: {
       label: 'Parent / Guardian',
-      badge: 'bg-surface text-warning shadow-[var(--shadow-emboss-sunken)]',
+      badge: 'bg-surface text-warning shadow-sunken',
       dot: 'bg-warning',
     },
   }
@@ -202,8 +201,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
               {unreadCount > 0 && (
                 // The ring is the same color as the button surface, so it
                 // reads as a "cut-out" that separates badge from button —
-                // this is intentional. ring-surface-strong = --glass-strong-bg
-                // = --glass-bg, i.e. the button color.
+                // this is intentional.
                 <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-black text-white ring-2 ring-surface-strong">
                   {unreadCount}
                 </span>
@@ -212,9 +210,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
 
             {notifOpen && (
               <div className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-84 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl animate-in fade-in zoom-in-95 duration-150">
-                {/* Header row — shadow seam replaces the old invisible
-                    `border-b border-surface`. bg-surface-strong dropped:
-                    it's the same color as the dropdown itself. */}
+                {/* Header row — shadow seam */}
                 <div className={`flex items-center justify-between px-3.5 py-2.5 ${SEAM_B}`}>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-color">

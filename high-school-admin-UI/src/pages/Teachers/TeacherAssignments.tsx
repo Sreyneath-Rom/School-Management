@@ -7,8 +7,8 @@ import type { StatCard } from '@/types'
 import { teacherService, type TeacherRecord } from '@/services/teacherService'
 import { classService, type ClassRecord } from '@/services/classService'
 
-// STRIPPED: Removed reads of TeacherProfileView.department (doesn't exist).
 // Rows are derived from homeroom class relationships only.
+// Subject-level allocations require a dedicated endpoint.
 
 interface AssignmentRow {
   id: string
@@ -142,7 +142,7 @@ export default function TeacherAssignments() {
         <button
           onClick={load}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-semibold hover:bg-surface-strong transition disabled:opacity-50 self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed self-start sm:self-auto"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Refresh
@@ -151,7 +151,7 @@ export default function TeacherAssignments() {
 
       <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
-        <p className="text-secondary">
+        <p className="text-fg-muted">
           Assignments are derived from each class's homeroom teacher. Subject-level
           allocations require a dedicated endpoint.
         </p>
@@ -159,32 +159,32 @@ export default function TeacherAssignments() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-surface">
+      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3.5 top-3 text-secondary" />
+          <Search size={16} className="absolute left-3.5 top-3 text-fg-muted" />
           <input
             type="text"
             placeholder="Search by teacher, class, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-surface border border-surface rounded-xl text-xs text-color placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
       </div>
 
-      <div className="rounded-2xl glass-sm border border-surface overflow-hidden shadow-sm">
+      <div className="rounded-2xl glass-sm overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-secondary text-sm">
+          <div className="py-16 text-center text-fg-muted text-sm">
             <RefreshCw size={16} className="inline animate-spin mr-2" />
             Loading assignments...
           </div>
         ) : error ? (
           <div className="py-16 text-center">
             <p className="text-sm font-bold text-error">Couldn't load assignments</p>
-            <p className="mt-1 text-xs text-secondary">{error.message}</p>
+            <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-secondary text-sm">
+          <div className="py-16 text-center text-fg-muted text-sm">
             {rows.length === 0
               ? 'No homeroom teachers assigned yet.'
               : 'No assignments match the filters.'}
@@ -192,30 +192,30 @@ export default function TeacherAssignments() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-surface bg-surface/50 text-[11px] font-semibold uppercase tracking-wider text-secondary">
+              <thead className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted theme-divider">
+                <tr>
                   <th className="py-3.5 px-4">Faculty</th>
                   <th className="py-3.5 px-4">Class</th>
                   <th className="py-3.5 px-4 text-center">Students</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface text-xs text-color">
+              <tbody className="divide-y divide-(--neu-shadow-dark) text-xs text-fg">
                 {filtered.map((row) => (
-                  <tr key={row.id} className="hover:bg-surface/40 transition">
+                  <tr key={row.id} className="transition-shadow hover:shadow-sunken">
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[11px] font-black text-white bg-linear-to-tr from-brand-600 to-brand-400 shrink-0">
                           {initials(row.teacherName)}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-color truncate">{row.teacherName}</div>
-                          <div className="text-[11px] text-secondary truncate">{row.teacherEmail}</div>
+                          <div className="font-semibold text-fg truncate">{row.teacherName}</div>
+                          <div className="text-[11px] text-fg-muted truncate">{row.teacherEmail}</div>
                         </div>
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-medium text-color">{row.className}</div>
-                      <div className="text-[11px] text-secondary">{row.gradeLevel}</div>
+                      <div className="font-medium text-fg">{row.className}</div>
+                      <div className="text-[11px] text-fg-muted">{row.gradeLevel}</div>
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono font-semibold">
                       {row.studentCount}

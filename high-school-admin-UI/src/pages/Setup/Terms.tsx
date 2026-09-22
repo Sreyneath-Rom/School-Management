@@ -2,16 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  Clock,
-  Plus,
-  CheckCircle2,
-  Calendar,
-  Edit3,
-  Trash2,
-  AlertTriangle,
-  Eye,
-  X,
-  RefreshCw,
+  Clock, Plus, CheckCircle2, Calendar, Edit3, Trash2, AlertTriangle,
+  Eye, X, RefreshCw,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
@@ -26,6 +18,15 @@ import {
   type TermPayload,
 } from '@/services/termService'
 
+/* Neumorphic hairline seams. */
+const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
+const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
+const SEAM_Y = 'shadow-[0_-1px_0_var(--neu-shadow-dark),0_1px_0_var(--neu-shadow-dark)]'
+
+const inputBase =
+  'w-full px-3.5 py-2 rounded-xl text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
+const labelBase = 'block text-xs font-semibold text-fg-muted mb-1'
+
 interface FormState {
   name: string
   startDate: string
@@ -37,13 +38,8 @@ interface FormState {
 }
 
 const EMPTY_FORM: FormState = {
-  name: '',
-  startDate: '',
-  endDate: '',
-  gradingDeadline: '',
-  weightPercentage: 35,
-  status: 'Upcoming',
-  description: '',
+  name: '', startDate: '', endDate: '', gradingDeadline: '',
+  weightPercentage: 35, status: 'Upcoming', description: '',
 }
 
 export default function Terms() {
@@ -60,7 +56,6 @@ export default function Terms() {
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM })
   const [saving, setSaving] = useState(false)
 
-  // Load years once, pick current
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -77,17 +72,11 @@ export default function Terms() {
         }
       }
     })()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [showToast])
 
   const loadTerms = useCallback(async () => {
-    if (!selectedYearId) {
-      setTerms([])
-      setLoading(false)
-      return
-    }
+    if (!selectedYearId) { setTerms([]); setLoading(false); return }
     setLoading(true)
     try {
       const records = await termService.list({ academicYearId: selectedYearId })
@@ -100,9 +89,7 @@ export default function Terms() {
     }
   }, [selectedYearId, showToast])
 
-  useEffect(() => {
-    loadTerms()
-  }, [loadTerms])
+  useEffect(() => { loadTerms() }, [loadTerms])
 
   const selectedYear = academicYears.find((y) => y.id === selectedYearId)
   const selectedYearName = selectedYear?.name ?? ''
@@ -114,24 +101,17 @@ export default function Terms() {
   }
 
   const kpiCards: StatCard[] = [
-    { id: 'terms', label: 'Configured Terms', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: selectedYearName || 'selected year', icon: 'Layers', tint: 'blue' },
-    { id: 'active', label: 'Active Term', value: stats.active, delta: '-', deltaDirection: 'neutral', deltaLabel: 'current cycle', icon: 'CheckCircle2', tint: 'green' },
-    { id: 'weight', label: 'Aggregate Weight', value: `${stats.totalWeight}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'toward final', icon: 'Award', tint: 'amber' },
-    { id: 'years', label: 'Academic Years', value: String(academicYears.length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'configured', icon: 'Calendar', tint: 'violet' },
+    { id: 'terms',  label: 'Configured Terms', value: String(stats.total),         delta: '-', deltaDirection: 'neutral', deltaLabel: selectedYearName || 'selected year', icon: 'Layers',       tint: 'blue' },
+    { id: 'active', label: 'Active Term',      value: stats.active,                delta: '-', deltaDirection: 'neutral', deltaLabel: 'current cycle',                   icon: 'CheckCircle2', tint: 'green' },
+    { id: 'weight', label: 'Aggregate Weight', value: `${stats.totalWeight}%`,     delta: '-', deltaDirection: 'neutral', deltaLabel: 'toward final',                    icon: 'Award',        tint: 'amber' },
+    { id: 'years',  label: 'Academic Years',   value: String(academicYears.length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'configured',                      icon: 'Calendar',     tint: 'violet' },
   ]
 
-  const resetForm = () => {
-    setForm({ ...EMPTY_FORM })
-    setEditingTerm(null)
-  }
+  const resetForm = () => { setForm({ ...EMPTY_FORM }); setEditingTerm(null) }
 
   const handleOpenCreate = () => {
-    if (!selectedYearId) {
-      showToast('Select an academic year first', 'error')
-      return
-    }
-    resetForm()
-    setModalOpen(true)
+    if (!selectedYearId) { showToast('Select an academic year first', 'error'); return }
+    resetForm(); setModalOpen(true)
   }
 
   const handleOpenEdit = (t: TermRecord) => {
@@ -161,14 +141,11 @@ export default function Terms() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim() || !form.startDate || !form.endDate) {
-      showToast('Name, start date, and end date are required', 'error')
-      return
+      showToast('Name, start date, and end date are required', 'error'); return
     }
     if (new Date(form.startDate) >= new Date(form.endDate)) {
-      showToast('Start date must precede end date', 'error')
-      return
+      showToast('Start date must precede end date', 'error'); return
     }
-
     setSaving(true)
     try {
       const payload: TermPayload = {
@@ -202,8 +179,7 @@ export default function Terms() {
     if (!deleteCandidate) return
     if (deleteCandidate.status === 'Active') {
       showToast('Cannot delete the active term', 'error')
-      setDeleteCandidate(null)
-      return
+      setDeleteCandidate(null); return
     }
     try {
       await termService.delete(deleteCandidate.id)
@@ -228,15 +204,12 @@ export default function Terms() {
           <select
             value={selectedYearId}
             onChange={(e) => setSelectedYearId(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-surface border border-surface text-xs font-semibold text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
           >
-            {academicYears.length === 0 && (
-              <option value="">No academic years</option>
-            )}
+            {academicYears.length === 0 && <option value="">No academic years</option>}
             {academicYears.map((y) => (
               <option key={y.id} value={y.id}>
-                {y.name}
-                {y.isCurrent ? ' (Current)' : ''}
+                {y.name}{y.isCurrent ? ' (Current)' : ''}
               </option>
             ))}
           </select>
@@ -244,7 +217,7 @@ export default function Terms() {
           <button
             onClick={handleOpenCreate}
             disabled={!selectedYearId}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold disabled:opacity-50 cursor-pointer"
           >
             <Plus size={16} />
             <span>Add Term</span>
@@ -255,27 +228,23 @@ export default function Terms() {
       <StatsGrid cards={kpiCards} columns={4} />
 
       {loading ? (
-        <div className="py-16 text-center text-secondary text-sm rounded-2xl glass-sm border border-surface">
+        <div className="py-16 text-center text-fg-muted text-sm rounded-2xl glass-sm">
           <RefreshCw size={16} className="inline animate-spin mr-2" />
           Loading terms...
         </div>
       ) : !selectedYearId ? (
-        <div className="py-16 text-center rounded-2xl glass-sm border border-surface">
-          <Calendar className="mx-auto mb-3 h-10 w-10 text-secondary" />
-          <p className="text-sm font-semibold text-color">
-            No academic year selected
-          </p>
-          <p className="text-xs text-secondary mt-1">
+        <div className="py-16 text-center rounded-2xl glass-sm">
+          <Calendar className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+          <p className="text-sm font-semibold text-fg">No academic year selected</p>
+          <p className="text-xs text-fg-muted mt-1">
             Create an academic year first, then add terms to it.
           </p>
         </div>
       ) : terms.length === 0 ? (
-        <div className="py-16 text-center rounded-2xl glass-sm border border-surface">
-          <Clock className="mx-auto mb-3 h-10 w-10 text-secondary" />
-          <p className="text-sm font-semibold text-color">
-            No terms in {selectedYearName}
-          </p>
-          <p className="text-xs text-secondary mt-1">
+        <div className="py-16 text-center rounded-2xl glass-sm">
+          <Clock className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+          <p className="text-sm font-semibold text-fg">No terms in {selectedYearName}</p>
+          <p className="text-xs text-fg-muted mt-1">
             Click "Add Term" to define the first evaluation period.
           </p>
         </div>
@@ -284,19 +253,15 @@ export default function Terms() {
           {terms.map((term) => (
             <div
               key={term.id}
-              className={`rounded-2xl p-5 glass-sm border transition flex flex-col justify-between hover:shadow-md ${
-                term.status === 'Active'
-                  ? 'border-brand-500/50 ring-2 ring-brand-500/10'
-                  : 'border-surface'
+              className={`rounded-2xl p-5 glass-sm transition-shadow duration-300 flex flex-col justify-between hover:shadow-(--glass-strong-shadow) ${
+                term.status === 'Active' ? 'ring-1 ring-brand-500/40 bg-brand-500/5' : ''
               }`}
             >
               <div>
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
-                    <h3 className="font-bold text-base text-color">
-                      {term.name}
-                    </h3>
-                    <div className="text-xs text-secondary flex items-center gap-1.5 mt-0.5">
+                    <h3 className="font-bold text-base text-fg">{term.name}</h3>
+                    <div className="text-xs text-fg-muted flex items-center gap-1.5 mt-0.5">
                       <Calendar size={12} />
                       <span>
                         {term.startDate.slice(0, 10)} → {term.endDate.slice(0, 10)}
@@ -309,7 +274,7 @@ export default function Terms() {
                       term.status === 'Active'
                         ? 'bg-success/15 text-success'
                         : term.status === 'Completed'
-                          ? 'bg-surface-strong text-secondary'
+                          ? 'text-fg-muted shadow-sunken'
                           : 'bg-info/15 text-info'
                     }`}
                   >
@@ -317,15 +282,14 @@ export default function Terms() {
                   </span>
                 </div>
 
-                <div className="space-y-2 py-3 border-y border-surface my-3 text-xs">
+                {/* Info strip — shadow seams around sunken wells */}
+                <div className={`space-y-2 py-3 my-3 ${SEAM_Y} text-xs`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-secondary">Grading deadline:</span>
-                    <span className="font-semibold text-error">
-                      {term.gradingDeadline.slice(0, 10)}
-                    </span>
+                    <span className="text-fg-muted">Grading deadline:</span>
+                    <span className="font-semibold text-error">{term.gradingDeadline.slice(0, 10)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-secondary">GPA weight:</span>
+                    <span className="text-fg-muted">GPA weight:</span>
                     <span className="font-bold text-brand-600 dark:text-brand-400">
                       {term.weightPercentage}%
                     </span>
@@ -337,7 +301,7 @@ export default function Terms() {
                 {term.status !== 'Active' ? (
                   <button
                     onClick={() => handleSetActive(term.id)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface hover:bg-brand-500 hover:text-white text-color transition"
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold text-fg shadow-sunken hover:bg-brand-500/10 hover:text-brand-600 dark:hover:text-brand-300 transition cursor-pointer"
                   >
                     Set as Active
                   </button>
@@ -350,23 +314,26 @@ export default function Terms() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setDetailTerm(term)}
-                    className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                    className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-sunken transition cursor-pointer"
                     title="Details"
+                    aria-label={`View details for ${term.name}`}
                   >
                     <Eye size={15} />
                   </button>
                   <button
                     onClick={() => handleOpenEdit(term)}
-                    className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                    className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-sunken transition cursor-pointer"
                     title="Edit"
+                    aria-label={`Edit ${term.name}`}
                   >
                     <Edit3 size={15} />
                   </button>
                   {term.status !== 'Active' && (
                     <button
                       onClick={() => setDeleteCandidate(term)}
-                      className="p-1.5 rounded-lg text-secondary hover:text-error hover:bg-error/10 transition"
+                      className="p-1.5 rounded-lg text-fg-muted hover:text-error hover:shadow-sunken transition cursor-pointer"
                       title="Delete"
+                      aria-label={`Delete ${term.name}`}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -380,80 +347,73 @@ export default function Terms() {
 
       {/* Detail modal */}
       {detailTerm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-5">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailTerm(null) }}
+        >
+          <div className="w-full max-w-lg rounded-2xl glass-strong p-6 space-y-5 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                <div className="p-3 rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
                   <Clock size={26} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-color">
-                    {detailTerm.name}
-                  </h3>
-                  <p className="text-xs text-secondary">
+                  <h3 className="text-lg font-bold text-fg">{detailTerm.name}</h3>
+                  <p className="text-xs text-fg-muted">
                     {detailTerm.academicYear?.name ?? selectedYearName}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setDetailTerm(null)}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                aria-label="Close"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
-                <span className="text-secondary">Schedule</span>
-                <span className="font-bold text-color block">
+              <div className="p-3 rounded-xl shadow-sunken space-y-1">
+                <span className="text-fg-muted">Schedule</span>
+                <span className="font-bold text-fg block">
                   {detailTerm.startDate.slice(0, 10)} – {detailTerm.endDate.slice(0, 10)}
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
-                <span className="text-secondary">Grading deadline</span>
-                <span className="font-bold text-error block">
-                  {detailTerm.gradingDeadline.slice(0, 10)}
-                </span>
+              <div className="p-3 rounded-xl shadow-sunken space-y-1">
+                <span className="text-fg-muted">Grading deadline</span>
+                <span className="font-bold text-error block">{detailTerm.gradingDeadline.slice(0, 10)}</span>
               </div>
-              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
-                <span className="text-secondary">GPA weight</span>
+              <div className="p-3 rounded-xl shadow-sunken space-y-1">
+                <span className="text-fg-muted">GPA weight</span>
                 <span className="font-bold text-brand-600 dark:text-brand-400 block">
                   {detailTerm.weightPercentage}%
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
-                <span className="text-secondary">Status</span>
-                <span className="font-bold text-color block">
-                  {detailTerm.status}
-                </span>
+              <div className="p-3 rounded-xl shadow-sunken space-y-1">
+                <span className="text-fg-muted">Status</span>
+                <span className="font-bold text-fg block">{detailTerm.status}</span>
               </div>
             </div>
 
             {detailTerm.description && (
-              <div className="p-3 rounded-xl bg-surface border border-surface text-xs">
-                <span className="font-semibold text-color block mb-1">
-                  Description
-                </span>
-                <p className="text-secondary">{detailTerm.description}</p>
+              <div className="p-3 rounded-xl shadow-sunken text-xs">
+                <span className="font-semibold text-fg block mb-1">Description</span>
+                <p className="text-fg-muted">{detailTerm.description}</p>
               </div>
             )}
 
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-surface">
+            <div className={`pt-2 flex items-center justify-end gap-2 ${SEAM_T}`}>
               <button
-                onClick={() => {
-                  const t = detailTerm
-                  setDetailTerm(null)
-                  handleOpenEdit(t)
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
+                onClick={() => { const t = detailTerm; setDetailTerm(null); handleOpenEdit(t) }}
+                className="glass-sm glass-interactive px-4 py-2 rounded-xl text-xs font-semibold text-fg"
               >
                 Edit
               </button>
               <button
                 onClick={() => setDetailTerm(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold theme-button-primary cursor-pointer"
               >
                 Close
               </button>
@@ -464,15 +424,20 @@ export default function Terms() {
 
       {/* Create / edit modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-surface">
-              <h3 className="text-base font-bold text-color">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setModalOpen(false) }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <div className={`flex items-center justify-between pb-3 ${SEAM_B}`}>
+              <h3 className="text-base font-bold text-fg">
                 {editingTerm ? 'Edit Term' : 'New Term'}
               </h3>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                aria-label="Close"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -480,96 +445,50 @@ export default function Terms() {
 
             <form onSubmit={handleSave} className="space-y-4 mt-3">
               <div>
-                <label className="block text-xs font-semibold text-secondary mb-1">
-                  Term name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Term 4 (Summer Intensive)"
+                <label className={labelBase}>Term name *</label>
+                <input type="text" required placeholder="e.g. Term 4 (Summer Intensive)"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  required
-                />
+                  className={inputBase} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    Start *
-                  </label>
-                  <input
-                    type="date"
-                    value={form.startDate}
-                    onChange={(e) =>
-                      setForm({ ...form, startDate: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    required
-                  />
+                  <label className={labelBase}>Start *</label>
+                  <input type="date" required value={form.startDate}
+                    onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                    className={inputBase} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    End *
-                  </label>
-                  <input
-                    type="date"
-                    value={form.endDate}
+                  <label className={labelBase}>End *</label>
+                  <input type="date" required value={form.endDate}
                     onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    required
-                  />
+                    className={inputBase} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    Grading deadline
-                  </label>
-                  <input
-                    type="date"
-                    value={form.gradingDeadline}
-                    onChange={(e) =>
-                      setForm({ ...form, gradingDeadline: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  />
+                  <label className={labelBase}>Grading deadline</label>
+                  <input type="date" value={form.gradingDeadline}
+                    onChange={(e) => setForm({ ...form, gradingDeadline: e.target.value })}
+                    className={inputBase} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    GPA weight (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
+                  <label className={labelBase}>GPA weight (%)</label>
+                  <input type="number" required min={1} max={100}
                     value={form.weightPercentage}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        weightPercentage: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    required
-                  />
+                    onChange={(e) => setForm({ ...form, weightPercentage: Number(e.target.value) })}
+                    className={inputBase} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-secondary mb-1">
-                  Status
-                </label>
+                <label className={labelBase}>Status</label>
                 <select
                   value={form.status}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      status: e.target.value as FormState['status'],
-                    })
-                  }
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none"
+                  onChange={(e) => setForm({ ...form, status: e.target.value as FormState['status'] })}
+                  className={`${inputBase} cursor-pointer`}
                 >
                   <option value="Upcoming">Upcoming</option>
                   <option value="Active">Active</option>
@@ -578,31 +497,24 @@ export default function Terms() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-secondary mb-1">
-                  Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
-                />
+                <label className={labelBase}>Description</label>
+                <textarea rows={3} value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className={`${inputBase} resize-none`} />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-surface">
+              <div className={`flex items-center justify-end gap-3 pt-3 ${SEAM_T}`}>
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-secondary hover:bg-surface transition"
+                  className="glass-sm glass-interactive px-4 py-2 rounded-xl text-xs font-semibold text-fg"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-md transition disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold theme-button-primary disabled:opacity-50 cursor-pointer"
                 >
                   {editingTerm ? 'Save' : 'Create'}
                 </button>
@@ -614,29 +526,33 @@ export default function Terms() {
 
       {/* Delete confirmation */}
       {deleteCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDeleteCandidate(null) }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
             <div className="flex items-center gap-3 text-error">
-              <div className="p-3 rounded-xl bg-error/10 border border-error/30">
+              <div className="p-3 rounded-xl bg-error/15 shadow-sunken">
                 <AlertTriangle size={24} />
               </div>
-              <h3 className="text-base font-bold text-color">Delete Term</h3>
+              <h3 className="text-base font-bold text-fg">Delete Term</h3>
             </div>
 
-            <p className="text-xs text-secondary">
-              Delete <span className="font-bold text-color">"{deleteCandidate.name}"</span>?
+            <p className="text-xs text-fg-muted">
+              Delete <span className="font-bold text-fg">"{deleteCandidate.name}"</span>?
             </p>
 
             <div className="pt-2 flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteCandidate(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
+                className="glass-sm glass-interactive px-4 py-2 rounded-xl text-xs font-semibold text-fg"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-error hover:opacity-90 text-white transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-error hover:opacity-90 text-white transition cursor-pointer"
               >
                 Confirm Delete
               </button>

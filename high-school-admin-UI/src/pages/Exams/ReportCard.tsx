@@ -54,7 +54,7 @@ export default function ReportCard() {
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             Refresh
@@ -62,7 +62,7 @@ export default function ReportCard() {
           <button
             onClick={() => window.print()}
             disabled={!selected}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Printer size={15} />
             Print
@@ -70,7 +70,7 @@ export default function ReportCard() {
           <button
             onClick={handleDownload}
             disabled={!selected}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition disabled:opacity-40 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             <Download size={16} />
             Download
@@ -104,7 +104,7 @@ export default function ReportCard() {
         </div>
       ) : (
         <>
-          {/* Selector — border removed */}
+          {/* Selector */}
           <div className="flex flex-col sm:flex-row items-center gap-3 p-3.5 rounded-2xl glass-sm">
             <div className="w-full sm:w-80">
               <label className="block text-[11px] font-semibold text-fg-muted mb-1">
@@ -125,19 +125,17 @@ export default function ReportCard() {
           </div>
 
           {selected && (
-            // The transcript itself: this is a "paper" metaphor — a
-            // single elevated sheet floating above the app chrome.
-            // `.glass-strong` gives it the widest neumorphic shadow,
-            // which is exactly the right treatment. Previously
-            // `bg-surface border border-surface shadow-xl` — the surface
-            // was invisible and the shadow was off-theme.
+            // The transcript itself — a single elevated "sheet" floating
+            // above the app chrome. `.glass-strong` supplies the widest
+            // neumorphic shadow, which is exactly the right metaphor.
             <div className="rounded-3xl p-8 glass-strong max-w-4xl mx-auto space-y-6">
-              {/* Header — was `border-b-2 border-surface` (invisible); now
-                  a doubled shadow seam reads as a document separator. */}
+              {/* Header — doubled bottom shadow reads as a document separator */}
               <div className="flex flex-col sm:flex-row items-center justify-between pb-6 shadow-[0_2px_0_var(--neu-shadow-dark)] gap-4">
                 <div className="flex items-center gap-3.5">
-                  {/* School seal — brand-filled circle, kept as an accent */}
-                  <div className="p-3 rounded-2xl bg-brand-600 text-white shadow-md shadow-brand-600/30">
+                  {/* School seal — brand-filled circle. No local elevation:
+                      the glass-strong sheet already provides the raised
+                      surface, and a second shadow would double-stack. */}
+                  <div className="p-3 rounded-2xl bg-brand-600 text-white">
                     <School size={28} />
                   </div>
                   <div>
@@ -150,6 +148,7 @@ export default function ReportCard() {
                   </div>
                 </div>
                 <div className="text-right">
+                  {/* Status chip — brand tint with border, matches other chips */}
                   <span className="px-3 py-1 rounded-full text-xs font-black bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/30 uppercase tracking-wider">
                     Report Card
                   </span>
@@ -179,7 +178,7 @@ export default function ReportCard() {
                 </div>
               </div>
 
-              {/* Subject table — border removed, dividers tokenized */}
+              {/* Subject table */}
               <div className="overflow-hidden rounded-2xl">
                 <table className="w-full text-left text-xs">
                   <thead className="text-fg-muted font-bold shadow-[0_1px_0_var(--neu-shadow-dark)]">

@@ -2,15 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  DoorOpen,
-  Plus,
-  Search,
-  Users,
-  Monitor,
-  FlaskConical,
-  Edit3,
-  Trash2,
-  RefreshCw,
+  DoorOpen, Plus, Search, Users, Monitor, FlaskConical, Edit3, Trash2, RefreshCw,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
@@ -20,6 +12,15 @@ import {
   type RoomRecord,
   type RoomPayload,
 } from '@/services/roomService'
+
+/* Neumorphic hairline seams. */
+const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
+const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
+const SEAM_Y = 'shadow-[0_-1px_0_var(--neu-shadow-dark),0_1px_0_var(--neu-shadow-dark)]'
+
+const inputBase =
+  'w-full px-3.5 py-2 rounded-xl text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
+const labelBase = 'block text-xs font-semibold text-fg-muted mb-1'
 
 interface RoomItem {
   id: string
@@ -89,15 +90,13 @@ export default function Rooms() {
     }
   }, [])
 
-  useEffect(() => {
-    void loadRooms()
-  }, [loadRooms])
+  useEffect(() => { void loadRooms() }, [loadRooms])
 
   const roomKpiCards: StatCard[] = [
-    { id: 'total-rooms', label: 'Total Rooms & Facilities', value: String(rooms.length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'campus spaces', icon: 'School', tint: 'blue' },
-    { id: 'available-rooms', label: 'Available Spaces', value: String(rooms.filter((r) => r.status === 'Available').length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'ready to assign', icon: 'DoorOpen', tint: 'green' },
-    { id: 'occupied-rooms', label: 'Occupied Spaces', value: String(rooms.filter((r) => r.status === 'Occupied').length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'in active use', icon: 'Users', tint: 'amber' },
-    { id: 'total-capacity', label: 'Total Seating Capacity', value: rooms.reduce((sum, r) => sum + r.capacity, 0).toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'available seats', icon: 'BookOpen', tint: 'violet' },
+    { id: 'total-rooms',     label: 'Total Rooms & Facilities', value: String(rooms.length),                                           delta: '-', deltaDirection: 'neutral', deltaLabel: 'campus spaces',   icon: 'School',   tint: 'blue' },
+    { id: 'available-rooms', label: 'Available Spaces',         value: String(rooms.filter((r) => r.status === 'Available').length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'ready to assign', icon: 'DoorOpen', tint: 'green' },
+    { id: 'occupied-rooms',  label: 'Occupied Spaces',          value: String(rooms.filter((r) => r.status === 'Occupied').length),  delta: '-', deltaDirection: 'neutral', deltaLabel: 'in active use',   icon: 'Users',    tint: 'amber' },
+    { id: 'total-capacity',  label: 'Total Seating Capacity',   value: rooms.reduce((sum, r) => sum + r.capacity, 0).toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'available seats', icon: 'BookOpen', tint: 'violet' },
   ]
 
   const filteredRooms = rooms.filter((r) => {
@@ -112,15 +111,9 @@ export default function Rooms() {
     return matchesSearch && matchesType && matchesStatus
   })
 
-  const resetForm = () => {
-    setFormData({ ...DEFAULT_FORM })
-    setEditingRoom(null)
-  }
+  const resetForm = () => { setFormData({ ...DEFAULT_FORM }); setEditingRoom(null) }
 
-  const handleOpenCreate = () => {
-    resetForm()
-    setModalOpen(true)
-  }
+  const handleOpenCreate = () => { resetForm(); setModalOpen(true) }
 
   const handleOpenEdit = (room: RoomItem) => {
     setEditingRoom(room)
@@ -139,10 +132,8 @@ export default function Rooms() {
   const handleSaveRoom = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name.trim() || !formData.code.trim()) {
-      showToast('Room name and code are required', 'error')
-      return
+      showToast('Room name and code are required', 'error'); return
     }
-
     const payload: RoomPayload = {
       name: formData.name.trim(),
       code: formData.code.trim(),
@@ -150,12 +141,8 @@ export default function Rooms() {
       floor: formData.floor.trim(),
       type: formData.type,
       capacity: Number(formData.capacity) || 30,
-      amenities: formData.amenitiesText
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+      amenities: formData.amenitiesText.split(',').map((s) => s.trim()).filter(Boolean),
     }
-
     setSaving(true)
     try {
       if (editingRoom) {
@@ -195,7 +182,7 @@ export default function Rooms() {
         />
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl theme-button-primary text-xs font-semibold shrink-0 cursor-pointer"
         >
           <Plus size={16} />
           <span>Add New Room</span>
@@ -204,15 +191,16 @@ export default function Rooms() {
 
       <StatsGrid cards={roomKpiCards} columns={4} />
 
-      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-surface">
+      {/* Filter bar */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3.5 top-3 text-secondary" />
+          <Search size={16} className="absolute left-3.5 top-3 text-fg-muted z-10 pointer-events-none" />
           <input
             type="text"
             placeholder="Search room name, code, or building..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-surface border border-surface text-color placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl text-fg placeholder:text-fg-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -220,7 +208,7 @@ export default function Rooms() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="px-3 py-2 text-xs rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
           >
             <option value="All">All types</option>
             <option value="Classroom">Classroom</option>
@@ -233,7 +221,7 @@ export default function Rooms() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="px-3 py-2 text-xs rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
           >
             <option value="All">All statuses</option>
             <option value="Available">Available</option>
@@ -244,28 +232,28 @@ export default function Rooms() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-secondary text-sm rounded-2xl glass-sm border border-surface">
+        <div className="py-16 text-center text-fg-muted text-sm rounded-2xl glass-sm">
           <RefreshCw size={16} className="inline animate-spin mr-2" />
           Loading rooms...
         </div>
       ) : error ? (
-        <div className="py-16 text-center rounded-2xl glass-sm border border-surface">
+        <div className="py-16 text-center rounded-2xl glass-sm">
           <p className="text-sm font-bold text-error">Couldn't load rooms</p>
-          <p className="mt-1 text-xs text-secondary">{error.message}</p>
+          <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
           <button
             onClick={loadRooms}
-            className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white"
+            className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition cursor-pointer"
           >
             Retry
           </button>
         </div>
       ) : filteredRooms.length === 0 ? (
-        <div className="py-16 text-center rounded-2xl glass-sm border border-surface">
-          <DoorOpen className="mx-auto mb-3 h-10 w-10 text-secondary" />
-          <p className="text-sm font-semibold text-color">
+        <div className="py-16 text-center rounded-2xl glass-sm">
+          <DoorOpen className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+          <p className="text-sm font-semibold text-fg">
             {rooms.length === 0 ? 'No rooms configured yet' : 'No matches'}
           </p>
-          <p className="text-xs text-secondary mt-1">
+          <p className="text-xs text-fg-muted mt-1">
             {rooms.length === 0
               ? 'Click "Add New Room" to create the first facility.'
               : 'Try a different search or filter.'}
@@ -276,12 +264,12 @@ export default function Rooms() {
           {filteredRooms.map((room) => (
             <div
               key={room.id}
-              className="rounded-2xl p-5 glass-sm border border-surface flex flex-col justify-between hover:shadow-md transition"
+              className="rounded-2xl p-5 glass-sm flex flex-col justify-between hover:shadow-(--glass-strong-shadow) transition-shadow duration-300"
             >
               <div>
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                    <div className="p-2.5 rounded-xl bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
                       {room.type === 'Science Lab' ? (
                         <FlaskConical size={20} />
                       ) : room.type === 'Computer Lab' ? (
@@ -291,10 +279,8 @@ export default function Rooms() {
                       )}
                     </div>
                     <div>
-                      <h3 className="font-bold text-base text-color">
-                        {room.name}
-                      </h3>
-                      <div className="text-xs text-secondary font-mono">
+                      <h3 className="font-bold text-base text-fg">{room.name}</h3>
+                      <div className="text-xs text-fg-muted font-mono">
                         {room.code} • {room.building} ({room.floor})
                       </div>
                     </div>
@@ -314,32 +300,29 @@ export default function Rooms() {
                 </div>
 
                 {room.currentClass && (
-                  <div className="mb-3 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/20 text-xs text-warning flex items-center gap-1.5">
+                  <div className="mb-3 px-3 py-1.5 rounded-xl bg-warning/15 text-xs text-warning flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-warning" />
-                    <span>
-                      Current: <strong>{room.currentClass}</strong>
-                    </span>
+                    <span>Current: <strong>{room.currentClass}</strong></span>
                   </div>
                 )}
 
-                <div className="space-y-2 py-3 border-y border-surface text-xs">
+                {/* Info strip: top & bottom shadow seams */}
+                <div className={`space-y-2 py-3 ${SEAM_Y} text-xs`}>
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-secondary">
+                    <span className="flex items-center gap-1.5 text-fg-muted">
                       <Users size={13} /> Seating capacity
                     </span>
-                    <span className="font-bold text-color">
-                      {room.capacity} seats
-                    </span>
+                    <span className="font-bold text-fg">{room.capacity} seats</span>
                   </div>
 
                   {room.amenities.length > 0 && (
                     <div>
-                      <div className="text-secondary mb-1">Amenities</div>
+                      <div className="text-fg-muted mb-1">Amenities</div>
                       <div className="flex flex-wrap gap-1">
                         {room.amenities.map((a, idx) => (
                           <span
                             key={idx}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-strong text-secondary"
+                            className="px-2 py-0.5 rounded-md text-[10px] font-medium text-fg-muted shadow-sunken"
                           >
                             {a}
                           </span>
@@ -351,23 +334,25 @@ export default function Rooms() {
               </div>
 
               <div className="pt-3 flex items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold text-secondary uppercase tracking-wider">
+                <span className="text-[11px] font-semibold text-fg-muted uppercase tracking-wider">
                   {room.type}
                 </span>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(room)}
-                    className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                    className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-sunken transition cursor-pointer"
                     title="Edit room"
+                    aria-label={`Edit ${room.name}`}
                   >
                     <Edit3 size={15} />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDeleteRoom(room)}
-                    className="p-1.5 rounded-lg text-secondary hover:text-error hover:bg-error/10 transition"
+                    className="p-1.5 rounded-lg text-fg-muted hover:text-error hover:shadow-sunken transition cursor-pointer"
                     title={`Delete ${room.name}`}
+                    aria-label={`Delete ${room.name}`}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -379,57 +364,38 @@ export default function Rooms() {
       )}
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-color mb-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) { setModalOpen(false); resetForm() } }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <h3 className="text-lg font-bold text-fg mb-4">
               {editingRoom ? 'Edit Room / Lab' : 'Add New Room / Lab'}
             </h3>
             <form onSubmit={handleSaveRoom} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-secondary mb-1">
-                  Room name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Physics Lab 303"
+                <label className={labelBase}>Room name *</label>
+                <input type="text" required placeholder="e.g. Physics Lab 303"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-sm text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  required
-                />
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className={inputBase} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    Room code *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. LAB-PHY"
+                  <label className={labelBase}>Room code *</label>
+                  <input type="text" required placeholder="e.g. LAB-PHY"
                     value={formData.code}
-                    onChange={(e) =>
-                      setFormData({ ...formData, code: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    required
-                  />
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    className={inputBase} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    Type
-                  </label>
+                  <label className={labelBase}>Type</label>
                   <select
                     value={formData.type}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        type: e.target.value as RoomRecord['type'],
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as RoomRecord['type'] })}
+                    className={`${inputBase} cursor-pointer`}
                   >
                     <option value="Classroom">Classroom</option>
                     <option value="Science Lab">Science Lab</option>
@@ -442,83 +408,46 @@ export default function Rooms() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    Building
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.building}
-                    onChange={(e) =>
-                      setFormData({ ...formData, building: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    required
-                  />
+                  <label className={labelBase}>Building</label>
+                  <input type="text" required value={formData.building}
+                    onChange={(e) => setFormData({ ...formData, building: e.target.value })}
+                    className={inputBase} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    Floor
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.floor}
-                    onChange={(e) =>
-                      setFormData({ ...formData, floor: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    required
-                  />
+                  <label className={labelBase}>Floor</label>
+                  <input type="text" required value={formData.floor}
+                    onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+                    className={inputBase} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    Capacity
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={2000}
+                  <label className={labelBase}>Capacity</label>
+                  <input type="number" required min={1} max={2000}
                     value={formData.capacity}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        capacity: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    required
-                  />
+                    onChange={(e) => setFormData({ ...formData, capacity: Number(e.target.value) })}
+                    className={inputBase} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-secondary mb-1">
-                  Amenities (comma separated)
-                </label>
-                <input
-                  type="text"
+                <label className={labelBase}>Amenities (comma separated)</label>
+                <input type="text"
                   value={formData.amenitiesText}
-                  onChange={(e) =>
-                    setFormData({ ...formData, amenitiesText: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-xs text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
-                />
+                  onChange={(e) => setFormData({ ...formData, amenitiesText: e.target.value })}
+                  className={inputBase} />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-surface">
+              <div className={`flex items-center justify-end gap-3 pt-3 ${SEAM_T}`}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setModalOpen(false)
-                    resetForm()
-                  }}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-secondary hover:bg-surface transition"
+                  onClick={() => { setModalOpen(false); resetForm() }}
+                  className="glass-sm glass-interactive px-4 py-2 rounded-xl text-xs font-semibold text-fg"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-md transition disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold theme-button-primary disabled:opacity-50 cursor-pointer"
                 >
                   {editingRoom ? 'Save' : 'Create'}
                 </button>

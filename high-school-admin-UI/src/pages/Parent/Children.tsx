@@ -1,21 +1,12 @@
+// src/pages/Parent/Children.tsx
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import PageHeading from "@/components/common/PageHeading";
-import { 
-  Users, 
-  Plus, 
-  GraduationCap, 
-  Award, 
-  Calendar, 
-  CheckCircle2, 
-  ArrowRight, 
-  Phone, 
-  Mail, 
-  FileText, 
-  X,
-  Sparkles
-} from "lucide-react";
+import { Plus, ArrowRight, X, Sparkles } from "lucide-react";
 import { useToast } from "@/components/common/ToastProvider";
+
+const SEAM_B = "shadow-[0_1px_0_var(--neu-shadow-dark)]";
+const SEAM_T = "shadow-[0_-1px_0_var(--neu-shadow-dark)]";
 
 interface ChildData {
   id: string;
@@ -75,13 +66,16 @@ const INITIAL_CHILDREN: ChildData[] = [
   },
 ];
 
+// Inputs inherit the sunken-well look from globals.css (.neu-inset).
+const inputBase =
+  "w-full px-3 py-2 rounded-xl text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand-500";
+const labelBase = "block font-semibold text-fg-muted mb-1";
+
 export default function Children() {
-  const navigate = useNavigate();
   const { showToast } = useToast();
   const [children, setChildren] = useState<ChildData[]>(INITIAL_CHILDREN);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
 
-  // Link Form
   const [linkStudentId, setLinkStudentId] = useState("");
   const [linkPin, setLinkPin] = useState("");
   const [relationship, setRelationship] = useState("Mother");
@@ -121,7 +115,6 @@ export default function Children() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeading
           title="Registered Wards & Children"
@@ -129,94 +122,98 @@ export default function Children() {
         />
         <button
           onClick={() => setIsLinkModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold cursor-pointer self-start sm:self-auto"
         >
           <Plus size={16} />
           <span>Link Sibling / Ward</span>
         </button>
       </div>
 
-      {/* Children Cards Roster */}
+      {/* Children cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {children.map((child) => (
           <div
             key={child.id}
-            className="rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 p-6 shadow-sm hover:border-brand-500/30 transition flex flex-col justify-between space-y-5 bg-white/40 dark:bg-stone-900/40"
+            className="rounded-2xl glass-sm p-6 hover:shadow-(--glass-strong-shadow) transition-shadow duration-300 flex flex-col justify-between space-y-5"
           >
             <div>
-              {/* Header Profile */}
+              {/* Header profile */}
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3.5">
+                  {/* Avatar — brand ring only, no local elevation
+                      (the card already provides the raised surface) */}
                   <img
                     src={child.avatar}
                     alt={child.name}
-                    className="w-14 h-14 rounded-2xl object-cover border-2 border-brand-500/30 shadow-sm shrink-0"
+                    className="w-14 h-14 rounded-2xl object-cover ring-2 ring-brand-500/30 shrink-0"
                   />
                   <div>
-                    <h3 className="text-base font-bold text-stone-900 dark:text-white">
-                      {child.name}
-                    </h3>
-                    <div className="text-xs text-stone-500 dark:text-stone-400 font-medium">
-                      {child.classSection} • Roll ID: <span className="font-mono text-brand-600 dark:text-brand-400">{child.rollNumber}</span>
+                    <h3 className="text-base font-bold text-fg">{child.name}</h3>
+                    <div className="text-xs text-fg-muted font-medium">
+                      {child.classSection} • Roll ID:{" "}
+                      <span className="font-mono text-brand-600 dark:text-brand-400">
+                        {child.rollNumber}
+                      </span>
                     </div>
-                    <div className="text-[11px] text-stone-400 mt-0.5">
+                    <div className="text-[11px] text-fg-muted/70 mt-0.5">
                       DOB: {child.dob} ({child.gender})
                     </div>
                   </div>
                 </div>
 
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border border-brand-200/50 dark:border-brand-800/40 shrink-0">
+                {/* Grade chip — brand tint, matches chips elsewhere */}
+                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/25 shrink-0">
                   {child.gradeLevel}
                 </span>
               </div>
 
-              {/* Performance Metrics Bar */}
-              <div className="grid grid-cols-3 gap-2.5 mt-5 p-3 rounded-xl bg-stone-50 dark:bg-white/5 text-center text-xs">
+              {/* Performance metrics bar */}
+              <div className="grid grid-cols-3 gap-2.5 mt-5 p-3 rounded-xl shadow-sunken text-center text-xs">
                 <div>
-                  <div className="text-stone-400 text-[11px]">Current GPA</div>
-                  <div className="text-base font-extrabold text-stone-900 dark:text-white mt-0.5">
-                    {child.gpa}
-                  </div>
+                  <div className="text-fg-muted/70 text-[11px]">Current GPA</div>
+                  <div className="text-base font-extrabold text-fg mt-0.5">{child.gpa}</div>
                 </div>
                 <div>
-                  <div className="text-stone-400 text-[11px]">Attendance</div>
-                  <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  <div className="text-fg-muted/70 text-[11px]">Attendance</div>
+                  <div className="text-base font-extrabold text-success mt-0.5">
                     {child.attendancePct}%
                   </div>
                 </div>
                 <div>
-                  <div className="text-stone-400 text-[11px]">Courses</div>
-                  <div className="text-base font-extrabold text-stone-900 dark:text-white mt-0.5">
+                  <div className="text-fg-muted/70 text-[11px]">Courses</div>
+                  <div className="text-base font-extrabold text-fg mt-0.5">
                     {child.enrolledSubjects} Active
                   </div>
                 </div>
               </div>
 
-              {/* Advisor & Health Info */}
-              <div className="mt-4 space-y-2 text-xs text-stone-600 dark:text-stone-300">
+              {/* Advisor & health info */}
+              <div className="mt-4 space-y-2 text-xs text-fg-muted">
                 <div className="flex items-center justify-between">
-                  <span className="text-stone-400">Class Advisor:</span>
-                  <span className="font-semibold text-stone-800 dark:text-stone-200">{child.classAdvisor}</span>
+                  <span className="text-fg-muted/70">Class Advisor:</span>
+                  <span className="font-semibold text-fg">{child.classAdvisor}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-stone-400">Blood Group / Allergy:</span>
-                  <span className="font-semibold text-stone-800 dark:text-stone-200">{child.bloodGroup} • {child.allergies}</span>
+                  <span className="text-fg-muted/70">Blood Group / Allergy:</span>
+                  <span className="font-semibold text-fg">
+                    {child.bloodGroup} • {child.allergies}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-stone-200/60 dark:border-white/5">
+            <div className={`flex items-center justify-between pt-4 ${SEAM_T}`}>
               <Link
                 to="/students/leave-requests"
-                className="text-xs font-semibold text-stone-600 dark:text-stone-300 hover:text-brand-600 transition"
+                className="text-xs font-semibold text-fg-muted hover:text-brand-600 dark:hover:text-brand-300 transition"
               >
                 Request Leave
               </Link>
-              
+
               <Link
                 to={`/parent/children/${child.id}`}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-semibold hover:opacity-90 transition shadow-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold"
               >
                 <span>View Full Details</span>
                 <ArrowRight size={14} />
@@ -226,18 +223,23 @@ export default function Children() {
         ))}
       </div>
 
-      {/* Link Ward Modal */}
+      {/* Link ward modal */}
       {isLinkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl glass border border-stone-200/80 dark:border-white/10 p-6 shadow-2xl bg-white dark:bg-stone-900 space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-200 dark:border-white/10 pb-3">
-              <h3 className="text-base font-bold text-stone-900 dark:text-white flex items-center gap-2">
-                <Sparkles size={18} className="text-brand-500" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setIsLinkModalOpen(false) }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <div className={`flex items-center justify-between pb-3 ${SEAM_B}`}>
+              <h3 className="text-base font-bold text-fg flex items-center gap-2">
+                <Sparkles size={18} className="text-brand-600 dark:text-brand-400" />
                 <span>Link Sibling / New Ward</span>
               </h3>
               <button
                 onClick={() => setIsLinkModalOpen(false)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+                aria-label="Close"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -245,61 +247,55 @@ export default function Children() {
 
             <form onSubmit={handleLinkSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Student Roll / Admission ID *
-                </label>
+                <label className={labelBase}>Student Roll / Admission ID *</label>
                 <input
                   type="text"
                   required
                   value={linkStudentId}
                   onChange={(e) => setLinkStudentId(e.target.value)}
                   placeholder="e.g. STD-2025-092"
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white font-mono focus:outline-none"
+                  className={`${inputBase} font-mono`}
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Parent Access PIN / Verification Code *
-                </label>
+                <label className={labelBase}>Parent Access PIN / Verification Code *</label>
                 <input
                   type="password"
                   required
                   value={linkPin}
                   onChange={(e) => setLinkPin(e.target.value)}
                   placeholder="Issued by registrar office"
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+                  className={inputBase}
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Relationship to Student
-                </label>
+                <label className={labelBase}>Relationship to Student</label>
                 <select
                   value={relationship}
                   onChange={(e) => setRelationship(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white focus:outline-none"
+                  className={`${inputBase} cursor-pointer`}
                 >
-                  <option value="Mother" className="dark:bg-stone-900">Mother</option>
-                  <option value="Father" className="dark:bg-stone-900">Father</option>
-                  <option value="Legal Guardian" className="dark:bg-stone-900">Legal Guardian</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Father">Father</option>
+                  <option value="Legal Guardian">Legal Guardian</option>
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-200 dark:border-white/10">
+              <div className={`flex items-center justify-end gap-2 pt-3 ${SEAM_T}`}>
                 <button
                   type="button"
                   onClick={() => setIsLinkModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-stone-200 dark:border-white/10 text-stone-600 dark:text-stone-300"
+                  className="glass-sm glass-interactive px-4 py-2 rounded-xl text-fg-muted hover:text-fg text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-md shadow-brand-500/20"
+                  className="px-5 py-2 rounded-xl theme-button-primary font-semibold cursor-pointer"
                 >
-                  Confirm & Link Ward
+                  Confirm &amp; Link Ward
                 </button>
               </div>
             </form>

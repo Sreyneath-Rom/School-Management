@@ -3,18 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  Inbox as InboxIcon,
-  Send,
-  Star,
-  Trash2,
-  Search,
-  Plus,
-  Users,
-  Mail,
-  Paperclip,
-  X,
-  RefreshCw,
-  Info,
+  Inbox as InboxIcon, Send, Star, Trash2, Search, Plus,
+  Users, Mail, Paperclip, X, RefreshCw, Info,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import {
@@ -24,12 +14,7 @@ import {
 } from '@/services/messageService'
 
 type FolderView =
-  | 'inbox'
-  | 'unread'
-  | 'starred'
-  | 'teachers'
-  | 'parents'
-  | 'sent'
+  | 'inbox' | 'unread' | 'starred' | 'teachers' | 'parents' | 'sent'
 
 const ROLE_LABELS: Record<MessageThread['counterpartyRole'], string> = {
   admin: 'Admin',
@@ -37,6 +22,10 @@ const ROLE_LABELS: Record<MessageThread['counterpartyRole'], string> = {
   student: 'Student',
   parent: 'Parent',
 }
+
+/* Neumorphic hairline seams. */
+const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
+const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -77,6 +66,11 @@ const EMPTY_COMPOSE: ComposeState = {
   body: '',
 }
 
+// Inputs inherit the sunken-well look from globals.css (.neu-inset).
+const inputBase =
+  'w-full px-3 py-2 rounded-xl text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
+const labelBase = 'block font-semibold text-fg-muted mb-1'
+
 export default function Inbox() {
   const { showToast } = useToast()
 
@@ -104,33 +98,30 @@ export default function Inbox() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   const toggleStar = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault()
     e.stopPropagation()
     const target = threads.find((t) => t.id === id)
     if (!target) return
     const next = !target.starred
-    // Optimistic
     setThreads((prev) =>
       prev.map((t) => (t.id === id ? { ...t, starred: next } : t))
     )
     try {
       await messageService.setStarred(id, next)
     } catch (err) {
-      // Roll back on failure
       setThreads((prev) =>
         prev.map((t) => (t.id === id ? { ...t, starred: !next } : t))
       )
-      const msg =
-        err instanceof Error ? err.message : 'Unable to update.'
+      const msg = err instanceof Error ? err.message : 'Unable to update.'
       showToast(msg, 'error')
     }
   }
 
   const deleteThread = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault()
     e.stopPropagation()
     if (!window.confirm('Delete this conversation?')) return
     try {
@@ -154,20 +145,13 @@ export default function Inbox() {
         if (!matches) return false
       }
       switch (activeFolder) {
-        case 'inbox':
-          return t.folder === 'inbox'
-        case 'unread':
-          return t.folder === 'inbox' && t.unread
-        case 'starred':
-          return t.starred
-        case 'teachers':
-          return t.folder === 'inbox' && t.counterpartyRole === 'teacher'
-        case 'parents':
-          return t.folder === 'inbox' && t.counterpartyRole === 'parent'
-        case 'sent':
-          return t.folder === 'sent'
-        default:
-          return true
+        case 'inbox':    return t.folder === 'inbox'
+        case 'unread':   return t.folder === 'inbox' && t.unread
+        case 'starred':  return t.starred
+        case 'teachers': return t.folder === 'inbox' && t.counterpartyRole === 'teacher'
+        case 'parents':  return t.folder === 'inbox' && t.counterpartyRole === 'parent'
+        case 'sent':     return t.folder === 'sent'
+        default:         return true
       }
     })
   }, [threads, search, activeFolder])
@@ -210,10 +194,10 @@ export default function Inbox() {
     <button
       key={key}
       onClick={() => setActiveFolder(key)}
-      className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
+      className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
         activeFolder === key
-          ? 'bg-brand-600 text-white shadow-sm'
-          : 'text-secondary hover:bg-surface'
+          ? 'bg-brand-600 text-white shadow-sunken'
+          : 'text-fg-muted hover:text-fg hover:shadow-sunken'
       }`}
     >
       <div className="flex items-center gap-2.5">
@@ -225,7 +209,7 @@ export default function Inbox() {
           className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
             activeFolder === key
               ? 'bg-white/20 text-white'
-              : 'bg-brand-500/15 text-brand-600 dark:text-brand-300'
+              : 'bg-brand-500/15 text-brand-700 dark:text-brand-300'
           }`}
         >
           {badge}
@@ -243,35 +227,38 @@ export default function Inbox() {
         />
         <button
           onClick={() => setIsComposeOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl theme-button-primary text-xs font-semibold self-start sm:self-auto cursor-pointer"
         >
           <Plus size={16} />
           <span>Compose</span>
         </button>
       </div>
 
-      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+      {/* Info banner — semantic info signal */}
+      <div className="rounded-2xl border border-info/30 bg-info/10 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
-        <p className="text-secondary">
+        <p className="text-fg-muted">
           The messaging module is not yet implemented on the backend. This
           inbox is empty until the Message and MessageThread models land.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 rounded-2xl glass-sm border border-surface p-4 shadow-sm min-h-145">
-        {/* Folder sidebar */}
-        <div className="md:col-span-3 space-y-1.5 border-b md:border-b-0 md:border-r border-surface pb-4 md:pb-0 md:pr-4">
+      {/* Main grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 rounded-2xl glass-sm p-4 min-h-145">
+        {/* Folder sidebar — single-axis shadow seam that flips direction
+            at the md breakpoint (bottom on mobile, right on desktop). */}
+        <div className="md:col-span-3 space-y-1.5 pb-4 md:pb-0 md:pr-4 md:shadow-[1px_0_0_var(--neu-shadow-dark)] shadow-[0_1px_0_var(--neu-shadow-dark)]">
           {renderFolderButton('inbox', InboxIcon, 'All Received', unreadCount)}
           {renderFolderButton('unread', Mail, 'Unread', unreadCount)}
           {renderFolderButton('starred', Star, 'Starred')}
 
-          <div className="pt-3 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-secondary">
+          <div className="pt-3 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-fg-muted">
             By Role
           </div>
           {renderFolderButton('teachers', Users, 'Teachers')}
           {renderFolderButton('parents', Users, 'Parents')}
 
-          <div className="pt-3 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-secondary">
+          <div className="pt-3 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-fg-muted">
             Outbox
           </div>
           {renderFolderButton('sent', Send, 'Sent')}
@@ -280,39 +267,34 @@ export default function Inbox() {
         {/* Thread list */}
         <div className="md:col-span-9 flex flex-col">
           <div className="relative mb-3">
-            <Search
-              size={16}
-              className="absolute left-3.5 top-2.5 text-secondary"
-            />
+            <Search size={16} className="absolute left-3.5 top-2.5 text-fg-muted z-10 pointer-events-none" />
             <input
               type="text"
               placeholder="Search by sender, subject, or keywords..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-surface text-xs text-color placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs text-fg placeholder:text-fg-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           {loading ? (
-            <div className="flex-1 flex items-center justify-center py-16 text-secondary text-sm">
+            <div className="flex-1 flex items-center justify-center py-16 text-fg-muted text-sm">
               <RefreshCw size={16} className="inline animate-spin mr-2" />
               Loading messages...
             </div>
           ) : error ? (
             <div className="py-16 text-center">
-              <p className="text-sm font-bold text-error">
-                Couldn't load messages
-              </p>
-              <p className="mt-1 text-xs text-secondary">{error.message}</p>
+              <p className="text-sm font-bold text-error">Couldn't load messages</p>
+              <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
               <button
                 onClick={load}
-                className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white"
+                className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition cursor-pointer"
               >
                 Retry
               </button>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-16 text-secondary text-xs">
+            <div className="flex-1 flex flex-col items-center justify-center py-16 text-fg-muted text-xs">
               <Mail size={32} className="mb-3 opacity-40" />
               <p>
                 {threads.length === 0
@@ -321,12 +303,14 @@ export default function Inbox() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-surface border border-surface rounded-2xl overflow-hidden bg-surface/40">
+            <div className="divide-y divide-(--neu-shadow-dark) rounded-2xl overflow-hidden glass-sm">
               {filtered.map((thread) => (
                 <div
                   key={thread.id}
-                  className={`flex items-start justify-between p-3.5 gap-3 transition cursor-pointer hover:bg-surface ${
-                    thread.unread ? 'bg-brand-500/3' : ''
+                  /* Unread: brand-tinted row + inner brand ring.
+                     Read: neutral surface. */
+                  className={`flex items-start justify-between p-3.5 gap-3 transition-shadow cursor-pointer hover:shadow-sunken ${
+                    thread.unread ? 'ring-1 ring-inset ring-brand-500/30 bg-brand-500/5' : ''
                   }`}
                 >
                   <Link
@@ -335,16 +319,14 @@ export default function Inbox() {
                   >
                     <button
                       onClick={(e) => toggleStar(thread.id, e)}
-                      className={`p-1 rounded-lg transition shrink-0 ${
+                      aria-label={thread.starred ? 'Unstar' : 'Star'}
+                      className={`p-1 rounded-lg transition shrink-0 cursor-pointer ${
                         thread.starred
-                          ? 'text-warning'
-                          : 'text-secondary hover:text-color'
+                          ? 'text-warning bg-warning/15'
+                          : 'text-fg-muted hover:text-fg hover:shadow-sunken'
                       }`}
                     >
-                      <Star
-                        size={16}
-                        className={thread.starred ? 'fill-current' : ''}
-                      />
+                      <Star size={16} className={thread.starred ? 'fill-current' : ''} />
                     </button>
 
                     {thread.counterpartyAvatarUrl ? (
@@ -361,38 +343,36 @@ export default function Inbox() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-color font-bold truncate">
+                        <span className="text-xs text-fg font-bold truncate">
                           {thread.folder === 'sent'
                             ? `To: ${thread.counterpartyName}`
                             : thread.counterpartyName}
                         </span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface text-secondary">
+                        {/* Role chip: sunken well */}
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium text-fg-muted shadow-sunken">
                           {ROLE_LABELS[thread.counterpartyRole]}
                         </span>
                         {thread.unread && (
                           <span className="w-2 h-2 rounded-full bg-brand-500 shrink-0" />
                         )}
                       </div>
-                      <div className="text-xs text-color font-medium truncate mt-0.5">
+                      <div className="text-xs text-fg font-medium truncate mt-0.5">
                         {thread.subject}
                       </div>
-                      <p className="text-[11px] text-secondary truncate">
-                        {thread.preview}
-                      </p>
+                      <p className="text-[11px] text-fg-muted truncate">{thread.preview}</p>
                     </div>
                   </Link>
 
                   <div className="flex items-center gap-3 shrink-0 self-start">
-                    {thread.hasAttachment && (
-                      <Paperclip size={14} className="text-secondary" />
-                    )}
-                    <span className="text-[11px] text-secondary whitespace-nowrap">
+                    {thread.hasAttachment && <Paperclip size={14} className="text-fg-muted" />}
+                    <span className="text-[11px] text-fg-muted whitespace-nowrap">
                       {relativeTime(thread.lastMessageAt)}
                     </span>
                     <button
                       onClick={(e) => deleteThread(thread.id, e)}
-                      className="p-1 rounded text-secondary hover:text-error transition"
+                      className="p-1 rounded text-fg-muted hover:text-error hover:shadow-sunken transition cursor-pointer"
                       title="Delete"
+                      aria-label="Delete conversation"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -406,16 +386,21 @@ export default function Inbox() {
 
       {/* Compose modal */}
       {isComposeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-surface pb-3">
-              <h3 className="text-base font-bold text-color flex items-center gap-2">
-                <Send size={16} className="text-brand-500" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-overlay backdrop-blur-sm animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setIsComposeOpen(false) }}
+        >
+          <div className="w-full max-w-lg rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <div className={`flex items-center justify-between pb-3 ${SEAM_B}`}>
+              <h3 className="text-base font-bold text-fg flex items-center gap-2">
+                <Send size={16} className="text-brand-600 dark:text-brand-400" />
                 <span>Compose Message</span>
               </h3>
               <button
                 onClick={() => setIsComposeOpen(false)}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                aria-label="Close"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -423,67 +408,55 @@ export default function Inbox() {
 
             <form onSubmit={handleSend} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Recipient user ID *
-                </label>
+                <label className={labelBase}>Recipient user ID *</label>
                 <input
                   type="text"
                   required
                   value={compose.recipientId}
-                  onChange={(e) =>
-                    setCompose({ ...compose, recipientId: e.target.value })
-                  }
+                  onChange={(e) => setCompose({ ...compose, recipientId: e.target.value })}
                   placeholder="e.g. usr_abc123"
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500 font-mono"
+                  className={`${inputBase} font-mono`}
                 />
-                <p className="mt-1 text-[10px] text-secondary">
+                <p className="mt-1 text-[10px] text-fg-muted">
                   A recipient picker will replace this field once the backend
                   exposes a directory endpoint.
                 </p>
               </div>
 
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Subject *
-                </label>
+                <label className={labelBase}>Subject *</label>
                 <input
                   type="text"
                   required
                   value={compose.subject}
-                  onChange={(e) =>
-                    setCompose({ ...compose, subject: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  onChange={(e) => setCompose({ ...compose, subject: e.target.value })}
+                  className={inputBase}
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Message *
-                </label>
+                <label className={labelBase}>Message *</label>
                 <textarea
                   rows={5}
                   required
                   value={compose.body}
-                  onChange={(e) =>
-                    setCompose({ ...compose, body: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  onChange={(e) => setCompose({ ...compose, body: e.target.value })}
+                  className={inputBase}
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface">
+              <div className={`flex items-center justify-end gap-2 pt-3 ${SEAM_T}`}>
                 <button
                   type="button"
                   onClick={() => setIsComposeOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-surface text-secondary text-xs font-semibold hover:bg-surface"
+                  className="glass-sm glass-interactive px-4 py-2 rounded-xl text-fg-muted hover:text-fg text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={sending}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-md shadow-brand-500/20 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl theme-button-primary font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {sending ? (
                     <RefreshCw size={14} className="animate-spin" />
