@@ -3,15 +3,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
   CheckCircle2,
-  Clock,
   Search,
   RefreshCw,
   Info,
   AlertCircle,
-  XCircle,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import { apiClient, ApiError } from '@/lib/apiClient'
+import StatsGrid from '@/components/cards/StatsGrid'
+import type { StatCard } from '@/types'
 
 interface FacultyAttendanceRecord {
   id: string
@@ -95,6 +95,12 @@ export default function TeacherAttendance() {
     [records]
   )
 
+  const statCards: StatCard[] = [
+    { id: 'on-duty', label: 'On Duty', value: String(counts.present), delta: 'Today', deltaDirection: 'neutral', deltaLabel: 'members', icon: 'CheckCircle2', tint: 'green', footerLabel: 'Present faculty' },
+    { id: 'late', label: 'Late', value: String(counts.late), delta: 'Today', deltaDirection: 'neutral', deltaLabel: 'logged', icon: 'Clock', tint: 'amber', footerLabel: 'Late check-ins' },
+    { id: 'absent', label: 'Absent / Leave', value: String(counts.absent), delta: 'Today', deltaDirection: 'neutral', deltaLabel: 'members', icon: 'XCircle', tint: 'red', footerLabel: 'Absence or leave' },
+  ]
+
   const updateStatus = (id: string, status: FacultyAttendanceRecord['status']) => {
     setRecords((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status } : r))
@@ -148,41 +154,7 @@ export default function TeacherAttendance() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl glass-sm border border-surface flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-success/10 text-success">
-            <CheckCircle2 size={22} />
-          </div>
-          <div>
-            <div className="text-xs text-secondary font-medium">On Duty</div>
-            <div className="text-lg font-bold text-color">
-              {counts.present} members
-            </div>
-          </div>
-        </div>
-        <div className="p-4 rounded-2xl glass-sm border border-surface flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-warning/10 text-warning">
-            <Clock size={22} />
-          </div>
-          <div>
-            <div className="text-xs text-secondary font-medium">Late</div>
-            <div className="text-lg font-bold text-color">
-              {counts.late} logged
-            </div>
-          </div>
-        </div>
-        <div className="p-4 rounded-2xl glass-sm border border-surface flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-error/10 text-error">
-            <XCircle size={22} />
-          </div>
-          <div>
-            <div className="text-xs text-secondary font-medium">Absent / Leave</div>
-            <div className="text-lg font-bold text-color">
-              {counts.absent} members
-            </div>
-          </div>
-        </div>
-      </div>
+      <StatsGrid cards={statCards} columns={3} loading={loading} />
 
       <div className="overflow-hidden rounded-2xl glass-sm border border-surface">
         <div className="p-3.5 border-b border-surface flex items-center justify-between gap-3">
