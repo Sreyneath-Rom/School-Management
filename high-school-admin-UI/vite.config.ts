@@ -365,7 +365,7 @@ export default defineConfig({
       : undefined,
   },
   build: {
-    outDir: '../dist',
+    outDir: 'dist',
     emptyOutDir: true,
   },
 })
