@@ -2,7 +2,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider, useAuthInitialization } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { ToastProvider } from '@/components/common/ToastProvider'
-import { AppLoadingSkeleton } from '@/feature'
+import { AppLoadingSkeleton } from '@/features'
 import AppRoutes from './routes/AppRoutes'
 
 function AppWithAuth() {
