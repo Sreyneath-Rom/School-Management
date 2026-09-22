@@ -21,10 +21,17 @@ function resolveBaseUrl(): string {
 }
 
 const API_BASE_URL = resolveBaseUrl()
+
+/** Exposes the resolved endpoint for startup diagnostics and support screens. */
+export const apiConfig = {
+  baseUrl: API_BASE_URL,
+  useMockApi: import.meta.env.VITE_USE_MOCK_API === 'true',
+}
+
 // Opt-IN, not opt-out: an unset env var (e.g. a prod deploy that forgot to
 // set this) must never silently start mocking requests. Only the literal
 // string 'true' turns mocking on.
-const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true'
+const USE_MOCK_API = apiConfig.useMockApi
 
 // -----------------------------------------------------------------------------
 // Error type
