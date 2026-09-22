@@ -37,9 +37,7 @@ School-Management/
 ├── high-school-admin-UI/       # Administrator frontend
 ├── high-school-teacher-UI/     # Teacher frontend
 ├── high-school-student-UI/     # Student frontend
-├── high-school-api/             # Express and Prisma backend
-├── .env.example                 # Shared environment template
-├── package.json                 # Root workspace commands
+├── high-school-api/             # Express and Prisma backend              
 └── README.md
 ```
 
