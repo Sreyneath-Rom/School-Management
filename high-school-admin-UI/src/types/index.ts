@@ -175,15 +175,5 @@ export type {
 } from './translation'
 
 // ---- Dashboard display types (UI-only, not API shapes) ----
-export type {
-  StatCard,
-  AttendanceDay,
-  EnrollmentSlice,
-  EventItem,
-  ActivityItem,
-  LeaveRequestItem,
-  AnnouncementItem,
-  NavLink,
-  NavSection,
-  Status,
-} from './dashboard'
+export type { StatCard } from './dashboard'
+export type Status = 'Draft' | 'Upcoming' | 'Active' | 'Completed' | 'Archived' | 'Inactive'

@@ -3,7 +3,8 @@ import { useState } from 'react'
 import {
   GraduationCap, Users, BookOpen, FileText, Star, FileCheck2,
   Trophy, CalendarClock, Award, CheckCircle2, Clock, HelpCircle,
-  AlertCircle, UserRound, UserCheck, ClipboardList,
+  AlertCircle, UserRound, UserCheck, ClipboardList, Mail, Database,
+  AlertTriangle, ShieldCheck, XCircle, Building2, BookMarked,
   School, DoorOpen, TrendingUp, Layers, BarChart3, Sparkles, Calendar,
   ArrowUp, ArrowDown, ChevronDown,
 } from 'lucide-react'
@@ -20,7 +21,8 @@ import { StatCardSkeleton } from '@/components/common/Skeleton'
 const iconMap: Record<string, LucideIcon> = {
   GraduationCap, Users, BookOpen, FileText, Star, FileCheck2,
   Trophy, CalendarClock, Award, CheckCircle2, Clock, HelpCircle,
-  AlertCircle, UserRound, UserCheck, ClipboardList,
+  AlertCircle, UserRound, UserCheck, ClipboardList, Mail, Database,
+  AlertTriangle, ShieldCheck, XCircle, Building2, BookMarked,
   School, DoorOpen, TrendingUp, Layers, BarChart3, Sparkles, Calendar,
 }
 

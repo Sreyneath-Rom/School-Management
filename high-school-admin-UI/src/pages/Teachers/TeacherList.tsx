@@ -1,54 +1,26 @@
-// src/pages/Teachers/TeacherList.tsx
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Users,
-  Search,
-  Mail,
-  Eye,
-  LayoutGrid,
-  List,
-  Building2,
-  ExternalLink,
-  RefreshCw,
-  GraduationCap,
-  Info,
-} from 'lucide-react'
+import { Eye, Mail, RefreshCw, Search, Users, Building2, GraduationCap, Info } from 'lucide-react'
 import PageHeading from '@/components/common/PageHeading'
-import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
 import { teacherService, type TeacherRecord } from '@/services/teacherService'
+import { useToast } from '@/components/common/ToastProvider'
 
-// STRIPPED: TeacherProfileView does not expose name, employeeId, department,
-// position, status, qualifications, specialization, weeklyTeachingHours,
-// assignedClasses, subjectsTaught, performanceRating, joiningDate, phone,
-// title. Only id, firstName, lastName, email, avatarUrl are used.
-//
-// The create/edit form is also removed — CreateTeacherPayload is a
-// discriminated union whose non-`userId` branch is not visible in the
-// current type file. Restore the form when src/types/teacherProfile.ts
-// is available.
-
-function displayName(t: TeacherRecord): string {
-  const composed = `${t.firstName ?? ''} ${t.lastName ?? ''}`.trim()
-  return composed || t.email || t.id
+function displayName(teacher: TeacherRecord) {
+  return `${teacher.firstName ?? ''} ${teacher.lastName ?? ''}`.trim() || teacher.email || teacher.id
 }
 
-function initials(first?: string, last?: string): string {
-  const a = (first ?? '').charAt(0)
-  const b = (last ?? '').charAt(0)
-  return (a + b).toUpperCase() || 'FC'
+function initials(teacher: TeacherRecord) {
+  return `${teacher.firstName?.charAt(0) ?? ''}${teacher.lastName?.charAt(0) ?? ''}`.toUpperCase() || 'TC'
 }
 
 export default function TeacherList() {
   const { showToast } = useToast()
   const navigate = useNavigate()
-
   const [teachers, setTeachers] = useState<TeacherRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
 
   const loadTeachers = useCallback(async () => {
     setIsLoading(true)
@@ -56,231 +28,64 @@ export default function TeacherList() {
       const data = await teacherService.list()
       setTeachers(Array.isArray(data) ? data : [])
     } catch {
-      showToast('Failed to load faculty', 'error')
       setTeachers([])
+      showToast('Failed to load faculty', 'error')
     } finally {
       setIsLoading(false)
     }
   }, [showToast])
 
-  useEffect(() => {
-    loadTeachers()
-  }, [loadTeachers])
+  useEffect(() => { loadTeachers() }, [loadTeachers])
 
-  const filtered = useMemo(() => {
-    return teachers.filter((t) => {
-      if (!search.trim()) return true
-      const q = search.toLowerCase()
-      return (
-        (t.firstName ?? '').toLowerCase().includes(q) ||
-        (t.lastName ?? '').toLowerCase().includes(q) ||
-        (t.email ?? '').toLowerCase().includes(q)
-      )
-    })
+  const filteredTeachers = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return teachers
+    return teachers.filter((teacher) =>
+      `${teacher.firstName ?? ''} ${teacher.lastName ?? ''} ${teacher.email ?? ''}`.toLowerCase().includes(query),
+    )
   }, [teachers, search])
 
-  const kpiCards: StatCard[] = [
-    { id: 'total-faculty', label: 'Total Faculty', value: String(teachers.length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'directory', icon: 'Users', tint: 'blue' },
-    { id: 'with-email', label: 'With Email', value: String(teachers.filter((t) => t.email).length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'contactable', icon: 'Mail', tint: 'green' },
-    { id: 'with-avatar', label: 'With Photo', value: String(teachers.filter((t) => t.avatarUrl).length), delta: '-', deltaDirection: 'neutral', deltaLabel: 'profiles', icon: 'Users', tint: 'amber' },
-    { id: 'departments', label: 'Departments', value: '—', delta: '-', deltaDirection: 'neutral', deltaLabel: 'not yet available', icon: 'Building2', tint: 'violet' },
+  const cards: StatCard[] = [
+    { id: 'total-faculty', label: 'Total Faculty', value: String(teachers.length), delta: 'Directory', deltaDirection: 'neutral', deltaLabel: 'all teachers', icon: 'Users', tint: 'blue', footerLabel: 'Faculty roster' },
+    { id: 'active-contact', label: 'Contactable', value: String(teachers.filter((teacher) => Boolean(teacher.email)).length), delta: 'Email', deltaDirection: 'neutral', deltaLabel: 'available', icon: 'Mail', tint: 'green', footerLabel: 'Verified directory contacts' },
+    { id: 'profile-complete', label: 'With Photo', value: String(teachers.filter((teacher) => Boolean(teacher.avatarUrl)).length), delta: 'Profiles', deltaDirection: 'neutral', deltaLabel: 'updated', icon: 'GraduationCap', tint: 'amber', footerLabel: 'Profile completeness' },
+    { id: 'departments', label: 'Departments', value: '—', delta: 'API', deltaDirection: 'neutral', deltaLabel: 'not available', icon: 'Building2', tint: 'violet', footerLabel: 'Department data' },
   ]
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <PageHeading
-          title="Teachers & Faculty Directory"
-          subtitle="Faculty roster."
-        />
-        <button
-          onClick={loadTeachers}
-          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-surface bg-surface hover:bg-surface-strong text-xs font-semibold text-color transition"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <PageHeading title="Teachers Directory" subtitle="View, search, and manage faculty profiles and contact records." />
+        <button onClick={loadTeachers} disabled={isLoading} className="inline-flex items-center gap-2 rounded-xl glass-sm glass-interactive px-3 py-2 text-xs font-semibold text-fg disabled:cursor-not-allowed disabled:opacity-50">
+          <RefreshCw className={isLoading ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} />
+          Refresh
         </button>
       </div>
 
-      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
-        <Info size={16} className="text-info shrink-0 mt-0.5" />
-        <p className="text-secondary">
-          Faculty creation and per-field editing require the full{' '}
-          <code className="font-mono">CreateTeacherPayload</code> shape. Paste{' '}
-          <code className="font-mono">src/types/teacherProfile.ts</code> to
-          restore them.
-        </p>
+      <div className="flex items-start gap-3 rounded-2xl border border-info/30 bg-info/5 p-4 text-xs">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-info" />
+        <p className="text-fg-muted">Faculty profiles are loaded from the live teacher API. Open a teacher to view the complete record.</p>
       </div>
 
-      <StatsGrid cards={kpiCards} columns={4} />
+      <StatsGrid cards={cards} loading={isLoading} columns={4} showHeader={false} />
 
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 p-4 rounded-2xl border border-surface bg-surface/40">
-        <div className="relative flex-1 w-full min-w-60">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 text-xs font-medium rounded-xl bg-surface border border-surface focus:outline-none focus:ring-1 focus:ring-brand-500 text-color"
-          />
+      <div className="flex items-center gap-3 rounded-2xl glass-sm p-4">
+        <div className="relative w-full max-w-xl">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
+          <input aria-label="Search teachers" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by teacher name or email..." className="w-full rounded-xl shadow-sunken bg-transparent py-2.5 pl-10 pr-4 text-xs font-medium text-fg outline-none placeholder:text-fg-muted focus:ring-2 focus:ring-brand-500/30" />
         </div>
-
-        <div className="flex items-center gap-1 self-end md:self-auto bg-surface p-1 rounded-xl border border-surface">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded-lg transition ${
-              viewMode === 'grid'
-                ? 'bg-surface-strong text-color shadow-xs'
-                : 'text-secondary hover:text-color'
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={`p-1.5 rounded-lg transition ${
-              viewMode === 'table'
-                ? 'bg-surface-strong text-color shadow-xs'
-                : 'text-secondary hover:text-color'
-            }`}
-          >
-            <List className="h-4 w-4" />
-          </button>
-        </div>
+        <span className="ml-auto whitespace-nowrap text-xs font-semibold text-fg-muted">{filteredTeachers.length} results</span>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div
-              key={n}
-              className="p-5 rounded-2xl border border-surface bg-surface/40 animate-pulse space-y-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-surface-strong" />
-                <div className="space-y-2 flex-1">
-                  <div className="h-4 w-32 rounded bg-surface-strong" />
-                  <div className="h-3 w-20 rounded bg-surface-strong" />
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="overflow-hidden rounded-2xl glass-sm p-4" role="status" aria-label="Loading teachers">
+          <div className="flex flex-col gap-4">{Array.from({ length: 6 }, (_, index) => <div key={index} className="flex items-center gap-4"><div className="h-10 w-10 rounded-xl skeleton" /><div className="flex flex-1 flex-col gap-2"><div className="h-4 w-48 rounded skeleton" /><div className="h-3 w-64 rounded skeleton" /></div><div className="h-6 w-20 rounded skeleton" /></div>)}</div>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="p-12 rounded-2xl border border-dashed border-surface bg-surface/30 text-center">
-          <Building2 className="mx-auto h-10 w-10 text-secondary mb-2" />
-          <h3 className="font-bold text-color">No Faculty Members Found</h3>
-          <p className="text-xs text-secondary mt-1">
-            {teachers.length === 0
-              ? 'The roster is empty.'
-              : 'Try adjusting your search.'}
-          </p>
-        </div>
-      ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((t) => {
-            const name = displayName(t)
-            const inits = initials(t.firstName, t.lastName)
-
-            return (
-              <div
-                key={t.id}
-                className="flex flex-col justify-between p-5 rounded-2xl border border-surface bg-surface/60 hover:border-brand-500/40 hover:shadow-md transition"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {t.avatarUrl ? (
-                        <img
-                          src={t.avatarUrl}
-                          alt={name}
-                          className="h-12 w-12 rounded-2xl object-cover ring-2 ring-brand-500/20"
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500/20 to-brand-600/10 font-bold text-brand-700 dark:text-brand-300 ring-2 ring-brand-500/20">
-                          {inits}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-color text-sm truncate">
-                          {name}
-                        </h3>
-                        <p className="text-xs text-secondary truncate mt-0.5">
-                          {t.email || '—'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-3.5 flex items-center justify-between gap-2 border-t border-surface">
-                  <button
-                    onClick={() => navigate(`/teachers/profiles?id=${t.id}`)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-brand-700 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-950/40 transition"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    <span>Profile</span>
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      ) : filteredTeachers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl glass p-12 text-center"><div className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-sunken text-fg-muted"><Users className="h-7 w-7" /></div><h3 className="mt-4 text-base font-bold text-fg">No Teachers Found</h3><p className="mt-1 text-xs text-fg-muted">Try adjusting your search or refresh the live directory.</p></div>
       ) : (
-        <div className="rounded-2xl border border-surface bg-surface/40 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-surface-strong border-b border-surface text-secondary uppercase font-bold text-[10px]">
-                <tr>
-                  <th className="py-3.5 px-4">Faculty Member</th>
-                  <th className="py-3.5 px-4">Email</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface">
-                {filtered.map((t) => {
-                  const name = displayName(t)
-                  const inits = initials(t.firstName, t.lastName)
-
-                  return (
-                    <tr key={t.id} className="hover:bg-surface/60 transition">
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          {t.avatarUrl ? (
-                            <img
-                              src={t.avatarUrl}
-                              alt=""
-                              className="h-9 w-9 rounded-xl object-cover ring-1 ring-brand-500/20"
-                            />
-                          ) : (
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-brand-500/20 to-brand-600/10 font-bold text-brand-700 dark:text-brand-300">
-                              {inits}
-                            </div>
-                          )}
-                          <div className="font-bold text-color">{name}</div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-secondary text-[11px]">
-                        {t.email || '—'}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => navigate(`/teachers/profiles?id=${t.id}`)}
-                            className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition"
-                            title="Open profile"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="overflow-hidden rounded-2xl glass-sm">
+          <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead className="text-[11px] font-bold uppercase tracking-wider text-fg-muted shadow-[0_1px_0_var(--neu-shadow-dark)]"><tr><th className="px-4 py-3.5">Teacher</th><th className="px-4 py-3.5">Email</th><th className="px-4 py-3.5">Profile</th><th className="px-4 py-3.5 text-right">Actions</th></tr></thead><tbody className="divide-y divide-(--neu-shadow-dark)">{filteredTeachers.map((teacher) => <tr key={teacher.id} className="transition-shadow hover:shadow-sunken"><td className="px-4 py-3.5"><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/15 font-bold text-brand-700 shadow-sunken">{teacher.avatarUrl ? <img src={teacher.avatarUrl} alt="" className="h-full w-full rounded-xl object-cover" /> : initials(teacher)}</div><div><div className="font-bold text-fg">{displayName(teacher)}</div><div className="text-[11px] text-fg-muted">Faculty ID: {teacher.id}</div></div></div></td><td className="px-4 py-3.5 text-fg-muted">{teacher.email || 'Not listed'}</td><td className="px-4 py-3.5"><span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-bold text-success"><span className="h-1.5 w-1.5 rounded-full bg-success" />Available</span></td><td className="px-4 py-3.5 text-right"><button onClick={() => navigate(`/teachers/profiles?id=${teacher.id}`)} className="rounded-lg p-1.5 text-fg-muted transition hover:bg-brand-500/10 hover:text-brand-600" title={`View ${displayName(teacher)}`}><Eye className="h-4 w-4" /></button></td></tr>)}</tbody></table></div>
         </div>
       )}
     </div>

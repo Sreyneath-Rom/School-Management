@@ -1,6 +1,5 @@
 // src/lib/apiClient.ts
 import { LOCAL_STORAGE_KEYS } from '@/utils/constants'
-import { mockApiHandler } from '@/lib/mockApiHandler'
 
 /**
  * Normalize the base URL. A trailing slash is stripped and, if the URL is
@@ -21,10 +20,11 @@ function resolveBaseUrl(): string {
 }
 
 const API_BASE_URL = resolveBaseUrl()
-// Opt-IN, not opt-out: an unset env var (e.g. a prod deploy that forgot to
-// set this) must never silently start mocking requests. Only the literal
-// string 'true' turns mocking on.
-const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true'
+
+/** Exposes the resolved endpoint for startup diagnostics and support screens. */
+export const apiConfig = {
+  baseUrl: API_BASE_URL,
+}
 
 // -----------------------------------------------------------------------------
 // Error type
@@ -288,33 +288,6 @@ async function request<T>(
 
     return await handleResponse<T>(res, path)
   } catch (err) {
-    if (!USE_MOCK_API) throw err
-
-    // 4xx (other than 404, which we treat as "no such mock/real route,
-    // try mocking it") are real client errors from a live server and must
-    // never be swallowed. 5xx must not be swallowed either — a genuine
-    // server outage should surface as a server error, not get silently
-    // replaced by mock data.
-    if (err instanceof ApiError && err.status !== 404) {
-      throw err
-    }
-
-    const method = options.method || 'GET'
-    let parsedBody: any
-    try {
-      parsedBody = options.body ? JSON.parse(options.body as string) : undefined
-    } catch {
-      parsedBody = options.body
-    }
-
-    const mockRes = await mockApiHandler.handle(path, method, parsedBody)
-    if (mockRes) {
-      if (!mockRes.success) {
-        throw new ApiError(400, mockRes.message || 'API request failed', mockRes)
-      }
-      return mockRes.data as T
-    }
-
     throw err
   }
 }
@@ -342,24 +315,6 @@ async function requestUpload<T>(
 
     return await handleResponse<T>(res, path)
   } catch (err) {
-    if (!USE_MOCK_API) throw err
-
-    // Same rule as request(): only fall through to the mock handler for
-    // "route doesn't exist" (404) or true network failures. A real 4xx
-    // validation error (file too large, bad type, etc.) or 5xx from a
-    // live server must be surfaced, not masked.
-    if (err instanceof ApiError && err.status !== 404) {
-      throw err
-    }
-
-    const mockRes = await mockApiHandler.handle(path, 'POST', formData)
-    if (mockRes) {
-      if (!mockRes.success) {
-        throw new ApiError(400, mockRes.message || 'API upload failed', mockRes)
-      }
-      return mockRes.data as T
-    }
-
     throw err
   }
 }

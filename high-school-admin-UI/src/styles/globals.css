@@ -406,6 +406,19 @@ textarea {
   .surface-theme  { background-color: var(--glass-bg); color: var(--text-color); }
   .page-theme     { background-color: var(--page-background); color: var(--text-color); }
   .page-surface   { color: var(--text-color); }
+
+  /* Shared primitives keep pages authored with utility classes on the same
+     neumorphic system as the application shell. */
+  .theme-divider { box-shadow: 0 1px 0 var(--neu-shadow-dark); }
+  .theme-muted { background-color: color-mix(in srgb, var(--glass-bg) 88%, var(--text-color)); }
+  .theme-overlay { background-color: rgb(15 23 42 / 0.58); }
+  .theme-button-primary {
+    background-color: var(--color-brand-600);
+    color: white;
+    box-shadow: var(--shadow-emboss-raised);
+  }
+  .theme-button-primary:hover { background-color: var(--color-brand-700); }
+  .theme-button-primary:active { box-shadow: var(--shadow-emboss-sunken); }
 }
 
 /* =========================================================
