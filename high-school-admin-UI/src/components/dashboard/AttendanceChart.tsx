@@ -22,8 +22,6 @@ export default function AttendanceChart({
   const loading = externalLoading ?? fetchLoading
   const [timeRange, setTimeRange] = useState<'week' | 'month'>('week')
 
-  // The dashboard summary endpoint returns a single object with counts per
-  // status. Reshape into the array Recharts expects.
   const chartData = data
     ? [
         { day: 'Present', value: data.present },
@@ -38,8 +36,13 @@ export default function AttendanceChart({
   if (loading) return <ChartCardSkeleton type="area" />
 
   return (
-    <section className="rounded-3xl border border-surface bg-surface-strong p-5 sm:p-6 shadow-xs">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-surface">
+    // The old `border border-surface bg-surface-strong shadow-xs` was
+    // three no-ops (border/bg matched the page; shadow-xs fought the
+    // neumorphic depth story). `.glass` supplies the correct raised
+    // surface. Chart itself is a data layer on top — its stroke/fill
+    // colors are Recharts props, not classes, so they're untouched.
+    <section className="rounded-3xl glass p-5 sm:p-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-4 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-fg">
@@ -58,7 +61,11 @@ export default function AttendanceChart({
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex rounded-xl bg-surface p-0.5 text-xs font-semibold">
+          {/* Toggle group: the outer tray is a sunken well, the active
+              segment is further pressed in — the classic neumorphic
+              segmented control. The old `bg-surface shadow-xs` active
+              state was invisible (same color as the tray). */}
+          <div className="flex rounded-xl p-0.5 text-xs font-semibold shadow-sunken">
             {(['week', 'month'] as const).map((range) => (
               <button
                 key={range}
@@ -66,7 +73,7 @@ export default function AttendanceChart({
                 onClick={() => setTimeRange(range)}
                 className={`rounded-lg px-2.5 py-1 transition cursor-pointer ${
                   timeRange === range
-                    ? 'bg-surface-strong text-fg shadow-xs font-bold'
+                    ? 'text-brand-700 dark:text-brand-300 font-bold shadow-sunken'
                     : 'text-fg-muted hover:text-fg'
                 }`}
               >
@@ -75,7 +82,7 @@ export default function AttendanceChart({
             ))}
           </div>
 
-          <span className="inline-flex items-center gap-1.5 rounded-xl bg-surface px-2.5 py-1 text-xs font-bold text-fg border border-surface">
+          <span className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold text-fg shadow-sunken">
             <Users size={12} className="text-brand-600 dark:text-brand-400" />
             <span>{total} records</span>
           </span>
@@ -102,7 +109,10 @@ export default function AttendanceChart({
               <CartesianGrid
                 vertical={false}
                 strokeDasharray="3 3"
-                stroke="var(--glass-outline)"
+                // --glass-outline is `transparent` under neumorphism, so
+                // the previous value rendered no grid at all. The shadow
+                // pair's dark half is the correct hairline tone.
+                stroke="var(--neu-shadow-dark)"
               />
               <XAxis
                 dataKey="day"
@@ -133,9 +143,11 @@ export default function AttendanceChart({
       </div>
 
       {data && (
-        <div className="mt-4 grid gap-2 sm:grid-cols-4 pt-3 border-t border-surface">
+        // Bottom stat row: four sunken wells. Previously four
+        // `bg-surface border border-surface` cards, both invisible.
+        <div className="mt-4 grid gap-2 sm:grid-cols-4 pt-3 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
           {chartData.map((row) => (
-            <div key={row.day} className="rounded-2xl bg-surface p-3 border border-surface">
+            <div key={row.day} className="rounded-2xl p-3 shadow-sunken">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-fg-muted">
                 {row.day}
               </div>
@@ -159,7 +171,9 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="dropdown-surface rounded-xl p-2.5 shadow-lg">
+    // `.dropdown-surface` already carries the elevated neumorphic shadow.
+    // The old `shadow-lg` was overriding it.
+    <div className="dropdown-surface rounded-xl p-2.5">
       <div className="flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-brand-500" />
         <span className="text-xs font-bold text-fg">{label}</span>

@@ -3,14 +3,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  Bell,
-  CheckCheck,
-  Trash2,
-  RefreshCw,
-  Mail,
-  Smartphone,
-  Monitor,
-  Circle,
+  Bell, CheckCheck, Trash2, RefreshCw, Mail, Smartphone, Monitor, Circle,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import { useNotifications } from '@/hooks/useNotifications'
@@ -23,9 +16,9 @@ const CHANNEL_META: Record<
   NotificationChannel,
   { label: string; Icon: typeof Mail }
 > = {
-  EMAIL: { label: 'Email', Icon: Mail },
-  PUSH: { label: 'Push', Icon: Smartphone },
-  IN_APP: { label: 'In-app', Icon: Monitor },
+  EMAIL:   { label: 'Email',   Icon: Mail },
+  PUSH:    { label: 'Push',    Icon: Smartphone },
+  IN_APP:  { label: 'In-app',  Icon: Monitor },
 }
 
 function relativeTime(iso: string): string {
@@ -45,22 +38,15 @@ function relativeTime(iso: string): string {
 export default function NotificationsPage() {
   const { showToast } = useToast()
   const {
-    notifications,
-    loading,
-    unreadCount,
-    isUnread,
-    markRead,
-    markAllRead,
-    refetch,
+    notifications, loading, unreadCount,
+    isUnread, markRead, markAllRead, refetch,
   } = useNotifications()
 
   const [filter, setFilter] = useState<Filter>('all')
   const [busyId, setBusyId] = useState<string | null>(null)
 
   const filtered: Notification[] = useMemo(() => {
-    return filter === 'unread'
-      ? notifications.filter(isUnread)
-      : notifications
+    return filter === 'unread' ? notifications.filter(isUnread) : notifications
   }, [notifications, filter, isUnread])
 
   const handleDismiss = async (id: string) => {
@@ -92,7 +78,7 @@ export default function NotificationsPage() {
           <button
             onClick={refetch}
             disabled={loading}
-            className="p-2 rounded-xl bg-surface hover:bg-surface-strong text-secondary transition disabled:opacity-50"
+            className="glass-sm glass-interactive p-2 rounded-xl text-fg-muted hover:text-fg disabled:opacity-50"
             title="Refresh"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -101,7 +87,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-surface text-color text-xs font-semibold hover:bg-surface transition"
+              className="glass-sm glass-interactive inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-fg text-xs font-semibold"
             >
               <CheckCheck size={14} />
               <span>Mark all read</span>
@@ -110,23 +96,24 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 p-3 rounded-2xl glass-sm border border-surface overflow-x-auto">
+      {/* Filter tray — border removed, hover is now visible */}
+      <div className="flex items-center gap-1.5 p-3 rounded-2xl glass-sm overflow-x-auto">
         <button
           onClick={() => setFilter('all')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
             filter === 'all'
-              ? 'bg-brand-600 text-white shadow-sm'
-              : 'text-secondary hover:bg-surface'
+              ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+              : 'text-fg-muted hover:text-fg hover:shadow-sunken'
           }`}
         >
           All ({notifications.length})
         </button>
         <button
           onClick={() => setFilter('unread')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
             filter === 'unread'
-              ? 'bg-brand-600 text-white shadow-sm'
-              : 'text-secondary hover:bg-surface'
+              ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+              : 'text-fg-muted hover:text-fg hover:shadow-sunken'
           }`}
         >
           Unread ({unreadCount})
@@ -134,14 +121,14 @@ export default function NotificationsPage() {
       </div>
 
       {loading ? (
-        <div className="p-16 text-center text-secondary text-sm rounded-2xl glass-sm border border-surface">
+        <div className="p-16 text-center text-fg-muted text-sm rounded-2xl glass-sm">
           <RefreshCw size={16} className="inline animate-spin mr-2" />
           Loading notifications...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl glass-sm border border-surface">
-          <Bell className="mx-auto mb-3 h-10 w-10 text-secondary" />
-          <p className="text-xs text-secondary">
+        <div className="p-12 text-center rounded-2xl glass-sm">
+          <Bell className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+          <p className="text-xs text-fg-muted">
             {notifications.length === 0
               ? "You don't have any notifications yet."
               : "You're all caught up."}
@@ -150,47 +137,41 @@ export default function NotificationsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((item) => {
-            const channelMeta =
-              CHANNEL_META[item.channel] ?? CHANNEL_META.IN_APP
+            const channelMeta = CHANNEL_META[item.channel] ?? CHANNEL_META.IN_APP
             const { Icon: ChannelIcon } = channelMeta
             const unread = isUnread(item)
 
             return (
               <div
                 key={item.id}
-                className={`p-4 rounded-2xl glass-sm border transition flex items-start justify-between gap-4 ${
-                  unread
-                    ? 'border-brand-500/30 bg-brand-500/3'
-                    : 'border-surface bg-surface/40'
+                // Unread: same raised surface + brand ring as the pinned
+                // announcements. Read: raised surface with no ring. Both
+                // replaced the previous `border-brand-500/30 bg-brand-500/3`
+                // (nearly invisible) and `border-surface bg-surface/40`
+                // (fully no-op) — neither read visually under neumorphism.
+                className={`p-4 rounded-2xl glass-sm flex items-start justify-between gap-4 ${
+                  unread ? 'ring-1 ring-brand-500/30 bg-brand-500/5' : ''
                 }`}
               >
                 <div className="flex items-start gap-3.5">
-                  <div className="p-2.5 rounded-xl bg-surface border border-surface shrink-0 mt-0.5 text-secondary">
+                  {/* Icon well → sunken */}
+                  <div className="p-2.5 rounded-xl text-fg-muted shrink-0 mt-0.5 shadow-sunken">
                     <ChannelIcon size={16} />
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h3
-                        className={`text-xs font-bold ${
-                          unread ? 'text-color' : 'text-secondary'
-                        }`}
-                      >
+                      <h3 className={`text-xs font-bold ${unread ? 'text-fg' : 'text-fg-muted'}`}>
                         {item.title}
                       </h3>
                       {unread && (
-                        <Circle
-                          size={6}
-                          className="text-brand-500 fill-brand-500 shrink-0"
-                        />
+                        <Circle size={6} className="text-brand-500 fill-brand-500 shrink-0" />
                       )}
                     </div>
 
-                    <p className="text-xs text-color leading-relaxed">
-                      {item.body}
-                    </p>
+                    <p className="text-xs text-fg leading-relaxed">{item.body}</p>
 
-                    <div className="flex items-center gap-3 pt-1 text-[11px] text-secondary">
+                    <div className="flex items-center gap-3 pt-1 text-[11px] text-fg-muted">
                       <span>{relativeTime(item.createdAt)}</span>
                       <span>•</span>
                       <span>{channelMeta.label}</span>
@@ -202,7 +183,7 @@ export default function NotificationsPage() {
                   {unread && (
                     <button
                       onClick={() => markRead(item.id)}
-                      className="p-1 rounded text-secondary hover:text-color"
+                      className="p-1 rounded text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
                       title="Mark as read"
                     >
                       <CheckCheck size={15} />
@@ -211,7 +192,7 @@ export default function NotificationsPage() {
                   <button
                     onClick={() => handleDismiss(item.id)}
                     disabled={busyId === item.id}
-                    className="p-1 rounded text-secondary hover:text-error disabled:opacity-50"
+                    className="p-1 rounded text-fg-muted hover:text-error hover:shadow-sunken disabled:opacity-50 transition cursor-pointer"
                     title="Dismiss"
                   >
                     <Trash2 size={15} />
@@ -223,11 +204,10 @@ export default function NotificationsPage() {
         </div>
       )}
 
-      {/* Cross-link to the raw endpoint for the user's full history */}
       <div className="text-center pt-4">
         <Link
           to="/settings"
-          className="text-[11px] text-secondary hover:text-color underline"
+          className="text-[11px] text-fg-muted hover:text-fg underline"
         >
           Notification preferences
         </Link>

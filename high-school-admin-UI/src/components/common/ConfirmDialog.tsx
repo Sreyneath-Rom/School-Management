@@ -24,6 +24,8 @@ const ACCENT: Record<ConfirmVariant, 'error' | 'warning' | 'brand'> = {
   primary: 'brand',
 }
 
+// Gradient icon badges sit ON the modal surface — colored accents are fine
+// here (they're stickers on a wall, not the wall itself).
 const ICON_WRAP: Record<ConfirmVariant, string> = {
   danger: 'bg-linear-to-br from-rose-500 to-red-600 text-white shadow-md shadow-rose-500/25',
   warning: 'bg-linear-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/25',
@@ -66,7 +68,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={activeProcessing}
-            className="rounded-2xl border border-surface bg-surface px-4 py-2 text-xs font-bold text-fg-muted hover:text-fg hover:bg-surface-strong transition cursor-pointer disabled:opacity-50"
+            className="glass-sm glass-interactive rounded-2xl px-4 py-2 text-xs font-bold text-fg-muted hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cancelLabel}
           </button>

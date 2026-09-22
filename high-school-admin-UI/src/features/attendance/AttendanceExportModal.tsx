@@ -1,3 +1,4 @@
+// src/features/attendance/AttendanceExportModal.tsx
 import React, { useState } from 'react'
 import { X, Download, FileSpreadsheet, Printer, Check } from 'lucide-react'
 import type { AttendanceRecord } from '@/services/attendanceService'
@@ -29,7 +30,6 @@ export default function AttendanceExportModal({
       return
     }
 
-    // Generate CSV
     const headers = ['Student ID', 'Student Name', 'Class', 'Date', 'Status', 'Check-In', 'Check-Out', 'Note']
     const rows = records.map((r) => [
       `"${r.studentCode || r.studentId}"`,
@@ -60,32 +60,28 @@ export default function AttendanceExportModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-200"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/80 bg-white/95 shadow-2xl backdrop-blur-2xl animate-in zoom-in-95 duration-200 dark:border-slate-800/80 dark:bg-slate-900/95"
+        className="relative w-full max-w-md overflow-hidden rounded-[28px] glass-strong animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Soft Ambient Light Glow */}
-        <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-gradient-to-br from-emerald-400/20 via-teal-400/15 to-transparent blur-3xl opacity-70" />
+        <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-linear-to-br from-emerald-400/20 via-teal-400/15 to-transparent blur-3xl opacity-60" />
 
-        {/* Header */}
-        <div className="relative z-10 flex items-center justify-between border-b border-slate-100 bg-white/60 px-6 py-4.5 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/60">
+        <div className="relative z-10 flex items-center justify-between px-6 py-4.5 shadow-[0_1px_0_var(--neu-shadow-dark)]">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
               <Download className="w-5 h-5" strokeWidth={2.2} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Export Attendance Records
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <h3 className="text-base font-bold text-fg">Export Attendance Records</h3>
+              <p className="text-xs text-fg-muted mt-0.5">
                 {selectedClass} • {selectedDate} ({records.length} students)
               </p>
             </div>
@@ -93,62 +89,60 @@ export default function AttendanceExportModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-fg-muted transition hover:text-fg hover:shadow-sunken cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body */}
         <div className="relative z-10 p-6 space-y-4">
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+          <label className="block text-xs font-bold text-fg">
             Export Format & Destination
           </label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setFormat('csv')}
-              className={`p-4 rounded-2xl border flex flex-col items-center gap-2.5 transition-all cursor-pointer ${
+              className={`p-4 rounded-2xl flex flex-col items-center gap-2.5 transition-all cursor-pointer ${
                 format === 'csv'
-                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20 shadow-xs'
-                  : 'border-slate-200/80 bg-slate-50/70 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'text-emerald-800 dark:text-emerald-300 shadow-sunken'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                 <FileSpreadsheet className="w-6 h-6" />
               </div>
               <div className="text-center">
-                <span className="text-xs font-bold block text-slate-900 dark:text-white">CSV Spreadsheet</span>
-                <span className="text-[10px] text-slate-400 font-medium">Excel & Sheets ready</span>
+                <span className="text-xs font-bold block text-fg">CSV Spreadsheet</span>
+                <span className="text-[10px] text-fg-muted font-medium">Excel & Sheets ready</span>
               </div>
             </button>
 
             <button
               type="button"
               onClick={() => setFormat('print')}
-              className={`p-4 rounded-2xl border flex flex-col items-center gap-2.5 transition-all cursor-pointer ${
+              className={`p-4 rounded-2xl flex flex-col items-center gap-2.5 transition-all cursor-pointer ${
                 format === 'print'
-                  ? 'border-blue-500 bg-blue-500/10 text-blue-800 dark:text-blue-300 ring-2 ring-blue-500/20 shadow-xs'
-                  : 'border-slate-200/80 bg-slate-50/70 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'text-blue-800 dark:text-blue-300 shadow-sunken'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400">
                 <Printer className="w-6 h-6" />
               </div>
               <div className="text-center">
-                <span className="text-xs font-bold block text-slate-900 dark:text-white">Print / PDF</span>
-                <span className="text-[10px] text-slate-400 font-medium">Official roll sheet</span>
+                <span className="text-xs font-bold block text-fg">Print / PDF</span>
+                <span className="text-[10px] text-fg-muted font-medium">Official roll sheet</span>
               </div>
             </button>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="relative z-10 flex items-center justify-end gap-2.5 border-t border-slate-100 bg-slate-50/60 px-6 py-4 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/60">
+        <div className="relative z-10 flex items-center justify-end gap-2.5 px-6 py-4 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-200/80 bg-slate-100/80 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition cursor-pointer dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            className="glass-sm glass-interactive rounded-2xl px-4 py-2 text-xs font-bold text-fg-muted hover:text-fg cursor-pointer"
           >
             Cancel
           </button>
@@ -156,7 +150,7 @@ export default function AttendanceExportModal({
             type="button"
             onClick={handleExport}
             disabled={downloaded}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/25 hover:from-emerald-700 hover:to-teal-700 transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/25 hover:from-emerald-700 hover:to-teal-700 transition cursor-pointer disabled:opacity-50"
           >
             {downloaded ? <Check className="w-4 h-4" /> : <Download className="w-4 h-4" />}
             <span>{downloaded ? 'Downloaded!' : format === 'csv' ? 'Download CSV' : 'Open Print View'}</span>

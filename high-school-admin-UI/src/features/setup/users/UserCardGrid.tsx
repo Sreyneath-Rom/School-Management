@@ -14,18 +14,13 @@ interface UserCardGridProps {
 }
 
 export const UserCardGrid: React.FC<UserCardGridProps> = ({
-  users,
-  selectedUserIds,
-  onToggleSelect,
-  onEdit,
-  onDelete,
-  onResetPassword,
+  users, selectedUserIds, onToggleSelect, onEdit, onDelete, onResetPassword,
 }) => {
   if (users.length === 0) {
     return (
-      <div className="rounded-[28px] glass-sm p-12 text-center text-text-main/50 border border-text-main/10">
+      <div className="rounded-[28px] glass-sm p-12 text-center text-fg-muted">
         <User size={36} className="mx-auto mb-3 opacity-40" />
-        <p className="font-semibold text-text-main">No Users Found</p>
+        <p className="font-semibold text-fg">No Users Found</p>
         <p className="text-xs">Try adjusting your search or role filters.</p>
       </div>
     )
@@ -42,24 +37,26 @@ export const UserCardGrid: React.FC<UserCardGridProps> = ({
           <div
             key={user.id}
             onClick={() => onToggleSelect(user.id)}
-            className={`group relative flex flex-col justify-between rounded-[26px] p-5 border transition-all cursor-pointer ${
+            // Selected = sunken well + brand ring. Unselected = raised
+            // surface, hover flips to sunken. Border removed (was invisible).
+            className={`group relative flex flex-col justify-between rounded-[26px] p-5 transition-all cursor-pointer ${
               isSelected
-                ? 'bg-brand-500/10 border-brand-500/60 shadow-md ring-2 ring-brand-500/20'
-                : 'glass-sm border-text-main/10 hover:border-brand-500/30 hover:shadow-lg'
+                ? 'shadow-sunken ring-1 ring-brand-500/30'
+                : 'glass-sm hover:shadow-sunken'
             }`}
           >
             <div>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-sm font-bold text-white shadow-md shadow-brand-600/20">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-sm font-bold text-white shadow-sm shadow-brand-600/25">
                     {user.firstName[0]}
                     {user.lastName[0]}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <h3 className="truncate font-bold text-sm text-text-main">{fullName}</h3>
+                      <h3 className="truncate font-bold text-sm text-fg">{fullName}</h3>
                     </div>
-                    <p className="text-xs text-text-main/50 font-mono">{user.id}</p>
+                    <p className="text-xs text-fg-muted font-mono">{user.id}</p>
                   </div>
                 </div>
 
@@ -70,7 +67,7 @@ export const UserCardGrid: React.FC<UserCardGridProps> = ({
                   <button
                     type="button"
                     onClick={() => onResetPassword(user)}
-                    className="rounded-lg p-1.5 text-text-main/50 hover:bg-amber-500/10 hover:text-amber-600 transition"
+                    className="rounded-lg p-1.5 text-fg-muted hover:text-warning hover:shadow-sunken transition"
                     title="Reset Password"
                   >
                     <Key size={14} />
@@ -78,7 +75,7 @@ export const UserCardGrid: React.FC<UserCardGridProps> = ({
                   <button
                     type="button"
                     onClick={() => onEdit(user)}
-                    className="rounded-lg p-1.5 text-text-main/50 hover:bg-brand-500/10 hover:text-brand-600 transition"
+                    className="rounded-lg p-1.5 text-fg-muted hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-sunken transition"
                     title="Edit User"
                   >
                     <Edit2 size={14} />
@@ -88,7 +85,7 @@ export const UserCardGrid: React.FC<UserCardGridProps> = ({
                     onClick={() => {
                       if (confirm(`Delete user ${fullName}?`)) onDelete(user.id)
                     }}
-                    className="rounded-lg p-1.5 text-text-main/50 hover:bg-error/10 hover:text-error transition"
+                    className="rounded-lg p-1.5 text-fg-muted hover:text-error hover:shadow-sunken transition"
                     title="Delete User"
                   >
                     <Trash2 size={14} />
@@ -97,47 +94,46 @@ export const UserCardGrid: React.FC<UserCardGridProps> = ({
               </div>
 
               <div className="mt-3.5 flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleColor.bg} ${roleColor.text}`}
-                >
+                {/* Role chip: semantic tint from ROLE_COLORS — kept */}
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleColor.bg} ${roleColor.text}`}>
                   {ROLE_LABELS[user.role]}
                 </span>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                     user.status === 'active'
-                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                      : 'bg-text-main/10 text-text-main/50'
+                      ? 'bg-success/15 text-success'
+                      : 'text-fg-muted shadow-sunken'
                   }`}
                 >
                   {user.status === 'active' ? 'Active' : 'Inactive'}
                 </span>
                 {(user as any).class && (
-                  <span className="rounded-full bg-text-main/10 px-2.5 py-0.5 text-[11px] font-bold text-text-main">
+                  <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-fg shadow-sunken">
                     {(user as any).class}
                   </span>
                 )}
                 {(user as any).department && (
-                  <span className="rounded-full bg-text-main/10 px-2.5 py-0.5 text-[11px] font-medium text-text-main/70">
+                  <span className="rounded-full px-2.5 py-0.5 text-[11px] font-medium text-fg-muted shadow-sunken">
                     {(user as any).department}
                   </span>
                 )}
               </div>
 
-              <div className="mt-4 space-y-1.5 text-xs text-text-main/60">
+              <div className="mt-4 space-y-1.5 text-xs text-fg-muted">
                 <div className="flex items-center gap-2 truncate">
-                  <Mail size={13} className="shrink-0 text-text-main/40" />
+                  <Mail size={13} className="shrink-0 text-fg-muted/70" />
                   <span className="truncate">{user.email}</span>
                 </div>
                 {user.phone && (
                   <div className="flex items-center gap-2 truncate">
-                    <Phone size={13} className="shrink-0 text-text-main/40" />
+                    <Phone size={13} className="shrink-0 text-fg-muted/70" />
                     <span className="truncate">{user.phone}</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-text-main/10 flex items-center justify-between text-[11px] text-text-main/40">
+            <div className="mt-4 pt-3 shadow-[0_-1px_0_var(--neu-shadow-dark)] flex items-center justify-between text-[11px] text-fg-muted/70">
               <span>Added {user.createdDate || 'Recently'}</span>
               <span className="capitalize">{user.gender || 'Not specified'}</span>
             </div>

@@ -23,6 +23,7 @@ import {
   type EventCategory,
 } from '@/services/eventService'
 
+/* Category tints are semantic distinctions, not surfaces — kept. */
 const CATEGORY_COLORS: Record<
   EventCategory,
   { bg: string; text: string; dot: string }
@@ -55,18 +56,19 @@ const CATEGORY_COLORS: Record<
 }
 
 const CATEGORY_FILTERS: Array<'All' | EventCategory> = [
-  'All',
-  'Academic',
-  'Exam',
-  'Holiday',
-  'Extracurricular',
-  'Meeting',
+  'All', 'Academic', 'Exam', 'Holiday', 'Extracurricular', 'Meeting',
 ]
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
+
+/* Hairline seam on the right and bottom of every cell. Both axes are
+   drawn because the grid has no gap — the "inner" borders between
+   cells need to come from one side or the other, not both. */
+const CELL_SEAM =
+  'shadow-[1px_0_0_var(--neu-shadow-dark),0_1px_0_var(--neu-shadow-dark)]'
 
 function pad(n: number): string {
   return String(n).padStart(2, '0')
@@ -86,7 +88,6 @@ export default function CalendarView() {
   const [selectedCategory, setSelectedCategory] = useState<'All' | EventCategory>('All')
   const [viewMode, setViewMode] = useState<'month' | 'list'>('month')
 
-  // Start at the current month, not a hardcoded one.
   const now = new Date()
   const [currentYear, setCurrentYear] = useState(now.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(now.getMonth())
@@ -109,26 +110,16 @@ export default function CalendarView() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   const handlePrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11)
-      setCurrentYear((y) => y - 1)
-    } else {
-      setCurrentMonth((m) => m - 1)
-    }
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1) }
+    else setCurrentMonth((m) => m - 1)
   }
 
   const handleNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0)
-      setCurrentYear((y) => y + 1)
-    } else {
-      setCurrentMonth((m) => m + 1)
-    }
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear((y) => y + 1) }
+    else setCurrentMonth((m) => m + 1)
   }
 
   const handleToday = () => {
@@ -138,10 +129,9 @@ export default function CalendarView() {
   }
 
   const filteredEvents = useMemo(
-    () =>
-      selectedCategory === 'All'
-        ? events
-        : events.filter((e) => e.category === selectedCategory),
+    () => selectedCategory === 'All'
+      ? events
+      : events.filter((e) => e.category === selectedCategory),
     [events, selectedCategory]
   )
 
@@ -152,8 +142,7 @@ export default function CalendarView() {
       setActiveEvent(null)
       showToast('Event removed', 'info')
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : 'Unable to delete event.'
+      const msg = err instanceof Error ? err.message : 'Unable to delete event.'
       showToast(msg, 'error')
     }
   }
@@ -162,9 +151,7 @@ export default function CalendarView() {
     const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay()
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
     const cells: Array<{ day: number | null; dateStr: string }> = []
-    for (let i = 0; i < firstDayOfWeek; i++) {
-      cells.push({ day: null, dateStr: '' })
-    }
+    for (let i = 0; i < firstDayOfWeek; i++) cells.push({ day: null, dateStr: '' })
     for (let d = 1; d <= daysInMonth; d++) {
       cells.push({
         day: d,
@@ -182,23 +169,24 @@ export default function CalendarView() {
           subtitle="Institutional milestones, examinations, holidays, and meetings."
         />
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center rounded-xl bg-surface p-1 border border-surface text-xs font-semibold">
+          {/* View toggle: sunken tray, active segment brand-filled */}
+          <div className="flex items-center rounded-xl p-1 text-xs font-semibold shadow-sunken">
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 viewMode === 'month'
-                  ? 'bg-surface-strong text-color shadow-sm'
-                  : 'text-secondary'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               Month
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-surface-strong text-color shadow-sm'
-                  : 'text-secondary'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               List
@@ -207,7 +195,7 @@ export default function CalendarView() {
 
           <Link
             to="/calendar/events/create"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition"
           >
             <Plus size={16} />
             <span>Add Event</span>
@@ -215,23 +203,23 @@ export default function CalendarView() {
         </div>
       </div>
 
-      {/* Navigation + filter */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-3 rounded-2xl glass-sm border border-surface">
+      {/* Navigation + filter bar — border removed (was invisible) */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-3 rounded-2xl glass-sm">
         <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-start">
           <div className="flex items-center gap-1">
             <button
               onClick={handlePrevMonth}
-              className="p-1.5 rounded-xl hover:bg-surface text-secondary transition"
+              className="p-1.5 rounded-xl text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               title="Previous month"
             >
               <ChevronLeft size={18} />
             </button>
-            <h2 className="text-base font-bold text-color px-2 min-w-40 text-center">
+            <h2 className="text-base font-bold text-fg px-2 min-w-40 text-center">
               {MONTH_NAMES[currentMonth]} {currentYear}
             </h2>
             <button
               onClick={handleNextMonth}
-              className="p-1.5 rounded-xl hover:bg-surface text-secondary transition"
+              className="p-1.5 rounded-xl text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               title="Next month"
             >
               <ChevronRight size={18} />
@@ -240,7 +228,7 @@ export default function CalendarView() {
 
           <button
             onClick={handleToday}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-fg shadow-sunken hover:shadow-emboss transition cursor-pointer"
           >
             Today
           </button>
@@ -251,10 +239,10 @@ export default function CalendarView() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-brand-600 text-white shadow-sm'
-                  : 'text-secondary hover:bg-surface'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+                  : 'text-fg-muted hover:text-fg hover:shadow-sunken'
               }`}
             >
               {cat}
@@ -265,23 +253,25 @@ export default function CalendarView() {
 
       {/* Body */}
       {loading ? (
-        <div className="rounded-2xl glass-sm border border-surface p-16 text-center text-sm text-secondary">
+        <div className="rounded-2xl glass-sm p-16 text-center text-sm text-fg-muted">
           Loading calendar...
         </div>
       ) : error ? (
-        <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-center">
+        // Semantic error — tinted, kept
+        <div className="rounded-2xl border border-error/30 bg-error/10 p-6 text-center">
           <p className="text-sm font-bold text-error">Couldn't load the calendar</p>
-          <p className="mt-1 text-xs text-secondary">{error.message}</p>
+          <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
           <button
             onClick={load}
-            className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+            className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 cursor-pointer"
           >
             Retry
           </button>
         </div>
       ) : viewMode === 'month' ? (
-        <div className="rounded-2xl glass-sm border border-surface overflow-hidden shadow-sm">
-          <div className="grid grid-cols-7 border-b border-surface bg-surface-strong text-center text-[11px] font-semibold tracking-wider text-secondary uppercase py-2.5">
+        <div className="rounded-2xl glass-sm overflow-hidden">
+          {/* Day-of-week header: bottom shadow seam */}
+          <div className="grid grid-cols-7 shadow-[0_1px_0_var(--neu-shadow-dark)] text-center text-[11px] font-semibold tracking-wider text-fg-muted uppercase py-2.5">
             <div>Sun</div>
             <div>Mon</div>
             <div>Tue</div>
@@ -291,13 +281,14 @@ export default function CalendarView() {
             <div>Sat</div>
           </div>
 
-          <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-surface">
+          {/* Cell grid: each cell draws its own right+bottom seam */}
+          <div className="grid grid-cols-7 auto-rows-fr">
             {calendarDays.map((cell, idx) => {
               if (!cell.day) {
                 return (
                   <div
                     key={`empty-${idx}`}
-                    className="min-h-26 p-2 bg-surface/20"
+                    className={`min-h-26 p-2 ${CELL_SEAM}`}
                   />
                 )
               }
@@ -308,8 +299,10 @@ export default function CalendarView() {
               return (
                 <div
                   key={cell.dateStr}
-                  className={`min-h-26 p-2 transition flex flex-col justify-between hover:bg-surface/40 ${
-                    isToday ? 'bg-brand-500/4' : ''
+                  className={`min-h-26 p-2 transition-shadow flex flex-col justify-between ${CELL_SEAM} ${
+                    isToday
+                      ? 'bg-brand-500/5'
+                      : 'hover:shadow-sunken'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -317,13 +310,13 @@ export default function CalendarView() {
                       className={`text-xs font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full ${
                         isToday
                           ? 'bg-brand-600 text-white font-bold'
-                          : 'text-color'
+                          : 'text-fg'
                       }`}
                     >
                       {cell.day}
                     </span>
                     {dayEvents.length > 0 && (
-                      <span className="text-[10px] text-secondary font-mono">
+                      <span className="text-[10px] text-fg-muted font-mono">
                         {dayEvents.length}
                       </span>
                     )}
@@ -336,7 +329,7 @@ export default function CalendarView() {
                         <button
                           key={evt.id}
                           onClick={() => setActiveEvent(evt)}
-                          className={`w-full text-left px-2 py-1 rounded-lg border text-[11px] font-medium truncate flex items-center gap-1.5 transition hover:scale-[1.02] ${col.bg}`}
+                          className={`w-full text-left px-2 py-1 rounded-lg border text-[11px] font-medium truncate flex items-center gap-1.5 transition hover:scale-[1.02] cursor-pointer ${col.bg}`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${col.dot}`} />
                           <span className="truncate">{evt.title}</span>
@@ -350,7 +343,7 @@ export default function CalendarView() {
           </div>
 
           {events.length === 0 && (
-            <div className="p-8 text-center text-secondary text-xs border-t border-surface">
+            <div className="p-8 text-center text-fg-muted text-xs shadow-[0_-1px_0_var(--neu-shadow-dark)]">
               No events scheduled. Add one to get started.
             </div>
           )}
@@ -358,7 +351,7 @@ export default function CalendarView() {
       ) : (
         <div className="space-y-3">
           {filteredEvents.length === 0 ? (
-            <div className="p-12 text-center text-secondary rounded-2xl glass-sm border border-surface">
+            <div className="p-12 text-center text-fg-muted rounded-2xl glass-sm">
               No events found for the chosen category.
             </div>
           ) : (
@@ -368,7 +361,7 @@ export default function CalendarView() {
                 <div
                   key={evt.id}
                   onClick={() => setActiveEvent(evt)}
-                  className="p-4 rounded-2xl glass-sm border border-surface flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-brand-500/30 transition cursor-pointer"
+                  className="p-4 rounded-2xl glass-sm glass-interactive flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer"
                 >
                   <div className="flex items-start gap-3.5">
                     <div className={`p-2.5 rounded-xl border ${col.bg} shrink-0`}>
@@ -376,17 +369,15 @@ export default function CalendarView() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm font-bold text-color">{evt.title}</h3>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${col.bg}`}
-                        >
+                        <h3 className="text-sm font-bold text-fg">{evt.title}</h3>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${col.bg}`}>
                           {evt.category}
                         </span>
                       </div>
-                      <p className="text-xs text-secondary mt-0.5 line-clamp-1">
+                      <p className="text-xs text-fg-muted mt-0.5 line-clamp-1">
                         {evt.description}
                       </p>
-                      <div className="flex items-center gap-3 mt-2 text-[11px] text-secondary flex-wrap">
+                      <div className="flex items-center gap-3 mt-2 text-[11px] text-fg-muted flex-wrap">
                         <span className="flex items-center gap-1">
                           <CalendarIcon size={12} /> {evt.date}
                         </span>
@@ -410,7 +401,7 @@ export default function CalendarView() {
                         e.stopPropagation()
                         navigate(`/calendar/events/${evt.id}/edit`)
                       }}
-                      className="p-1.5 rounded-lg hover:bg-surface text-secondary"
+                      className="p-1.5 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
                     >
                       <Edit3 size={15} />
                     </button>
@@ -419,7 +410,7 @@ export default function CalendarView() {
                         e.stopPropagation()
                         handleDeleteEvent(evt.id)
                       }}
-                      className="p-1.5 rounded-lg hover:bg-error/10 text-secondary hover:text-error"
+                      className="p-1.5 rounded-lg text-fg-muted hover:text-error hover:shadow-sunken transition cursor-pointer"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -431,77 +422,76 @@ export default function CalendarView() {
         </div>
       )}
 
-      {/* Detail modal */}
+      {/* Detail modal — flat scrim, `.glass-strong` panel (border + shadow-2xl removed) */}
       {activeEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-surface pb-3">
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${CATEGORY_COLORS[activeEvent.category].bg}`}
-              >
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveEvent(null) }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <div className="flex items-center justify-between pb-3 shadow-[0_1px_0_var(--neu-shadow-dark)]">
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${CATEGORY_COLORS[activeEvent.category].bg}`}>
                 {activeEvent.category}
               </span>
               <button
                 onClick={() => setActiveEvent(null)}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-base font-bold text-color">{activeEvent.title}</h3>
-              <p className="text-xs text-secondary leading-relaxed">
+              <h3 className="text-base font-bold text-fg">{activeEvent.title}</h3>
+              <p className="text-xs text-fg-muted leading-relaxed">
                 {activeEvent.description}
               </p>
 
-              <div className="p-3.5 rounded-xl bg-surface space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-color">
-                  <CalendarIcon size={14} className="text-secondary" />
+              {/* Info panel → sunken well */}
+              <div className="p-3.5 rounded-xl shadow-sunken space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-fg">
+                  <CalendarIcon size={14} className="text-fg-muted" />
                   <span className="font-semibold">{activeEvent.date}</span>
-                  <span className="text-secondary">•</span>
+                  <span className="text-fg-muted">•</span>
                   <span>
                     {activeEvent.isAllDay
                       ? 'All day'
                       : `${activeEvent.startTime} - ${activeEvent.endTime}`}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-color">
-                  <MapPin size={14} className="text-secondary" />
+                <div className="flex items-center gap-2 text-fg">
+                  <MapPin size={14} className="text-fg-muted" />
                   <span>{activeEvent.location}</span>
                 </div>
-                <div className="flex items-center gap-2 text-color">
-                  <Users size={14} className="text-secondary" />
-                  <span>
-                    Audience: <strong>{activeEvent.targetAudience}</strong>
-                  </span>
+                <div className="flex items-center gap-2 text-fg">
+                  <Users size={14} className="text-fg-muted" />
+                  <span>Audience: <strong>{activeEvent.targetAudience}</strong></span>
                 </div>
-                <div className="flex items-center gap-2 text-color">
-                  <Bell size={14} className="text-secondary" />
-                  <span>
-                    Organizer: <strong>{activeEvent.organizer}</strong>
-                  </span>
+                <div className="flex items-center gap-2 text-fg">
+                  <Bell size={14} className="text-fg-muted" />
+                  <span>Organizer: <strong>{activeEvent.organizer}</strong></span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-surface">
+            <div className="flex items-center justify-between pt-3 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
               <button
                 onClick={() => handleDeleteEvent(activeEvent.id)}
-                className="text-xs font-semibold text-error hover:underline"
+                className="text-xs font-semibold text-error hover:underline cursor-pointer"
               >
                 Delete
               </button>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigate(`/calendar/events/${activeEvent.id}/edit`)}
-                  className="px-3.5 py-1.5 rounded-xl border border-surface text-color text-xs font-semibold hover:bg-surface"
+                  className="glass-sm glass-interactive px-3.5 py-1.5 rounded-xl text-fg text-xs font-semibold"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => setActiveEvent(null)}
-                  className="px-4 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700"
+                  className="px-4 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 transition cursor-pointer"
                 >
                   Done
                 </button>

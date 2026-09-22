@@ -1,5 +1,5 @@
-import Login from './Login';
+import Login from './Login'
 
 export default function StudentLogin() {
-  return <Login initialRole="student" />;
+  return <Login initialRole="student" />
 }

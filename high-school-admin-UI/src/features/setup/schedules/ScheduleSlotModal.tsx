@@ -33,23 +33,12 @@ const TIME_PRESETS = [
 ]
 
 const COLOR_THEMES: ('sky' | 'emerald' | 'amber' | 'violet' | 'rose' | 'indigo')[] = [
-  'sky',
-  'emerald',
-  'amber',
-  'violet',
-  'rose',
-  'indigo',
+  'sky', 'emerald', 'amber', 'violet', 'rose', 'indigo',
 ]
 
 export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
-  isOpen,
-  isSubmitting,
-  slotToEdit,
-  defaultDayOfWeek = 0,
-  defaultStartTime = '08:00',
-  subjects,
-  onClose,
-  onSubmit,
+  isOpen, isSubmitting, slotToEdit, defaultDayOfWeek = 0, defaultStartTime = '08:00',
+  subjects, onClose, onSubmit,
 }) => {
   const [classId, setClassId] = useState(CLASSES[0].id)
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '')
@@ -76,7 +65,9 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
       setSubjectId(subjects[0]?.id || '')
       setDayOfWeek(defaultDayOfWeek)
       setStartTime(defaultStartTime)
-      setEndTime(defaultStartTime === '08:00' ? '09:30' : defaultStartTime === '10:00' ? '11:30' : '14:30')
+      setEndTime(
+        defaultStartTime === '08:00' ? '09:30' : defaultStartTime === '10:00' ? '11:30' : '14:30'
+      )
       setRoom('Room 101')
       setColorTheme('sky')
 
@@ -105,10 +96,7 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
     const selectedClass = CLASSES.find((c) => c.id === classId)
     const selectedSubject = subjects.find((s) => s.id === subjectId)
 
-    if (!subjectId) {
-      setError('Please select a subject')
-      return
-    }
+    if (!subjectId) { setError('Please select a subject'); return }
 
     onSubmit({
       classId,
@@ -126,83 +114,90 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[30px] glass-strong p-6 sm:p-7 shadow-2xl border border-text-main/15">
-        <div className="flex items-center justify-between pb-4 border-b border-text-main/10">
+    <div
+      // Flat scrim — dropped backdrop-blur-sm (a glassmorphism artifact).
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-200"
+      role="presentation"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      {/* `.glass-strong` supplies bg + radius + shadow. The old
+          `border border-text-main/15 shadow-2xl` was overriding/competing
+          with the neumorphic surface. */}
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[30px] glass-strong p-6 sm:p-7">
+        <div className="flex items-center justify-between pb-4 shadow-[0_1px_0_var(--neu-shadow-dark)]">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-md shadow-brand-600/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm shadow-brand-600/20">
               <Calendar size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-text-main">
+              <h2 className="text-lg font-bold text-fg">
                 {slotToEdit ? 'Edit Timetable Period' : 'Add Timetable Period'}
               </h2>
-              <p className="text-xs text-text-main/55">Assign subject, room, teacher and time slot</p>
+              <p className="text-xs text-fg-muted">Assign subject, room, teacher and time slot</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-text-main/50 hover:bg-text-main/10 hover:text-text-main transition cursor-pointer"
+            className="rounded-full p-2 text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          {/* Semantic error — tinted bg + tinted border is the signal */}
           {error && (
-            <div className="rounded-2xl bg-error/10 border border-error/20 p-3 text-xs text-error">
+            <div className="rounded-2xl bg-error/10 border border-error/25 p-3 text-xs text-error">
               {error}
             </div>
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
                 Target Class Cohort
               </label>
+              {/* Inputs/selects now inherit the sunken-well look from
+                  globals.css. Only layout + focus ring remain inline. */}
               <select
                 value={classId}
                 onChange={(e) => setClassId(e.target.value)}
-                className="w-full rounded-2xl border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main outline-none transition focus:border-brand-500"
+                className="w-full rounded-2xl px-4 py-2.5 text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
               >
                 {CLASSES.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-slate-800 text-white">
-                    {c.name}
-                  </option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
                 Day of Week
               </label>
               <select
                 value={dayOfWeek}
                 onChange={(e) => setDayOfWeek(Number(e.target.value))}
-                className="w-full rounded-2xl border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main outline-none transition focus:border-brand-500"
+                className="w-full rounded-2xl px-4 py-2.5 text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
               >
                 {DAYS.map((d, idx) => (
-                  <option key={d} value={idx} className="bg-slate-800 text-white">
-                    {d}
-                  </option>
+                  <option key={d} value={idx}>{d}</option>
                 ))}
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
               Subject
             </label>
             <select
               value={subjectId}
               onChange={(e) => handleSubjectChange(e.target.value)}
-              className="w-full rounded-2xl border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main outline-none transition focus:border-brand-500"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
             >
               {subjects.map((s) => (
-                <option key={s.id} value={s.id} className="bg-slate-800 text-white">
+                <option key={s.id} value={s.id}>
                   {s.code} — {s.name} ({s.department})
                 </option>
               ))}
@@ -211,7 +206,7 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
                 Instructor Name
               </label>
               <input
@@ -219,12 +214,12 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
                 value={teacherName}
                 onChange={(e) => setTeacherName(e.target.value)}
                 placeholder="e.g. Dr. John Whitfield"
-                className="w-full rounded-2xl border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main outline-none transition focus:border-brand-500"
+                className="w-full rounded-2xl px-4 py-2.5 text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
                 Classroom / Laboratory
               </label>
               <input
@@ -232,15 +227,17 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
                 placeholder="e.g. Lab 302 or Room 101"
-                className="w-full rounded-2xl border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main outline-none transition focus:border-brand-500"
+                className="w-full rounded-2xl px-4 py-2.5 text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
               Time Preset
             </label>
+            {/* Time presets: raised neumorphic chips → sunken when
+                selected. The selected one reads as "pressed in". */}
             <div className="grid grid-cols-2 gap-2">
               {TIME_PRESETS.map((tp) => {
                 const isSelected = startTime === tp.start && endTime === tp.end
@@ -248,14 +245,11 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
                   <button
                     key={tp.start}
                     type="button"
-                    onClick={() => {
-                      setStartTime(tp.start)
-                      setEndTime(tp.end)
-                    }}
-                    className={`rounded-xl p-2 text-xs font-medium transition cursor-pointer border ${
+                    onClick={() => { setStartTime(tp.start); setEndTime(tp.end) }}
+                    className={`rounded-xl p-2 text-xs font-medium transition cursor-pointer ${
                       isSelected
-                        ? 'bg-brand-500/20 border-brand-500 text-brand-400 font-bold'
-                        : 'bg-text-main/5 border-text-main/10 hover:border-text-main/20 text-text-main/80'
+                        ? 'text-brand-700 dark:text-brand-300 font-bold shadow-sunken'
+                        : 'text-fg-muted hover:text-fg shadow-emboss'
                     }`}
                   >
                     {tp.label}
@@ -266,9 +260,12 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
               Accent Color
             </label>
+            {/* Color swatches: user-picked data color, keep saturated.
+                Selector ring uses a light matte gap (ring-white) since
+                it needs to stand out against the saturated fill. */}
             <div className="flex items-center gap-2">
               {COLOR_THEMES.map((theme) => {
                 const isSelected = colorTheme === theme
@@ -286,7 +283,7 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
                     type="button"
                     onClick={() => setColorTheme(theme)}
                     className={`h-7 w-7 rounded-full ${bgMap[theme]} transition-all cursor-pointer ${
-                      isSelected ? 'ring-3 ring-white scale-110' : 'opacity-70 hover:opacity-100'
+                      isSelected ? 'ring-2 ring-fg ring-offset-2 ring-offset-surface-strong scale-110' : 'opacity-70 hover:opacity-100'
                     }`}
                     title={theme}
                   />
@@ -295,7 +292,7 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-text-main/10 flex items-center justify-end gap-3">
+          <div className="pt-4 shadow-[0_-1px_0_var(--neu-shadow-dark)] flex items-center justify-end gap-3">
             <Button variant="glass" type="button" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>

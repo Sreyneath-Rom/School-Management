@@ -1,6 +1,7 @@
+// src/features/reports/index.tsx
 import { Link } from "react-router-dom";
 import PageHeading from "@/components/common/PageHeading";
-import { BarChart3, TrendingUp, Users, Award, ArrowRight } from "lucide-react";
+import { TrendingUp, Users, Award, ArrowRight } from "lucide-react";
 
 export default function ReportsFeature() {
   const cards = [
@@ -36,26 +37,32 @@ export default function ReportsFeature() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {cards.map((c, i) => (
+          // Was a full glassmorphism override on top of `.glass-sm`:
+          // `border border-stone-200/70 ... bg-white/40 dark:bg-stone-900/40`
+          // — the border was invisible against the page, the translucent
+          // bgs were flat, and `hover:border-brand-500/40` did nothing
+          // visible. `.glass-sm .glass-interactive` gives the raised
+          // surface + the neumorphic hover-lift / press-in gesture.
           <Link
             key={i}
             to={c.link}
-            className="p-6 rounded-2xl glass-sm border border-stone-200/70 dark:border-white/10 hover:border-brand-500/40 transition group bg-white/40 dark:bg-stone-900/40 space-y-3"
+            className="p-6 rounded-2xl glass-sm glass-interactive space-y-3 group"
           >
             <div className="flex items-center justify-between">
-              <div className="p-3 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
+              {/* Brand-tinted icon well, sunken into the card */}
+              <div className="p-3 rounded-xl bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
                 <c.icon size={22} />
               </div>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-300">
+              {/* Stat chip: carved-in badge in theme tokens */}
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full text-fg-muted shadow-sunken">
                 {c.stats}
               </span>
             </div>
 
-            <h3 className="text-base font-bold text-stone-900 dark:text-white group-hover:text-brand-600 transition">
+            <h3 className="text-base font-bold text-fg group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">
               {c.title}
             </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-              {c.desc}
-            </p>
+            <p className="text-xs text-fg-muted leading-relaxed">{c.desc}</p>
 
             <div className="pt-2 flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400">
               <span>Generate Report</span>

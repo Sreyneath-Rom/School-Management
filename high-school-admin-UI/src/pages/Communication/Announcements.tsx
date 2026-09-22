@@ -2,17 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  Megaphone,
-  Plus,
-  Search,
-  Users,
-  Pin,
-  Trash2,
-  Edit3,
-  AlertCircle,
-  X,
-  CheckCircle2,
-  RefreshCw,
+  Megaphone, Plus, Search, Users, Pin, Trash2, Edit3,
+  AlertCircle, X, CheckCircle2, RefreshCw,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
@@ -20,12 +11,6 @@ import type { StatCard } from '@/types'
 import { announcementService } from '@/services/announcementService'
 import type { Announcement } from '@/types/announcement'
 
-/**
- * View model. The backend `Announcement` shape drives what's shown, but
- * several fields (category, priority, pinned, author name) are optional —
- * if the API doesn't return them, the UI hides the corresponding elements
- * rather than inventing values.
- */
 interface AnnouncementView {
   id: string
   title: string
@@ -49,8 +34,7 @@ function toView(raw: Announcement): AnnouncementView {
 
   const first = r.author?.firstName ?? ''
   const last = r.author?.lastName ?? ''
-  const fullName =
-    r.author?.name ?? [first, last].filter(Boolean).join(' ').trim()
+  const fullName = r.author?.name ?? [first, last].filter(Boolean).join(' ').trim()
 
   const priorityRaw = r.priority?.toLowerCase()
   const priority: AnnouncementView['priority'] =
@@ -77,11 +61,7 @@ interface FormState {
   audience: 'all' | 'admin' | 'teacher' | 'student' | 'parent'
 }
 
-const EMPTY_FORM: FormState = {
-  title: '',
-  content: '',
-  audience: 'all',
-}
+const EMPTY_FORM: FormState = { title: '', content: '', audience: 'all' }
 
 const AUDIENCE_LABELS: Record<FormState['audience'], string> = {
   all: 'All Community',
@@ -95,11 +75,8 @@ function formatDate(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   return d.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   })
 }
 
@@ -132,9 +109,7 @@ export default function Announcements() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   const filtered = useMemo(() => {
     return items.filter((a) => {
@@ -164,10 +139,10 @@ export default function Announcements() {
   )
 
   const kpiCards: StatCard[] = [
-    { id: 'total', label: 'Announcements', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'published', icon: 'Megaphone', tint: 'blue' },
-    { id: 'urgent', label: 'Urgent', value: String(stats.urgent), delta: '-', deltaDirection: 'neutral', deltaLabel: 'flagged urgent', icon: 'AlertCircle', tint: 'red' },
-    { id: 'pinned', label: 'Pinned', value: String(stats.pinned), delta: '-', deltaDirection: 'neutral', deltaLabel: 'priority posts', icon: 'Pin', tint: 'violet' },
-    { id: 'audiences', label: 'Audiences', value: String(stats.audiencesCovered), delta: '-', deltaDirection: 'neutral', deltaLabel: 'distinct groups', icon: 'Users', tint: 'green' },
+    { id: 'total',    label: 'Announcements', value: String(stats.total),            delta: '-', deltaDirection: 'neutral', deltaLabel: 'published',       icon: 'Megaphone',   tint: 'blue' },
+    { id: 'urgent',   label: 'Urgent',        value: String(stats.urgent),           delta: '-', deltaDirection: 'neutral', deltaLabel: 'flagged urgent',  icon: 'AlertCircle', tint: 'red' },
+    { id: 'pinned',   label: 'Pinned',        value: String(stats.pinned),           delta: '-', deltaDirection: 'neutral', deltaLabel: 'priority posts',  icon: 'Pin',         tint: 'violet' },
+    { id: 'audiences', label: 'Audiences',    value: String(stats.audiencesCovered), delta: '-', deltaDirection: 'neutral', deltaLabel: 'distinct groups', icon: 'Users',       tint: 'green' },
   ]
 
   const handleOpenCreate = () => {
@@ -232,6 +207,12 @@ export default function Announcements() {
     }
   }
 
+  // Shared modal input styling — inherits the sunken-well look from
+  // globals.css. Only padding + focus ring live here.
+  const modalInput =
+    'w-full px-3 py-2 rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
+  const modalLabel = 'block font-semibold text-fg-muted mb-1'
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -241,7 +222,7 @@ export default function Announcements() {
         />
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition self-start sm:self-auto cursor-pointer"
         >
           <Plus size={16} />
           <span>New Announcement</span>
@@ -250,22 +231,26 @@ export default function Announcements() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-surface">
+      {/* Filter bar — border removed (was invisible) */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3.5 top-3 text-secondary" />
+          <Search size={16} className="absolute left-3.5 top-3 text-fg-muted z-10" />
+          {/* Input gets the sunken-well treatment from globals.css.
+              Previously `bg-transparent border-none`, which meant the
+              input read as plain text floating on the glass card. */}
           <input
             type="text"
             placeholder="Search announcements..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-transparent text-xs text-color placeholder:text-secondary focus:outline-none"
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs text-fg placeholder:text-fg-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
         <select
           value={audienceFilter}
           onChange={(e) => setAudienceFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-xl bg-surface text-xs text-color focus:outline-none cursor-pointer w-full sm:w-52"
+          className="px-3 py-1.5 rounded-xl text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer w-full sm:w-52"
         >
           <option value="all">All Audiences</option>
           {announcementService.audiences.map((a) => (
@@ -277,23 +262,24 @@ export default function Announcements() {
       </div>
 
       {loading ? (
-        <div className="p-16 text-center text-secondary text-sm rounded-2xl glass-sm border border-surface">
+        <div className="p-16 text-center text-fg-muted text-sm rounded-2xl glass-sm">
           <RefreshCw size={16} className="inline animate-spin mr-2" />
           Loading announcements...
         </div>
       ) : error ? (
-        <div className="p-6 rounded-2xl border border-error/30 bg-error/5 text-center">
+        // Semantic error — tinted, kept
+        <div className="p-6 rounded-2xl border border-error/30 bg-error/10 text-center">
           <p className="text-sm font-bold text-error">Couldn't load announcements</p>
-          <p className="mt-1 text-xs text-secondary">{error.message}</p>
+          <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
           <button
             onClick={load}
-            className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white"
+            className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition cursor-pointer"
           >
             Retry
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="p-12 text-center text-secondary rounded-2xl glass-sm border border-surface text-xs">
+        <div className="p-12 text-center text-fg-muted rounded-2xl glass-sm text-xs">
           {items.length === 0
             ? 'No announcements yet. Click "New Announcement" to publish the first one.'
             : 'No announcements match your filters.'}
@@ -303,20 +289,24 @@ export default function Announcements() {
           {filtered.map((item) => (
             <div
               key={item.id}
-              className={`p-5 rounded-2xl glass-sm border transition shadow-sm space-y-3 ${
-                item.pinned
-                  ? 'border-brand-500/40 bg-brand-500/2'
-                  : 'border-surface bg-surface/40'
+              // Pinned items get a brand ring + subtle tint ON TOP of the
+              // same raised `glass-sm` surface. Previously the pinned
+              // state used `border-brand-500/40 bg-brand-500/2` — the
+              // border was on an invisible surface, and 2% opacity brand
+              // background is imperceptible on the flat page color.
+              className={`p-5 rounded-2xl glass-sm space-y-3 ${
+                item.pinned ? 'ring-1 ring-brand-500/40 bg-brand-500/5' : ''
               }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     {item.pinned && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/15 text-brand-600">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/15 text-brand-700 dark:text-brand-300">
                         <Pin size={10} /> Pinned
                       </span>
                     )}
+                    {/* Priority chip — semantic tints, kept */}
                     {item.priority && (
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
@@ -324,37 +314,38 @@ export default function Announcements() {
                             ? 'bg-error/15 text-error'
                             : item.priority === 'High'
                               ? 'bg-warning/15 text-warning'
-                              : 'bg-surface-strong text-secondary'
+                              : 'text-fg-muted shadow-sunken'
                         }`}
                       >
                         {item.priority}
                       </span>
                     )}
                     {item.category && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface-strong text-secondary">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium text-fg-muted shadow-sunken">
                         {item.category}
                       </span>
                     )}
-                    <span className="text-[11px] text-secondary">
-                      Audience: <strong className="text-color">
+                    <span className="text-[11px] text-fg-muted">
+                      Audience:{' '}
+                      <strong className="text-fg">
                         {AUDIENCE_LABELS[item.audience.toLowerCase() as FormState['audience']] ?? item.audience}
                       </strong>
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-color">{item.title}</h3>
+                  <h3 className="text-base font-bold text-fg">{item.title}</h3>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => handleOpenEdit(item)}
-                    className="p-1.5 rounded-lg hover:bg-surface text-secondary hover:text-color transition"
+                    className="p-1.5 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
                     title="Edit"
                   >
                     <Edit3 size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(item.id, item.title)}
-                    className="p-1.5 rounded-lg hover:bg-error/10 text-secondary hover:text-error transition"
+                    className="p-1.5 rounded-lg text-fg-muted hover:text-error hover:shadow-sunken transition cursor-pointer"
                     title="Delete"
                   >
                     <Trash2 size={16} />
@@ -362,17 +353,16 @@ export default function Announcements() {
                 </div>
               </div>
 
-              <p className="text-xs text-color leading-relaxed whitespace-pre-line">
+              <p className="text-xs text-fg leading-relaxed whitespace-pre-line">
                 {item.content}
               </p>
 
-              <div className="flex items-center justify-between pt-2 border-t border-surface text-[11px] text-secondary">
+              {/* Footer divider — shadow seam replaces invisible border */}
+              <div className="flex items-center justify-between pt-2 shadow-[0_-1px_0_var(--neu-shadow-dark)] text-[11px] text-fg-muted">
                 <div className="flex items-center gap-3">
                   {item.authorName && (
                     <>
-                      <span>
-                        By <strong className="text-color">{item.authorName}</strong>
-                      </span>
+                      <span>By <strong className="text-fg">{item.authorName}</strong></span>
                       <span>•</span>
                     </>
                   )}
@@ -385,18 +375,20 @@ export default function Announcements() {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-surface pb-3">
-              <h3 className="text-base font-bold text-color flex items-center gap-2">
-                <Megaphone size={18} className="text-brand-500" />
-                <span>
-                  {editingId ? 'Edit Announcement' : 'New Announcement'}
-                </span>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false) }}
+        >
+          <div className="w-full max-w-lg rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <div className="flex items-center justify-between pb-3 shadow-[0_1px_0_var(--neu-shadow-dark)]">
+              <h3 className="text-base font-bold text-fg flex items-center gap-2">
+                <Megaphone size={18} className="text-brand-600 dark:text-brand-400" />
+                <span>{editingId ? 'Edit Announcement' : 'New Announcement'}</span>
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -404,32 +396,25 @@ export default function Announcements() {
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Title *
-                </label>
+                <label className={modalLabel}>Title *</label>
                 <input
                   type="text"
                   required
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="e.g. Term 2 examination timetable"
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className={modalInput}
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Audience
-                </label>
+                <label className={modalLabel}>Audience</label>
                 <select
                   value={form.audience}
                   onChange={(e) =>
-                    setForm({
-                      ...form,
-                      audience: e.target.value as FormState['audience'],
-                    })
+                    setForm({ ...form, audience: e.target.value as FormState['audience'] })
                   }
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+                  className={`${modalInput} cursor-pointer`}
                 >
                   {announcementService.audiences.map((a) => (
                     <option key={a} value={a}>
@@ -440,31 +425,29 @@ export default function Announcements() {
               </div>
 
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Content *
-                </label>
+                <label className={modalLabel}>Content *</label>
                 <textarea
                   rows={6}
                   required
                   value={form.content}
                   onChange={(e) => setForm({ ...form, content: e.target.value })}
                   placeholder="Announcement body..."
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className={modalInput}
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface">
+              <div className="flex items-center justify-end gap-2 pt-3 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-surface text-secondary text-xs font-semibold hover:bg-surface"
+                  className="glass-sm glass-interactive px-4 py-2 rounded-xl text-fg-muted hover:text-fg text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-md shadow-brand-500/20 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm shadow-brand-600/25 disabled:opacity-50 cursor-pointer"
                 >
                   {saving ? (
                     <RefreshCw size={13} className="animate-spin" />

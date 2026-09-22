@@ -1,3 +1,4 @@
+// src/features/dashboard/Announcements.tsx
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Megaphone, ArrowUpRight } from 'lucide-react'
@@ -72,8 +73,8 @@ export default function Announcements() {
   if (loading) return <ListCardSkeleton rows={3} />
 
   return (
-    <section className="rounded-3xl border border-surface bg-surface-strong p-5 sm:p-6 shadow-xs">
-      <div className="mb-4 flex items-center justify-between pb-3 border-b border-surface">
+    <section className="rounded-3xl glass p-5 sm:p-6">
+      <div className="mb-4 flex items-center justify-between pb-3 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <div>
           <h2 className="text-base font-bold text-fg">Broadcasts & Notices</h2>
           <p className="text-xs text-fg-muted">Institutional announcements</p>
@@ -81,7 +82,7 @@ export default function Announcements() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-1 rounded-xl bg-brand-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-brand-700 transition cursor-pointer shadow-xs"
+          className="flex items-center gap-1 rounded-xl bg-brand-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-brand-700 transition cursor-pointer shadow-sm shadow-brand-600/20"
         >
           <Plus size={13} />
           <span>Post</span>
@@ -98,13 +99,15 @@ export default function Announcements() {
       ) : (
         <div className="space-y-3">
           {items.slice(0, 3).map((item) => (
+            // Was `border border-surface bg-surface` — both no-ops. Now
+            // a sunken well that reads as carved into the section.
             <div
               key={item.id}
-              className="rounded-2xl border border-surface bg-surface p-3.5 transition hover:border-brand-500/30"
+              className="rounded-2xl p-3.5 shadow-sunken"
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-bold text-fg truncate">{item.title}</p>
-                <span className="shrink-0 rounded-full bg-surface-strong px-2 py-0.5 text-[10px] font-bold text-fg-muted border border-surface">
+                <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-fg-muted shadow-emboss">
                   {relativeTime(item.createdAt)}
                 </span>
               </div>
@@ -116,7 +119,7 @@ export default function Announcements() {
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-surface text-center">
+      <div className="mt-4 pt-3 shadow-[0_-1px_0_var(--neu-shadow-dark)] text-center">
         <Link
           to="/communication/announcements"
           className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400"

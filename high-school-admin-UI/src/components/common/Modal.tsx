@@ -33,10 +33,6 @@ interface ModalProps {
   /** Soft glow color in the top-right corner. */
   accent?: ModalAccent
   size?: ModalSize
-  /**
-   * When true, clicking the backdrop does NOT close the modal. Use for
-   * destructive confirms or forms with unsaved state.
-   */
   preventBackdropClose?: boolean
   children: ReactNode
 }
@@ -53,7 +49,6 @@ export default function Modal({
   preventBackdropClose = false,
   children,
 }: ModalProps) {
-  // Close on Escape unless disabled.
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => {
@@ -63,8 +58,6 @@ export default function Modal({
     return () => document.removeEventListener('keydown', handler)
   }, [isOpen, onClose])
 
-  // Lock body scroll while open. Restoring on cleanup means a modal that
-  // unmounts mid-transition doesn't leave the page frozen.
   useEffect(() => {
     if (!isOpen) return
     const previous = document.body.style.overflow
@@ -74,7 +67,6 @@ export default function Modal({
     }
   }, [isOpen])
 
-  // Focus the panel on open so keyboard users land inside.
   const panelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (isOpen) panelRef.current?.focus()
@@ -90,7 +82,9 @@ export default function Modal({
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !preventBackdropClose) onClose()
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-150"
+      // No backdrop-blur — the neumorphic surface is already depth-based,
+      // and a frosted scrim fights the dual-shadow language.
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
     >
       <div
         ref={panelRef}
@@ -98,19 +92,18 @@ export default function Modal({
         aria-modal="true"
         tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`relative w-full ${SIZE_CLASSES[size]} max-h-[min(92vh,840px)] flex flex-col overflow-hidden rounded-[28px] glass-strong border border-surface-strong shadow-2xl animate-in zoom-in-95 duration-150 focus:outline-none`}
+        className={`relative w-full ${SIZE_CLASSES[size]} max-h-[min(92vh,840px)] flex flex-col overflow-hidden rounded-[28px] glass-strong animate-in zoom-in-95 duration-150 focus:outline-none`}
       >
-        {/* Ambient accent glow — decorative, non-interactive. */}
         <div
           aria-hidden="true"
-          className={`pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-3xl opacity-70 bg-linear-to-br ${ACCENT_GLOW[accent]} to-transparent`}
+          className={`pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-3xl opacity-50 bg-linear-to-br ${ACCENT_GLOW[accent]} to-transparent`}
         />
 
         {hasHeader && (
-          <div className="relative z-10 flex items-start justify-between gap-4 border-b border-surface bg-surface px-6 py-4">
+          <div className="relative z-10 flex items-start justify-between gap-4 shadow-[0_1px_0_var(--neu-shadow-dark)] px-6 py-4">
             <div className="flex items-start gap-3 min-w-0">
               {icon && (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-strong text-fg border border-surface">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
                   {icon}
                 </div>
               )}
@@ -132,7 +125,7 @@ export default function Modal({
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-fg-muted hover:bg-surface-strong hover:text-fg transition cursor-pointer"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
             >
               <X size={18} strokeWidth={2.2} />
             </button>
@@ -144,7 +137,7 @@ export default function Modal({
         </div>
 
         {footer && (
-          <div className="relative z-10 flex flex-wrap items-center justify-end gap-2.5 border-t border-surface bg-surface px-6 py-4">
+          <div className="relative z-10 flex flex-wrap items-center justify-end gap-2.5 shadow-[0_-1px_0_var(--neu-shadow-dark)] px-6 py-4">
             {footer}
           </div>
         )}

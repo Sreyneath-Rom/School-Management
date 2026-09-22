@@ -1,23 +1,9 @@
+// src/features/users/UserList.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Search,
-  ChevronUp,
-  ChevronDown,
-  ChevronsUpDown,
-  Eye,
-  Pencil,
-  Trash2,
-  KeyRound,
-  Check,
-  X,
-  UserPlus,
-  Upload,
-  Download,
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
-  Loader2,
-  AlertCircle,
+  Search, ChevronUp, ChevronDown, ChevronsUpDown, Eye, Pencil, Trash2,
+  KeyRound, Check, X, UserPlus, Upload, Download, ChevronLeft, ChevronRight,
+  MoreVertical, Loader2, AlertCircle,
 } from 'lucide-react'
 import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -54,13 +40,11 @@ const SEARCH_FIELD_LABELS: Record<SearchField, string> = {
 }
 
 export default function UserList({ showHeading = true }: { showHeading?: boolean }) {
-  // ---- Server state ----
   const [users, setUsers] = useState<SystemUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  // ---- UI state ----
   const [searchField, setSearchField] = useState<SearchField>('all')
   const [searchInput, setSearchInput] = useState('')
   const searchQuery = useDebounce(searchInput, 300)
@@ -79,7 +63,6 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
 
   const { success, info, error: notifyError, notifications, removeNotification } = useNotification()
 
-  // ---- Fetch users from the API ----
   const loadUsers = async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true)
     else setRefreshing(true)
@@ -119,7 +102,6 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
     return () => { cancelled = true }
   }, [])
 
-  // ---- Derived filter option lists ----
   const grades = useMemo(() => uniqueSorted(users.map(getDisplayGrade).filter(isString)), [users])
   const classes = useMemo(() => uniqueSorted(users.map(getDisplayClass).filter(isString)), [users])
   const departments = useMemo(() => uniqueSorted(users.map(getDisplayDepartment).filter(isString)), [users])
@@ -224,7 +206,6 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
 
   const clearSelection = () => setSelectedIds(new Set())
 
-  // ---- CRUD operations ----
   const handleDeleteUser = async (user: SystemUser) => {
     const label = getFullName(user)
     if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return
@@ -305,21 +286,21 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
 
   const pageAllSelected = currentItems.length > 0 && currentItems.every((u) => selectedIds.has(u.id))
 
-  // ---- Render ----
   return (
-    <div className="w-full text-text-main">
-      {/* Toast Notifications */}
+    <div className="w-full text-fg">
+      {/* Toast notifications — elevated `glass-strong` surface. The
+          semantic left-border strip is a signal, kept. */}
       {notifications.length > 0 && (
         <div className="fixed top-4 right-4 z-50 space-y-2 w-72">
           {notifications.map((n) => (
             <div
               key={n.id}
-              className={`rounded-2xl px-4 py-3 text-sm glass-strong flex items-start justify-between gap-2 shadow-lg ${
+              className={`rounded-2xl px-4 py-3 text-sm glass-strong flex items-start justify-between gap-2 ${
                 n.type === 'success' ? 'border-l-4 border-success' : n.type === 'error' ? 'border-l-4 border-error' : 'border-l-4 border-info'
               }`}
             >
               <span>{n.message}</span>
-              <button onClick={() => removeNotification(n.id)} className="opacity-70 hover:opacity-100">
+              <button onClick={() => removeNotification(n.id)} className="opacity-70 hover:opacity-100 cursor-pointer">
                 <X size={14} />
               </button>
             </div>
@@ -338,20 +319,27 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
             }
           />
           <div className="flex flex-wrap items-center gap-2">
+            {/* Was `glass glass-interactive` — glass is a raised surface,
+                which is correct for a button. Buttons were fine; the
+                conversion is just removing the redundant naming since
+                `.glass-interactive` supplies the gesture. */}
             <button
               onClick={() => loadUsers({ silent: true })}
               disabled={refreshing}
-              className="glass glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-text-main disabled:opacity-50"
+              className="glass-sm glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-fg disabled:opacity-50 cursor-pointer"
             >
               {refreshing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
               Refresh
             </button>
-            <button className="glass glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-text-main">
+            <button className="glass-sm glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-fg cursor-pointer">
               <Download size={16} /> Export
             </button>
+            {/* Was `glass-teal glass-interactive text-white` — glass-teal
+                is a page-colored surface, so white text was invisible.
+                Converted to the brand CTA. */}
             <button
               onClick={() => info('Add-user form not wired yet')}
-              className="glass-teal glass-interactive flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white"
+              className="flex items-center gap-1.5 rounded-full bg-brand-600 hover:bg-brand-700 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-brand-600/25 cursor-pointer"
             >
               <UserPlus size={16} /> Add User
             </button>
@@ -359,26 +347,27 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
         </div>
       )}
 
-      {/* Search & Filters */}
-      <div className="glass-strong rounded-2xl sm:rounded-3xl p-3 sm:p-4 mb-4 flex flex-wrap items-center gap-2.5 sm:gap-3">
+      {/* Search & Filters — `.glass-sm` raised surface, no border.
+          Inputs inherit the sunken-well look from globals.css. */}
+      <div className="glass-sm rounded-2xl sm:rounded-3xl p-3 sm:p-4 mb-4 flex flex-wrap items-center gap-2.5 sm:gap-3">
         <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0 sm:min-w-60">
           <select
             value={searchField}
             onChange={(e) => setSearchField(e.target.value as SearchField)}
-            className="glass rounded-full px-3 py-2 text-xs sm:text-sm text-text-main focus:outline-none shrink-0"
+            className="rounded-full px-3 py-2 text-xs sm:text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 shrink-0"
           >
             {Object.entries(SEARCH_FIELD_LABELS).map(([value, label]) => (
-              <option key={value} value={value} className="bg-slate-800 text-white">{label}</option>
+              <option key={value} value={value}>{label}</option>
             ))}
           </select>
           <div className="relative flex-1 min-w-0">
-            <Search size={16} className="absolute left-3.5 top-2.5 text-text-main/50" />
+            <Search size={16} className="absolute left-3.5 top-2.5 text-fg-muted z-10" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search users..."
-              className="glass w-full pl-9 pr-3 py-2 rounded-full text-xs sm:text-sm text-text-main placeholder:text-text-main/40 focus:outline-none"
+              className="w-full pl-9 pr-3 py-2 rounded-full text-xs sm:text-sm text-fg placeholder:text-fg-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -391,48 +380,67 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
         <FilterSelect label="Academic Year" value={academicYearFilter} onChange={setAcademicYearFilter} options={academicYears.map((y) => ({ value: y, label: y }))} />
 
         {hasActiveFilters && (
-          <button onClick={clearFilters} className="text-sm font-semibold text-brand-400 hover:underline">
+          <button
+            onClick={clearFilters}
+            className="text-sm font-semibold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
+          >
             Clear filters
           </button>
         )}
       </div>
 
-      {/* Bulk Operations Bar */}
+      {/* Bulk operations bar — brand-tinted signal, kept (matches the
+          bulk bar pattern used in StudentFilters / UsersFeature). */}
       {selectedIds.size > 0 && (
-        <div className="glass-teal rounded-2xl px-4 py-3 mb-4 flex flex-wrap items-center justify-between gap-3">
-          <span className="text-sm font-medium text-white">{selectedIds.size} selected</span>
+        <div className="rounded-2xl border border-brand-500/30 bg-brand-500/15 px-4 py-3 mb-4 flex flex-wrap items-center justify-between gap-3">
+          <span className="text-sm font-medium text-brand-800 dark:text-brand-200">
+            {selectedIds.size} selected
+          </span>
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={handleBulkActivate} className="glass-sm rounded-full px-3 py-1 text-xs text-white">Activate</Button>
-            <Button onClick={handleBulkDeactivate} className="glass-sm rounded-full px-3 py-1 text-xs text-white">Deactivate</Button>
-            <Button onClick={handleBulkResetPassword} className="glass-sm rounded-full px-3 py-1 text-xs text-white">Reset Password</Button>
-            <Button onClick={handleBulkDelete} className="bg-error rounded-full px-3 py-1 text-xs text-white">Delete</Button>
-            <Button onClick={clearSelection} className="glass-sm glass-interactive rounded-full px-3 py-1 text-xs text-white/80">Clear</Button>
+            <Button onClick={handleBulkActivate} className="rounded-full px-3 py-1 text-xs shadow-emboss hover:shadow-sunken">
+              Activate
+            </Button>
+            <Button onClick={handleBulkDeactivate} className="rounded-full px-3 py-1 text-xs shadow-emboss hover:shadow-sunken">
+              Deactivate
+            </Button>
+            <Button onClick={handleBulkResetPassword} className="rounded-full px-3 py-1 text-xs shadow-emboss hover:shadow-sunken">
+              Reset Password
+            </Button>
+            <Button onClick={handleBulkDelete} className="bg-error text-white rounded-full px-3 py-1 text-xs">
+              Delete
+            </Button>
+            <Button onClick={clearSelection} className="rounded-full px-3 py-1 text-xs text-fg-muted hover:text-fg">
+              Clear
+            </Button>
           </div>
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error state — semantic error signal, tinted */}
       {error && !loading && (
-        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
           <AlertCircle size={18} className="mt-0.5 shrink-0" />
           <div className="flex-1">
             <div className="font-semibold">Could not load users</div>
-            <div className="text-rose-200/80">{error}</div>
+            <div className="text-error/80">{error}</div>
           </div>
-          <button onClick={() => loadUsers()} className="text-xs font-semibold underline hover:no-underline">
+          <button
+            onClick={() => loadUsers()}
+            className="text-xs font-semibold underline hover:no-underline cursor-pointer"
+          >
             Retry
           </button>
         </div>
       )}
 
-      {/* Table */}
-      <div className="glass-strong rounded-3xl overflow-hidden">
+      {/* Table container */}
+      <div className="glass rounded-3xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-text-main/10 text-left text-text-main/60">
+              <tr className="text-left text-fg-muted shadow-[0_1px_0_var(--neu-shadow-dark)]">
                 <th className="px-4 py-3 w-10">
-                  <input type="checkbox" checked={pageAllSelected} onChange={toggleSelectAllOnPage} className="w-4 h-4 accent-brand-500" />
+                  <input type="checkbox" checked={pageAllSelected} onChange={toggleSelectAllOnPage} className="w-4 h-4 accent-brand-500 cursor-pointer" />
                 </th>
                 <th className="px-2 py-3 w-12"></th>
                 <th className="px-2 py-3 font-medium">User ID</th>
@@ -445,10 +453,10 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
                 <th className="px-4 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-(--neu-shadow-dark)">
               {loading && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-16 text-center text-text-main/60">
+                  <td colSpan={10} className="px-4 py-16 text-center text-fg-muted">
                     <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
                     Loading users…
                   </td>
@@ -468,8 +476,8 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
               ))}
               {!loading && currentItems.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-16 text-center text-text-main/60">
-                    <p className="font-medium text-text-main">
+                  <td colSpan={10} className="px-4 py-16 text-center text-fg-muted">
+                    <p className="font-medium text-fg">
                       {users.length === 0 ? 'No users yet' : 'No users match these filters'}
                     </p>
                   </td>
@@ -480,22 +488,34 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
         </div>
 
         {!loading && totalItems > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-text-main/10">
-            <p className="text-xs text-text-main/60">Showing {startIndex}–{endIndex} of {totalItems}</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
+            <p className="text-xs text-fg-muted">Showing {startIndex}–{endIndex} of {totalItems}</p>
             <div className="flex items-center gap-1">
-              <button onClick={prevPage} disabled={currentPage === 1} className="p-1.5 rounded-full hover:bg-text-main/10 disabled:opacity-30">
+              <button
+                onClick={prevPage}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-full text-fg-muted hover:text-fg hover:shadow-sunken disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
                 <ChevronLeft size={16} />
               </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
                   onClick={() => goToPage(page)}
-                  className={`w-7 h-7 rounded-full text-xs font-semibold ${page === currentPage ? 'glass-teal text-white' : 'text-text-main/70 hover:bg-text-main/10'}`}
+                  className={`w-7 h-7 rounded-full text-xs font-semibold cursor-pointer ${
+                    page === currentPage
+                      ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+                      : 'text-fg-muted hover:text-fg hover:shadow-sunken'
+                  }`}
                 >
                   {page}
                 </button>
               ))}
-              <button onClick={nextPage} disabled={currentPage === totalPages} className="p-1.5 rounded-full hover:bg-text-main/10 disabled:opacity-30">
+              <button
+                onClick={nextPage}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-full text-fg-muted hover:text-fg hover:shadow-sunken disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -520,7 +540,10 @@ function SortableHeader({ label, field, sortField, sortOrder, onSort }: Sortable
   const active = sortField === field
   return (
     <th className="px-4 py-3 font-medium">
-      <button onClick={() => onSort(field)} className="flex items-center gap-1 hover:text-text-main transition">
+      <button
+        onClick={() => onSort(field)}
+        className="flex items-center gap-1 hover:text-fg transition cursor-pointer"
+      >
         {label}
         {active ? (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />) : <ChevronsUpDown size={14} className="opacity-40" />}
       </button>
@@ -545,11 +568,11 @@ function FilterSelect<T extends string>({ label, value, onChange, options }: Fil
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as T | 'all')}
-      className="glass rounded-full px-3 py-2 text-sm text-text-main focus:outline-none"
+      className="rounded-full px-3 py-2 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
     >
-      <option value="all" className="bg-slate-800 text-white">{label}: All</option>
+      <option value="all">{label}: All</option>
       {options.map((opt) => (
-        <option key={opt.value} value={opt.value} className="bg-slate-800 text-white">{opt.label}</option>
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
       ))}
     </select>
   )
@@ -571,36 +594,42 @@ function UserRow({ user, selected, onToggleSelect, onView, onEdit, onResetPasswo
   const fullName = getFullName(user)
 
   return (
-    <tr className="border-b border-text-main/5 hover:bg-text-main/5 transition">
+    <tr
+      // Row hover and selected state both press into a sunken well.
+      // Previously `hover:bg-text-main/5` which is a near-invisible tint.
+      className={`transition-shadow ${
+        selected ? 'shadow-sunken' : 'hover:shadow-sunken'
+      }`}
+    >
       <td className="px-4 py-3">
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} className="w-4 h-4 accent-brand-500" />
+        <input type="checkbox" checked={selected} onChange={onToggleSelect} className="w-4 h-4 accent-brand-500 cursor-pointer" />
       </td>
       <td className="px-2 py-3">
         {user.profilePhoto ? (
-          <img src={user.profilePhoto} alt="" className="w-9 h-9 rounded-full object-cover" />
+          <img src={user.profilePhoto} alt="" className="w-9 h-9 rounded-full object-cover shadow-sunken" />
         ) : (
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold ${roleColor.bg} ${roleColor.text}`}>
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shadow-sunken ${roleColor.bg} ${roleColor.text}`}>
             {user.firstName[0]}{user.lastName[0]}
           </div>
         )}
       </td>
-      <td className="px-2 py-3 font-mono text-xs text-text-main/60">{user.id}</td>
-      <td className="px-4 py-3 font-medium text-text-main">{fullName}</td>
-      <td className="px-4 py-3 text-text-main/80">{user.email}</td>
-      <td className="px-4 py-3 text-text-main/80">{user.phone}</td>
+      <td className="px-2 py-3 font-mono text-xs text-fg-muted">{user.id}</td>
+      <td className="px-4 py-3 font-medium text-fg">{fullName}</td>
+      <td className="px-4 py-3 text-fg-muted">{user.email}</td>
+      <td className="px-4 py-3 text-fg-muted">{user.phone}</td>
       <td className="px-4 py-3">
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${roleColor.bg} ${roleColor.text} ${roleColor.ring}`}>
           {ROLE_LABELS[roleKey] || 'User'}
         </span>
       </td>
-      <td className="px-4 py-3 text-text-main/80">{getDisplayClass(user) ?? '—'}</td>
+      <td className="px-4 py-3 text-fg-muted">{getDisplayClass(user) ?? '—'}</td>
       <td className="px-4 py-3">
         {user.status === 'active' ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-success/20 text-success px-2.5 py-1 text-xs font-semibold">
+          <span className="inline-flex items-center gap-1 rounded-full bg-success/15 text-success px-2.5 py-1 text-xs font-semibold">
             <Check size={12} /> Active
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-text-main/10 text-text-main/60 px-2.5 py-1 text-xs font-semibold">
+          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-fg-muted shadow-sunken">
             <X size={12} /> Inactive
           </span>
         )}
@@ -634,15 +663,39 @@ function ActionsMenu({ onView, onEdit, onResetPassword, onDelete }: ActionsMenuP
 
   return (
     <div className="relative inline-block text-left" ref={containerRef}>
-      <button onClick={() => setOpen((prev) => !prev)} className="p-1.5 rounded-full text-text-main/50 hover:bg-text-main/10 hover:text-text-main">
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        className="p-1.5 rounded-full text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
+      >
         <MoreVertical size={16} />
       </button>
       {open && (
-        <div className="glass-strong absolute right-0 z-20 mt-1 w-44 rounded-2xl shadow-xl py-1 border border-text-main/10">
-          <button onClick={() => { setOpen(false); onView() }} className="flex w-full items-center gap-2 px-3.5 py-2 text-sm text-text-main hover:bg-text-main/10"><Eye size={15} /> View profile</button>
-          <button onClick={() => { setOpen(false); onEdit() }} className="flex w-full items-center gap-2 px-3.5 py-2 text-sm text-text-main hover:bg-text-main/10"><Pencil size={15} /> Edit user</button>
-          <button onClick={() => { setOpen(false); onResetPassword() }} className="flex w-full items-center gap-2 px-3.5 py-2 text-sm text-text-main hover:bg-text-main/10"><KeyRound size={15} /> Reset password</button>
-          <button onClick={() => { setOpen(false); onDelete() }} className="flex w-full items-center gap-2 px-3.5 py-2 text-sm text-error hover:bg-error/10"><Trash2 size={15} /> Delete user</button>
+        // `.dropdown-surface` — elevated floating surface, no border.
+        <div className="dropdown-surface absolute right-0 z-20 mt-1 w-44 rounded-2xl py-1">
+          <button
+            onClick={() => { setOpen(false); onView() }}
+            className="flex w-full items-center gap-2 px-3.5 py-2 text-sm text-fg hover:text-brand-600 dark:hover:text-brand-400 transition cursor-pointer"
+          >
+            <Eye size={15} /> View profile
+          </button>
+          <button
+            onClick={() => { setOpen(false); onEdit() }}
+            className="flex w-full items-center gap-2 px-3.5 py-2 text-sm text-fg hover:text-brand-600 dark:hover:text-brand-400 transition cursor-pointer"
+          >
+            <Pencil size={15} /> Edit user
+          </button>
+          <button
+            onClick={() => { setOpen(false); onResetPassword() }}
+            className="flex w-full items-center gap-2 px-3.5 py-2 text-sm text-fg hover:text-warning transition cursor-pointer"
+          >
+            <KeyRound size={15} /> Reset password
+          </button>
+          <button
+            onClick={() => { setOpen(false); onDelete() }}
+            className="flex w-full items-center gap-2 px-3.5 py-2 text-sm text-error hover:bg-error/10 transition cursor-pointer"
+          >
+            <Trash2 size={15} /> Delete user
+          </button>
         </div>
       )}
     </div>

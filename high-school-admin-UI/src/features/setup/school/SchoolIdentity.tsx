@@ -3,20 +3,19 @@ import { GraduationCap, Link2 } from 'lucide-react';
 import Field from './Field';
 import SectionHeader from './SectionHeader';
 import { inputClass } from './constants';
-import type { SchoolFormState } from '@/types/school'; 
-
+import type { SchoolFormState } from '@/types/school';
 
 interface Props {
-  form: SchoolFormState; 
+  form: SchoolFormState;
   updateField: (field: keyof SchoolFormState, value: string) => void;
-  errors: Partial<Record<keyof SchoolFormState, string>>; // better than any
+  errors: Partial<Record<keyof SchoolFormState, string>>;
 }
-// In SchoolIdentity.tsx, add these props:
 
 export default function SchoolIdentity({ form, updateField, errors }: Props) {
   return (
     <section className="rounded-[28px] glass-sm">
-      <div className="border-b border-(--glass-outline) px-6 py-5">
+      {/* Shadow seam replaces the invisible border-(--glass-outline) */}
+      <div className="px-6 py-5 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <SectionHeader icon={<GraduationCap size={19} />} title="School Identity" description="" />
       </div>
       <div className="space-y-5 p-6">
@@ -25,7 +24,7 @@ export default function SchoolIdentity({ form, updateField, errors }: Props) {
             <input
               value={form.name}
               onChange={(e) => updateField('name', e.target.value)}
-              className={`${inputClass} ${errors.name ? 'border-error/50' : ''}`}
+              className={`${inputClass} ${errors.name ? 'border-error/50 focus:ring-error/25' : ''}`}
               placeholder="Varin High School"
             />
           </Field>
@@ -49,11 +48,11 @@ export default function SchoolIdentity({ form, updateField, errors }: Props) {
           </Field>
           <Field label="Website" error={errors.website}>
             <div className="relative">
-              <Link2 size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-main/45" />
+              <Link2 size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-muted z-10" />
               <input
                 value={form.website}
                 onChange={(e) => updateField('website', e.target.value)}
-                className={`${inputClass} pl-11 ${errors.website ? 'border-error/50' : ''}`}
+                className={`${inputClass} pl-11 ${errors.website ? 'border-error/50 focus:ring-error/25' : ''}`}
                 placeholder="https://yourschool.edu"
               />
             </div>

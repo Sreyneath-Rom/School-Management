@@ -28,11 +28,6 @@ interface EnrollmentSlice {
   color: string
 }
 
-/**
- * Aggregates the class list into per-grade student counts. Sorted by grade
- * number ascending so a school whose grade levels are 7–12 always renders
- * in that order regardless of the API response order.
- */
 function buildSlices(classes: ClassRecord[]): EnrollmentSlice[] {
   const byGrade = new Map<number, number>()
 
@@ -98,8 +93,10 @@ export default function EnrollmentDonut({
     : null
 
   return (
-    <section className="flex flex-col justify-between rounded-3xl border border-surface bg-surface-strong p-5 sm:p-6 shadow-xs">
-      <div className="flex items-center justify-between pb-3 border-b border-surface">
+    // Same surface fix as AttendanceChart: `border border-surface
+    // bg-surface-strong shadow-xs` → `.glass`.
+    <section className="flex flex-col justify-between rounded-3xl glass p-5 sm:p-6">
+      <div className="flex items-center justify-between pb-3 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <div>
           <h2 className="text-base font-bold text-fg">Enrollment Demographics</h2>
           <p className="text-xs text-fg-muted">Student cohort distribution</p>
@@ -152,17 +149,22 @@ export default function EnrollmentDonut({
               </ResponsiveContainer>
             </div>
 
+            {/* Center readout: a sunken disk behind the numbers makes it
+                read as a "hole" punched through the donut ring, rather
+                than text floating over the chart. */}
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-2xl font-black text-fg tracking-tight">
-                {activeData ? activeData.count.toLocaleString() : total.toLocaleString()}
-              </span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-fg-muted">
-                {activeData ? activeData.grade : 'Enrolled'}
-              </span>
+              <div className="flex flex-col items-center justify-center rounded-full px-4 py-3 shadow-sunken">
+                <span className="text-2xl font-black text-fg tracking-tight">
+                  {activeData ? activeData.count.toLocaleString() : total.toLocaleString()}
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-fg-muted">
+                  {activeData ? activeData.grade : 'Enrolled'}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-surface text-xs">
+          <div className="grid grid-cols-2 gap-2 pt-2 shadow-[0_-1px_0_var(--neu-shadow-dark)] text-xs">
             {slices.map((slice) => {
               const percent = total > 0 ? Math.round((slice.count / total) * 100) : 0
               const isHovered = hoveredGrade === slice.grade
@@ -172,10 +174,12 @@ export default function EnrollmentDonut({
                   key={slice.grade}
                   onMouseEnter={() => setHoveredGrade(slice.grade)}
                   onMouseLeave={() => setHoveredGrade(null)}
+                  // Previously `bg-surface` / `hover:bg-surface` — both
+                  // no-ops. Hovered state now presses into a sunken well.
                   className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 transition cursor-pointer ${
                     isHovered
-                      ? 'bg-surface font-bold text-fg'
-                      : 'text-fg-muted hover:bg-surface hover:text-fg'
+                      ? 'text-fg font-bold shadow-sunken'
+                      : 'text-fg-muted hover:text-fg'
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">

@@ -11,25 +11,11 @@ interface Props {
   gradingScale: GradeScale[];
 }
 
-export default function WizardSidebar({
-  form,
-  gradingScale,
-}: Props) {
+export default function WizardSidebar({ form, gradingScale }: Props) {
   return (
     <aside className="space-y-4">
-      {/* =====================================================
-          SCHOOL PROFILE
-      ====================================================== */}
       <SchoolProfileCard form={form} />
-
-      {/* =====================================================
-          GRADING SUMMARY
-      ====================================================== */}
       <GradingSummary gradingScale={gradingScale} />
-
-      {/* =====================================================
-          SETUP TIP
-      ====================================================== */}
       <SetupTip />
     </aside>
   );

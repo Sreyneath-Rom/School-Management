@@ -7,13 +7,6 @@ import { classService, type ClassRecord } from '@/services/classService'
 import { useTranslations } from '@/i18n'
 import { useNotification } from '@/hooks/useNotification'
 
-/**
- * Raw schedule as returned by the API. Deliberately NOT `extends Schedule`
- * — the compiler enforces `Schedule.dayOfWeek: DayOfWeek` (non-nullable),
- * while the API may return null or a string name for a row that predates
- * the current schema. Widening here and normalizing via `normalizeDay`
- * below keeps the mismatch in one place.
- */
 interface RawSchedule {
   id: string
   dayOfWeek?: unknown
@@ -22,62 +15,26 @@ interface RawSchedule {
   room?: string | null
   subject?: { id?: string; name?: string } | null
   class?: { id?: string; name?: string } | null
-  teacher?: {
-    id?: string
-    user?: { firstName?: string; lastName?: string }
-  } | null
+  teacher?: { id?: string; user?: { firstName?: string; lastName?: string } } | null
 }
 
-const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const // Mon..Sat, Sun
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const
 const DAY_LABEL: Record<number, string> = {
-  0: 'Sunday',
-  1: 'Monday',
-  2: 'Tuesday',
-  3: 'Wednesday',
-  4: 'Thursday',
-  5: 'Friday',
-  6: 'Saturday',
+  0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday',
+  4: 'Thursday', 5: 'Friday', 6: 'Saturday',
 }
 
 const DAY_NAME_TO_NUMBER: Record<string, number> = {
-  SUNDAY: 0,
-  MONDAY: 1,
-  TUESDAY: 2,
-  WEDNESDAY: 3,
-  THURSDAY: 4,
-  FRIDAY: 5,
-  SATURDAY: 6,
+  SUNDAY: 0, MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3,
+  THURSDAY: 4, FRIDAY: 5, SATURDAY: 6,
 }
 
-/**
- * Coerce whatever the API sends into a 0..6 day index. Returns null for
- * anything unrecognized so the caller can skip it rather than mis-group.
- * Accepts:
- *   - number 0..6
- *   - numeric string "0".."6"
- *   - day name "MONDAY", "monday", etc.
- *   - null / undefined / anything else → null
- */
 function normalizeDay(value: unknown): number | null {
-  if (
-    typeof value === 'number' &&
-    Number.isInteger(value) &&
-    value >= 0 &&
-    value <= 6
-  ) {
-    return value
-  }
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 6) return value
   if (typeof value === 'string') {
     const trimmed = value.trim()
     const numeric = Number(trimmed)
-    if (
-      !Number.isNaN(numeric) &&
-      Number.isInteger(numeric) &&
-      numeric >= 0 &&
-      numeric <= 6
-    ) {
-      return numeric
-    }
+    if (!Number.isNaN(numeric) && Number.isInteger(numeric) && numeric >= 0 && numeric <= 6) return numeric
     const named = DAY_NAME_TO_NUMBER[trimmed.toUpperCase()]
     if (named !== undefined) return named
   }
@@ -86,7 +43,6 @@ function normalizeDay(value: unknown): number | null {
 
 function timeOf(value: string | null | undefined): string {
   if (!value) return ''
-  // Handles both "09:00" and "2025-01-01T09:00:00.000Z"
   return value.includes('T') ? value.slice(11, 16) : value.slice(0, 5)
 }
 
@@ -105,21 +61,13 @@ export default function Schedules() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  // Load class list for the filter. Failure here doesn't block the page —
-  // the schedule list still renders, just without a class filter.
   useEffect(() => {
     let cancelled = false
     classService
       .list()
-      .then((rows) => {
-        if (!cancelled) setClasses(Array.isArray(rows) ? rows : [])
-      })
-      .catch(() => {
-        if (!cancelled) setClasses([])
-      })
-    return () => {
-      cancelled = true
-    }
+      .then((rows) => { if (!cancelled) setClasses(Array.isArray(rows) ? rows : []) })
+      .catch(() => { if (!cancelled) setClasses([]) })
+    return () => { cancelled = true }
   }, [])
 
   const loadSchedules = useCallback(async () => {
@@ -138,9 +86,7 @@ export default function Schedules() {
     }
   }, [classId, notifyError])
 
-  useEffect(() => {
-    loadSchedules()
-  }, [loadSchedules])
+  useEffect(() => { loadSchedules() }, [loadSchedules])
 
   const grouped = useMemo(() => {
     const byDay = new Map<number, RawSchedule[]>()
@@ -151,58 +97,42 @@ export default function Schedules() {
       list.push(row)
       byDay.set(day, list)
     }
-    // Sort each day by start time
     for (const list of byDay.values()) {
       list.sort((a, b) => timeOf(a.startTime).localeCompare(timeOf(b.startTime)))
     }
     return byDay
   }, [schedules])
 
-  const daysWithSchedule = useMemo(
-    () => DAY_ORDER.filter((d) => grouped.has(d)),
-    [grouped]
-  )
+  const daysWithSchedule = useMemo(() => DAY_ORDER.filter((d) => grouped.has(d)), [grouped])
 
-  const handleRefresh = () => {
-    loadSchedules()
-  }
-
-  const handleRetry = () => {
-    loadSchedules()
-  }
+  const handleRefresh = () => { loadSchedules() }
+  const handleRetry = () => { loadSchedules() }
 
   return (
     <div className="space-y-5">
-      {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-black tracking-tight text-color sm:text-xl">
+          <h1 className="text-lg font-black tracking-tight text-fg sm:text-xl">
             {t('sidebar.classSchedules')}
           </h1>
-          <p className="mt-0.5 text-xs text-secondary">
-            Weekly timetable by class
-          </p>
+          <p className="mt-0.5 text-xs text-fg-muted">Weekly timetable by class</p>
         </div>
 
         <div className="flex items-center gap-2">
           <select
             value={classId}
             onChange={(e) => setClassId(e.target.value)}
-            className="h-9.5 rounded-xl border border-surface bg-surface px-3 text-xs font-semibold text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="h-9.5 rounded-xl px-3 text-xs font-semibold text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
           >
             <option value="">All classes</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
 
           <button
             type="button"
             onClick={handleRefresh}
             disabled={loading}
-            className="flex h-9.5 items-center gap-1.5 rounded-xl border border-surface bg-surface px-3 text-xs font-semibold text-secondary transition hover:text-color disabled:opacity-50"
+            className="flex h-9.5 items-center gap-1.5 rounded-xl glass-sm glass-interactive px-3 text-xs font-semibold text-fg-muted hover:text-fg disabled:opacity-50"
           >
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             Refresh
@@ -210,7 +140,6 @@ export default function Schedules() {
         </div>
       </div>
 
-      {/* Body */}
       {loading ? (
         <SkeletonTable />
       ) : error ? (
@@ -229,27 +158,21 @@ export default function Schedules() {
           {daysWithSchedule.map((day) => {
             const slots = grouped.get(day) ?? []
             return (
-              <section
-                key={day}
-                className="overflow-hidden rounded-2xl border border-surface bg-surface shadow-xs"
-              >
-                <header className="flex items-center gap-2 border-b border-surface bg-surface-strong px-4 py-2.5">
-                  <CalendarDays
-                    size={14}
-                    className="text-brand-600 dark:text-brand-400"
-                  />
-                  <h2 className="text-xs font-black uppercase tracking-wider text-color">
+              <section key={day} className="overflow-hidden rounded-2xl glass-sm">
+                <header className="flex items-center gap-2 px-4 py-2.5 shadow-[0_1px_0_var(--neu-shadow-dark)]">
+                  <CalendarDays size={14} className="text-brand-600 dark:text-brand-400" />
+                  <h2 className="text-xs font-black uppercase tracking-wider text-fg">
                     {DAY_LABEL[day]}
                   </h2>
-                  <span className="ml-auto text-[10px] font-semibold text-secondary">
+                  <span className="ml-auto text-[10px] font-semibold text-fg-muted">
                     {slots.length} {slots.length === 1 ? 'period' : 'periods'}
                   </span>
                 </header>
 
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-160 text-left text-xs">
-                    <thead className="bg-surface/50">
-                      <tr className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+                    <thead>
+                      <tr className="text-[10px] font-bold uppercase tracking-wider text-fg-muted shadow-[0_1px_0_var(--neu-shadow-dark)]">
                         <th className="w-28 px-4 py-2">Time</th>
                         <th className="px-4 py-2">Subject</th>
                         <th className="px-4 py-2">Teacher</th>
@@ -257,7 +180,7 @@ export default function Schedules() {
                         <th className="w-24 px-4 py-2">Room</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-surface">
+                    <tbody className="divide-y divide-(--neu-shadow-dark)">
                       {slots.map((slot) => {
                         const start = timeOf(slot.startTime)
                         const end = timeOf(slot.endTime)
@@ -265,24 +188,15 @@ export default function Schedules() {
                         return (
                           <tr
                             key={slot.id}
-                            className="transition hover:bg-surface/40"
+                            className="transition-shadow hover:shadow-sunken"
                           >
-                            <td className="px-4 py-2.5 font-mono text-[11px] font-semibold text-color">
-                              {start || '—'}
-                              {end ? ` – ${end}` : ''}
+                            <td className="px-4 py-2.5 font-mono text-[11px] font-semibold text-fg">
+                              {start || '—'}{end ? ` – ${end}` : ''}
                             </td>
-                            <td className="px-4 py-2.5 font-medium text-color">
-                              {slot.subject?.name || '—'}
-                            </td>
-                            <td className="px-4 py-2.5 text-secondary">
-                              {teacher || '—'}
-                            </td>
-                            <td className="px-4 py-2.5 text-secondary">
-                              {slot.class?.name || '—'}
-                            </td>
-                            <td className="px-4 py-2.5 text-secondary">
-                              {slot.room || '—'}
-                            </td>
+                            <td className="px-4 py-2.5 font-medium text-fg">{slot.subject?.name || '—'}</td>
+                            <td className="px-4 py-2.5 text-fg-muted">{teacher || '—'}</td>
+                            <td className="px-4 py-2.5 text-fg-muted">{slot.class?.name || '—'}</td>
+                            <td className="px-4 py-2.5 text-fg-muted">{slot.room || '—'}</td>
                           </tr>
                         )
                       })}
@@ -306,17 +220,11 @@ function SkeletonTable() {
   return (
     <div className="space-y-4">
       {[0, 1].map((i) => (
-        <div
-          key={i}
-          className="overflow-hidden rounded-2xl border border-surface bg-surface"
-        >
-          <div className="h-10 animate-pulse bg-surface-strong" />
+        <div key={i} className="overflow-hidden rounded-2xl glass-sm">
+          <div className="h-10 skeleton" />
           <div className="space-y-2 p-4">
             {[0, 1, 2].map((j) => (
-              <div
-                key={j}
-                className="h-6 animate-pulse rounded-lg bg-surface-strong/60"
-              />
+              <div key={j} className="h-6 skeleton rounded-lg" />
             ))}
           </div>
         </div>
@@ -325,21 +233,16 @@ function SkeletonTable() {
   )
 }
 
-function ErrorState({
-  error,
-  onRetry,
-}: {
-  error: Error
-  onRetry: () => void
-}) {
+function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
   return (
-    <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-center">
+    // Semantic error signal — tinted, kept
+    <div className="rounded-2xl border border-error/30 bg-error/10 p-6 text-center">
       <p className="text-sm font-bold text-error">Couldn't load schedules</p>
-      <p className="mt-1 text-xs text-secondary">{error.message}</p>
+      <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+        className="mt-3 rounded-xl bg-error px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 cursor-pointer"
       >
         Retry
       </button>
@@ -349,12 +252,13 @@ function ErrorState({
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-surface bg-surface/30 p-10 text-center">
-      <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-surface text-secondary">
+    // Dashed border tinted against the shadow pair so it's actually visible
+    <div className="rounded-2xl border border-dashed border-(--neu-shadow-dark) p-10 text-center">
+      <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl text-fg-muted shadow-sunken">
         <CalendarDays size={18} />
       </div>
-      <p className="text-sm font-bold text-color">{title}</p>
-      <p className="mx-auto mt-1 max-w-md text-xs text-secondary">{body}</p>
+      <p className="text-sm font-bold text-fg">{title}</p>
+      <p className="mx-auto mt-1 max-w-md text-xs text-fg-muted">{body}</p>
     </div>
   )
 }

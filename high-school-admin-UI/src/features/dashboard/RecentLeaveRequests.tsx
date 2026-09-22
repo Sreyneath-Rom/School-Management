@@ -1,3 +1,4 @@
+// src/features/dashboard/RecentLeaveRequests.tsx
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, FileClock } from 'lucide-react'
@@ -8,9 +9,9 @@ import type { LeaveRequest, LeaveStatus } from '@/types/leaveRequest'
 
 function statusClasses(status: LeaveStatus): string {
   switch (status) {
-    case 'APPROVED': return 'bg-success/10 text-success border-success/20'
-    case 'REJECTED': return 'bg-error/10 text-error border-error/20'
-    default: return 'bg-warning/10 text-warning border-warning/20'
+    case 'APPROVED': return 'bg-success/15 text-success border border-success/25'
+    case 'REJECTED': return 'bg-error/15 text-error border border-error/25'
+    default:         return 'bg-warning/15 text-warning border border-warning/25'
   }
 }
 
@@ -50,13 +51,13 @@ export default function RecentLeaveRequests() {
   if (loading) return <ListCardSkeleton rows={3} />
 
   return (
-    <section className="rounded-3xl border border-surface bg-surface-strong p-5 sm:p-6 shadow-xs">
-      <div className="mb-4 flex items-center justify-between pb-3 border-b border-surface">
+    <section className="rounded-3xl glass p-5 sm:p-6">
+      <div className="mb-4 flex items-center justify-between pb-3 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-fg">Student Leave Requests</h2>
             {items.length > 0 && (
-              <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-bold text-warning border border-warning/20">
+              <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning border border-warning/25">
                 {items.length} Pending
               </span>
             )}
@@ -88,12 +89,14 @@ export default function RecentLeaveRequests() {
             const grade = request.student?.class?.name ?? '—'
 
             return (
+              // Was `border border-surface bg-surface` — both no-ops.
+              // Sunken well now, matching the sibling list rows.
               <div
                 key={request.id}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-surface bg-surface p-3.5 transition hover:border-brand-500/30"
+                className="flex items-center justify-between gap-3 rounded-2xl p-3.5 shadow-sunken"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 font-bold text-brand-600 dark:text-brand-300 border border-brand-500/20 text-xs">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/15 font-bold text-brand-600 dark:text-brand-300 text-xs">
                     {initials(name)}
                   </div>
                   <div className="min-w-0">
@@ -103,7 +106,7 @@ export default function RecentLeaveRequests() {
                     </p>
                   </div>
                 </div>
-                <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${statusClasses(request.status)}`}>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-bold ${statusClasses(request.status)}`}>
                   {statusLabel(request.status)}
                 </span>
               </div>

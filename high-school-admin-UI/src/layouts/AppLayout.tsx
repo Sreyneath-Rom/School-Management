@@ -17,42 +17,26 @@ export default function AppLayout() {
 
   return (
     <SchoolProvider>
-      <div className="page-theme flex h-screen w-full overflow-hidden text-color">
-        {/* ============================================================
-            SIDEBAR
-        ============================================================ */}
+      {/* h-dvh (not h-screen) so the shell doesn't jump when the mobile
+          URL bar collapses — matches html/body { min-height: 100dvh }. */}
+      <div className="page-theme flex h-dvh w-full overflow-hidden text-color">
         <Sidebar
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}
           role={(role as any) ?? undefined}
         />
 
-        {/* ============================================================
-            APPLICATION AREA
-        ============================================================ */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* ==========================================================
-              HEADER
-          ========================================================== */}
           <Header onOpenSidebar={() => setMobileOpen(true)} />
 
-          {/* ==========================================================
-              SCROLLABLE CONTENT
-          ========================================================== */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
             <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-              {/* Breadcrumb Navigation */}
               <div className="mb-4">
                 <Breadcrumbs />
               </div>
-
-              {/* Page Content */}
               <Outlet />
             </main>
 
-            {/* ========================================================
-                FOOTER
-            ======================================================== */}
             <Footer />
           </div>
         </div>

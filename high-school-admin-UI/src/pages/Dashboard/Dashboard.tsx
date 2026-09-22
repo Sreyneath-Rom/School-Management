@@ -17,11 +17,6 @@ import {
 } from '@/features/dashboard/dashboardCards'
 import type { Cohort } from '@/services/dashboardService'
 
-/**
- * Maps the display labels DashboardHeroBanner renders to the URL-safe
- * slugs the backend expects. "All Grades" is what the user sees;
- * `'all'` is what `GET /dashboard/stats?cohort=...` accepts.
- */
 const COHORT_MAP: Record<string, Cohort> = {
   'All Grades': 'all',
   'Upper Sec (10-12)': 'upper-secondary',
@@ -33,7 +28,6 @@ function AdminDashboard() {
   const cohort: Cohort = COHORT_MAP[cohortLabel] ?? 'all'
   const { stats, attendance, loading, error } = useDashboardData(cohort)
 
-  // Fill the card shells with live values. Cards with no source keep `—`.
   const cards = applyDashboardStats(DASHBOARD_CARDS, stats, attendance)
 
   const handleExportSummary = () => {
@@ -53,7 +47,11 @@ function AdminDashboard() {
       <DashboardQuickActions />
 
       {error && (
-        <div className="rounded-2xl p-4 text-xs font-semibold text-error bg-surface border border-surface">
+        // Was `bg-surface border border-surface` — both resolved to the
+        // page background, so the banner rendered as plain text with no
+        // visual container. A warning-tinted alert is the correct signal
+        // here: the sync failed but the dashboard still renders stale data.
+        <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold text-warning">
           Unable to synchronize real-time dashboard metrics. Displaying last known values.
         </div>
       )}

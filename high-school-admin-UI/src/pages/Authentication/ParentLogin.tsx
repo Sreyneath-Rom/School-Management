@@ -1,5 +1,5 @@
-import Login from './Login';
+import Login from './Login'
 
 export default function ParentLogin() {
-  return <Login initialRole="parent" />;
+  return <Login initialRole="parent" />
 }

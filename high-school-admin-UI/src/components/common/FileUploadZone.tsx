@@ -138,6 +138,10 @@ export default function FileUploadZone({
       />
 
       {!currentFile ? (
+        // Dashed border is a semantic affordance ("drop here") — that's
+        // meaning, not decoration, so the visible line stays. Color uses
+        // the neumorphic shadow-dark token so it reads as part of the
+        // sunken well.
         <div
           role="button"
           tabIndex={disabled ? -1 : 0}
@@ -153,11 +157,11 @@ export default function FileUploadZone({
           }}
           className={`relative border-2 border-dashed rounded-2xl p-4 text-center transition flex flex-col items-center justify-center gap-2 ${
             isDragging
-              ? 'border-brand-500 bg-brand-500/10'
-              : 'border-surface bg-surface hover:border-brand-400 hover:bg-surface-strong'
+              ? 'border-brand-500 bg-brand-500/10 shadow-sunken'
+              : 'border-(--neu-shadow-dark) hover:border-brand-400/70 hover:bg-brand-500/5 shadow-sunken'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          <div className="p-2.5 rounded-full bg-surface-strong text-brand-600 dark:text-brand-400">
+          <div className="p-2.5 rounded-full bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
             <UploadCloud size={20} />
           </div>
           <div className="space-y-0.5">
@@ -171,7 +175,8 @@ export default function FileUploadZone({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between p-3 rounded-2xl border border-surface bg-surface-strong">
+        // Sunken well — signals "this file has been accepted into the form".
+        <div className="flex items-center justify-between p-3 rounded-2xl shadow-sunken">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2 rounded-xl bg-success/15 text-success">
               <File size={16} />
@@ -195,7 +200,7 @@ export default function FileUploadZone({
             onClick={handleRemove}
             disabled={disabled}
             aria-label="Remove attachment"
-            className="p-1.5 rounded-lg text-fg-muted hover:text-error hover:bg-surface transition cursor-pointer"
+            className="p-1.5 rounded-lg text-fg-muted hover:text-error hover:bg-error/10 transition cursor-pointer"
           >
             <X size={14} />
           </button>

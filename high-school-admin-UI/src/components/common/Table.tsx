@@ -5,24 +5,6 @@ import type { ReactNode } from 'react'
  * Table primitives. Every page defines the same thead/tbody/th/td classes
  * inline — these wrappers exist so the classes live in one file and are
  * easy to change.
- *
- * Usage:
- *   <TableContainer>
- *     <Table>
- *       <Thead>
- *         <Tr>
- *           <Th>Name</Th>
- *           <Th align="center">Score</Th>
- *         </Tr>
- *       </Thead>
- *       <Tbody>
- *         <Tr hoverable>
- *           <Td>Emily</Td>
- *           <Td align="center">92%</Td>
- *         </Tr>
- *       </Tbody>
- *     </Table>
- *   </TableContainer>
  */
 
 type Align = 'left' | 'center' | 'right'
@@ -41,9 +23,7 @@ export function TableContainer({
   className?: string
 }) {
   return (
-    <div
-      className={`glass-sm rounded-2xl border border-surface overflow-hidden ${className}`}
-    >
+    <div className={`glass-sm rounded-2xl overflow-hidden ${className}`}>
       {children}
     </div>
   )
@@ -58,9 +38,7 @@ export function Table({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table
-        className={`w-full text-left text-xs text-fg-muted ${className}`}
-      >
+      <table className={`w-full text-left text-xs text-fg-muted ${className}`}>
         {children}
       </table>
     </div>
@@ -69,7 +47,9 @@ export function Table({
 
 export function Thead({ children }: { children: ReactNode }) {
   return (
-    <thead className="bg-surface text-[11px] font-semibold uppercase tracking-wider text-fg-muted border-b border-surface">
+    // `bg-surface` was a no-op (same color as the container); a shadow
+    // seam is the correct neumorphic divider.
+    <thead className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted shadow-[0_1px_0_var(--neu-shadow-dark)]">
       {children}
     </thead>
   )
@@ -77,7 +57,11 @@ export function Thead({ children }: { children: ReactNode }) {
 
 export function Tbody({ children }: { children: ReactNode }) {
   return (
-    <tbody className="divide-y divide-(--glass-outline)">{children}</tbody>
+    // `--glass-outline` is `transparent` under this theme — row dividers
+    // need the shadow-dark token to actually be visible.
+    <tbody className="divide-y divide-(--neu-shadow-dark)">
+      {children}
+    </tbody>
   )
 }
 
@@ -93,7 +77,7 @@ export function Tr({
   return (
     <tr
       className={`${
-        hoverable ? 'hover:bg-surface/60 transition' : ''
+        hoverable ? 'hover:shadow-sunken transition' : ''
       } ${className}`}
     >
       {children}

@@ -14,13 +14,14 @@ export const RoleStats: React.FC<RoleStatsProps> = ({ roles = [], catalog = [], 
   const safeRoles = Array.isArray(roles) ? roles : []
   const systemRolesCount = safeRoles.filter((r) => r && r.isSystem).length
   const customRolesCount = safeRoles.filter((r) => r && !r.isSystem).length
-  const activePermsCount = activeRole && Array.isArray(activeRole.permissionIds) ? activeRole.permissionIds.length : 0
+  const activePermsCount =
+    activeRole && Array.isArray(activeRole.permissionIds) ? activeRole.permissionIds.length : 0
 
   const cards: StatCard[] = [
-    { id: 'defined-roles', label: 'Defined Roles', value: safeRoles.length.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'active', icon: 'Shield', tint: 'blue' },
-    { id: 'system-roles', label: 'System Roles', value: systemRolesCount.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'protected', icon: 'ShieldCheck', tint: 'green' },
-    { id: 'custom-roles', label: 'Custom Roles', value: customRolesCount.toString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'custom', icon: 'UserCheck', tint: 'violet' },
-    { id: 'permission-nodes', label: 'Permission Nodes', value: catalog.length.toString(), delta: activePermsCount.toString(), deltaDirection: 'neutral', deltaLabel: 'active', icon: 'Key', tint: 'amber' },
+    { id: 'defined-roles',    label: 'Defined Roles',    value: safeRoles.length.toString(),       delta: '-',                       deltaDirection: 'neutral', deltaLabel: 'active',    icon: 'Shield',      tint: 'blue' },
+    { id: 'system-roles',     label: 'System Roles',     value: systemRolesCount.toString(),       delta: '-',                       deltaDirection: 'neutral', deltaLabel: 'protected', icon: 'ShieldCheck', tint: 'green' },
+    { id: 'custom-roles',     label: 'Custom Roles',     value: customRolesCount.toString(),       delta: '-',                       deltaDirection: 'neutral', deltaLabel: 'custom',    icon: 'UserCheck',   tint: 'violet' },
+    { id: 'permission-nodes', label: 'Permission Nodes', value: catalog.length.toString(),         delta: activePermsCount.toString(), deltaDirection: 'neutral', deltaLabel: 'active',    icon: 'Key',         tint: 'amber' },
   ]
 
   return <StatsGrid cards={cards} columns={4} />

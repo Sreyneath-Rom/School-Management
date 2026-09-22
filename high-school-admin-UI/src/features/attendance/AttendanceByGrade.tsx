@@ -1,3 +1,4 @@
+// src/features/attendance/AttendanceByGrade.tsx
 import { useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { attendanceByGradeData } from '@/services/attendanceMockData'
@@ -9,7 +10,7 @@ export default function AttendanceByGrade() {
   return (
     <section className="rounded-[28px] glass-sm p-6 min-h-90">
       <div className="mb-6">
-        <h2 className="text-base font-semibold text-stone-900 dark:text-stone-100">Attendance by Grade</h2>
+        <h2 className="text-base font-semibold text-fg">Attendance by Grade</h2>
       </div>
 
       <div className="relative flex items-center justify-center">
@@ -41,27 +42,24 @@ export default function AttendanceByGrade() {
                 content={<CustomTooltip total={total} />}
                 position={cursorPos ?? undefined}
                 allowEscapeViewBox={{ x: true, y: true }}
-                wrapperStyle={{
-                  zIndex: 50,
-                  transition: 'transform 0.12s ease-out, left 0.12s ease-out, top 0.12s ease-out, opacity 0.12s ease-out',
-                }}
+                wrapperStyle={{ zIndex: 50 }}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto flex w-fit -translate-y-1/2 flex-col items-center px-6 py-4 text-center">
-          <div className="text-3xl font-semibold text-stone-900 dark:text-stone-100">{total.toLocaleString()}</div>
-          <div className="text-sm text-stone-600 dark:text-stone-400">Present</div>
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto flex w-fit -translate-y-1/2 flex-col items-center rounded-full px-6 py-4 text-center shadow-[var(--shadow-emboss-sunken)]">
+          <div className="text-3xl font-semibold text-fg">{total.toLocaleString()}</div>
+          <div className="text-sm text-fg-muted">Present</div>
         </div>
       </div>
 
       <ul className="mt-6 space-y-3">
         {attendanceByGradeData.map((slice) => (
-          <li key={slice.grade} className="flex items-center gap-3 text-sm text-stone-600 dark:text-stone-400">
+          <li key={slice.grade} className="flex items-center gap-3 text-sm text-fg-muted">
             <span className="inline-flex h-3.5 w-3.5 rounded-full" style={{ background: slice.color }} />
-            <span className="flex-1 text-stone-600 dark:text-stone-400">{slice.grade}</span>
-            <span className="font-semibold text-stone-900 dark:text-stone-100">{slice.count}</span>
+            <span className="flex-1 text-fg-muted">{slice.grade}</span>
+            <span className="font-semibold text-fg">{slice.count}</span>
           </li>
         ))}
       </ul>
@@ -86,29 +84,13 @@ function CustomTooltip({
   const percent = total > 0 ? Math.round((entry.count / total) * 100) : 0
 
   return (
-    <div
-      style={{
-        borderRadius: 16,
-        border: '1px solid rgba(255,255,255,0.4)',
-        background: 'rgba(255,255,255,0.10)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        boxShadow:
-          '0 20px 60px rgba(15, 23, 42, 0.15), 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
-        outline: '1px solid rgba(0, 0, 0, 0.05)',
-        padding: '8px 12px',
-        fontSize: 13,
-      }}
-    >
+    <div className="dropdown-surface rounded-2xl px-3 py-2 text-[13px]">
       <div className="flex items-center gap-2">
-        <span
-          className="inline-flex h-2.5 w-2.5 rounded-full"
-          style={{ background: entry.color }}
-        />
-        <span className="font-semibold text-stone-900">{entry.grade}</span>
+        <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ background: entry.color }} />
+        <span className="font-semibold text-fg">{entry.grade}</span>
       </div>
-      <div className="mt-1 text-stone-600">
-        {entry.count} present <span className="text-stone-500">({percent}%)</span>
+      <div className="mt-1 text-fg-muted">
+        {entry.count} present <span className="text-fg-muted">({percent}%)</span>
       </div>
     </div>
   )

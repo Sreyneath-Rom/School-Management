@@ -32,12 +32,12 @@ export default function Card({
   const hasHeader = title || subtitle || action
 
   return (
-    <section
-      className={`rounded-[28px] glass-sm border border-surface flex flex-col ${className}`}
-    >
+    <section className={`rounded-[28px] glass-sm flex flex-col ${className}`}>
       {hasHeader && (
+        // Hairline seam via box-shadow: a `border-b border-surface` here
+        // would be invisible (surface = page color).
         <div
-          className={`flex items-start justify-between gap-4 border-b border-surface ${PADDING[padding]}`}
+          className={`flex items-start justify-between gap-4 shadow-[0_1px_0_var(--neu-shadow-dark)] ${PADDING[padding]}`}
         >
           <div className="min-w-0">
             {title && (
@@ -55,7 +55,7 @@ export default function Card({
 
       {footer && (
         <div
-          className={`border-t border-surface ${PADDING[padding]} pt-4`}
+          className={`shadow-[0_-1px_0_var(--neu-shadow-dark)] ${PADDING[padding]} pt-4`}
         >
           {footer}
         </div>

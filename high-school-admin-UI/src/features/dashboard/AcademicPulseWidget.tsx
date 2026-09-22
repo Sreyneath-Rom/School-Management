@@ -1,3 +1,4 @@
+// src/features/dashboard/AcademicPulseWidget.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Sparkles, ArrowUpRight } from 'lucide-react'
@@ -48,14 +49,18 @@ export default function AcademicPulseWidget() {
   const summaries = useMemo(() => buildSubjectSummaries(grades), [grades])
 
   return (
-    <div className="rounded-3xl border border-surface bg-surface-strong p-5 shadow-xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface">
+    // Was `border border-surface bg-surface-strong shadow-xs` — every piece
+    // a no-op under this theme. `.glass` supplies the raised surface.
+    <div className="rounded-3xl glass p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-fg">
               Curriculum Mastery & Subject Health
             </h2>
-            <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success border border-success/20">
+            {/* Semantic "Live" chip — tinted bg + tinted border is
+                intentional here, it's a signal not a surface. */}
+            <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold text-success border border-success/25">
               <Sparkles size={10} className="inline -mt-0.5 mr-1" />
               Live
             </span>
@@ -93,7 +98,9 @@ export default function AcademicPulseWidget() {
                   </span>
                 </span>
               </div>
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-surface">
+              {/* Progress-bar track: was `bg-surface` (no-op) — now a
+                  sunken well so the fill reads as poured into it. */}
+              <div className="relative h-2 w-full overflow-hidden rounded-full shadow-sunken">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     sub.averageScore >= 80

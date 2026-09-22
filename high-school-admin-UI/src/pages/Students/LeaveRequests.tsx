@@ -2,18 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  Calendar,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Search,
-  FileText,
-  Plus,
-  Check,
-  X,
-  Eye,
-  RefreshCw,
-  Info,
+  Calendar, Clock, CheckCircle2, XCircle, Search, FileText,
+  Plus, Check, X, Eye, RefreshCw, Info,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import StatsGrid from '@/components/cards/StatsGrid'
@@ -21,11 +11,11 @@ import type { StatCard } from '@/types'
 import { leaveRequestService } from '@/services/leaveRequestService'
 import type { LeaveRequest } from '@/types/leaveRequest'
 
-// STRIPPED: LeaveRequest has no studentName, studentCode, attachmentUrl,
-// reviewNote. Rows display the raw studentId. Review payload accepts only
-// the fields the backend defines — no note is sent.
-
 type StatusTab = 'All' | 'PENDING' | 'APPROVED' | 'REJECTED'
+
+/* Neumorphic hairline seams. */
+const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
+const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
 
 function initials(value: string): string {
   const parts = value.trim().split(/\s+/).filter(Boolean)
@@ -40,6 +30,12 @@ function daysBetween(start: string, end: string): number {
   if (Number.isNaN(s) || Number.isNaN(e)) return 0
   return Math.max(1, Math.round((e - s) / 86400000) + 1)
 }
+
+// Inputs inherit the sunken-well look from globals.css. Only layout
+// and focus ring are set inline.
+const inputBase =
+  'w-full px-3 py-2 rounded-xl text-xs text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
+const labelBase = 'block font-semibold text-fg-muted mb-1'
 
 export default function LeaveRequests() {
   const { showToast } = useToast()
@@ -76,9 +72,7 @@ export default function LeaveRequests() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   const filtered = useMemo(() => {
     return requests.filter((r) => {
@@ -102,10 +96,10 @@ export default function LeaveRequests() {
   }, [requests])
 
   const kpiCards: StatCard[] = [
-    { id: 'pending', label: 'Pending', value: String(stats.pending), delta: '-', deltaDirection: 'neutral', deltaLabel: 'awaiting review', icon: 'Clock', tint: 'amber' },
-    { id: 'approved', label: 'Approved', value: String(stats.approved), delta: '-', deltaDirection: 'neutral', deltaLabel: 'this term', icon: 'CheckCircle2', tint: 'green' },
-    { id: 'rejected', label: 'Rejected', value: String(stats.rejected), delta: '-', deltaDirection: 'neutral', deltaLabel: 'declined', icon: 'XCircle', tint: 'red' },
-    { id: 'total', label: 'Total', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'submitted', icon: 'FileText', tint: 'violet' },
+    { id: 'pending',  label: 'Pending',  value: String(stats.pending),  delta: '-', deltaDirection: 'neutral', deltaLabel: 'awaiting review', icon: 'Clock',        tint: 'amber' },
+    { id: 'approved', label: 'Approved', value: String(stats.approved), delta: '-', deltaDirection: 'neutral', deltaLabel: 'this term',       icon: 'CheckCircle2', tint: 'green' },
+    { id: 'rejected', label: 'Rejected', value: String(stats.rejected), delta: '-', deltaDirection: 'neutral', deltaLabel: 'declined',        icon: 'XCircle',      tint: 'red' },
+    { id: 'total',    label: 'Total',    value: String(stats.total),    delta: '-', deltaDirection: 'neutral', deltaLabel: 'submitted',       icon: 'FileText',     tint: 'violet' },
   ]
 
   const handleApprove = async (id: string) => {
@@ -187,14 +181,14 @@ export default function LeaveRequests() {
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-surface bg-surface text-color text-xs font-semibold hover:bg-surface-strong transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold disabled:opacity-50"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
           <button
             onClick={() => setNewOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition"
           >
             <Plus size={16} />
             <span>Record Request</span>
@@ -202,9 +196,10 @@ export default function LeaveRequests() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+      {/* Info banner — semantic info signal (5% tint was imperceptible) */}
+      <div className="rounded-2xl border border-info/30 bg-info/10 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
-        <p className="text-secondary">
+        <p className="text-fg-muted">
           Requests are loaded from <code className="font-mono">/leaves</code>. Rows
           show raw student IDs — a directory join is not yet available.
         </p>
@@ -212,16 +207,17 @@ export default function LeaveRequests() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl glass-sm border border-surface">
+      {/* Filter bar — border was invisible */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl glass-sm">
         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
           {(['All', 'PENDING', 'APPROVED', 'REJECTED'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer ${
                 tab === t
-                  ? 'bg-brand-600 text-white shadow-sm'
-                  : 'text-secondary hover:bg-surface'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
+                  : 'text-fg-muted hover:text-fg hover:shadow-sunken'
               }`}
             >
               {t === 'All' ? 'All' : t.charAt(0) + t.slice(1).toLowerCase()}
@@ -230,30 +226,31 @@ export default function LeaveRequests() {
         </div>
 
         <div className="relative w-full sm:w-64">
-          <Search size={15} className="absolute left-3 top-2.5 text-secondary" />
+          <Search size={15} className="absolute left-3 top-2.5 text-fg-muted z-10" />
           <input
             type="text"
             placeholder="Search student ID or reason..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-surface rounded-xl text-xs text-color placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full pl-8 pr-3 py-1.5 rounded-xl text-xs text-fg placeholder:text-fg-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
       </div>
 
-      <div className="rounded-2xl glass-sm border border-surface overflow-hidden shadow-sm">
+      {/* Table container */}
+      <div className="rounded-2xl glass-sm overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-secondary text-sm">
+          <div className="py-16 text-center text-fg-muted text-sm">
             <RefreshCw size={16} className="inline animate-spin mr-2" />
             Loading leave requests...
           </div>
         ) : error ? (
           <div className="py-16 text-center">
             <p className="text-sm font-bold text-error">Couldn't load requests</p>
-            <p className="mt-1 text-xs text-secondary">{error.message}</p>
+            <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-secondary text-sm">
+          <div className="py-16 text-center text-fg-muted text-sm">
             {requests.length === 0
               ? 'No leave requests yet.'
               : 'No requests match the current filters.'}
@@ -262,7 +259,7 @@ export default function LeaveRequests() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-surface bg-surface/50 text-[11px] font-semibold uppercase tracking-wider text-secondary">
+                <tr className={`${SEAM_B} text-[11px] font-semibold uppercase tracking-wider text-fg-muted`}>
                   <th className="py-3.5 px-4">Student</th>
                   <th className="py-3.5 px-4">Period</th>
                   <th className="py-3.5 px-4">Reason</th>
@@ -270,37 +267,42 @@ export default function LeaveRequests() {
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface text-xs text-color">
+              <tbody className="divide-y divide-(--neu-shadow-dark) text-xs text-fg">
                 {filtered.map((req) => {
                   const days = daysBetween(req.startDate, req.endDate)
                   return (
-                    <tr key={req.id} className="hover:bg-surface/40 transition">
+                    <tr
+                      key={req.id}
+                      className="hover:shadow-sunken transition-shadow"
+                    >
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
+                          {/* Avatar chip — data-driven brand gradient, kept */}
                           <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black text-white bg-linear-to-tr from-brand-600 to-brand-400 shrink-0">
                             {initials(req.studentId)}
                           </div>
-                          <div className="font-mono text-[11px] text-secondary">
+                          <div className="font-mono text-[11px] text-fg-muted">
                             {req.studentId}
                           </div>
                         </div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="font-medium text-color flex items-center gap-1.5">
-                          <Calendar size={12} className="text-secondary" />
+                        <div className="font-medium text-fg flex items-center gap-1.5">
+                          <Calendar size={12} className="text-fg-muted" />
                           {req.startDate}
                           {req.startDate !== req.endDate && ` → ${req.endDate}`}
                         </div>
-                        <div className="text-[11px] text-secondary">
+                        <div className="text-[11px] text-fg-muted">
                           {days} {days === 1 ? 'day' : 'days'}
                         </div>
                       </td>
                       <td className="py-3.5 px-4 max-w-xs">
-                        <p className="line-clamp-2 text-secondary">
+                        <p className="line-clamp-2 text-fg-muted">
                           {req.reason || '—'}
                         </p>
                       </td>
                       <td className="py-3.5 px-4">
+                        {/* Status chip — semantic tints, kept */}
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold ${
                             req.status === 'APPROVED'
@@ -323,23 +325,24 @@ export default function LeaveRequests() {
                               setSelected(req)
                               setDetailOpen(true)
                             }}
-                            className="p-1.5 rounded-lg hover:bg-surface text-secondary hover:text-brand-600 transition"
+                            className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 dark:hover:text-brand-300 hover:shadow-sunken transition cursor-pointer"
                           >
                             <Eye size={15} />
                           </button>
                           {req.status === 'PENDING' && (
                             <>
+                              {/* Semantic action buttons — kept tinted */}
                               <button
                                 onClick={() => handleApprove(req.id)}
                                 disabled={busyId === req.id}
-                                className="p-1.5 rounded-lg bg-success/10 hover:bg-success/20 text-success transition disabled:opacity-50"
+                                className="p-1.5 rounded-lg bg-success/15 hover:bg-success/25 text-success transition disabled:opacity-50 cursor-pointer"
                               >
                                 <Check size={15} />
                               </button>
                               <button
                                 onClick={() => handleReject(req.id)}
                                 disabled={busyId === req.id}
-                                className="p-1.5 rounded-lg bg-error/10 hover:bg-error/20 text-error transition disabled:opacity-50"
+                                className="p-1.5 rounded-lg bg-error/15 hover:bg-error/25 text-error transition disabled:opacity-50 cursor-pointer"
                               >
                                 <X size={15} />
                               </button>
@@ -356,12 +359,22 @@ export default function LeaveRequests() {
         )}
       </div>
 
+      {/* Detail modal */}
       {detailOpen && selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-surface pb-3">
-              <h3 className="text-base font-bold text-color flex items-center gap-2">
-                <FileText size={18} className="text-brand-500" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setDetailOpen(false)
+              setSelected(null)
+            }
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <div className={`flex items-center justify-between pb-3 ${SEAM_B}`}>
+              <h3 className="text-base font-bold text-fg flex items-center gap-2">
+                <FileText size={18} className="text-brand-600 dark:text-brand-400" />
                 Leave Application
               </h3>
               <button
@@ -369,53 +382,53 @@ export default function LeaveRequests() {
                   setDetailOpen(false)
                   setSelected(null)
                 }}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-surface">
+              <div className="flex items-center gap-3 p-3 rounded-xl shadow-sunken">
                 <div className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-black text-white bg-linear-to-tr from-brand-600 to-brand-400">
                   {initials(selected.studentId)}
                 </div>
-                <div className="font-mono text-[11px] text-secondary">
+                <div className="font-mono text-[11px] text-fg-muted">
                   {selected.studentId}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-secondary block text-[11px]">Start</span>
-                  <span className="font-semibold text-color">{selected.startDate}</span>
+                  <span className="text-fg-muted block text-[11px]">Start</span>
+                  <span className="font-semibold text-fg">{selected.startDate}</span>
                 </div>
                 <div>
-                  <span className="text-secondary block text-[11px]">End</span>
-                  <span className="font-semibold text-color">{selected.endDate}</span>
+                  <span className="text-fg-muted block text-[11px]">End</span>
+                  <span className="font-semibold text-fg">{selected.endDate}</span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-surface">
-                <div className="text-secondary text-[11px] mb-1">Reason</div>
-                <div className="text-color">{selected.reason || '—'}</div>
+              <div className="p-3 rounded-xl shadow-sunken">
+                <div className="text-fg-muted text-[11px] mb-1">Reason</div>
+                <div className="text-fg">{selected.reason || '—'}</div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface">
+            <div className={`flex items-center justify-end gap-2 pt-3 ${SEAM_T}`}>
               {selected.status === 'PENDING' ? (
                 <>
                   <button
                     onClick={() => handleReject(selected.id)}
                     disabled={busyId === selected.id}
-                    className="px-3.5 py-1.5 rounded-xl border border-error/40 text-error hover:bg-error/10 text-xs font-semibold transition disabled:opacity-50"
+                    className="px-3.5 py-1.5 rounded-xl border border-error/40 text-error hover:bg-error/10 text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
                   >
                     Reject
                   </button>
                   <button
                     onClick={() => handleApprove(selected.id)}
                     disabled={busyId === selected.id}
-                    className="px-4 py-1.5 rounded-xl bg-success hover:opacity-90 text-white text-xs font-semibold shadow-sm transition disabled:opacity-50"
+                    className="px-4 py-1.5 rounded-xl bg-success hover:opacity-90 text-white text-xs font-semibold shadow-sm transition disabled:opacity-50 cursor-pointer"
                   >
                     Approve
                   </button>
@@ -426,7 +439,7 @@ export default function LeaveRequests() {
                     setDetailOpen(false)
                     setSelected(null)
                   }}
-                  className="px-4 py-2 rounded-xl bg-surface text-color text-xs font-semibold hover:bg-surface-strong"
+                  className="glass-sm glass-interactive px-4 py-2 rounded-xl text-fg text-xs font-semibold"
                 >
                   Close
                 </button>
@@ -436,17 +449,22 @@ export default function LeaveRequests() {
         </div>
       )}
 
+      {/* Create modal */}
       {newOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-surface pb-3">
-              <h3 className="text-base font-bold text-color flex items-center gap-2">
-                <Plus size={18} className="text-brand-500" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setNewOpen(false) }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <div className={`flex items-center justify-between pb-3 ${SEAM_B}`}>
+              <h3 className="text-base font-bold text-fg flex items-center gap-2">
+                <Plus size={18} className="text-brand-600 dark:text-brand-400" />
                 Record Leave Request
               </h3>
               <button
                 onClick={() => setNewOpen(false)}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -454,71 +472,63 @@ export default function LeaveRequests() {
 
             <form onSubmit={handleCreate} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Student ID *
-                </label>
+                <label className={labelBase}>Student ID *</label>
                 <input
                   type="text"
                   required
                   value={newForm.studentId}
                   onChange={(e) => setNewForm({ ...newForm, studentId: e.target.value })}
                   placeholder="student id"
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color font-mono focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className={`${inputBase} font-mono`}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-secondary mb-1">
-                    Start date *
-                  </label>
+                  <label className={labelBase}>Start date *</label>
                   <input
                     type="date"
                     required
                     value={newForm.startDate}
                     onChange={(e) => setNewForm({ ...newForm, startDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className={inputBase}
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-secondary mb-1">
-                    End date *
-                  </label>
+                  <label className={labelBase}>End date *</label>
                   <input
                     type="date"
                     required
                     value={newForm.endDate}
                     onChange={(e) => setNewForm({ ...newForm, endDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className={inputBase}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Reason *
-                </label>
+                <label className={labelBase}>Reason *</label>
                 <textarea
                   rows={3}
                   required
                   value={newForm.reason}
                   onChange={(e) => setNewForm({ ...newForm, reason: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className={inputBase}
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface">
+              <div className={`flex items-center justify-end gap-2 pt-3 ${SEAM_T}`}>
                 <button
                   type="button"
                   onClick={() => setNewOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-surface text-secondary text-xs font-semibold hover:bg-surface"
+                  className="glass-sm glass-interactive px-4 py-2 rounded-xl text-fg-muted hover:text-fg text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-md shadow-brand-500/20 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm shadow-brand-600/25 disabled:opacity-50 cursor-pointer"
                 >
                   {submitting && <RefreshCw size={13} className="animate-spin" />}
                   Submit

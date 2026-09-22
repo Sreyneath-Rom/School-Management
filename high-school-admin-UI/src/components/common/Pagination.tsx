@@ -9,10 +9,6 @@ interface PaginationProps {
   summary?: string
 }
 
-/**
- * Page selector for server-side paginated lists. Reads the `meta` block
- * the API returns alongside every list response.
- */
 export default function Pagination({
   meta,
   onPageChange,
@@ -37,7 +33,7 @@ export default function Pagination({
           onClick={() => onPageChange(meta.page - 1)}
           disabled={!meta.hasPrev}
           aria-label="Previous page"
-          className="p-1.5 rounded-lg border border-surface bg-surface text-fg-muted hover:text-fg hover:bg-surface-strong transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="glass-sm glass-interactive p-1.5 rounded-lg text-fg-muted hover:text-fg disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronLeft size={14} />
         </button>
@@ -51,7 +47,7 @@ export default function Pagination({
           onClick={() => onPageChange(meta.page + 1)}
           disabled={!meta.hasNext}
           aria-label="Next page"
-          className="p-1.5 rounded-lg border border-surface bg-surface text-fg-muted hover:text-fg hover:bg-surface-strong transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="glass-sm glass-interactive p-1.5 rounded-lg text-fg-muted hover:text-fg disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronRight size={14} />
         </button>

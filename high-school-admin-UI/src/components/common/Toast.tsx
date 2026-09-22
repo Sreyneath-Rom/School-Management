@@ -50,10 +50,13 @@ export default function Toast({
   const Icon = ICONS[type]
 
   return (
+    // `.glass-strong` supplies the elevated neumorphic surface and its
+    // shadow. The old `border border-surface-strong` was invisible and
+    // `shadow-xl` was overriding the neumorphic shadow.
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-auto relative flex w-full max-w-sm items-start gap-3 overflow-hidden rounded-[22px] glass-strong border border-surface-strong p-4 shadow-xl animate-in slide-in-from-top-2 duration-200"
+      className="pointer-events-auto relative flex w-full max-w-sm items-start gap-3 overflow-hidden rounded-[22px] glass-strong p-4 animate-in slide-in-from-top-2 duration-200"
     >
       <div
         aria-hidden="true"
@@ -67,9 +70,7 @@ export default function Toast({
       </div>
 
       <div className="relative min-w-0 flex-1 pt-0.5">
-        {title && (
-          <p className="text-xs font-bold text-fg">{title}</p>
-        )}
+        {title && <p className="text-xs font-bold text-fg">{title}</p>}
         <p className="text-xs font-medium text-fg leading-relaxed">
           {message}
         </p>
@@ -79,7 +80,7 @@ export default function Toast({
         type="button"
         onClick={onClose}
         aria-label="Dismiss"
-        className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-surface hover:text-fg transition cursor-pointer"
+        className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-fg-muted hover:text-fg transition cursor-pointer"
       >
         <X size={14} />
       </button>

@@ -69,7 +69,7 @@ export default function StatusDialog({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-2xl border border-surface bg-surface py-2.5 text-xs font-bold text-fg-muted hover:text-fg hover:bg-surface-strong transition cursor-pointer"
+            className="glass-sm glass-interactive flex-1 rounded-2xl py-2.5 text-xs font-bold text-fg-muted hover:text-fg"
           >
             Close
           </button>

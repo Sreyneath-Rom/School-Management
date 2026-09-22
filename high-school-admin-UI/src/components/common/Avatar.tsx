@@ -20,7 +20,8 @@ interface AvatarProps {
   name: string
   src?: string | null
   size?: AvatarSize
-  /** Optional ring color drawn around the avatar. */
+  /** Optional ring drawn around the avatar. Under neumorphism this is a
+   *  matte gap in the page color, not a colored outline. */
   ring?: boolean
   className?: string
 }
@@ -32,9 +33,10 @@ export default function Avatar({
   ring = false,
   className = '',
 }: AvatarProps) {
-  const ringClass = ring
-    ? 'ring-2 ring-(--glass-outline)'
-    : ''
+  // `--glass-outline` is `transparent` in the neumorphic theme, so the
+  // old ring-(--glass-outline) rendered nothing. Ring against the page
+  // color instead — this is the correct neumorphic "matte gap" effect.
+  const ringClass = ring ? 'ring-2 ring-(--glass-bg)' : ''
 
   if (src) {
     return (

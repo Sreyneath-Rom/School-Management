@@ -1,3 +1,4 @@
+// src/features/attendance/AttendanceStatsGrid.tsx
 import { attendanceStatCards } from '@/services/attendanceMockData'
 import type { AttendanceStats } from '@/services/attendanceService'
 import StatsGrid from '@/components/cards/StatsGrid'

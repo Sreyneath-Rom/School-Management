@@ -54,9 +54,7 @@ export default function UsersFeature() {
     }
   }
 
-  useEffect(() => {
-    loadUsers()
-  }, [])
+  useEffect(() => { loadUsers() }, [])
 
   const filteredUsers = useMemo(() => {
     const safeUsers = Array.isArray(users) ? users : []
@@ -192,10 +190,7 @@ export default function UsersFeature() {
           <Button
             variant="solid"
             size="sm"
-            onClick={() => {
-              setUserToEdit(null)
-              setIsUserModalOpen(true)
-            }}
+            onClick={() => { setUserToEdit(null); setIsUserModalOpen(true) }}
             className="inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
           >
             <Plus size={16} /> Add User
@@ -205,17 +200,17 @@ export default function UsersFeature() {
 
       <UserStats users={users} />
 
-      {/* Filter and View Bar */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-3xl glass-sm p-4 border border-text-main/10">
+      {/* Filter bar — was `glass-sm border border-text-main/10`. Border was invisible. */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-3xl glass-sm p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-48 sm:min-w-64">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-main/40" />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-muted z-10" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search user name, email, ID..."
-              className="w-full rounded-full border border-text-main/15 bg-text-main/5 py-2 pl-9 pr-3 text-xs sm:text-sm text-text-main outline-none transition focus:border-brand-500"
+              className="w-full rounded-full py-2 pl-9 pr-3 text-xs sm:text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -227,10 +222,11 @@ export default function UsersFeature() {
                   key={tab.id}
                   type="button"
                   onClick={() => setSelectedRoleTab(tab.id)}
+                  // Role tabs: raised by default, brand-filled when active.
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${
                     isSelected
-                      ? 'bg-brand-600 text-white shadow-xs'
-                      : 'bg-text-main/5 text-text-main/60 hover:bg-text-main/10'
+                      ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                      : 'text-fg-muted hover:text-fg shadow-emboss hover:shadow-sunken'
                   }`}
                 >
                   {tab.label}
@@ -240,15 +236,16 @@ export default function UsersFeature() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-text-main/50">Status:</span>
+            <span className="text-xs font-semibold text-fg-muted">Status:</span>
+            {/* `<select>` inherits the sunken-well look from globals.css */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-full border border-text-main/15 bg-text-main/5 px-3 py-1.5 text-xs text-text-main outline-none transition focus:border-brand-500"
+              className="rounded-full px-3 py-1.5 text-xs text-fg outline-none focus:ring-2 focus:ring-brand-500"
             >
-              <option value="all" className="bg-slate-800 text-white">All Status</option>
-              <option value="active" className="bg-slate-800 text-white">Active</option>
-              <option value="inactive" className="bg-slate-800 text-white">Inactive</option>
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
         </div>
@@ -256,13 +253,13 @@ export default function UsersFeature() {
         <div className="flex items-center gap-2 justify-end">
           {selectedUserIds.length > 0 && (
             <div className="flex items-center gap-1.5 mr-2">
-              <span className="text-xs font-bold text-brand-400">
+              <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
                 {selectedUserIds.length} selected
               </span>
               <button
                 type="button"
                 onClick={() => handleBulkStatus('active')}
-                className="rounded-lg bg-emerald-500/15 text-emerald-400 px-2.5 py-1 text-xs font-bold hover:bg-emerald-500/25 transition cursor-pointer"
+                className="rounded-lg bg-success/15 text-success px-2.5 py-1 text-xs font-bold hover:bg-success/25 transition cursor-pointer"
               >
                 Activate
               </button>
@@ -279,20 +276,21 @@ export default function UsersFeature() {
           <button
             type="button"
             onClick={loadUsers}
-            className="rounded-xl p-2 text-text-main/60 hover:bg-text-main/10 hover:text-text-main transition"
+            className="rounded-xl p-2 text-fg-muted hover:text-fg hover:shadow-sunken transition"
             title="Refresh list"
           >
             <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
           </button>
 
-          <div className="flex items-center rounded-2xl bg-text-main/10 p-1">
+          {/* View toggle: sunken tray, active segment brand-filled */}
+          <div className="flex items-center rounded-2xl p-1 shadow-sunken">
             <button
               type="button"
               onClick={() => setViewMode('table')}
               className={`rounded-xl p-1.5 transition cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'text-text-main/50 hover:text-text-main'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                  : 'text-fg-muted hover:text-fg'
               }`}
               title="Table View"
             >
@@ -303,8 +301,8 @@ export default function UsersFeature() {
               onClick={() => setViewMode('grid')}
               className={`rounded-xl p-1.5 transition cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'text-text-main/50 hover:text-text-main'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                  : 'text-fg-muted hover:text-fg'
               }`}
               title="Grid View"
             >
@@ -314,14 +312,15 @@ export default function UsersFeature() {
         </div>
       </div>
 
-      {/* Main Content Area */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-16 space-y-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-3 border-brand-500 border-t-transparent" />
-          <p className="text-sm font-medium text-text-main/60">Loading user accounts...</p>
+          {/* `border-3` isn't a valid Tailwind width — border-2 */}
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+          <p className="text-sm font-medium text-fg-muted">Loading user accounts...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-3xl bg-error/10 border border-error/20 p-6 text-center text-error">
+        // Semantic error — tinted bg + border carries the signal
+        <div className="rounded-3xl bg-error/10 border border-error/25 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load users</p>
           <p className="text-xs">{loadError}</p>
         </div>
@@ -330,10 +329,7 @@ export default function UsersFeature() {
           users={filteredUsers}
           selectedUserIds={selectedUserIds}
           onToggleSelect={handleToggleSelect}
-          onEdit={(u) => {
-            setUserToEdit(u)
-            setIsUserModalOpen(true)
-          }}
+          onEdit={(u) => { setUserToEdit(u); setIsUserModalOpen(true) }}
           onDelete={handleDeleteUser}
           onResetPassword={(u) => setResetModalUser(u)}
         />
@@ -343,28 +339,20 @@ export default function UsersFeature() {
           selectedUserIds={selectedUserIds}
           onToggleSelect={handleToggleSelect}
           onToggleSelectAll={handleToggleSelectAll}
-          onEdit={(u) => {
-            setUserToEdit(u)
-            setIsUserModalOpen(true)
-          }}
+          onEdit={(u) => { setUserToEdit(u); setIsUserModalOpen(true) }}
           onDelete={handleDeleteUser}
           onResetPassword={(u) => setResetModalUser(u)}
         />
       )}
 
-      {/* User Create/Edit Modal */}
       <UserModal
         isOpen={isUserModalOpen}
         isSubmitting={isSubmittingUser}
         userToEdit={userToEdit}
-        onClose={() => {
-          setIsUserModalOpen(false)
-          setUserToEdit(null)
-        }}
+        onClose={() => { setIsUserModalOpen(false); setUserToEdit(null) }}
         onSubmit={handleCreateOrUpdateUser}
       />
 
-      {/* Reset Password Modal */}
       <UserResetPasswordModal
         isOpen={!!resetModalUser}
         user={resetModalUser}

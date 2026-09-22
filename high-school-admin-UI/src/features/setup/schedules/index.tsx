@@ -59,9 +59,7 @@ export default function SchedulesFeature() {
     }
   }
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  useEffect(() => { loadData() }, [])
 
   const filteredSlots = useMemo(() => {
     const safeSlots = Array.isArray(slots) ? slots : []
@@ -133,10 +131,11 @@ export default function SchedulesFeature() {
 
       <ScheduleStats slots={slots} />
 
-      {/* Control Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-[24px] glass-sm p-4 border border-text-main/10">
+      {/* Control bar — was `glass-sm border border-text-main/10`.
+          The border was invisible; `.glass-sm` alone is correct. */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl glass-sm p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-semibold text-text-main/50">Viewing Class:</span>
+          <span className="text-xs font-semibold text-fg-muted">Viewing Class:</span>
           <div className="flex flex-wrap gap-1.5">
             {CLASSES.map((c) => {
               const isSelected = selectedClassId === c.id
@@ -145,10 +144,13 @@ export default function SchedulesFeature() {
                   key={c.id}
                   type="button"
                   onClick={() => setSelectedClassId(c.id)}
+                  // Cohort chips: sunken well for selected (pressed in),
+                  // raised shadow for unselected (raised). Both stay flat,
+                  // no border, no bg.
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${
                     isSelected
-                      ? 'bg-brand-600 text-white shadow-xs'
-                      : 'bg-text-main/5 text-text-main/60 hover:bg-text-main/10'
+                      ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                      : 'text-fg-muted hover:text-fg shadow-sunken'
                   }`}
                 >
                   {c.name}
@@ -162,20 +164,21 @@ export default function SchedulesFeature() {
           <button
             type="button"
             onClick={loadData}
-            className="rounded-xl p-2 text-text-main/60 hover:bg-text-main/10 hover:text-text-main transition"
+            className="rounded-xl p-2 text-fg-muted hover:text-fg hover:shadow-sunken transition"
             title="Refresh schedules"
           >
             <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
           </button>
 
-          <div className="flex items-center rounded-2xl bg-text-main/10 p-1">
+          {/* View toggle: sunken tray, active segment pressed in again */}
+          <div className="flex items-center rounded-2xl p-1 shadow-sunken">
             <button
               type="button"
               onClick={() => setViewMode('timetable')}
               className={`rounded-xl p-1.5 transition cursor-pointer ${
                 viewMode === 'timetable'
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'text-text-main/50 hover:text-text-main'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                  : 'text-fg-muted hover:text-fg'
               }`}
               title="Weekly Timetable Grid"
             >
@@ -186,8 +189,8 @@ export default function SchedulesFeature() {
               onClick={() => setViewMode('list')}
               className={`rounded-xl p-1.5 transition cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'text-text-main/50 hover:text-text-main'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                  : 'text-fg-muted hover:text-fg'
               }`}
               title="Period List View"
             >
@@ -197,14 +200,15 @@ export default function SchedulesFeature() {
         </div>
       </div>
 
-      {/* Main View */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-16 space-y-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-3 border-brand-500 border-t-transparent" />
-          <p className="text-sm font-medium text-text-main/60">Loading timetable matrix...</p>
+          {/* `border-3` isn't a valid Tailwind width — border-2 */}
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+          <p className="text-sm font-medium text-fg-muted">Loading timetable matrix...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
+        // Semantic error — tinted bg + border carries the signal
+        <div className="rounded-3xl bg-error/10 border border-error/25 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load schedule</p>
           <p className="text-xs">{loadError}</p>
         </div>
@@ -212,24 +216,17 @@ export default function SchedulesFeature() {
         <ScheduleTimetableGrid
           slots={filteredSlots}
           onAddSlot={handleAddSlotForTime}
-          onEditSlot={(slot) => {
-            setSlotToEdit(slot)
-            setIsModalOpen(true)
-          }}
+          onEditSlot={(slot) => { setSlotToEdit(slot); setIsModalOpen(true) }}
           onDeleteSlot={handleDelete}
         />
       ) : (
         <ScheduleListView
           slots={filteredSlots}
-          onEditSlot={(slot) => {
-            setSlotToEdit(slot)
-            setIsModalOpen(true)
-          }}
+          onEditSlot={(slot) => { setSlotToEdit(slot); setIsModalOpen(true) }}
           onDeleteSlot={handleDelete}
         />
       )}
 
-      {/* Modal */}
       <ScheduleSlotModal
         isOpen={isModalOpen}
         isSubmitting={isSubmitting}
@@ -237,10 +234,7 @@ export default function SchedulesFeature() {
         defaultDayOfWeek={modalDefaultDay}
         defaultStartTime={modalDefaultTime}
         subjects={subjects}
-        onClose={() => {
-          setIsModalOpen(false)
-          setSlotToEdit(null)
-        }}
+        onClose={() => { setIsModalOpen(false); setSlotToEdit(null) }}
         onSubmit={handleCreateOrUpdate}
       />
     </div>

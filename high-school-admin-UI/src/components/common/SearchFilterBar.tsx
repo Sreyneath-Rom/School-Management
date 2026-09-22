@@ -33,18 +33,21 @@ export default function SearchFilterBar({
   placeholder = 'Search...',
 }: SearchFilterBarProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-[28px] glass-sm border border-surface p-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-4 rounded-[28px] glass-sm p-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="relative flex-1">
         <Search
           size={18}
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-muted"
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-muted z-10"
         />
+        {/* The sunken-well look (background, inset shadow, no border)
+            comes from globals.css. Only radius + padding + focus ring
+            live here. */}
         <input
           type="text"
           placeholder={placeholder}
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full rounded-full bg-surface border border-surface py-2.5 pl-11 pr-4 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+          className="w-full rounded-full py-2.5 pl-11 pr-4 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/30"
         />
       </div>
 
@@ -53,7 +56,7 @@ export default function SearchFilterBar({
           <select
             value={statusFilter ?? ''}
             onChange={(e) => onStatusFilterChange(e.target.value)}
-            className="rounded-full bg-surface border border-surface px-4 py-2.5 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/30 cursor-pointer"
+            className="rounded-full px-4 py-2.5 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/30 cursor-pointer"
           >
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -68,7 +71,7 @@ export default function SearchFilterBar({
         <button
           type="button"
           aria-label="Advanced filters"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full glass-sm text-fg-muted hover:text-fg transition cursor-pointer"
+          className="glass-sm glass-interactive inline-flex h-11 w-11 items-center justify-center rounded-full text-fg-muted hover:text-fg"
         >
           <SlidersHorizontal size={17} />
         </button>

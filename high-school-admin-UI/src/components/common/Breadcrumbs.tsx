@@ -32,7 +32,6 @@ interface SegmentConfig {
 }
 
 const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
-  // Main sections
   dashboard: { key: 'sidebar.dashboard', fallback: 'Dashboard' },
   setup: { key: 'sidebar.setup', fallback: 'Setup', defaultChildPath: '/setup/school' },
   academic: { key: 'sidebar.academic', fallback: 'Academic', defaultChildPath: '/academic/classes' },
@@ -46,7 +45,6 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   parent: { key: 'sidebar.children', fallback: 'Parent Portal', defaultChildPath: '/parent/dashboard' },
   children: { key: 'sidebar.myChildren', fallback: 'My Children', defaultChildPath: '/parent/children' },
 
-  // Setup sub-items
   school: { key: 'sidebar.schoolSetup', fallback: 'School Information' },
   'academic-years': { key: 'sidebar.academicYears', fallback: 'Academic Years' },
   terms: { key: 'sidebar.terms', fallback: 'Terms' },
@@ -56,7 +54,6 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   users: { key: 'sidebar.users', fallback: 'Users' },
   translations: { key: 'sidebar.translations', fallback: 'Translations' },
 
-  // Academic sub-items
   classes: { key: 'sidebar.classes', fallback: 'Classes' },
   'class-subjects': { key: 'sidebar.classSubjects', fallback: 'Class Subjects' },
   lessons: { key: 'sidebar.lessons', fallback: 'Lessons' },
@@ -68,39 +65,31 @@ const SEGMENT_CONFIGS: Record<string, SegmentConfig> = {
   'mark-entry': { key: 'sidebar.markEntry', fallback: 'Mark Entry' },
   'report-cards': { key: 'sidebar.reportCards', fallback: 'Report Cards' },
 
-  // Exam actions
   create: { key: 'breadcrumb.createExam', fallback: 'Create' },
   edit: { key: 'breadcrumb.editExam', fallback: 'Edit' },
   marks: { key: 'breadcrumb.marksEntry', fallback: 'Mark Entry' },
 
-  // Calendar sub-items
   events: { key: 'sidebar.calendarEvents', fallback: 'Events' },
   holidays: { key: 'sidebar.calendarHolidays', fallback: 'Holidays' },
 
-  // Student sub-items
   profiles: { key: 'sidebar.studentProfiles', fallback: 'Profiles' },
   attendance: { key: 'sidebar.attendance', fallback: 'Attendance' },
   'leave-requests': { key: 'sidebar.leaveRequests', fallback: 'Leave Requests' },
 
-  // Teacher sub-items
   assignments: { key: 'sidebar.teacherAssignments', fallback: 'Teacher Assignments' },
 
-  // Communication sub-items
   announcements: { key: 'sidebar.announcements', fallback: 'Announcements' },
   notifications: { key: 'sidebar.notifications', fallback: 'Notifications' },
 
-  // Report sub-items
   'attendance-report': { key: 'sidebar.attendanceReport', fallback: 'Attendance Report' },
   'grade-report': { key: 'sidebar.gradeReport', fallback: 'Academic Performance' },
   'student-report': { key: 'sidebar.studentReport', fallback: 'Student Report' },
   'teacher-report': { key: 'sidebar.teacherReport', fallback: 'Teacher Report' },
 
-  // System sub-items
   logs: { key: 'sidebar.auditLogs', fallback: 'Audit Logs' },
   activity: { key: 'sidebar.activityLogs', fallback: 'Activity Logs' },
   'system-settings': { key: 'sidebar.systemSettings', fallback: 'System Settings' },
 
-  // User profile & settings
   profile: { key: 'header.myProfile', fallback: 'My Profile' },
   settings: { key: 'header.settings', fallback: 'Settings' },
 }
@@ -139,18 +128,13 @@ export default function Breadcrumbs({
 
   const homePath = useMemo(() => {
     switch (role) {
-      case 'teacher':
-        return '/teacher/dashboard'
-      case 'student':
-        return '/student/dashboard'
-      case 'parent':
-        return '/parent/dashboard'
-      default:
-        return '/dashboard'
+      case 'teacher': return '/teacher/dashboard'
+      case 'student': return '/student/dashboard'
+      case 'parent': return '/parent/dashboard'
+      default: return '/dashboard'
     }
   }, [role])
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -188,9 +172,7 @@ export default function Breadcrumbs({
       const segment = segments[i]
       accumulatedPath += `/${segment}`
 
-      // Skip role namespace tokens (they're implicit in the "Home" link)
       if (isRolePrefix(segment, i) && segments.length > 1) continue
-      // Skip the extra "dashboard" segment after a role prefix
       if (segment === 'dashboard' && i > 0) continue
 
       const isLast = i === segments.length - 1
@@ -203,7 +185,6 @@ export default function Breadcrumbs({
         label = formatSegmentLabel(segment)
       }
 
-      // Contextual labels for action segments
       const prevSegment = i > 0 ? segments[i - 1].toLowerCase() : ''
       if (segment === 'create') {
         if (prevSegment === 'events') label = t('breadcrumb.createEvent') || 'Create Event'
@@ -241,7 +222,6 @@ export default function Breadcrumbs({
       await navigator.clipboard.writeText(window.location.href)
       markCopied()
     } catch {
-      // Fallback for restricted clipboard contexts (non-HTTPS, iframe)
       const input = document.createElement('input')
       input.value = window.location.href
       document.body.appendChild(input)
@@ -264,7 +244,6 @@ export default function Breadcrumbs({
       aria-label="Breadcrumb"
       className={`mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-2 sm:gap-3 rounded-2xl glass-sm px-3.5 sm:px-4 py-2 sm:py-2.5 transition-all text-xs sm:text-sm ${className}`}
     >
-      {/* LEFT: breadcrumb trail */}
       <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5">
         {showBackButton && !isSingleHome && (
           <button
@@ -272,7 +251,7 @@ export default function Breadcrumbs({
             onClick={() => navigate(-1)}
             aria-label={t('breadcrumb.back') || 'Go back'}
             title={t('breadcrumb.back') || 'Back'}
-            className="mr-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted hover:bg-surface hover:text-fg active:scale-95 transition cursor-pointer"
+            className="mr-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted hover:text-fg active:shadow-sunken transition cursor-pointer"
           >
             <ArrowLeft size={15} />
           </button>
@@ -304,7 +283,7 @@ export default function Breadcrumbs({
                   ) : item.path ? (
                     <Link
                       to={item.path}
-                      className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-fg-muted hover:bg-surface hover:text-brand-600 transition"
+                      className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-fg-muted hover:text-brand-600 transition"
                     >
                       {Icon && <Icon size={14} className="shrink-0" />}
                       <span className="truncate">{item.label}</span>
@@ -320,12 +299,11 @@ export default function Breadcrumbs({
             })
           ) : (
             <>
-              {/* First item (Home) */}
               <li className="flex items-center gap-1 sm:gap-1.5 whitespace-nowrap">
                 {firstItem.path ? (
                   <Link
                     to={firstItem.path}
-                    className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-fg-muted hover:bg-surface hover:text-brand-600 transition"
+                    className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-fg-muted hover:text-brand-600 transition"
                   >
                     {firstItem.icon && <firstItem.icon size={14} className="shrink-0" />}
                     <span className="hidden sm:inline">{firstItem.label}</span>
@@ -339,27 +317,28 @@ export default function Breadcrumbs({
                 <ChevronRight size={13} className="shrink-0 text-fg-muted" aria-hidden="true" />
               </li>
 
-              {/* Collapsed middle dropdown */}
               <li className="relative flex items-center" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setCollapsedOpen((prev) => !prev)}
                   aria-expanded={collapsedOpen}
                   aria-label="Show collapsed breadcrumb items"
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted hover:bg-surface hover:text-fg transition cursor-pointer"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted hover:text-fg transition cursor-pointer"
                 >
                   <MoreHorizontal size={15} />
                 </button>
 
                 {collapsedOpen && (
-                  <div className="dropdown-surface left-0 top-full z-40 mt-1.5 min-w-44 rounded-xl p-1.5 shadow-xl">
+                  // `.dropdown-surface` supplies the elevated shadow; the
+                  // old `shadow-xl` was overriding it.
+                  <div className="dropdown-surface left-0 top-full z-40 mt-1.5 min-w-44 rounded-xl p-1.5">
                     {middleItems.map((midItem, idx) => (
                       <div key={idx}>
                         {midItem.path ? (
                           <Link
                             to={midItem.path}
                             onClick={() => setCollapsedOpen(false)}
-                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-fg-muted hover:bg-surface hover:text-brand-600 transition"
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-fg-muted hover:text-brand-600 transition"
                           >
                             <FolderOpen size={13} />
                             <span className="truncate">{midItem.label}</span>
@@ -377,7 +356,6 @@ export default function Breadcrumbs({
                 <ChevronRight size={13} className="ml-1 shrink-0 text-fg-muted" aria-hidden="true" />
               </li>
 
-              {/* Last item (active page) */}
               <li className="flex items-center gap-1.5 whitespace-nowrap min-w-0">
                 <span
                   aria-current="page"
@@ -394,7 +372,6 @@ export default function Breadcrumbs({
         </ol>
       </div>
 
-      {/* RIGHT: copy link */}
       {showCopyLink && (
         <div className="flex shrink-0 items-center gap-1">
           <button
@@ -404,8 +381,8 @@ export default function Breadcrumbs({
             title={copied ? (t('breadcrumb.linkCopied') || 'Copied!') : (t('breadcrumb.copyLink') || 'Copy page link')}
             className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
               copied
-                ? 'bg-surface text-success border border-surface'
-                : 'text-fg-muted hover:bg-surface hover:text-fg'
+                ? 'bg-success/15 text-success'
+                : 'text-fg-muted hover:text-fg'
             }`}
           >
             {copied ? (

@@ -21,7 +21,10 @@ function resolveBaseUrl(): string {
 }
 
 const API_BASE_URL = resolveBaseUrl()
-const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API !== 'false'
+// Opt-IN, not opt-out: an unset env var (e.g. a prod deploy that forgot to
+// set this) must never silently start mocking requests. Only the literal
+// string 'true' turns mocking on.
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true'
 
 // -----------------------------------------------------------------------------
 // Error type
@@ -287,7 +290,12 @@ async function request<T>(
   } catch (err) {
     if (!USE_MOCK_API) throw err
 
-    if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 404) {
+    // 4xx (other than 404, which we treat as "no such mock/real route,
+    // try mocking it") are real client errors from a live server and must
+    // never be swallowed. 5xx must not be swallowed either — a genuine
+    // server outage should surface as a server error, not get silently
+    // replaced by mock data.
+    if (err instanceof ApiError && err.status !== 404) {
       throw err
     }
 
@@ -335,6 +343,14 @@ async function requestUpload<T>(
     return await handleResponse<T>(res, path)
   } catch (err) {
     if (!USE_MOCK_API) throw err
+
+    // Same rule as request(): only fall through to the mock handler for
+    // "route doesn't exist" (404) or true network failures. A real 4xx
+    // validation error (file too large, bad type, etc.) or 5xx from a
+    // live server must be surfaced, not masked.
+    if (err instanceof ApiError && err.status !== 404) {
+      throw err
+    }
 
     const mockRes = await mockApiHandler.handle(path, 'POST', formData)
     if (mockRes) {

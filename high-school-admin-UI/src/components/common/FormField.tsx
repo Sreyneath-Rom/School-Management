@@ -6,12 +6,17 @@ import type {
   TextareaHTMLAttributes,
 } from 'react'
 
+// Inputs/selects/textareas get their neumorphic sunken-well styling
+// (background, radius, inset shadow, no border) from `globals.css`
+// automatically. This file only layers padding + focus ring + type scale.
 const FIELD_BASE =
-  'w-full rounded-xl bg-surface border text-sm text-fg placeholder:text-fg-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-500 transition'
+  'w-full text-sm text-fg placeholder:text-fg-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-500 transition'
 
 const FIELD_STATE = {
-  normal: 'border-surface',
-  error: 'border-error/60 focus:ring-error/40',
+  normal: '',
+  // Error state re-introduces a visible 1px border. Everything else
+  // (background, shadow) still comes from the global sunken-well rule.
+  error: 'border border-error/60 focus:ring-error/40',
 }
 
 function fieldClasses(
@@ -29,10 +34,6 @@ function fieldClasses(
     .filter(Boolean)
     .join(' ')
 }
-
-// ---------------------------------------------------------------------------
-// Shared shell (label, hint, error)
-// ---------------------------------------------------------------------------
 
 interface FieldShellProps {
   id: string
@@ -53,10 +54,7 @@ function FieldShell({
 }: FieldShellProps) {
   return (
     <div className="space-y-1.5">
-      <label
-        htmlFor={id}
-        className="block text-xs font-semibold text-fg"
-      >
+      <label htmlFor={id} className="block text-xs font-semibold text-fg">
         {label}
         {required && <span className="text-error ml-0.5">*</span>}
       </label>
@@ -73,10 +71,6 @@ function FieldShell({
 function slug(label: string): string {
   return `field-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
 }
-
-// ---------------------------------------------------------------------------
-// Text input
-// ---------------------------------------------------------------------------
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string
@@ -121,10 +115,6 @@ export function FormField({
   )
 }
 
-// ---------------------------------------------------------------------------
-// Textarea
-// ---------------------------------------------------------------------------
-
 interface FormTextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string
   error?: string
@@ -160,10 +150,6 @@ export function FormTextarea({
     </FieldShell>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Select
-// ---------------------------------------------------------------------------
 
 interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string

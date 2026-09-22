@@ -1,13 +1,6 @@
 // src/features/setup/roles/RoleMatrixTable.tsx
 import React, { useState, useMemo } from 'react'
-import {
-  Square,
-  Search,
-  Save,
-  RotateCcw,
-  Check,
-  Lock,
-} from 'lucide-react'
+import { Square, Search, Save, RotateCcw, Check, Lock } from 'lucide-react'
 import Button from '@/components/common/Button'
 import type { RoleDef, PermissionDef, PermissionAction } from '@/types/roles'
 import { PERMISSION_ACTIONS } from '@/types/roles'
@@ -27,15 +20,9 @@ interface RoleMatrixTableProps {
 }
 
 export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
-  selectedRole,
-  catalog,
-  draftPermissionIds,
-  isSaving,
-  hasChanges,
-  onTogglePermission,
-  onToggleModuleAll,
-  onSave,
-  onReset,
+  selectedRole, catalog, draftPermissionIds,
+  isSaving, hasChanges,
+  onTogglePermission, onToggleModuleAll, onSave, onReset,
 }) => {
   const [search, setSearch] = useState('')
   const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>('all')
@@ -45,8 +32,7 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
 
   const filteredModules = useMemo(() => {
     return (MODULES || []).filter((m) => {
-      const matchesFilter =
-        selectedModuleFilter === 'all' || m.id === selectedModuleFilter
+      const matchesFilter = selectedModuleFilter === 'all' || m.id === selectedModuleFilter
       const matchesSearch =
         !search.trim() ||
         m.label.toLowerCase().includes(search.toLowerCase()) ||
@@ -55,15 +41,15 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
     })
   }, [search, selectedModuleFilter])
 
-  // Helper to find a permission in catalog
   const getPermission = (moduleId: string, action: PermissionAction) => {
     return safeCatalog.find((p) => p && p.moduleId === moduleId && p.action === action)
   }
 
   if (!selectedRole) {
+    // Empty-state card: `.glass-sm` raised surface, no border.
     return (
-      <div className="rounded-[28px] glass-sm p-12 text-center text-text-main/50 border border-text-main/10">
-        <p className="font-semibold text-text-main">Select a role above</p>
+      <div className="rounded-[28px] glass-sm p-12 text-center text-fg-muted">
+        <p className="font-semibold text-fg">Select a role above</p>
         <p className="text-xs">Click on any role card to view and manage its capability matrix.</p>
       </div>
     )
@@ -73,32 +59,33 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Search & Filter Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl glass-sm p-4 border border-text-main/10">
+      {/* Toolbar — raised neumorphic surface, no border */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl glass-sm p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-48 sm:min-w-64">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-main/40" />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-muted z-10" />
+            {/* Input inherits the sunken-well look from globals.css */}
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search module permissions..."
-              className="w-full rounded-full border border-text-main/15 bg-text-main/5 py-2 pl-9 pr-3 text-xs sm:text-sm text-text-main outline-none transition focus:border-brand-500"
+              className="w-full rounded-full py-2 pl-9 pr-3 text-xs sm:text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-text-main/50">Module:</span>
+            <span className="text-xs font-semibold text-fg-muted">Module:</span>
+            {/* The `<select>` also inherits the sunken-well look.
+                Its `<option>`s are natively painted by the OS. */}
             <select
               value={selectedModuleFilter}
               onChange={(e) => setSelectedModuleFilter(e.target.value)}
-              className="rounded-full border border-text-main/15 bg-text-main/5 px-3 py-1.5 text-xs text-text-main outline-none transition focus:border-brand-500 capitalize"
+              className="rounded-full px-3 py-1.5 text-xs text-fg outline-none focus:ring-2 focus:ring-brand-500 capitalize"
             >
-              <option value="all" className="bg-slate-800 text-white">All Modules</option>
+              <option value="all">All Modules</option>
               {MODULES.map((m) => (
-                <option key={m.id} value={m.id} className="bg-slate-800 text-white">
-                  {m.label}
-                </option>
+                <option key={m.id} value={m.id}>{m.label}</option>
               ))}
             </select>
           </div>
@@ -106,7 +93,7 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
 
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <span className="text-xs font-semibold text-amber-500 mr-1 animate-pulse">
+            <span className="text-xs font-semibold text-warning mr-1 animate-pulse">
               Unsaved Changes
             </span>
           )}
@@ -133,22 +120,20 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
         </div>
       </div>
 
-      {/* Matrix Table */}
-      <div className="overflow-hidden rounded-[26px] glass-sm border border-text-main/10">
+      {/* Matrix table — raised surface, shadow seams for header and rows */}
+      <div className="overflow-hidden rounded-[26px] glass-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-text-main/5 border-b border-text-main/10 text-xs font-bold uppercase tracking-wider text-text-main/60">
+            <thead className="text-xs font-bold uppercase tracking-wider text-fg-muted shadow-[0_1px_0_var(--neu-shadow-dark)]">
               <tr>
                 <th className="px-6 py-4">Module Area</th>
                 {PERMISSION_ACTIONS.map((act) => (
-                  <th key={act} className="px-4 py-4 text-center capitalize w-28">
-                    {act}
-                  </th>
+                  <th key={act} className="px-4 py-4 text-center capitalize w-28">{act}</th>
                 ))}
                 <th className="px-6 py-4 text-right w-36">Quick Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-text-main/5">
+            <tbody className="divide-y divide-(--neu-shadow-dark)">
               {filteredModules.map((mod) => {
                 const modulePerms = safeCatalog.filter((p) => p && p.moduleId === mod.id)
                 const isAllGranted =
@@ -156,15 +141,15 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
                   modulePerms.every((p) => safeDraftPerms.includes(p.id))
 
                 return (
-                  <tr key={mod.id} className="hover:bg-text-main/5 transition">
+                  <tr key={mod.id} className="hover:shadow-sunken transition-shadow">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/15 font-bold text-xs text-brand-600 dark:text-brand-300">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/15 font-bold text-xs text-brand-600 dark:text-brand-300 shadow-sunken">
                           {mod.initial}
                         </span>
                         <div>
-                          <p className="font-bold text-text-main text-sm">{mod.label}</p>
-                          <p className="text-xs text-text-main/40 font-mono">module: {mod.id}</p>
+                          <p className="font-bold text-fg text-sm">{mod.label}</p>
+                          <p className="text-xs text-fg-muted font-mono">module: {mod.id}</p>
                         </div>
                       </div>
                     </td>
@@ -173,7 +158,7 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
                       const perm = getPermission(mod.id, action)
                       if (!perm) {
                         return (
-                          <td key={action} className="px-4 py-4 text-center text-text-main/20 text-xs">
+                          <td key={action} className="px-4 py-4 text-center text-fg-muted/40 text-xs">
                             —
                           </td>
                         )
@@ -183,15 +168,18 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
 
                       return (
                         <td key={action} className="px-4 py-4 text-center align-middle">
+                          {/* Grant/revoke toggle: sunken well when
+                              unpressed, brand-filled when granted. Both
+                              read as physical states under neumorphism. */}
                           <button
                             type="button"
                             disabled={isSuperAdmin}
                             onClick={() => onTogglePermission(perm.id)}
-                            className={`inline-flex h-8 w-8 items-center justify-center rounded-xl transition cursor-pointer ${
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-xl transition ${
                               isGranted
-                                ? 'bg-brand-600 text-white shadow-xs'
-                                : 'bg-text-main/10 text-text-main/20 hover:bg-text-main/15 hover:text-text-main/40'
-                            } ${isSuperAdmin ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                                : 'text-fg-muted/50 shadow-sunken hover:text-fg-muted'
+                            } ${isSuperAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                             title={
                               isSuperAdmin
                                 ? 'Super Admin permissions are fixed'
@@ -211,13 +199,13 @@ export const RoleMatrixTable: React.FC<RoleMatrixTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onToggleModuleAll(mod.id)}
-                          className="rounded-lg px-2.5 py-1 text-xs font-semibold bg-text-main/10 text-text-main/70 hover:bg-text-main/15 hover:text-text-main transition cursor-pointer"
+                          className="rounded-lg px-2.5 py-1 text-xs font-semibold text-fg-muted hover:text-fg shadow-sunken transition cursor-pointer"
                         >
                           {isAllGranted ? 'Revoke All' : 'Grant All'}
                         </button>
                       )}
                       {isSuperAdmin && (
-                        <span className="flex items-center justify-end gap-1 text-xs text-text-main/40">
+                        <span className="flex items-center justify-end gap-1 text-xs text-fg-muted">
                           <Lock size={12} /> Locked
                         </span>
                       )}

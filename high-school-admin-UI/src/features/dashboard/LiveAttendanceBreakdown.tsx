@@ -1,3 +1,4 @@
+// src/features/dashboard/LiveAttendanceBreakdown.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
@@ -63,12 +64,12 @@ export default function LiveAttendanceBreakdown() {
     totalStudents > 0 ? ((totalPresent / totalStudents) * 100).toFixed(1) : '—'
 
   return (
-    <div className="rounded-3xl border border-surface bg-surface-strong p-5 shadow-xs">
-      <div className="flex items-center justify-between pb-4 border-b border-surface">
+    <div className="rounded-3xl glass p-5">
+      <div className="flex items-center justify-between pb-4 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-fg">Daily Attendance Breakdown</h2>
-            <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success border border-success/20">
+            <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold text-success border border-success/25">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
               Live
             </span>
@@ -84,13 +85,18 @@ export default function LiveAttendanceBreakdown() {
         </Link>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2.5 rounded-2xl bg-surface p-3 border border-surface">
+      {/* KPI tray: was `bg-surface border border-surface` — both
+          no-ops. Now a single sunken well containing three stat cells,
+          separated by internal shadow seams. */}
+      <div className="mt-4 grid grid-cols-3 gap-2.5 rounded-2xl p-3 shadow-sunken">
         <div className="text-center sm:text-left">
           <p className="text-[10px] font-bold uppercase tracking-wider text-fg-muted">Rate</p>
-          <p className="text-base sm:text-lg font-black text-fg">{overallRate}{overallRate !== '—' ? '%' : ''}</p>
+          <p className="text-base sm:text-lg font-black text-fg">
+            {overallRate}{overallRate !== '—' ? '%' : ''}
+          </p>
           <p className="text-[10px] text-success font-semibold">{totalPresent} present</p>
         </div>
-        <div className="text-center sm:text-left border-x border-surface px-2">
+        <div className="text-center sm:text-left px-2 shadow-[-1px_0_0_var(--neu-shadow-dark),1px_0_0_var(--neu-shadow-dark)]">
           <p className="text-[10px] font-bold uppercase tracking-wider text-fg-muted">Excused</p>
           <p className="text-base sm:text-lg font-black text-warning">{totalExcused}</p>
           <p className="text-[10px] text-fg-muted">Parent notes</p>
@@ -109,15 +115,13 @@ export default function LiveAttendanceBreakdown() {
           No attendance marked for today.
         </p>
       ) : (
-        <div className="mt-4 divide-y divide-surface">
+        <div className="mt-4 divide-y divide-(--neu-shadow-dark)">
           {grades.map((row) => {
             const percent = Math.round((row.present / row.total) * 100)
             return (
               <div key={row.gradeLevel} className="py-2.5 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="font-bold text-fg truncate">
-                    Grade {row.gradeLevel}
-                  </span>
+                  <span className="font-bold text-fg truncate">Grade {row.gradeLevel}</span>
                   <span className="font-mono text-xs font-black text-fg">
                     {percent}%{' '}
                     <span className="text-[10px] font-normal text-fg-muted">
@@ -125,7 +129,7 @@ export default function LiveAttendanceBreakdown() {
                     </span>
                   </span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-surface overflow-hidden">
+                <div className="h-1.5 w-full rounded-full overflow-hidden shadow-sunken">
                   <div
                     className={`h-full rounded-full ${
                       percent >= 94

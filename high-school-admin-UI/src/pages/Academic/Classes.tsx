@@ -2,20 +2,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  School,
-  Plus,
-  Search,
-  Users,
-  User,
-  DoorOpen,
-  BookOpen,
-  CalendarDays,
-  Eye,
-  Edit,
-  Trash2,
-  X,
-  AlertTriangle,
-  GraduationCap,
+  School, Plus, Search, Users, User, DoorOpen, BookOpen, CalendarDays,
+  Eye, Edit, Trash2, X, AlertTriangle, GraduationCap,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useToast } from '@/components/common/ToastProvider'
@@ -28,15 +16,11 @@ import {
   type UpdateClassPayload,
 } from '@/services/classService'
 
-/**
- * Row shape the page renders. Built from `ClassRecord` — anything the
- * backend doesn't return is derived or shown as a dash, never fabricated.
- */
 interface ClassRow {
   id: string
   name: string
-  gradeLevel: string   // "Grade 10" for display
-  section: string      // "A"
+  gradeLevel: string
+  section: string
   room: string
   classTeacher: string
   studentCount: number
@@ -46,7 +30,7 @@ interface ClassRow {
 
 interface ClassFormState {
   name: string
-  gradeLevel: string   // "Grade 10"
+  gradeLevel: string
   section: string
   room: string
   classTeacher: string
@@ -63,14 +47,11 @@ const DEFAULT_FORM: ClassFormState = {
 }
 
 function sectionFromName(name: string): string {
-  // "Grade 10-A" → "A"
   const part = name.split('-').pop()?.trim()
   return part && part.length <= 3 ? part.toUpperCase() : 'A'
 }
 
-function teacherFullName(
-  teacher: ClassRecord['homeroomTeacher'] | undefined
-): string {
+function teacherFullName(teacher: ClassRecord['homeroomTeacher'] | undefined): string {
   const user = teacher?.user
   if (!user) return ''
   return `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
@@ -86,8 +67,7 @@ function recordToRow(record: ClassRecord): ClassRow {
     classTeacher: teacherFullName(record.homeroomTeacher) || 'Unassigned',
     studentCount: (record as ClassRecord & { studentCount?: number }).studentCount ?? 0,
     maxCapacity: (record as ClassRecord & { maxCapacity?: number }).maxCapacity ?? 0,
-    subjectsCount:
-      (record as ClassRecord & { subjectsCount?: number }).subjectsCount ?? 0,
+    subjectsCount: (record as ClassRecord & { subjectsCount?: number }).subjectsCount ?? 0,
   }
 }
 
@@ -118,9 +98,7 @@ export default function Classes() {
     }
   }, [showToast])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   const filtered = useMemo(() => {
     return rows.filter((c) => {
@@ -144,10 +122,10 @@ export default function Classes() {
   }, [rows])
 
   const kpiCards: StatCard[] = [
-    { id: 'active-classes', label: 'Active Classes', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'sections', icon: 'School', tint: 'blue' },
-    { id: 'enrolled-students', label: 'Enrolled Students', value: stats.totalStudents.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'enrolled', icon: 'Users', tint: 'green' },
-    { id: 'desk-capacity', label: 'Total Desk Capacity', value: stats.totalCapacity.toLocaleString(), delta: '-', deltaDirection: 'neutral', deltaLabel: 'available seats', icon: 'DoorOpen', tint: 'amber' },
-    { id: 'fill-rate', label: 'Average Fill Rate', value: `${stats.fillRate}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'capacity used', icon: 'GraduationCap', tint: 'violet' },
+    { id: 'active-classes',    label: 'Active Classes',       value: String(stats.total),                            delta: '-', deltaDirection: 'neutral', deltaLabel: 'sections',        icon: 'School',        tint: 'blue' },
+    { id: 'enrolled-students', label: 'Enrolled Students',    value: stats.totalStudents.toLocaleString(),           delta: '-', deltaDirection: 'neutral', deltaLabel: 'enrolled',        icon: 'Users',         tint: 'green' },
+    { id: 'desk-capacity',     label: 'Total Desk Capacity',  value: stats.totalCapacity.toLocaleString(),           delta: '-', deltaDirection: 'neutral', deltaLabel: 'available seats', icon: 'DoorOpen',      tint: 'amber' },
+    { id: 'fill-rate',         label: 'Average Fill Rate',    value: `${stats.fillRate}%`,                           delta: '-', deltaDirection: 'neutral', deltaLabel: 'capacity used',   icon: 'GraduationCap', tint: 'violet' },
   ]
 
   const resetForm = () => {
@@ -182,22 +160,15 @@ export default function Classes() {
     }
 
     const gradeLevelNumber = Number(formData.gradeLevel.replace(/\D/g, '')) || 10
-    const composedName =
-      formData.name.trim() || `Grade ${gradeLevelNumber}-${section}`
+    const composedName = formData.name.trim() || `Grade ${gradeLevelNumber}-${section}`
 
     try {
       if (editingId) {
-        const payload: UpdateClassPayload = {
-          name: composedName,
-          gradeLevel: gradeLevelNumber,
-        }
+        const payload: UpdateClassPayload = { name: composedName, gradeLevel: gradeLevelNumber }
         await classService.update(editingId, payload)
         showToast(`Class "${composedName}" updated`, 'success')
       } else {
-        const payload: CreateClassPayload = {
-          name: composedName,
-          gradeLevel: gradeLevelNumber,
-        }
+        const payload: CreateClassPayload = { name: composedName, gradeLevel: gradeLevelNumber }
         await classService.create(payload)
         showToast(`Class "${composedName}" created`, 'success')
       }
@@ -244,7 +215,7 @@ export default function Classes() {
         <button
           id="btn-create-class"
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/20 transition shrink-0 cursor-pointer"
         >
           <Plus size={16} />
           <span>Create Class</span>
@@ -253,43 +224,41 @@ export default function Classes() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm border border-surface">
+      {/* Filter bar — was `glass-sm border border-surface`. Border was invisible. */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm">
         <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3.5 top-3 text-secondary" />
+          <Search size={16} className="absolute left-3.5 top-3 text-fg-muted z-10" />
+          {/* Inputs inherit the sunken-well look from globals.css */}
           <input
             type="text"
             placeholder="Search class name, homeroom teacher, or room..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-surface border border-surface focus:outline-none focus:ring-1 focus:ring-brand-500 text-color"
+            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
         <select
           value={gradeFilter}
           onChange={(e) => setGradeFilter(e.target.value)}
-          className="px-3 py-2 text-xs font-medium rounded-xl bg-surface border border-surface focus:outline-none focus:ring-1 focus:ring-brand-500 text-color cursor-pointer w-full sm:w-44"
+          className="px-3 py-2 text-xs font-medium rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer w-full sm:w-44"
         >
           <option value="All">All Grade Levels</option>
           {[7, 8, 9, 10, 11, 12].map((g) => (
-            <option key={g} value={`Grade ${g}`}>
-              Grade {g}
-            </option>
+            <option key={g} value={`Grade ${g}`}>Grade {g}</option>
           ))}
         </select>
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-sm text-secondary">
-          Loading classes...
-        </div>
+        <div className="py-16 text-center text-sm text-fg-muted">Loading classes...</div>
       ) : filtered.length === 0 ? (
-        <div className="glass-sm rounded-2xl border border-surface p-12 text-center">
-          <School className="mx-auto mb-3 h-12 w-12 text-secondary" />
-          <h3 className="text-base font-semibold text-color">
+        <div className="glass-sm rounded-2xl p-12 text-center">
+          <School className="mx-auto mb-3 h-12 w-12 text-fg-muted/60" />
+          <h3 className="text-base font-semibold text-fg">
             {rows.length === 0 ? 'No classes yet' : 'No matches'}
           </h3>
-          <p className="text-sm text-secondary mt-1 max-w-md mx-auto">
+          <p className="text-sm text-fg-muted mt-1 max-w-md mx-auto">
             {rows.length === 0
               ? 'Click "Create Class" to add the first section.'
               : 'Try a different search or grade filter.'}
@@ -306,67 +275,53 @@ export default function Classes() {
             return (
               <div
                 key={cls.id}
-                className="rounded-2xl p-5 glass-sm border border-surface flex flex-col justify-between hover:shadow-md transition"
+                className="rounded-2xl p-5 glass-sm flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2.5">
-                      <div className="p-2.5 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                      {/* Icon well: sunken + brand tint */}
+                      <div className="p-2.5 rounded-xl bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
                         <School size={20} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-base text-color">
-                          {cls.name}
-                        </h3>
-                        <div className="text-xs text-secondary font-medium">
+                        <h3 className="font-bold text-base text-fg">{cls.name}</h3>
+                        <div className="text-xs text-fg-muted font-medium">
                           {cls.gradeLevel} • Section {cls.section}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2 py-3 border-y border-surface text-xs">
+                  <div className="space-y-2 py-3 shadow-[0_1px_0_var(--neu-shadow-dark),0_-1px_0_var(--neu-shadow-dark)] text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-secondary">
-                        <User size={13} /> Class Teacher:
-                      </span>
-                      <span className="font-semibold text-color">
-                        {cls.classTeacher}
-                      </span>
+                      <span className="flex items-center gap-1.5 text-fg-muted"><User size={13} /> Class Teacher:</span>
+                      <span className="font-semibold text-fg">{cls.classTeacher}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-secondary">
-                        <DoorOpen size={13} /> Room:
-                      </span>
-                      <span className="font-medium text-color">{cls.room}</span>
+                      <span className="flex items-center gap-1.5 text-fg-muted"><DoorOpen size={13} /> Room:</span>
+                      <span className="font-medium text-fg">{cls.room}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-secondary">
-                        <BookOpen size={13} /> Subjects:
-                      </span>
-                      <span className="font-medium text-color">
-                        {cls.subjectsCount}
-                      </span>
+                      <span className="flex items-center gap-1.5 text-fg-muted"><BookOpen size={13} /> Subjects:</span>
+                      <span className="font-medium text-fg">{cls.subjectsCount}</span>
                     </div>
 
                     {cls.maxCapacity > 0 && (
                       <div className="pt-1.5">
                         <div className="flex items-center justify-between text-[11px] mb-1">
-                          <span className="text-secondary">Capacity</span>
-                          <span className="font-bold text-color">
+                          <span className="text-fg-muted">Capacity</span>
+                          <span className="font-bold text-fg">
                             {cls.studentCount} / {cls.maxCapacity} ({fillPct}%)
                           </span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-surface overflow-hidden">
+                        {/* Track: sunken well; fill keeps threshold colors */}
+                        <div className="h-2 w-full rounded-full overflow-hidden shadow-sunken">
                           <div
                             className={`h-full rounded-full ${
-                              fillPct > 90
-                                ? 'bg-warning'
-                                : fillPct > 75
-                                  ? 'bg-brand-500'
-                                  : 'bg-success'
+                              fillPct > 90 ? 'bg-warning' : fillPct > 75 ? 'bg-brand-500' : 'bg-success'
                             }`}
                             style={{ width: `${Math.min(fillPct, 100)}%` }}
                           />
@@ -380,13 +335,13 @@ export default function Classes() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setDetailRow(cls)}
-                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-surface hover:bg-brand-500/10 hover:text-brand-600 text-color transition flex items-center gap-1"
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-fg shadow-sunken hover:text-brand-600 dark:hover:text-brand-400 transition flex items-center gap-1 cursor-pointer"
                     >
                       <Eye size={13} /> Details
                     </button>
                     <Link
                       to="/academic/schedules"
-                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-surface hover:bg-brand-500 hover:text-white text-color transition flex items-center gap-1"
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-fg shadow-sunken hover:text-brand-600 dark:hover:text-brand-400 transition flex items-center gap-1"
                     >
                       <CalendarDays size={13} /> Timetable
                     </Link>
@@ -395,14 +350,14 @@ export default function Classes() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEdit(cls)}
-                      className="p-1.5 rounded-lg text-secondary hover:text-brand-600 hover:bg-surface transition"
+                      className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-sunken transition cursor-pointer"
                       title="Edit"
                     >
                       <Edit size={14} />
                     </button>
                     <button
                       onClick={() => setDeleteCandidate(cls)}
-                      className="p-1.5 rounded-lg text-secondary hover:text-error hover:bg-error/10 transition"
+                      className="p-1.5 rounded-lg text-fg-muted hover:text-error hover:shadow-sunken transition cursor-pointer"
                       title="Delete"
                     >
                       <Trash2 size={14} />
@@ -417,75 +372,60 @@ export default function Classes() {
 
       {/* Detail modal */}
       {detailRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-5">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailRow(null) }}
+        >
+          <div className="w-full max-w-lg rounded-2xl glass-strong p-6 space-y-5 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                <div className="p-3 rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
                   <School size={28} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-color">{detailRow.name}</h3>
-                  <p className="text-xs text-secondary">
-                    {detailRow.gradeLevel} • Section {detailRow.section}
-                  </p>
+                  <h3 className="text-lg font-bold text-fg">{detailRow.name}</h3>
+                  <p className="text-xs text-fg-muted">{detailRow.gradeLevel} • Section {detailRow.section}</p>
                 </div>
               </div>
               <button
                 onClick={() => setDetailRow(null)}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
+            {/* Info grid — sunken wells */}
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
-                <span className="text-secondary flex items-center gap-1">
-                  <User size={12} /> Homeroom
-                </span>
-                <span className="font-semibold text-color">
-                  {detailRow.classTeacher}
-                </span>
+              <div className="p-3 rounded-xl shadow-sunken space-y-1">
+                <span className="text-fg-muted flex items-center gap-1"><User size={12} /> Homeroom</span>
+                <span className="font-semibold text-fg">{detailRow.classTeacher}</span>
               </div>
-              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
-                <span className="text-secondary flex items-center gap-1">
-                  <DoorOpen size={12} /> Room
-                </span>
-                <span className="font-semibold text-color">{detailRow.room}</span>
+              <div className="p-3 rounded-xl shadow-sunken space-y-1">
+                <span className="text-fg-muted flex items-center gap-1"><DoorOpen size={12} /> Room</span>
+                <span className="font-semibold text-fg">{detailRow.room}</span>
               </div>
-              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
-                <span className="text-secondary flex items-center gap-1">
-                  <BookOpen size={12} /> Subjects
-                </span>
-                <span className="font-semibold text-color">
-                  {detailRow.subjectsCount}
-                </span>
+              <div className="p-3 rounded-xl shadow-sunken space-y-1">
+                <span className="text-fg-muted flex items-center gap-1"><BookOpen size={12} /> Subjects</span>
+                <span className="font-semibold text-fg">{detailRow.subjectsCount}</span>
               </div>
-              <div className="p-3 rounded-xl bg-surface border border-surface space-y-1">
-                <span className="text-secondary flex items-center gap-1">
-                  <Users size={12} /> Enrollment
-                </span>
-                <span className="font-semibold text-color">
-                  {detailRow.studentCount} / {detailRow.maxCapacity || '—'}
-                </span>
+              <div className="p-3 rounded-xl shadow-sunken space-y-1">
+                <span className="text-fg-muted flex items-center gap-1"><Users size={12} /> Enrollment</span>
+                <span className="font-semibold text-fg">{detailRow.studentCount} / {detailRow.maxCapacity || '—'}</span>
               </div>
             </div>
 
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-surface">
+            <div className="pt-2 flex items-center justify-end gap-2 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
               <button
-                onClick={() => {
-                  const r = detailRow
-                  setDetailRow(null)
-                  handleOpenEdit(r)
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
+                onClick={() => { const r = detailRow; setDetailRow(null); handleOpenEdit(r) }}
+                className="glass-sm glass-interactive px-4 py-2 rounded-xl text-xs font-semibold text-fg"
               >
                 Edit
               </button>
               <button
                 onClick={() => setDetailRow(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-sm shadow-brand-600/20 transition cursor-pointer"
               >
                 Close
               </button>
@@ -496,18 +436,19 @@ export default function Classes() {
 
       {/* Create / edit modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-surface">
-              <h3 className="text-base font-bold text-color">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) { setIsFormOpen(false); resetForm() } }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
+            <div className="flex items-center justify-between pb-3 shadow-[0_1px_0_var(--neu-shadow-dark)]">
+              <h3 className="text-base font-bold text-fg">
                 {editingId ? 'Edit Class' : 'Create Class'}
               </h3>
               <button
-                onClick={() => {
-                  setIsFormOpen(false)
-                  resetForm()
-                }}
-                className="p-1 rounded-lg text-secondary hover:text-color"
+                onClick={() => { setIsFormOpen(false); resetForm() }}
+                className="p-1 rounded-lg text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -515,51 +456,37 @@ export default function Classes() {
 
             <form onSubmit={handleSave} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold text-secondary mb-1">
-                  Class Label (Optional)
-                </label>
+                <label className="block font-semibold text-fg-muted mb-1">Class Label (Optional)</label>
                 <input
                   type="text"
                   placeholder="e.g. Grade 10-A"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-secondary mb-1">
-                    Grade Level
-                  </label>
+                  <label className="block font-semibold text-fg-muted mb-1">Grade Level</label>
                   <select
                     value={formData.gradeLevel}
-                    onChange={(e) =>
-                      setFormData({ ...formData, gradeLevel: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
                   >
                     {[7, 8, 9, 10, 11, 12].map((g) => (
-                      <option key={g} value={`Grade ${g}`}>
-                        Grade {g}
-                      </option>
+                      <option key={g} value={`Grade ${g}`}>Grade {g}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block font-semibold text-secondary mb-1">
-                    Section *
-                  </label>
+                  <label className="block font-semibold text-fg-muted mb-1">Section *</label>
                   <input
                     type="text"
                     placeholder="A, B, C"
                     value={formData.section}
-                    onChange={(e) =>
-                      setFormData({ ...formData, section: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color font-mono focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl text-fg font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -567,52 +494,38 @@ export default function Classes() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-secondary mb-1">
-                    Room
-                  </label>
+                  <label className="block font-semibold text-fg-muted mb-1">Room</label>
                   <input
                     type="text"
                     value={formData.room}
-                    onChange={(e) =>
-                      setFormData({ ...formData, room: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-secondary mb-1">
-                    Max Capacity
-                  </label>
+                  <label className="block font-semibold text-fg-muted mb-1">Max Capacity</label>
                   <input
                     type="number"
                     min={1}
                     max={60}
                     value={formData.maxCapacity}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        maxCapacity: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    onChange={(e) => setFormData({ ...formData, maxCapacity: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-surface">
+              <div className="pt-3 flex items-center justify-end gap-2 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsFormOpen(false)
-                    resetForm()
-                  }}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
+                  onClick={() => { setIsFormOpen(false); resetForm() }}
+                  className="glass-sm glass-interactive px-4 py-2 rounded-xl text-xs font-semibold text-fg"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition shadow-sm"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition shadow-sm shadow-brand-600/20 cursor-pointer"
                 >
                   {editingId ? 'Save' : 'Create'}
                 </button>
@@ -624,25 +537,26 @@ export default function Classes() {
 
       {/* Delete confirmation */}
       {deleteCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl glass-strong border border-surface p-6 shadow-2xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-150"
+          role="presentation"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDeleteCandidate(null) }}
+        >
+          <div className="w-full max-w-md rounded-2xl glass-strong p-6 space-y-4 animate-in zoom-in-95 duration-150" role="dialog" aria-modal="true">
             <div className="flex items-center gap-3 text-error">
-              <div className="p-3 rounded-xl bg-error/10 border border-error/30">
+              <div className="p-3 rounded-xl bg-error/15 border border-error/30 shadow-sunken">
                 <AlertTriangle size={24} />
               </div>
-              <h3 className="text-base font-bold text-color">Delete Class</h3>
+              <h3 className="text-base font-bold text-fg">Delete Class</h3>
             </div>
 
-            <p className="text-xs text-secondary leading-relaxed">
-              Permanently delete{' '}
-              <span className="font-bold text-color">
-                "{deleteCandidate.name}"
-              </span>
-              ?
+            <p className="text-xs text-fg-muted leading-relaxed">
+              Permanently delete <span className="font-bold text-fg">"{deleteCandidate.name}"</span>?
             </p>
 
+            {/* Semantic warning — tinted, kept */}
             {deleteCandidate.studentCount > 0 && (
-              <div className="p-3 rounded-xl bg-warning/10 border border-warning/30 text-xs text-warning">
+              <div className="p-3 rounded-xl bg-warning/15 border border-warning/30 text-xs text-warning">
                 This class has {deleteCandidate.studentCount} enrolled students.
                 Deletion will be blocked until they are reassigned.
               </div>
@@ -651,13 +565,13 @@ export default function Classes() {
             <div className="pt-2 flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteCandidate(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-strong text-color transition"
+                className="glass-sm glass-interactive px-4 py-2 rounded-xl text-xs font-semibold text-fg"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-error hover:opacity-90 text-white transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-error hover:opacity-90 text-white transition cursor-pointer"
               >
                 Confirm Delete
               </button>

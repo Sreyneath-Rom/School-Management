@@ -1,12 +1,7 @@
 // src/pages/Exams/ExamForm.tsx
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import {
-  ArrowLeft,
-  Save,
-  Loader2,
-  Info,
-} from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Info } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import { examService, type ExamRecord } from '@/services/examService'
 
@@ -62,9 +57,7 @@ export default function ExamForm() {
         if (!cancelled) setLoading(false)
       }
     })()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [id, navigate, showToast])
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -105,12 +98,17 @@ export default function ExamForm() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto py-16 text-center text-secondary text-sm flex items-center justify-center gap-2">
+      <div className="max-w-3xl mx-auto py-16 text-center text-fg-muted text-sm flex items-center justify-center gap-2">
         <Loader2 size={16} className="animate-spin" />
         Loading exam...
       </div>
     )
   }
+
+  // Inputs inherit the sunken-well look from globals.css
+  const inputBase =
+    'w-full px-3.5 py-2 rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
+  const labelBase = 'block font-semibold text-fg-muted mb-1'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto pb-12">
@@ -118,15 +116,15 @@ export default function ExamForm() {
         <div className="flex items-center gap-3">
           <Link
             to="/academic/exams"
-            className="p-2 rounded-xl bg-surface hover:bg-surface-strong text-secondary transition"
+            className="glass-sm glass-interactive p-2 rounded-xl text-fg-muted hover:text-fg"
           >
             <ArrowLeft size={18} />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-color">
+            <h1 className="text-xl font-bold text-fg">
               {isEditing ? 'Edit Examination' : 'Create Examination'}
             </h1>
-            <p className="text-xs text-secondary">
+            <p className="text-xs text-fg-muted">
               Configure session dates, term, and lifecycle status.
             </p>
           </div>
@@ -136,14 +134,14 @@ export default function ExamForm() {
           <button
             type="button"
             onClick={() => navigate('/academic/exams')}
-            className="px-4 py-2 rounded-xl border border-surface text-secondary text-xs font-semibold hover:bg-surface"
+            className="glass-sm glass-interactive px-4 py-2 rounded-xl text-fg-muted hover:text-fg text-xs font-semibold"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition disabled:opacity-50 cursor-pointer"
           >
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
             <span>{isEditing ? 'Save' : 'Create'}</span>
@@ -151,38 +149,37 @@ export default function ExamForm() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+      {/* Info banner — semantic info signal, tinted */}
+      <div className="rounded-2xl border border-info/30 bg-info/10 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
-        <p className="text-secondary">
+        <p className="text-fg-muted">
           The exams module is not yet implemented on the backend. Submitting
           this form will surface a 501 until the Exam model lands.
         </p>
       </div>
 
-      <div className="p-6 rounded-2xl glass-sm border border-surface space-y-5 bg-surface/40 text-xs">
+      {/* Was `glass-sm border border-surface bg-surface/40` — border was
+          invisible, bg override was a no-op. `.glass-sm` alone. */}
+      <div className="p-6 rounded-2xl glass-sm space-y-5 text-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
-            <label className="block font-semibold text-secondary mb-1">
-              Title *
-            </label>
+            <label className={labelBase}>Title *</label>
             <input
               type="text"
               required
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
               placeholder="e.g. Midterm Examination Term 2"
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className={inputBase}
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Status
-            </label>
+            <label className={labelBase}>Status</label>
             <select
               value={form.status}
               onChange={(e) => set('status', e.target.value as FormState['status'])}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={`${inputBase} cursor-pointer`}
             >
               <option value="UPCOMING">Upcoming</option>
               <option value="ACTIVE">Active</option>
@@ -192,56 +189,48 @@ export default function ExamForm() {
           </div>
 
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Academic Year *
-            </label>
+            <label className={labelBase}>Academic Year *</label>
             <input
               type="text"
               required
               value={form.academicYear}
               onChange={(e) => set('academicYear', e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={inputBase}
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Term *
-            </label>
+            <label className={labelBase}>Term *</label>
             <input
               type="text"
               required
               value={form.term}
               onChange={(e) => set('term', e.target.value)}
               placeholder="e.g. Term 2"
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={inputBase}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-surface">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Start date *
-            </label>
+            <label className={labelBase}>Start date *</label>
             <input
               type="date"
               required
               value={form.startDate}
               onChange={(e) => set('startDate', e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={inputBase}
             />
           </div>
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              End date *
-            </label>
+            <label className={labelBase}>End date *</label>
             <input
               type="date"
               required
               value={form.endDate}
               onChange={(e) => set('endDate', e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={inputBase}
             />
           </div>
         </div>

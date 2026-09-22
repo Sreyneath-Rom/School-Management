@@ -2,15 +2,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import PageHeading from '@/components/common/PageHeading'
 import {
-  Award,
-  BookOpen,
-  Search,
-  Save,
-  TrendingUp,
-  AlertCircle,
-  Layers,
-  Printer,
-  RotateCcw,
+  Award, BookOpen, Search, Save, TrendingUp, AlertCircle,
+  Layers, Printer, RotateCcw,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { academicService } from '@/services/academicService'
@@ -43,7 +36,6 @@ export default function GradesPage() {
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
 
-  // Track edits per record id — teacher edits before saving.
   const [drafts, setDrafts] = useState<Record<string, DraftEdit>>({})
 
   const loadClasses = useCallback(async () => {
@@ -51,17 +43,13 @@ export default function GradesPage() {
     try {
       const classes = await classService.list()
       setApiClasses(Array.isArray(classes) ? classes : [])
-      if (classes.length > 0 && !selectedClass) {
-        setSelectedClass(classes[0].name)
-      }
+      if (classes.length > 0 && !selectedClass) setSelectedClass(classes[0].name)
     } catch {
       setApiClasses([])
     }
   }, [isStudent, selectedClass])
 
-  useEffect(() => {
-    loadClasses()
-  }, [loadClasses])
+  useEffect(() => { loadClasses() }, [loadClasses])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -77,9 +65,7 @@ export default function GradesPage() {
             subjectId: undefined,
           }),
           selectedClass
-            ? academicService.getStudentProgress(
-                apiClasses.find((c) => c.name === selectedClass)?.id
-              )
+            ? academicService.getStudentProgress(apiClasses.find((c) => c.name === selectedClass)?.id)
             : Promise.resolve([]),
         ])
         setGradeRecords(grades)
@@ -87,46 +73,32 @@ export default function GradesPage() {
       }
     } catch {
       showToast('Failed to load academic grades', 'error')
-      setGradeRecords([])
-      setStudentRecords([])
-      setProgressList([])
+      setGradeRecords([]); setStudentRecords([]); setProgressList([])
     } finally {
       setLoading(false)
     }
   }, [isStudent, selectedClass, apiClasses, showToast])
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
-
-  // ---- Teacher edit handlers ----
+  useEffect(() => { loadData() }, [loadData])
 
   const handleScoreChange = (recordId: string, raw: string) => {
     setDrafts((prev) => ({
       ...prev,
-      [recordId]: {
-        score: raw,
-        comment: prev[recordId]?.comment ?? getOriginalComment(recordId),
-      },
+      [recordId]: { score: raw, comment: prev[recordId]?.comment ?? getOriginalComment(recordId) },
     }))
   }
 
   const handleCommentChange = (recordId: string, comment: string) => {
     setDrafts((prev) => ({
       ...prev,
-      [recordId]: {
-        score: prev[recordId]?.score ?? String(getOriginalScore(recordId)),
-        comment,
-      },
+      [recordId]: { score: prev[recordId]?.score ?? String(getOriginalScore(recordId)), comment },
     }))
   }
 
-  const getOriginalScore = (recordId: string): number => {
-    return gradeRecords.find((r) => r.id === recordId)?.score ?? 0
-  }
-  const getOriginalComment = (recordId: string): string => {
-    return gradeRecords.find((r) => r.id === recordId)?.comment ?? ''
-  }
+  const getOriginalScore = (recordId: string): number =>
+    gradeRecords.find((r) => r.id === recordId)?.score ?? 0
+  const getOriginalComment = (recordId: string): string =>
+    gradeRecords.find((r) => r.id === recordId)?.comment ?? ''
 
   const hasUnsavedChanges = Object.keys(drafts).length > 0
 
@@ -155,10 +127,7 @@ export default function GradesPage() {
         })
         .filter((x): x is NonNullable<typeof x> => x !== null)
 
-      if (payload.length === 0) {
-        setSaving(false)
-        return
-      }
+      if (payload.length === 0) { setSaving(false); return }
 
       const results = await academicService.saveBatchGrades(payload)
       const failures = results.filter((r) => !r.ok)
@@ -178,56 +147,42 @@ export default function GradesPage() {
     }
   }
 
-  // ---- Derived stats ----
-
   const displayScore = (r: GradeRecord) =>
     drafts[r.id]?.score !== undefined ? drafts[r.id].score : String(r.score)
   const displayComment = (r: GradeRecord) =>
     drafts[r.id]?.comment !== undefined ? drafts[r.id].comment : r.comment
 
-  const classAverage =
-    gradeRecords.length > 0
-      ? (
-          gradeRecords.reduce((sum, r) => sum + r.percentage, 0) / gradeRecords.length
-        ).toFixed(1)
-      : '0.0'
+  const classAverage = gradeRecords.length > 0
+    ? (gradeRecords.reduce((sum, r) => sum + r.percentage, 0) / gradeRecords.length).toFixed(1)
+    : '0.0'
   const countA = gradeRecords.filter((r) => r.letterGrade === 'A').length
   const countB = gradeRecords.filter((r) => r.letterGrade === 'B').length
-  const countDF = gradeRecords.filter(
-    (r) => r.letterGrade === 'D' || r.letterGrade === 'F'
-  ).length
+  const countDF = gradeRecords.filter((r) => r.letterGrade === 'D' || r.letterGrade === 'F').length
 
-  const studentAverage =
-    studentRecords.length > 0
-      ? (
-          studentRecords.reduce((sum, r) => sum + r.percentage, 0) / studentRecords.length
-        ).toFixed(1)
-      : '0.0'
-  const studentGpa =
-    studentRecords.length > 0
-      ? (studentRecords.reduce((sum, r) => sum + r.gpa, 0) / studentRecords.length).toFixed(2)
-      : '0.00'
+  const studentAverage = studentRecords.length > 0
+    ? (studentRecords.reduce((sum, r) => sum + r.percentage, 0) / studentRecords.length).toFixed(1)
+    : '0.0'
+  const studentGpa = studentRecords.length > 0
+    ? (studentRecords.reduce((sum, r) => sum + r.gpa, 0) / studentRecords.length).toFixed(2)
+    : '0.00'
 
   const filteredTeacherRecords = gradeRecords.filter((r) => {
     if (!search.trim()) return true
     const term = search.toLowerCase()
-    return (
-      r.studentName.toLowerCase().includes(term) ||
-      r.studentCode.toLowerCase().includes(term)
-    )
+    return r.studentName.toLowerCase().includes(term) || r.studentCode.toLowerCase().includes(term)
   })
 
   const kpiCards: StatCard[] = isStudent
     ? [
-        { id: 'gpa', label: 'Cumulative GPA', value: `${studentGpa} / 4.00`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'academic standing', icon: 'Award', tint: 'amber' },
-        { id: 'avg', label: 'Average Score', value: `${studentAverage}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: `${studentRecords.length} graded periods`, icon: 'TrendingUp', tint: 'blue' },
+        { id: 'gpa',      label: 'Cumulative GPA',  value: `${studentGpa} / 4.00`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'academic standing',      icon: 'Award',        tint: 'amber' },
+        { id: 'avg',      label: 'Average Score',   value: `${studentAverage}%`,   delta: '-', deltaDirection: 'neutral', deltaLabel: `${studentRecords.length} graded periods`, icon: 'TrendingUp', tint: 'blue' },
         { id: 'subjects', label: 'Subjects Graded', value: String(new Set(studentRecords.map((r) => r.subjectId)).size), delta: '-', deltaDirection: 'neutral', deltaLabel: 'this session', icon: 'BookOpen', tint: 'green' },
       ]
     : [
-        { id: 'class-avg', label: 'Class Average', value: `${classAverage}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: selectedClass || 'all classes', icon: 'TrendingUp', tint: 'blue' },
-        { id: 'grade-a', label: "Grade 'A'", value: String(countA), delta: '-', deltaDirection: 'neutral', deltaLabel: '90% - 100%', icon: 'Award', tint: 'green' },
-        { id: 'grade-b', label: "Grade 'B'", value: String(countB), delta: '-', deltaDirection: 'neutral', deltaLabel: '80% - 89%', icon: 'BookOpen', tint: 'sky' },
-        { id: 'needs-support', label: 'Needs Support', value: String(countDF), delta: '-', deltaDirection: 'neutral', deltaLabel: 'below 70%', icon: 'AlertCircle', tint: 'amber' },
+        { id: 'class-avg',     label: 'Class Average',   value: `${classAverage}%`, delta: '-', deltaDirection: 'neutral', deltaLabel: selectedClass || 'all classes', icon: 'TrendingUp',  tint: 'blue' },
+        { id: 'grade-a',       label: "Grade 'A'",        value: String(countA),    delta: '-', deltaDirection: 'neutral', deltaLabel: '90% - 100%',                    icon: 'Award',       tint: 'green' },
+        { id: 'grade-b',       label: "Grade 'B'",        value: String(countB),    delta: '-', deltaDirection: 'neutral', deltaLabel: '80% - 89%',                     icon: 'BookOpen',    tint: 'sky' },
+        { id: 'needs-support', label: 'Needs Support',   value: String(countDF),   delta: '-', deltaDirection: 'neutral', deltaLabel: 'below 70%',                     icon: 'AlertCircle', tint: 'amber' },
       ]
 
   return (
@@ -248,7 +203,7 @@ export default function GradesPage() {
               id="save-grades-btn"
               onClick={handleSaveAll}
               disabled={loading || saving || !hasUnsavedChanges}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm transition disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm shadow-brand-600/20 transition disabled:cursor-not-allowed disabled:opacity-45 cursor-pointer"
             >
               <Save className={`w-4 h-4 ${saving ? 'animate-pulse' : ''}`} />
               {saving
@@ -263,7 +218,7 @@ export default function GradesPage() {
             type="button"
             onClick={loadData}
             disabled={loading || saving}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-surface bg-surface text-secondary text-sm font-medium hover:text-color transition disabled:cursor-not-allowed disabled:opacity-45"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl glass-sm glass-interactive text-fg-muted hover:text-fg text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45"
           >
             <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -272,7 +227,7 @@ export default function GradesPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-surface bg-surface text-secondary text-sm font-medium hover:text-color transition"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl glass-sm glass-interactive text-fg-muted hover:text-fg text-sm font-medium"
           >
             <Printer className="w-4 h-4" />
             Print
@@ -308,19 +263,13 @@ export default function GradesPage() {
 }
 
 // ---------------------------------------------------------------------------
-// Student view — one row per grade record.
+// Student view
 // ---------------------------------------------------------------------------
 
-function StudentView({
-  records,
-  loading,
-}: {
-  records: GradeRecord[]
-  loading: boolean
-}) {
+function StudentView({ records, loading }: { records: GradeRecord[]; loading: boolean }) {
   if (loading) {
     return (
-      <div className="glass-sm rounded-2xl border border-surface p-10 text-center text-sm text-secondary">
+      <div className="glass-sm rounded-2xl p-10 text-center text-sm text-fg-muted">
         Loading your grade report...
       </div>
     )
@@ -328,10 +277,10 @@ function StudentView({
 
   if (records.length === 0) {
     return (
-      <div className="glass-sm rounded-2xl border border-surface p-10 text-center">
-        <BookOpen className="mx-auto mb-3 h-10 w-10 text-secondary" />
-        <p className="text-sm font-semibold text-color">No grades published yet</p>
-        <p className="mt-1 text-xs text-secondary">
+      <div className="glass-sm rounded-2xl p-10 text-center">
+        <BookOpen className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+        <p className="text-sm font-semibold text-fg">No grades published yet</p>
+        <p className="mt-1 text-xs text-fg-muted">
           Your subject results will appear here once a teacher records them.
         </p>
       </div>
@@ -339,20 +288,20 @@ function StudentView({
   }
 
   return (
-    <div className="glass-sm rounded-2xl border border-surface overflow-hidden">
-      <div className="p-4 border-b border-surface bg-surface-strong flex items-center justify-between">
-        <h3 className="font-semibold text-sm text-color flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-brand-600" />
+    <div className="glass-sm rounded-2xl overflow-hidden">
+      <div className="p-4 shadow-[0_1px_0_var(--neu-shadow-dark)] flex items-center justify-between">
+        <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-brand-600 dark:text-brand-400" />
           Grade Report
         </h3>
-        <span className="text-xs text-secondary">
+        <span className="text-xs text-fg-muted">
           {records.length} record{records.length === 1 ? '' : 's'}
         </span>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-secondary">
-          <thead className="bg-surface/50 text-[11px] font-semibold uppercase tracking-wider text-secondary border-b border-surface">
+        <table className="w-full text-left text-xs text-fg-muted">
+          <thead className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted shadow-[0_1px_0_var(--neu-shadow-dark)]">
             <tr>
               <th className="py-3.5 px-4">Subject</th>
               <th className="py-3.5 px-4">Period</th>
@@ -363,32 +312,18 @@ function StudentView({
               <th className="py-3.5 px-4">Comment</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface">
+          <tbody className="divide-y divide-(--neu-shadow-dark)">
             {records.map((r) => (
-              <tr key={r.id} className="hover:bg-surface/30 transition">
-                <td className="py-3.5 px-4 font-semibold text-color">
-                  {r.subjectName || '—'}
-                </td>
+              <tr key={r.id} className="hover:shadow-sunken transition-shadow">
+                <td className="py-3.5 px-4 font-semibold text-fg">{r.subjectName || '—'}</td>
                 <td className="py-3.5 px-4">
-                  <span className="text-[11px] font-medium text-secondary">
-                    {r.periodLabel} ({r.period})
-                  </span>
+                  <span className="text-[11px] font-medium text-fg-muted">{r.periodLabel} ({r.period})</span>
                 </td>
-                <td className="py-3.5 px-4 text-center font-mono">
-                  {r.score} / {r.maxScore}
-                </td>
-                <td className="py-3.5 px-4 text-center font-bold text-color">
-                  {r.percentage}%
-                </td>
-                <td className="py-3.5 px-4 text-center">
-                  <GradeBadge grade={r.letterGrade} />
-                </td>
-                <td className="py-3.5 px-4 text-center font-semibold">
-                  {r.gpa.toFixed(2)}
-                </td>
-                <td className="py-3.5 px-4 text-secondary italic max-w-xs truncate">
-                  {r.comment || '—'}
-                </td>
+                <td className="py-3.5 px-4 text-center font-mono">{r.score} / {r.maxScore}</td>
+                <td className="py-3.5 px-4 text-center font-bold text-fg">{r.percentage}%</td>
+                <td className="py-3.5 px-4 text-center"><GradeBadge grade={r.letterGrade} /></td>
+                <td className="py-3.5 px-4 text-center font-semibold">{r.gpa.toFixed(2)}</td>
+                <td className="py-3.5 px-4 text-fg-muted italic max-w-xs truncate">{r.comment || '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -403,21 +338,9 @@ function StudentView({
 // ---------------------------------------------------------------------------
 
 function TeacherView({
-  activeTab,
-  setActiveTab,
-  loading,
-  classes,
-  selectedClass,
-  onClassChange,
-  search,
-  onSearchChange,
-  records,
-  progress,
-  displayScore,
-  displayComment,
-  onScoreChange,
-  onCommentChange,
-  drafts,
+  activeTab, setActiveTab, loading, classes, selectedClass, onClassChange,
+  search, onSearchChange, records, progress, displayScore, displayComment,
+  onScoreChange, onCommentChange, drafts,
 }: {
   activeTab: 'grades' | 'progress'
   setActiveTab: (t: 'grades' | 'progress') => void
@@ -437,24 +360,24 @@ function TeacherView({
 }) {
   return (
     <div className="space-y-6">
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-surface pb-2">
+      {/* Tabs — sunken tray, active segment brand-filled */}
+      <div className="flex items-center gap-2 pb-2 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <button
           onClick={() => setActiveTab('grades')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+          className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
             activeTab === 'grades'
-              ? 'bg-brand-600 text-white shadow-sm'
-              : 'text-secondary hover:bg-surface'
+              ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+              : 'text-fg-muted hover:text-fg shadow-sunken'
           }`}
         >
           Grade Roster
         </button>
         <button
           onClick={() => setActiveTab('progress')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
+          className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
             activeTab === 'progress'
-              ? 'bg-brand-600 text-white shadow-sm'
-              : 'text-secondary hover:bg-surface'
+              ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+              : 'text-fg-muted hover:text-fg shadow-sunken'
           }`}
         >
           Student Progress
@@ -463,48 +386,43 @@ function TeacherView({
 
       {activeTab === 'grades' ? (
         <>
-          {/* Class selector + search */}
-          <div className="glass-sm rounded-2xl p-4 border border-surface flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="glass-sm rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
             <div className="flex items-center gap-2.5 w-full md:w-auto">
-              <Layers className="w-4 h-4 text-brand-600" />
-              <span className="text-xs font-semibold text-secondary">Class:</span>
+              <Layers className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+              <span className="text-xs font-semibold text-fg-muted">Class:</span>
               <select
                 value={selectedClass}
                 onChange={(e) => onClassChange(e.target.value)}
-                className="text-xs px-3 py-2 rounded-xl border border-surface bg-surface text-color font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="text-xs px-3 py-2 rounded-xl text-fg font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
               >
                 {classes.length === 0 && <option value="">No classes</option>}
-                {classes.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
+                {classes.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
             </div>
 
             <div className="relative w-full md:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted z-10" />
               <input
                 type="text"
                 placeholder="Search student..."
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-surface bg-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
 
           {loading && (
-            <div className="rounded-xl border border-brand-200/60 bg-brand-50/40 px-4 py-3 text-xs text-brand-700">
+            <div className="rounded-xl bg-brand-500/10 border border-brand-500/25 px-4 py-3 text-xs text-brand-700 dark:text-brand-300">
               Loading the selected class gradebook...
             </div>
           )}
 
           {!loading && records.length === 0 && (
-            <div className="glass-sm rounded-2xl border border-surface p-10 text-center">
-              <AlertCircle className="mx-auto mb-3 h-10 w-10 text-secondary" />
-              <p className="text-sm font-semibold text-color">No grade records found</p>
-              <p className="mt-1 text-xs text-secondary">
+            <div className="glass-sm rounded-2xl p-10 text-center">
+              <AlertCircle className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+              <p className="text-sm font-semibold text-fg">No grade records found</p>
+              <p className="mt-1 text-xs text-fg-muted">
                 {selectedClass
                   ? 'No grades recorded for this class yet.'
                   : 'Select a class to see its gradebook.'}
@@ -513,19 +431,17 @@ function TeacherView({
           )}
 
           {records.length > 0 && (
-            <div className="glass-sm rounded-2xl border border-surface overflow-hidden">
-              <div className="p-4 border-b border-surface bg-surface-strong">
-                <h3 className="font-semibold text-sm text-color">
-                  Roster ({records.length} records)
-                </h3>
-                <p className="text-xs text-secondary mt-0.5">
+            <div className="glass-sm rounded-2xl overflow-hidden">
+              <div className="p-4 shadow-[0_1px_0_var(--neu-shadow-dark)]">
+                <h3 className="font-semibold text-sm text-fg">Roster ({records.length} records)</h3>
+                <p className="text-xs text-fg-muted mt-0.5">
                   Type a score between 0 and the maximum. Changes are saved together.
                 </p>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-secondary">
-                  <thead className="bg-surface/50 text-[11px] font-semibold uppercase tracking-wider border-b border-surface">
+                <table className="w-full text-left text-xs text-fg-muted">
+                  <thead className="text-[11px] font-semibold uppercase tracking-wider shadow-[0_1px_0_var(--neu-shadow-dark)]">
                     <tr>
                       <th className="py-3 px-4">Student</th>
                       <th className="py-3 px-4">Subject</th>
@@ -537,7 +453,7 @@ function TeacherView({
                       <th className="py-3 px-4">Comment</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-surface">
+                  <tbody className="divide-y divide-(--neu-shadow-dark)">
                     {records.map((rec) => {
                       const draft = drafts[rec.id]
                       const draftScore = Number(draft?.score ?? rec.score)
@@ -547,18 +463,13 @@ function TeacherView({
                           : rec.percentage
 
                       return (
-                        <tr
-                          key={rec.id}
-                          className={draft ? 'bg-brand-50/30 dark:bg-brand-950/10' : ''}
-                        >
+                        <tr key={rec.id} className={draft ? 'bg-brand-500/5' : ''}>
                           <td className="py-3 px-4">
-                            <div className="font-semibold text-color">{rec.studentName}</div>
-                            <div className="text-[11px] text-secondary">{rec.studentCode}</div>
+                            <div className="font-semibold text-fg">{rec.studentName}</div>
+                            <div className="text-[11px] text-fg-muted">{rec.studentCode}</div>
                           </td>
-                          <td className="py-3 px-4 text-color">{rec.subjectName}</td>
-                          <td className="py-3 px-4 text-center text-[11px]">
-                            {rec.periodLabel}
-                          </td>
+                          <td className="py-3 px-4 text-fg">{rec.subjectName}</td>
+                          <td className="py-3 px-4 text-center text-[11px]">{rec.periodLabel}</td>
                           <td className="py-2.5 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <input
@@ -568,29 +479,21 @@ function TeacherView({
                                 step={0.5}
                                 value={displayScore(rec)}
                                 onChange={(e) => onScoreChange(rec.id, e.target.value)}
-                                className="w-16 px-2 py-1.5 text-center text-xs font-semibold rounded-lg border border-surface bg-surface text-color focus:ring-1 focus:ring-brand-500"
+                                className="w-16 px-2 py-1.5 text-center text-xs font-semibold rounded-lg text-fg focus:ring-2 focus:ring-brand-500"
                               />
-                              <span className="text-[10px] text-secondary">
-                                / {rec.maxScore}
-                              </span>
+                              <span className="text-[10px] text-fg-muted">/ {rec.maxScore}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-center font-bold text-color">
-                            {previewPct}%
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <GradeBadge grade={rec.letterGrade} />
-                          </td>
-                          <td className="py-3 px-4 text-center font-semibold">
-                            {rec.gpa.toFixed(2)}
-                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-fg">{previewPct}%</td>
+                          <td className="py-3 px-4 text-center"><GradeBadge grade={rec.letterGrade} /></td>
+                          <td className="py-3 px-4 text-center font-semibold">{rec.gpa.toFixed(2)}</td>
                           <td className="py-2.5 px-4">
                             <input
                               type="text"
                               placeholder="Add note..."
                               value={displayComment(rec)}
                               onChange={(e) => onCommentChange(rec.id, e.target.value)}
-                              className="w-full px-2.5 py-1 text-xs rounded-lg border border-surface bg-surface text-color focus:ring-1 focus:ring-brand-500"
+                              className="w-full px-2.5 py-1 text-xs rounded-lg text-fg focus:ring-2 focus:ring-brand-500"
                             />
                           </td>
                         </tr>
@@ -610,19 +513,13 @@ function TeacherView({
 }
 
 // ---------------------------------------------------------------------------
-// Progress view — only the fields the backend actually returns.
+// Progress view
 // ---------------------------------------------------------------------------
 
-function ProgressView({
-  progress,
-  loading,
-}: {
-  progress: StudentProgress[]
-  loading: boolean
-}) {
+function ProgressView({ progress, loading }: { progress: StudentProgress[]; loading: boolean }) {
   if (loading) {
     return (
-      <div className="glass-sm rounded-2xl border border-surface p-10 text-center text-sm text-secondary">
+      <div className="glass-sm rounded-2xl p-10 text-center text-sm text-fg-muted">
         Loading progress analytics...
       </div>
     )
@@ -630,10 +527,10 @@ function ProgressView({
 
   if (progress.length === 0) {
     return (
-      <div className="glass-sm rounded-2xl border border-surface p-10 text-center">
-        <TrendingUp className="mx-auto mb-3 h-10 w-10 text-secondary" />
-        <p className="text-sm font-semibold text-color">No progress data available</p>
-        <p className="mt-1 text-xs text-secondary">
+      <div className="glass-sm rounded-2xl p-10 text-center">
+        <TrendingUp className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+        <p className="text-sm font-semibold text-fg">No progress data available</p>
+        <p className="mt-1 text-xs text-fg-muted">
           Select a class with recorded grades to see aggregate progress.
         </p>
       </div>
@@ -641,20 +538,18 @@ function ProgressView({
   }
 
   return (
-    <div className="glass-sm rounded-2xl border border-surface overflow-hidden">
-      <div className="p-4 border-b border-surface bg-surface-strong">
-        <h3 className="font-semibold text-sm text-color flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-brand-600" />
+    <div className="glass-sm rounded-2xl overflow-hidden">
+      <div className="p-4 shadow-[0_1px_0_var(--neu-shadow-dark)]">
+        <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-brand-600 dark:text-brand-400" />
           Student Progress ({progress.length})
         </h3>
-        <p className="text-xs text-secondary mt-0.5">
-          Aggregated from recorded grade records only.
-        </p>
+        <p className="text-xs text-fg-muted mt-0.5">Aggregated from recorded grade records only.</p>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-secondary">
-          <thead className="bg-surface/50 text-[11px] font-semibold uppercase tracking-wider border-b border-surface">
+        <table className="w-full text-left text-xs text-fg-muted">
+          <thead className="text-[11px] font-semibold uppercase tracking-wider shadow-[0_1px_0_var(--neu-shadow-dark)]">
             <tr>
               <th className="py-3 px-4">Student</th>
               <th className="py-3 px-4">Class</th>
@@ -663,23 +558,17 @@ function ProgressView({
               <th className="py-3 px-4 text-center">Records</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface">
+          <tbody className="divide-y divide-(--neu-shadow-dark)">
             {progress.map((p) => (
-              <tr key={p.studentId} className="hover:bg-surface/30">
+              <tr key={p.studentId} className="hover:shadow-sunken transition-shadow">
                 <td className="py-3.5 px-4">
-                  <div className="font-semibold text-color">{p.studentName}</div>
-                  <div className="text-[11px] text-secondary">{p.studentCode}</div>
+                  <div className="font-semibold text-fg">{p.studentName}</div>
+                  <div className="text-[11px] text-fg-muted">{p.studentCode}</div>
                 </td>
-                <td className="py-3.5 px-4 text-color">{p.className || '—'}</td>
-                <td className="py-3.5 px-4 text-center font-bold text-color">
-                  {p.periodAveragePercentage}%
-                </td>
-                <td className="py-3.5 px-4 text-center font-semibold">
-                  {p.overallGpa.toFixed(2)}
-                </td>
-                <td className="py-3.5 px-4 text-center text-secondary">
-                  {p.gradeRecordCount}
-                </td>
+                <td className="py-3.5 px-4 text-fg">{p.className || '—'}</td>
+                <td className="py-3.5 px-4 text-center font-bold text-fg">{p.periodAveragePercentage}%</td>
+                <td className="py-3.5 px-4 text-center font-semibold">{p.overallGpa.toFixed(2)}</td>
+                <td className="py-3.5 px-4 text-center text-fg-muted">{p.gradeRecordCount}</td>
               </tr>
             ))}
           </tbody>
@@ -690,18 +579,15 @@ function ProgressView({
 }
 
 // ---------------------------------------------------------------------------
-// Grade badge
+// Grade badge — semantic tints, kept
 // ---------------------------------------------------------------------------
 
 function GradeBadge({ grade }: { grade: 'A' | 'B' | 'C' | 'D' | 'F' }) {
   const classes =
-    grade === 'A'
-      ? 'bg-success/15 text-success'
-      : grade === 'B'
-        ? 'bg-info/15 text-info'
-        : grade === 'C'
-          ? 'bg-warning/15 text-warning'
-          : 'bg-error/15 text-error'
+    grade === 'A' ? 'bg-success/15 text-success'
+    : grade === 'B' ? 'bg-info/15 text-info'
+    : grade === 'C' ? 'bg-warning/15 text-warning'
+    : 'bg-error/15 text-error'
 
   return (
     <span className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-xs ${classes}`}>

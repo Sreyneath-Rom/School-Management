@@ -10,7 +10,11 @@ export type BadgeTone =
   | 'brand'
 
 const TONES: Record<BadgeTone, string> = {
-  neutral: 'bg-surface text-fg-muted',
+  // Neutral reads as a carved-in chip: same surface color, sunken shadow.
+  // `bg-surface` alone was a no-op under the neumorphic theme.
+  neutral: 'text-fg-muted shadow-[var(--shadow-emboss-sunken)]',
+  // Semantic tints keep their tinted backgrounds — color IS the signal,
+  // and light tints are visible on the flat neumorphic surface.
   success: 'bg-success/15 text-success',
   warning: 'bg-warning/15 text-warning',
   error: 'bg-error/15 text-error',

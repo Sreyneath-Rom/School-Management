@@ -1,3 +1,4 @@
+// src/features/attendance/AttendanceAlerts.tsx
 import { useState } from 'react'
 import { attendanceAlerts as initialAlerts } from '@/services/attendanceMockData'
 import Button from '@/components/common/Button'
@@ -30,8 +31,8 @@ export default function AttendanceAlerts() {
     <section className="rounded-[28px] glass-sm p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Attendance Alerts</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Flags that need admin review</p>
+          <h2 className="text-base font-semibold text-fg">Attendance Alerts</h2>
+          <p className="text-sm text-fg-muted">Flags that need admin review</p>
         </div>
         <Button variant="solid" onClick={() => setIsOpen(true)}>
           Flag New
@@ -42,35 +43,37 @@ export default function AttendanceAlerts() {
         {items.map((item) => (
           <div
             key={item.id}
-            className="group rounded-3xl glass-sm p-6 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-slate-50/60 hover:shadow-[0_16px_35px_-15px_rgba(15,23,42,0.2)]"
+            className="group rounded-3xl glass-sm p-6 transition-all duration-300 ease-out hover:shadow-(--glass-strong-shadow)"
           >
             <div className="flex items-center justify-between gap-4">
-              <p className="font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
-              <span className="shrink-0 rounded-full bg-slate-900/5 dark:bg-white/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">{item.time}</span>
+              <p className="font-semibold text-fg">{item.title}</p>
+              <span className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-fg-muted shadow-sunken">
+                {item.time}
+              </span>
             </div>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{item.body}</p>
+            <p className="mt-2 text-sm text-fg-muted">{item.body}</p>
           </div>
         ))}
       </div>
 
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 animate-[fadeIn_0.18s_ease-out]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 animate-[fadeIn_0.18s_ease-out]"
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-md rounded-[28px] glass-sm bg-white/90 dark:bg-stone-900/90 p-6 shadow-[0_30px_70px_-20px_rgba(15,23,42,0.35)] animate-[popIn_0.18s_ease-out]"
+            className="w-full max-w-md rounded-[28px] glass-strong p-6 animate-[popIn_0.18s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">New Attendance Alert</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Flag a pattern for admin follow-up</p>
+                <h3 className="text-base font-semibold text-fg">New Attendance Alert</h3>
+                <p className="text-sm text-fg-muted">Flag a pattern for admin follow-up</p>
               </div>
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-full p-1.5 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:text-slate-200"
+                className="rounded-full p-1.5 text-fg-muted transition hover:text-fg hover:shadow-sunken"
                 aria-label="Close"
               >
                 <X size={18} />
@@ -79,7 +82,7 @@ export default function AttendanceAlerts() {
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label htmlFor="alert-title" className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <label htmlFor="alert-title" className="mb-1.5 block text-sm font-semibold text-fg">
                   Title
                 </label>
                 <input
@@ -88,13 +91,13 @@ export default function AttendanceAlerts() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Grade 9-C Chronic Tardiness"
-                  className="w-full rounded-2xl border border-slate-200 dark:border-stone-700 bg-white/70 dark:bg-stone-800/60 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-2.5 text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="alert-body" className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <label htmlFor="alert-body" className="mb-1.5 block text-sm font-semibold text-fg">
                   Details
                 </label>
                 <textarea
@@ -103,7 +106,7 @@ export default function AttendanceAlerts() {
                   onChange={(e) => setBody(e.target.value)}
                   placeholder="Describe the pattern or concern..."
                   rows={4}
-                  className="w-full resize-none rounded-2xl border border-slate-200 dark:border-stone-700 bg-white/70 dark:bg-stone-800/60 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  className="w-full resize-none rounded-2xl px-4 py-2.5 text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
                   required
                 />
               </div>
@@ -122,10 +125,7 @@ export default function AttendanceAlerts() {
       )}
 
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes popIn {
           from { opacity: 0; transform: scale(0.95) translateY(8px); }
           to { opacity: 1; transform: scale(1) translateY(0); }

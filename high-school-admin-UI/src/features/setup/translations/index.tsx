@@ -79,10 +79,7 @@ export default function TranslationsFeature() {
   }, [languages, activeLangCode])
 
   const handleUpdateTranslation = (key: string, value: string) => {
-    setTranslations((prev) => ({
-      ...prev,
-      [key]: value,
-    }))
+    setTranslations((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleSaveTranslations = async () => {
@@ -102,10 +99,7 @@ export default function TranslationsFeature() {
     try {
       const missingEntries = STRINGS.filter(
         (s) => !translations[s.key] || translations[s.key].trim() === ''
-      ).map((s) => ({
-        key: s.key,
-        text: s.en,
-      }))
+      ).map((s) => ({ key: s.key, text: s.en }))
 
       if (missingEntries.length === 0) {
         success('All strings are already translated')
@@ -113,10 +107,7 @@ export default function TranslationsFeature() {
       }
 
       const res = await translationsService.autoTranslate(activeLangCode, missingEntries)
-      setTranslations((prev) => ({
-        ...prev,
-        ...res.translations,
-      }))
+      setTranslations((prev) => ({ ...prev, ...res.translations }))
       success(`Auto-translated ${Object.keys(res.translations).length} strings`)
     } catch (err) {
       notifyError(err instanceof ApiError ? err.message : 'Auto-translation failed')
@@ -132,7 +123,7 @@ export default function TranslationsFeature() {
         handleUpdateTranslation(key, res.translations[key])
         success(`Translated "${key}"`)
       }
-    } catch (err) {
+    } catch {
       notifyError('Failed to translate string')
     }
   }
@@ -230,23 +221,26 @@ export default function TranslationsFeature() {
         translatedKeysCount={translatedCount}
       />
 
-      {/* Language Selector Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl glass-sm p-4 border border-text-main/10">
+      {/* Language selector tabs — control bar was `glass-sm border
+          border-text-main/10`. Border was invisible; keep `.glass-sm`. */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl glass-sm p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-text-main/50 mr-1">Installed Locales:</span>
+          <span className="text-xs font-semibold text-fg-muted mr-1">Installed Locales:</span>
           {languages.map((lang) => {
             const isSelected = activeLangCode === lang.code
             return (
               <div
                 key={lang.code}
-                className={`group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition cursor-pointer border ${
+                // Chip: raised by default (unselected), brand-filled for
+                // the active locale. Hover on unselected presses in.
+                className={`group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
                   isSelected
-                    ? 'bg-brand-600 border-brand-600 text-white shadow-md'
-                    : 'bg-text-main/5 border-text-main/10 text-text-main/70 hover:bg-text-main/10'
+                    ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                    : 'text-fg-muted hover:text-fg shadow-emboss hover:shadow-sunken'
                 }`}
                 onClick={() => handleSelectLanguage(lang.code)}
               >
-                <span className="uppercase font-mono text-[10px] opacity-75">{lang.code}</span>
+                <span className="uppercase font-mono text-[10px] opacity-80">{lang.code}</span>
                 <span>{lang.name}</span>
                 {lang.code !== 'en' && (
                   <button
@@ -256,7 +250,7 @@ export default function TranslationsFeature() {
                       handleDeleteLanguage(lang.code)
                     }}
                     className={`rounded p-0.5 opacity-0 group-hover:opacity-100 hover:text-error transition ${
-                      isSelected ? 'text-white/70 hover:text-white' : 'text-text-main/40'
+                      isSelected ? 'text-white/70 hover:text-white' : 'text-fg-muted'
                     }`}
                     title="Remove language"
                   >
@@ -271,21 +265,22 @@ export default function TranslationsFeature() {
         <button
           type="button"
           onClick={loadLanguages}
-          className="rounded-xl p-2 text-text-main/60 hover:bg-text-main/10 hover:text-text-main transition"
+          className="rounded-xl p-2 text-fg-muted hover:text-fg hover:shadow-sunken transition"
           title="Refresh languages"
         >
           <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {/* Translation Keys Table */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-16 space-y-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-3 border-brand-500 border-t-transparent" />
-          <p className="text-sm font-medium text-text-main/60">Loading translation dictionary...</p>
+          {/* `border-3` isn't a valid Tailwind width — border-2 */}
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+          <p className="text-sm font-medium text-fg-muted">Loading translation dictionary...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-3xl bg-error/10 border border-error/20 p-6 text-center text-error">
+        // Semantic error — tinted bg + border carries the signal
+        <div className="rounded-3xl bg-error/10 border border-error/25 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load translation keys</p>
           <p className="text-xs">{loadError}</p>
         </div>
@@ -303,7 +298,6 @@ export default function TranslationsFeature() {
         />
       )}
 
-      {/* Add Language Modal */}
       <AddLanguageModal
         isOpen={isAddModalOpen}
         isSubmitting={isAddingLanguage}

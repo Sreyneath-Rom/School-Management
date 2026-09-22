@@ -20,13 +20,6 @@ const SIZE_CLASSES: Record<NonNullable<FormModalProps['size']>, string> = {
   lg: 'max-w-2xl',
 }
 
-/**
- * A form-in-a-modal shell. Kept separate from `Modal` because its footer
- * buttons are wired to a `<form>` element via the `form` attribute, which
- * `Modal`'s generic footer slot doesn't handle. If you'd rather consolidate,
- * pass a `<form>` as `<Modal>`'s children and use `form="id"` on the
- * submit button — that's what `Announcements` does.
- */
 export default function FormModal({
   title,
   subtitle,
@@ -40,28 +33,31 @@ export default function FormModal({
 }: FormModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 animate-in fade-in duration-200"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCancel()
       }}
     >
+      {/* `.glass-strong` supplies bg + radius + elevated shadow.
+          The old `border border-surface-strong` was invisible, and
+          `shadow-2xl` was overriding the neumorphic shadow. */}
       <div
-        className={`relative w-full ${SIZE_CLASSES[size]} max-h-[min(90vh,760px)] flex flex-col overflow-hidden rounded-[28px] glass-strong border border-surface-strong shadow-2xl animate-in zoom-in-95 duration-200`}
+        className={`relative w-full ${SIZE_CLASSES[size]} max-h-[min(90vh,760px)] flex flex-col overflow-hidden rounded-[28px] glass-strong animate-in zoom-in-95 duration-200`}
         role="dialog"
         aria-modal="true"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full blur-3xl opacity-60 bg-linear-to-br from-brand-400/20 to-info/20"
+          className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full blur-3xl opacity-40 bg-linear-to-br from-brand-400/20 to-info/20"
         />
 
-        {/* Header */}
-        <div className="relative z-10 flex items-center justify-between border-b border-surface bg-surface px-6 py-4">
+        {/* Header — shadow seam replaces the invisible border. */}
+        <div className="relative z-10 flex items-center justify-between shadow-[0_1px_0_var(--neu-shadow-dark)] px-6 py-4">
           <div className="flex items-center gap-3 min-w-0">
             {icon && (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-strong text-brand-600 dark:text-brand-400 border border-surface">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
                 {icon}
               </div>
             )}
@@ -81,13 +77,12 @@ export default function FormModal({
             type="button"
             onClick={onCancel}
             aria-label="Close dialog"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-fg-muted transition hover:bg-surface-strong hover:text-fg cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-fg-muted transition hover:text-fg hover:shadow-sunken cursor-pointer"
           >
             <X size={18} strokeWidth={2.2} />
           </button>
         </div>
 
-        {/* Form */}
         <form
           onSubmit={onSubmit}
           className="relative z-10 flex flex-1 flex-col overflow-hidden"
@@ -96,12 +91,11 @@ export default function FormModal({
             {children}
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-end gap-2.5 border-t border-surface bg-surface px-6 py-4">
+          <div className="flex items-center justify-end gap-2.5 shadow-[0_-1px_0_var(--neu-shadow-dark)] px-6 py-4">
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-2xl border border-surface bg-surface px-4 py-2 text-xs font-bold text-fg-muted hover:text-fg hover:bg-surface-strong transition cursor-pointer"
+              className="glass-sm glass-interactive rounded-2xl px-4 py-2 text-xs font-bold text-fg-muted hover:text-fg"
             >
               Cancel
             </button>

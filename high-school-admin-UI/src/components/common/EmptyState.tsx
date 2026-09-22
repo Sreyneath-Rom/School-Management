@@ -11,11 +11,6 @@ interface EmptyStateProps {
   variant?: 'default' | 'compact'
 }
 
-/**
- * Renders the "no results" state that every list page shows. Replaces the
- * five copies currently scattered across Classes, Grades, Homework,
- * Lessons, and Quizzes.
- */
 export default function EmptyState({
   icon: Icon,
   title,
@@ -26,8 +21,10 @@ export default function EmptyState({
   const isCompact = variant === 'compact'
 
   return (
+    // The old `border border-surface` was invisible under this theme —
+    // `.glass-sm` alone gives the raised surface.
     <div
-      className={`glass-sm rounded-2xl border border-surface text-center ${
+      className={`glass-sm rounded-2xl text-center ${
         isCompact ? 'p-8' : 'p-12'
       }`}
     >

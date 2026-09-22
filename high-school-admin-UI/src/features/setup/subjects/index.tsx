@@ -57,9 +57,7 @@ export default function SubjectsFeature() {
     }
   }
 
-  useEffect(() => {
-    loadSubjects()
-  }, [])
+  useEffect(() => { loadSubjects() }, [])
 
   const filteredSubjects = useMemo(() => {
     const safeSubjects = Array.isArray(subjects) ? subjects : []
@@ -81,9 +79,7 @@ export default function SubjectsFeature() {
       if (subjectToEdit) {
         const updated = await subjectService.update(subjectToEdit.id, data)
         setSubjects((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
-        if (drawerSubject?.id === updated.id) {
-          setDrawerSubject(updated)
-        }
+        if (drawerSubject?.id === updated.id) setDrawerSubject(updated)
         success(`Subject "${updated.name}" updated`)
       } else {
         const created = await subjectService.create(data as CreateSubjectPayload)
@@ -103,9 +99,7 @@ export default function SubjectsFeature() {
     try {
       await subjectService.delete(id)
       setSubjects((prev) => prev.filter((s) => s.id !== id))
-      if (drawerSubject?.id === id) {
-        setDrawerSubject(null)
-      }
+      if (drawerSubject?.id === id) setDrawerSubject(null)
       success('Subject removed from catalog')
     } catch (err) {
       notifyError(err instanceof ApiError ? err.message : 'Failed to delete subject')
@@ -156,10 +150,7 @@ export default function SubjectsFeature() {
           <Button
             variant="solid"
             size="sm"
-            onClick={() => {
-              setSubjectToEdit(null)
-              setIsModalOpen(true)
-            }}
+            onClick={() => { setSubjectToEdit(null); setIsModalOpen(true) }}
             className="inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
           >
             <Plus size={16} /> Add Subject
@@ -167,34 +158,33 @@ export default function SubjectsFeature() {
         </div>
       </div>
 
-      {/* Stats */}
       <SubjectStats subjects={subjects} />
 
-      {/* Control Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-[24px] glass-sm p-4 border border-text-main/10">
+      {/* Control bar — was `glass-sm border border-text-main/10`.
+          The border was invisible; `.glass-sm` alone is correct. */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl glass-sm p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-48 sm:min-w-64">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-main/40" />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-muted z-10" />
+            {/* Input inherits sunken-well styling from globals.css */}
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search course title or code..."
-              className="w-full rounded-full border border-text-main/15 bg-text-main/5 py-2 pl-9 pr-3 text-xs sm:text-sm text-text-main outline-none transition focus:border-brand-500"
+              className="w-full rounded-full py-2 pl-9 pr-3 text-xs sm:text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-text-main/50">Dept:</span>
+            <span className="text-xs font-semibold text-fg-muted">Dept:</span>
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
-              className="rounded-full border border-text-main/15 bg-text-main/5 px-3 py-1.5 text-xs text-text-main outline-none transition focus:border-brand-500"
+              className="rounded-full px-3 py-1.5 text-xs text-fg outline-none focus:ring-2 focus:ring-brand-500"
             >
               {DEPARTMENTS.map((d) => (
-                <option key={d} value={d} className="bg-slate-800 text-white">
-                  {d}
-                </option>
+                <option key={d} value={d}>{d}</option>
               ))}
             </select>
           </div>
@@ -204,20 +194,21 @@ export default function SubjectsFeature() {
           <button
             type="button"
             onClick={loadSubjects}
-            className="rounded-xl p-2 text-text-main/60 hover:bg-text-main/10 hover:text-text-main transition"
+            className="rounded-xl p-2 text-fg-muted hover:text-fg hover:shadow-sunken transition"
             title="Refresh subjects"
           >
             <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
           </button>
 
-          <div className="flex items-center rounded-2xl bg-text-main/10 p-1">
+          {/* View toggle: sunken tray, active segment brand-filled */}
+          <div className="flex items-center rounded-2xl p-1 shadow-sunken">
             <button
               type="button"
               onClick={() => setViewMode('grid')}
               className={`rounded-xl p-1.5 transition cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'text-text-main/50 hover:text-text-main'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                  : 'text-fg-muted hover:text-fg'
               }`}
               title="Grid View"
             >
@@ -228,8 +219,8 @@ export default function SubjectsFeature() {
               onClick={() => setViewMode('table')}
               className={`rounded-xl p-1.5 transition cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'text-text-main/50 hover:text-text-main'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20'
+                  : 'text-fg-muted hover:text-fg'
               }`}
               title="Table View"
             >
@@ -239,14 +230,15 @@ export default function SubjectsFeature() {
         </div>
       </div>
 
-      {/* Main View */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-16 space-y-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-3 border-brand-500 border-t-transparent" />
-          <p className="text-sm font-medium text-text-main/60">Loading academic subjects...</p>
+          {/* Fixed `border-3` (invalid) → border-2 */}
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+          <p className="text-sm font-medium text-fg-muted">Loading academic subjects...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
+        // Semantic error — tinted bg + border carries the signal
+        <div className="rounded-3xl bg-error/10 border border-error/25 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load subjects</p>
           <p className="text-xs">{loadError}</p>
         </div>
@@ -254,45 +246,31 @@ export default function SubjectsFeature() {
         <SubjectCardGrid
           subjects={filteredSubjects}
           onSelect={(s) => setDrawerSubject(s)}
-          onEdit={(s) => {
-            setSubjectToEdit(s)
-            setIsModalOpen(true)
-          }}
+          onEdit={(s) => { setSubjectToEdit(s); setIsModalOpen(true) }}
           onDelete={handleDelete}
         />
       ) : (
         <SubjectTable
           subjects={filteredSubjects}
           onViewDetails={(s) => setDrawerSubject(s)}
-          onEdit={(s) => {
-            setSubjectToEdit(s)
-            setIsModalOpen(true)
-          }}
+          onEdit={(s) => { setSubjectToEdit(s); setIsModalOpen(true) }}
           onDelete={handleDelete}
         />
       )}
 
-      {/* Modal */}
       <SubjectModal
         isOpen={isModalOpen}
         isSubmitting={isSubmitting}
         subjectToEdit={subjectToEdit}
-        onClose={() => {
-          setIsModalOpen(false)
-          setSubjectToEdit(null)
-        }}
+        onClose={() => { setIsModalOpen(false); setSubjectToEdit(null) }}
         onSubmit={handleCreateOrUpdate}
       />
 
-      {/* Detail Drawer */}
       <SubjectDetailDrawer
         subject={drawerSubject}
         isOpen={!!drawerSubject}
         onClose={() => setDrawerSubject(null)}
-        onEdit={(s) => {
-          setSubjectToEdit(s)
-          setIsModalOpen(true)
-        }}
+        onEdit={(s) => { setSubjectToEdit(s); setIsModalOpen(true) }}
         onDelete={handleDelete}
       />
     </div>

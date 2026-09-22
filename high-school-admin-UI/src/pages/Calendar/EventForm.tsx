@@ -1,13 +1,7 @@
 // src/pages/Calendar/EventForm.tsx
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import {
-  ArrowLeft,
-  Save,
-  Bell,
-  RotateCw,
-  Loader2,
-} from 'lucide-react'
+import { ArrowLeft, Save, Bell, RotateCw, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import {
   eventService,
@@ -70,9 +64,7 @@ export default function EventForm() {
         if (!cancelled) setLoading(false)
       }
     })()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [id, navigate, showToast])
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -81,14 +73,8 @@ export default function EventForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.title.trim()) {
-      showToast('Title is required', 'error')
-      return
-    }
-    if (!form.date) {
-      showToast('Date is required', 'error')
-      return
-    }
+    if (!form.title.trim()) { showToast('Title is required', 'error'); return }
+    if (!form.date) { showToast('Date is required', 'error'); return }
 
     setSaving(true)
     try {
@@ -110,12 +96,18 @@ export default function EventForm() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto py-16 text-center text-secondary text-sm flex items-center justify-center gap-2">
+      <div className="max-w-3xl mx-auto py-16 text-center text-fg-muted text-sm flex items-center justify-center gap-2">
         <Loader2 size={16} className="animate-spin" />
         Loading event...
       </div>
     )
   }
+
+  // Inputs inherit their sunken-well appearance from globals.css.
+  // Only layout + focus ring are set inline.
+  const inputBase =
+    'w-full px-3.5 py-2 rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500'
+  const labelBase = 'block font-semibold text-fg-muted mb-1'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto pb-12">
@@ -123,15 +115,15 @@ export default function EventForm() {
         <div className="flex items-center gap-3">
           <Link
             to="/calendar"
-            className="p-2 rounded-xl bg-surface hover:bg-surface-strong text-secondary transition"
+            className="glass-sm glass-interactive p-2 rounded-xl text-fg-muted hover:text-fg"
           >
             <ArrowLeft size={18} />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-color">
+            <h1 className="text-xl font-bold text-fg">
               {isEditing ? 'Edit Event' : 'Create Event'}
             </h1>
-            <p className="text-xs text-secondary">
+            <p className="text-xs text-fg-muted">
               {isEditing
                 ? 'Update this event and save your changes.'
                 : 'Schedule an activity on the school calendar.'}
@@ -143,49 +135,43 @@ export default function EventForm() {
           <button
             type="button"
             onClick={() => navigate('/calendar')}
-            className="px-4 py-2 rounded-xl border border-surface text-secondary text-xs font-semibold hover:bg-surface"
+            className="glass-sm glass-interactive px-4 py-2 rounded-xl text-fg-muted hover:text-fg text-xs font-semibold"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition disabled:opacity-50 cursor-pointer"
           >
-            {saving ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Save size={15} />
-            )}
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
             <span>{isEditing ? 'Update' : 'Publish'}</span>
           </button>
         </div>
       </div>
 
-      <div className="p-6 rounded-2xl glass-sm border border-surface space-y-4 bg-surface/40 text-xs">
+      {/* Was `glass-sm border border-surface bg-surface/40` — the border
+          and the bg override were both no-ops under neumorphism. */}
+      <div className="p-6 rounded-2xl glass-sm space-y-4 text-xs">
         <div>
-          <label className="block font-semibold text-secondary mb-1">
-            Event title *
-          </label>
+          <label className={labelBase}>Event title *</label>
           <input
             type="text"
             required
             value={form.title}
             onChange={(e) => set('title', e.target.value)}
             placeholder="e.g. Annual Sports Day"
-            className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className={inputBase}
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Category
-            </label>
+            <label className={labelBase}>Category</label>
             <select
               value={form.category}
               onChange={(e) => set('category', e.target.value as EventCategory)}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={`${inputBase} cursor-pointer`}
             >
               <option value="Academic">Academic Milestone</option>
               <option value="Exam">Exam / Assessment</option>
@@ -196,15 +182,11 @@ export default function EventForm() {
           </div>
 
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Target audience
-            </label>
+            <label className={labelBase}>Target audience</label>
             <select
               value={form.targetAudience}
-              onChange={(e) =>
-                set('targetAudience', e.target.value as EventAudience)
-              }
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              onChange={(e) => set('targetAudience', e.target.value as EventAudience)}
+              className={`${inputBase} cursor-pointer`}
             >
               <option value="All">All School Community</option>
               <option value="Students">Students Only</option>
@@ -215,43 +197,37 @@ export default function EventForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-surface">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Date *
-            </label>
+            <label className={labelBase}>Date *</label>
             <input
               type="date"
               required
               value={form.date}
               onChange={(e) => set('date', e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={inputBase}
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Start time
-            </label>
+            <label className={labelBase}>Start time</label>
             <input
               type="time"
               disabled={form.isAllDay}
               value={form.startTime}
               onChange={(e) => set('startTime', e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none disabled:opacity-50"
+              className={`${inputBase} disabled:opacity-50`}
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              End time
-            </label>
+            <label className={labelBase}>End time</label>
             <input
               type="time"
               disabled={form.isAllDay}
               value={form.endTime}
               onChange={(e) => set('endTime', e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none disabled:opacity-50"
+              className={`${inputBase} disabled:opacity-50`}
             />
           </div>
         </div>
@@ -262,54 +238,45 @@ export default function EventForm() {
             id="allDayCheck"
             checked={form.isAllDay}
             onChange={(e) => set('isAllDay', e.target.checked)}
-            className="rounded border-surface text-brand-600 focus:ring-brand-500"
+            className="rounded accent-brand-500 cursor-pointer"
           />
-          <label
-            htmlFor="allDayCheck"
-            className="text-color font-medium"
-          >
+          <label htmlFor="allDayCheck" className="text-fg font-medium cursor-pointer">
             All-day event (no specific time)
           </label>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-surface">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Location
-            </label>
+            <label className={labelBase}>Location</label>
             <input
               type="text"
               value={form.location}
               onChange={(e) => set('location', e.target.value)}
               placeholder="e.g. Main Auditorium"
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={inputBase}
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-secondary mb-1">
-              Organizer / Host
-            </label>
+            <label className={labelBase}>Organizer / Host</label>
             <input
               type="text"
               value={form.organizer}
               onChange={(e) => set('organizer', e.target.value)}
               placeholder="e.g. Athletics Department"
-              className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+              className={inputBase}
             />
           </div>
         </div>
 
         <div>
-          <label className="block font-semibold text-secondary mb-1">
-            Description
-          </label>
+          <label className={labelBase}>Description</label>
           <textarea
             rows={4}
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
             placeholder="What attendees should expect, materials needed, dress code..."
-            className="w-full px-3.5 py-2 rounded-xl bg-surface border border-surface text-color focus:outline-none"
+            className={inputBase}
           />
         </div>
 
@@ -317,21 +284,18 @@ export default function EventForm() {
           Notifications and recurrence are not stored on the backend yet.
           Shown disabled with a note rather than faked as working toggles.
         */}
-        <div className="space-y-2 pt-2 border-t border-surface opacity-60">
+        <div className="space-y-2 pt-2 shadow-[0_-1px_0_var(--neu-shadow-dark)] opacity-60">
           <label className="flex items-center gap-2.5 cursor-not-allowed">
             <input
               type="checkbox"
               checked={notifyAttendees}
               disabled
               onChange={(e) => setNotifyAttendees(e.target.checked)}
-              className="rounded border-surface"
             />
-            <span className="text-color font-medium flex items-center gap-1.5">
+            <span className="text-fg font-medium flex items-center gap-1.5">
               <Bell size={13} className="text-brand-500" />
               Notify targeted audience
-              <span className="text-secondary text-[10px] font-normal">
-                (not yet supported)
-              </span>
+              <span className="text-fg-muted text-[10px] font-normal">(not yet supported)</span>
             </span>
           </label>
 
@@ -341,14 +305,11 @@ export default function EventForm() {
               checked={isRecurring}
               disabled
               onChange={(e) => setIsRecurring(e.target.checked)}
-              className="rounded border-surface"
             />
-            <span className="text-color font-medium flex items-center gap-1.5">
+            <span className="text-fg font-medium flex items-center gap-1.5">
               <RotateCw size={13} className="text-brand-500" />
               Weekly recurrence
-              <span className="text-secondary text-[10px] font-normal">
-                (not yet supported)
-              </span>
+              <span className="text-fg-muted text-[10px] font-normal">(not yet supported)</span>
             </span>
           </label>
         </div>

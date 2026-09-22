@@ -4,12 +4,7 @@ import PageHeading from '@/components/common/PageHeading'
 import StatsGrid from '@/components/cards/StatsGrid'
 import type { StatCard } from '@/types'
 import {
-  Save,
-  Search,
-  Download,
-  RefreshCw,
-  Info,
-  Award,
+  Save, Search, Download, RefreshCw, Info, Award,
 } from 'lucide-react'
 import { useToast } from '@/components/common/ToastProvider'
 import { examService, type MarkEntryRecord } from '@/services/examService'
@@ -33,9 +28,7 @@ export default function MarkEntry() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   const filtered = useMemo(
     () =>
@@ -65,10 +58,10 @@ export default function MarkEntry() {
   }, [records])
 
   const kpiCards: StatCard[] = [
-    { id: 'total', label: 'Records', value: String(stats.total), delta: '-', deltaDirection: 'neutral', deltaLabel: 'marks entered', icon: 'Users', tint: 'blue' },
-    { id: 'graded', label: 'Graded', value: `${stats.graded} / ${stats.total}`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'complete', icon: 'CheckCircle2', tint: 'green' },
-    { id: 'avg', label: 'Average', value: stats.avg.toFixed(1), delta: '-', deltaDirection: 'neutral', deltaLabel: 'class average', icon: 'TrendingUp', tint: 'sky' },
-    { id: 'max', label: 'Highest', value: stats.max.toFixed(0), delta: '-', deltaDirection: 'neutral', deltaLabel: 'top score', icon: 'Award', tint: 'amber' },
+    { id: 'total',  label: 'Records', value: String(stats.total),        delta: '-', deltaDirection: 'neutral', deltaLabel: 'marks entered',  icon: 'Users',        tint: 'blue' },
+    { id: 'graded', label: 'Graded',  value: `${stats.graded} / ${stats.total}`, delta: '-', deltaDirection: 'neutral', deltaLabel: 'complete',       icon: 'CheckCircle2', tint: 'green' },
+    { id: 'avg',    label: 'Average', value: stats.avg.toFixed(1),       delta: '-', deltaDirection: 'neutral', deltaLabel: 'class average',  icon: 'TrendingUp',   tint: 'sky' },
+    { id: 'max',    label: 'Highest', value: stats.max.toFixed(0),       delta: '-', deltaDirection: 'neutral', deltaLabel: 'top score',      icon: 'Award',        tint: 'amber' },
   ]
 
   const handleExportCsv = () => {
@@ -114,14 +107,14 @@ export default function MarkEntry() {
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface hover:bg-surface-strong text-color text-xs font-semibold transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-sm glass-interactive text-fg text-xs font-semibold"
           >
             <Download size={14} />
             Export CSV
           </button>
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/25 transition cursor-pointer"
           >
             <Save size={16} />
             Save
@@ -129,9 +122,9 @@ export default function MarkEntry() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-info/30 bg-info/5 p-4 flex items-start gap-3 text-xs">
+      <div className="rounded-2xl border border-info/30 bg-info/10 p-4 flex items-start gap-3 text-xs">
         <Info size={16} className="text-info shrink-0 mt-0.5" />
-        <p className="text-secondary">
+        <p className="text-fg-muted">
           The mark-entry endpoint is part of the exams stub. Saving returns a
           501 until the MarkEntry model is added.
         </p>
@@ -139,30 +132,37 @@ export default function MarkEntry() {
 
       <StatsGrid cards={kpiCards} columns={4} />
 
-      <div className="overflow-hidden rounded-2xl glass-sm border border-surface">
-        <div className="p-3.5 border-b border-surface flex items-center gap-3">
-          <Search size={16} className="text-secondary" />
-          <input
-            type="text"
-            placeholder="Search student, roll number, or subject..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full text-xs bg-transparent text-color placeholder:text-secondary focus:outline-none"
-          />
+      {/* Container — border removed */}
+     {/* Filter bar — border was invisible */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-2xl glass-sm">
+          <div className="relative flex-1 w-full">
+            <Search
+              size={16}
+              className="absolute left-3.5 top-3 text-fg-muted z-10"
+            />
+            {/* Inputs inherit the sunken-well look from globals.css */}
+            <input
+              type="text"
+              placeholder="Search subject, invigilator, or room..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-secondary text-sm">
+          <div className="py-16 text-center text-fg-muted text-sm">
             <RefreshCw size={16} className="inline animate-spin mr-2" />
             Loading marks...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center">
-            <Award className="mx-auto mb-3 h-10 w-10 text-secondary" />
-            <p className="text-sm font-semibold text-color">
+          <div className="py-16 text-center rounded-2xl glass-sm">
+            <Award className="mx-auto mb-3 h-10 w-10 text-fg-muted/60" />
+            <p className="text-sm font-semibold text-fg">
               {records.length === 0 ? 'No marks recorded yet' : 'No matches'}
             </p>
-            <p className="text-xs text-secondary mt-1">
+            <p className="text-xs text-fg-muted mt-1">
               {records.length === 0
                 ? 'Marks will appear here once the backend module is implemented.'
                 : 'Try a different search.'}
@@ -171,7 +171,7 @@ export default function MarkEntry() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-surface-strong text-secondary font-semibold border-b border-surface">
+              <thead className="text-fg-muted font-semibold shadow-[0_1px_0_var(--neu-shadow-dark)]">
                 <tr>
                   <th className="p-3.5">Roll</th>
                   <th className="p-3.5">Student</th>
@@ -181,27 +181,25 @@ export default function MarkEntry() {
                   <th className="p-3.5">Remarks</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface">
+              <tbody className="divide-y divide-(--neu-shadow-dark)">
                 {filtered.map((m) => (
-                  <tr key={m.id} className="hover:bg-surface/40 transition">
-                    <td className="p-3.5 font-mono text-secondary">
-                      {m.rollNumber}
-                    </td>
-                    <td className="p-3.5 font-semibold text-color">
-                      {m.studentName}
-                    </td>
-                    <td className="p-3.5 text-color">{m.subject}</td>
-                    <td className="p-3.5 text-center font-bold text-color">
+                  <tr
+                    key={m.id}
+                    className="hover:shadow-sunken transition-shadow"
+                  >
+                    <td className="p-3.5 font-mono text-fg-muted">{m.rollNumber}</td>
+                    <td className="p-3.5 font-semibold text-fg">{m.studentName}</td>
+                    <td className="p-3.5 text-fg">{m.subject}</td>
+                    <td className="p-3.5 text-center font-bold text-fg">
                       {m.marksObtained} / {m.maxMarks}
                     </td>
                     <td className="p-3.5 text-center">
+                      {/* Grade badge — brand tint, kept (it's a data chip) */}
                       <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-brand-500/15 text-brand-700 dark:text-brand-300">
                         {m.grade}
                       </span>
                     </td>
-                    <td className="p-3.5 text-secondary italic">
-                      {m.remarks || '—'}
-                    </td>
+                    <td className="p-3.5 text-fg-muted italic">{m.remarks || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -209,6 +207,5 @@ export default function MarkEntry() {
           </div>
         )}
       </div>
-    </div>
   )
 }

@@ -8,12 +8,7 @@ interface DashboardHeaderActionProps {
   onExportSummary?: () => void
   selectedCohort: string
   onCohortChange: (cohort: string) => void
-  /**
-   * Live attendance rate (0–100) from `/dashboard/attendance-summary`.
-   * Omit or pass `undefined` to hide the sentence fragment.
-   */
   attendanceRate?: number
-  /** Pending leave requests from `/dashboard/stats`. */
   pendingApprovals?: number
 }
 
@@ -43,9 +38,6 @@ export default function DashboardHeroBanner({
     year: 'numeric',
   })
 
-  // Build the status sentence from whichever live values are present.
-  // No value is fabricated — a missing metric is simply omitted from the
-  // sentence rather than replaced with a placeholder number.
   const statusParts: string[] = []
   if (attendanceRate !== undefined) {
     statusParts.push(`${attendanceRate}% daily attendance reported today`)
@@ -60,22 +52,24 @@ export default function DashboardHeroBanner({
   const statusSentence = statusParts.join(', ')
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-surface bg-surface-strong p-5 sm:p-7 shadow-xs">
-      {/* Decorative background geometry */}
+    // Was `border border-surface bg-surface-strong shadow-xs` — three
+    // no-ops. `.glass` gives the elevated hero surface.
+    <div className="relative overflow-hidden rounded-3xl glass p-5 sm:p-7">
+      {/* Ambient tint blobs: kept, but lighter, because the flat
+          neumorphic surface is easily muddied by strong color bleed. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-10 right-1/4 h-48 w-48 rounded-full bg-success/10 blur-2xl"
+        className="pointer-events-none absolute -bottom-10 right-1/4 h-48 w-48 rounded-full bg-success/8 blur-2xl"
       />
 
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        {/* Left: salutation & institutional status */}
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 px-3 py-1 text-xs font-bold text-brand-600 dark:text-brand-300 border border-brand-500/20">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 px-3 py-1 text-xs font-bold text-brand-600 dark:text-brand-300 border border-brand-500/25">
               <Sparkles size={13} />
               Academic Session 2025–2026 • Term II
             </span>
@@ -97,9 +91,10 @@ export default function DashboardHeroBanner({
           )}
         </div>
 
-        {/* Right: cohort filter + export */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center rounded-2xl bg-surface p-1 border border-surface shadow-xs">
+          {/* Cohort toggle: outer tray is a sunken well, active segment
+              presses in again with brand text. */}
+          <div className="flex items-center rounded-2xl p-1 shadow-sunken">
             {COHORTS.map((cohort) => (
               <button
                 key={cohort}
@@ -107,7 +102,7 @@ export default function DashboardHeroBanner({
                 onClick={() => onCohortChange(cohort)}
                 className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                   selectedCohort === cohort
-                    ? 'bg-brand-600 text-white shadow-xs'
+                    ? 'bg-brand-600 text-white'
                     : 'text-fg-muted hover:text-fg'
                 }`}
               >
@@ -119,7 +114,7 @@ export default function DashboardHeroBanner({
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 rounded-2xl bg-brand-600 hover:bg-brand-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition cursor-pointer"
+            className="flex items-center gap-1.5 rounded-2xl bg-brand-600 hover:bg-brand-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm shadow-brand-600/20 transition cursor-pointer"
           >
             {exported ? (
               <>

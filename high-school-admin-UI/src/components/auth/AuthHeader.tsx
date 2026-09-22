@@ -34,6 +34,12 @@ interface Props {
   onRoleSelect?: (role: UserRole | 'all') => void
 }
 
+/* Neumorphic hairline seams. Under this theme a 1px border in
+   --glass-bg is invisible; a 1px hard-edged box-shadow using
+   --neu-shadow-dark reads as a proper seam. */
+const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
+const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
+
 const SUPPORTED_LANGS = [
   { code: 'en', name: 'English', native: 'English', flag: '🇬🇧' },
   { code: 'km', name: 'Khmer', native: 'ភាសាខ្មែរ', flag: '🇰🇭' },
@@ -127,6 +133,8 @@ export default function AuthHeader({
               <span className="font-extrabold text-base sm:text-lg tracking-tight text-fg">
                 Varin High School
               </span>
+              {/* Soft brand chip — keeps its visible tinted border because
+                  it conveys the school-year status, not a surface. */}
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/20">
                 <CheckCircle2 size={10} className="text-brand-600 dark:text-brand-400" />
                 AY 2025–2026
@@ -143,36 +151,12 @@ export default function AuthHeader({
           </div>
         </div>
 
-        {/* ---------- Role tabs ---------- */}
-        <nav
-          aria-label="Role Portals Navigation"
-          className="flex items-center gap-1 p-1 rounded-2xl bg-surface-strong border border-surface shadow-xs max-w-full overflow-x-auto"
-        >
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = activeRole === item.id
-            return (
-              <button
-                key={item.id}
-                id={`nav-role-${item.id}`}
-                type="button"
-                onClick={() => handleRoleClick(item.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-fg text-(--glass-strong-bg) shadow-sm'
-                    : 'text-fg-muted hover:text-fg hover:bg-surface'
-                }`}
-              >
-                <Icon size={14} className={isActive ? '' : item.color} />
-                <span>{item.label}</span>
-              </button>
-            )
-          })}
-        </nav>
 
         {/* ---------- Right tools ---------- */}
         <div className="flex items-center gap-2">
           {isAuthenticated && user && (
+            // Semantic status chip — keeps its success-tinted surface so
+            // "signed in" reads at a glance. Not a neumorphic surface.
             <div className="hidden lg:flex items-center gap-2 pl-2 pr-1 py-1 rounded-2xl bg-success/15 border border-success/30 text-xs text-fg">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
               <span className="font-semibold">{user.firstName || user.name}</span>
@@ -202,7 +186,7 @@ export default function AuthHeader({
               type="button"
               onClick={() => setIsLangOpen((v) => !v)}
               aria-expanded={isLangOpen}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-strong border border-surface text-fg text-xs font-semibold shadow-xs transition hover:bg-surface cursor-pointer"
+              className="glass-sm glass-interactive inline-flex items-center gap-1.5 px-3 py-1.5 text-fg text-xs font-semibold"
             >
               <span className="text-sm">{currentLang.flag}</span>
               <span className="hidden sm:inline font-medium">{currentLang.native}</span>
@@ -210,8 +194,8 @@ export default function AuthHeader({
             </button>
 
             {isLangOpen && (
-              <div className="dropdown-surface right-0 top-full mt-1.5 w-48 rounded-2xl py-1.5 z-50">
-                <div className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-fg-muted border-b border-surface mb-1 flex items-center gap-1.5">
+              <div className="dropdown-surface absolute right-0 top-full mt-1.5 w-48 rounded-2xl py-1.5 z-50">
+                <div className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-fg-muted mb-1 flex items-center gap-1.5 ${SEAM_B}`}>
                   <Globe size={12} />
                   Choose Language / ភាសា
                 </div>
@@ -227,7 +211,7 @@ export default function AuthHeader({
                       className={`w-full px-3 py-2 text-xs text-left flex items-center justify-between transition cursor-pointer ${
                         language === lang.code
                           ? 'font-bold text-brand-700 dark:text-brand-300 bg-brand-500/15'
-                          : 'text-fg hover:bg-surface'
+                          : 'text-fg hover:text-fg'
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -253,17 +237,18 @@ export default function AuthHeader({
             type="button"
             onClick={toggleTheme}
             aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-            className="w-9 h-9 rounded-xl bg-surface-strong border border-surface text-fg-muted hover:text-fg flex items-center justify-center shadow-xs transition cursor-pointer"
+            className="glass-sm glass-interactive w-9 h-9 flex items-center justify-center text-fg-muted hover:text-fg"
           >
             {isDark ? <Sun size={16} className="text-warning" /> : <Moon size={16} />}
           </button>
 
-          {/* Helpdesk */}
+          {/* Helpdesk — brand-tinted text on the same glass surface, so it
+              reads as a distinct affordance without introducing a border. */}
           <button
             id="auth-support-btn"
             type="button"
             onClick={() => setIsHelpOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/20 text-xs font-semibold shadow-xs transition hover:bg-brand-500/25 cursor-pointer"
+            className="glass-sm glass-interactive inline-flex items-center gap-1.5 px-3 py-1.5 text-brand-700 dark:text-brand-300 text-xs font-semibold"
           >
             <HelpCircle size={14} />
             <span className="hidden sm:inline">IT Helpdesk</span>
@@ -273,18 +258,25 @@ export default function AuthHeader({
 
       {/* ---------- Support modal ---------- */}
       {isHelpOpen && (
+        // No backdrop-blur: the neumorphic surface treatment is already
+        // depth-based, and a frosted scrim fights it. A plain dark wash
+        // does the same job.
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setIsHelpOpen(false)
           }}
         >
-          <div className="relative w-full max-w-md rounded-3xl glass-strong border border-surface-strong p-6 sm:p-7 shadow-2xl">
+          {/* .glass-strong supplies bg + radius + shadow. `border border-surface-strong`
+              was invisible (surface-strong = --glass-bg) and `shadow-2xl`
+              would have overridden the neumorphic shadow since it's
+              unlayered. Both removed. */}
+          <div className="relative w-full max-w-md rounded-3xl glass-strong p-6 sm:p-7">
             <button
               type="button"
               onClick={() => setIsHelpOpen(false)}
               aria-label="Close dialog"
-              className="absolute top-4 right-4 text-fg-muted hover:text-fg p-1.5 rounded-full hover:bg-surface transition cursor-pointer"
+              className="absolute top-4 right-4 text-fg-muted hover:text-fg p-1.5 rounded-full transition cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -316,6 +308,8 @@ export default function AuthHeader({
                 it-support@varinhigh.edu.kh • registrar@varinhigh.edu.kh
               </SupportRow>
 
+              {/* Semantic warning callout — keeps its tinted border, since
+                  yellow-on-yellow would be easy to miss inside the modal. */}
               <div className="p-3.5 rounded-2xl bg-warning/15 border border-warning/30">
                 <p className="font-bold text-fg text-xs flex items-center gap-1.5">
                   <Sparkles size={13} className="text-warning" />
@@ -329,11 +323,11 @@ export default function AuthHeader({
               </div>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-surface flex justify-end">
+            <div className={`mt-5 pt-3 flex justify-end ${SEAM_T}`}>
               <button
                 type="button"
                 onClick={() => setIsHelpOpen(false)}
-                className="px-4 py-2 rounded-xl bg-fg text-(--glass-strong-bg) text-xs font-semibold hover:opacity-90 transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-semibold hover:bg-brand-500 transition cursor-pointer"
               >
                 Close Support
               </button>
@@ -355,7 +349,10 @@ function SupportRow({
   children: React.ReactNode
 }) {
   return (
-    <div className="p-3.5 rounded-2xl bg-surface border border-surface flex items-start gap-3">
+    // Sunken well inside a raised modal — the classic neumorphic
+    // "inset field" pattern. `bg-surface border border-surface` was
+    // a no-op (same color as the modal bg on both axes).
+    <div className="p-3.5 rounded-2xl shadow-sunken flex items-start gap-3">
       <span className="shrink-0 mt-0.5">{icon}</span>
       <div>
         <p className="font-bold text-fg">{label}</p>

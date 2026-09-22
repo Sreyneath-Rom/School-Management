@@ -8,13 +8,17 @@
 /* =========================================================
    2. DESIGN TOKENS (Neumorphic — Soft Blue)
    ========================================================= */
-@theme {
+
+/* `static` forces every token in this block to be emitted into :root.
+   Tailwind v4 tree-shakes theme variables that no generated utility
+   references — but the brand ramp is consumed here via plain
+   `var(--color-brand-*)` (see :focus-visible), which Tailwind cannot
+   see. Without `static`, those vars would silently vanish. */
+@theme static {
   --shadow-emboss: var(--shadow-emboss-raised);
   --shadow-sunken: var(--shadow-emboss-sunken);
 
-  /* Prestigious Academic Blue & Indigo Palette (kept as accent colors —
-     neumorphism is monochrome for surfaces, but buttons, links, focus
-     rings and selected states still read the brand hue on top) */
+  /* Prestigious Academic Blue & Indigo Palette */
   --color-brand-50:  #eff6ff;
   --color-brand-100: #dbeafe;
   --color-brand-200: #bfdbfe;
@@ -26,7 +30,12 @@
   --color-brand-800: #1e40af;
   --color-brand-900: #1e3a8a;
   --color-brand-950: #172554;
+}
 
+/* `inline` substitutes the value at the utility site rather than
+   emitting a --color-* indirection. Correct here because these are
+   pointers onto vars that are swapped at runtime by :root / .dark. */
+@theme inline {
   /* Semantic color tokens */
   --color-fg:             var(--text-color);
   --color-fg-muted:       var(--text-color-secondary);
@@ -51,6 +60,8 @@
    toggles) flip them inward.
    ========================================================= */
 :root {
+  color-scheme: light;               /* ← NEW: native widgets follow the theme */
+
   --page-background: #e0e8f5;
 
   /* Neumorphic pair */
@@ -79,8 +90,7 @@
 
   --glass-shadow: var(--shadow-emboss-raised);
 
-  /* Elevated surface (modals, dropdowns, hero cards) — same base color,
-     a wider/softer shadow throw for a floating-higher feel */
+  /* Elevated surface (modals, dropdowns, hero cards) */
   --glass-strong-bg:     #e0e8f5;
   --glass-strong-border: transparent;
   --glass-strong-shadow:
@@ -100,12 +110,24 @@
   /* Dropdown & popover backdrops — flush, shadow-only elevation */
   --dropdown-bg:     #e0e8f5;
   --dropdown-border: transparent;
+
+  /* Chrome tokens — ← NEW: previously hardcoded in two places */
+  --scrollbar-thumb:       rgba(148, 163, 184, 0.35);
+  --scrollbar-thumb-hover: rgba(148, 163, 184, 0.6);
+  --shimmer:               rgba(255, 255, 255, 0.75);
 }
 
 /* =========================================================
    4. DARK MODE (Neumorphic Dark)
+
+   NOTE: `.dark` must land on <html>, not on a wrapper <div>.
+   `html { background-color: var(--page-background) }` below only picks
+   up the dark value if the class is on the root element — otherwise the
+   overscroll / rubber-band area stays light on mobile.
    ========================================================= */
 .dark {
+  color-scheme: dark;                /* ← NEW */
+
   --page-background: #1e1f29;
 
   --neu-shadow-dark:  #111218;
@@ -145,6 +167,11 @@
 
   --dropdown-bg:     #1e1f29;
   --dropdown-border: transparent;
+
+  /* Chrome tokens — ← NEW */
+  --scrollbar-thumb:       rgba(148, 163, 184, 0.25);
+  --scrollbar-thumb-hover: rgba(148, 163, 184, 0.5);
+  --shimmer:               rgba(255, 255, 255, 0.08);
 }
 
 /* =========================================================
@@ -152,13 +179,14 @@
    ========================================================= */
 html, body {
   min-height: 100vh;
+  min-height: 100dvh;   /* ← NEW: avoids the mobile URL-bar reflow jump */
 }
 
 html {
   background-color: var(--page-background);
   color: var(--text-color);
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;  /* ← UPDATED */
 }
 
 body {
@@ -173,6 +201,7 @@ body {
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;   /* ← UPDATED */
   background-color: transparent;
   color: inherit;
 }
@@ -190,10 +219,12 @@ textarea {
   opacity: 0.7;
 }
 
+/* No border-radius here — this rule is unlayered and would otherwise
+   clobber the radius of .glass / .glass-strong while focused. Modern
+   browsers already curve the outline to match the element's own radius. */
 :focus-visible {
   outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
-  border-radius: 0.5rem;
 }
 
 ::selection {
@@ -212,19 +243,18 @@ textarea {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
+  background: var(--scrollbar-thumb);          /* ← UPDATED */
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+  background: var(--scrollbar-thumb-hover);    /* ← UPDATED */
 }
 
 /* =========================================================
    7. NEUMORPHIC CARD & COMPONENT SURFACES
    ========================================================= */
 @layer components {
-  /* Raised surface: flush with the page, lifted by the dual shadow.
-     No border, no blur — that's the glassmorphism-era leftover. */
+  /* Raised surface: flush with the page, lifted by the dual shadow. */
   .glass,
   .glass-lite,
   .glass-sm,
@@ -271,8 +301,7 @@ textarea {
     box-shadow: var(--glass-strong-shadow);
   }
 
-  /* Docked App Header — no more frosted blur; a subtle sunken seam
-     replaces the hairline border to separate it from content below */
+  /* Docked App Header */
   .app-header {
     margin: 0;
     border-radius: 0;
@@ -285,7 +314,7 @@ textarea {
     position: relative;
   }
 
-  /* Docked App Sidebar — same treatment: flush color, shadow-defined edge */
+  /* Docked App Sidebar */
   .app-sidebar {
     background-color: var(--sidebar-bg);
     border-right: none;
@@ -301,10 +330,11 @@ textarea {
   }
 
   /* Active nav item: pressed-in neumorphic well, tinted with the brand
-     color so selection is still unambiguous at a glance */
+     color. brand-700 (#1d4ed8) gives ~5.4:1 on --glass-bg, clearing
+     WCAG AA; brand-600 was ~4.17:1 and just missed it. */
   aside.app-sidebar a[aria-current="page"] {
     background-color: var(--glass-bg);
-    color: var(--color-brand-600);
+    color: var(--color-brand-700);   /* ← UPDATED (was brand-600) */
     box-shadow: var(--shadow-emboss-sunken);
     border-radius: 0.75rem;
   }
@@ -313,15 +343,28 @@ textarea {
   }
 
   /* Sunken fields: inputs, search boxes, anything meant to look like a
-     carved-in well rather than a raised card */
+     carved-in well rather than a raised card.
+
+     The :where() wrapper drops specificity to 0 so consumers can
+     override freely, and the :not() exclusion list catches untyped
+     <input> (which defaults to text but matches no [type="..."] rule). */
   .neu-inset,
-  input[type="text"],
-  input[type="search"],
-  input[type="email"],
-  input[type="password"],
-  input[type="number"],
-  textarea,
-  select {
+  :where(
+    input:not(
+      [type="checkbox"],
+      [type="radio"],
+      [type="range"],
+      [type="color"],
+      [type="file"],
+      [type="submit"],
+      [type="button"],
+      [type="reset"],
+      [type="image"],
+      [type="hidden"]
+    ),
+    textarea,
+    select
+  ) {                                 /* ← UPDATED */
     background-color: var(--glass-bg);
     border: none;
     border-radius: 0.75rem;
@@ -343,7 +386,7 @@ textarea {
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.25),
+      var(--shimmer),       /* ← UPDATED: was invisible white-on-light */
       transparent
     );
     animation: shimmer 1.5s infinite;
@@ -352,17 +395,17 @@ textarea {
 
 /* =========================================================
    8. SEMANTIC UTILITY HELPERS
+
+   The surface/border helpers were removed — @theme already generates
+   bg-surface, bg-surface-strong, border-surface and border-surface-strong,
+   and having both copies in play left source order deciding the winner.
    ========================================================= */
 @layer utilities {
-  .text-color            { color: var(--text-color); }
-  .text-secondary        { color: var(--text-color-secondary); }
-  .bg-surface            { background-color: var(--glass-bg); }
-  .bg-surface-strong     { background-color: var(--glass-strong-bg); }
-  .border-surface        { border-color: transparent; }
-  .border-surface-strong { border-color: transparent; }
-  .surface-theme         { background-color: var(--glass-bg); color: var(--text-color); }
-  .page-theme            { background-color: var(--page-background); color: var(--text-color); }
-  .page-surface          { color: var(--text-color); }
+  .text-color     { color: var(--text-color); }
+  .text-secondary { color: var(--text-color-secondary); }
+  .surface-theme  { background-color: var(--glass-bg); color: var(--text-color); }
+  .page-theme     { background-color: var(--page-background); color: var(--text-color); }
+  .page-surface   { color: var(--text-color); }
 }
 
 /* =========================================================

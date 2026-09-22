@@ -1,18 +1,18 @@
 // src/features/setup/school/constants.ts
 
+// Inputs get their sunken-well treatment (bg + inset shadow + no border)
+// from globals.css automatically. This constant only layers on the
+// layout + focus ring + typography that the global rule doesn't set.
 export const inputClass = `
   w-full
-  rounded-xl
   outline-none
   px-4
   py-3
   text-sm
   font-medium
-  text-text-main
-  placeholder:text-text-main/45
-  
-  glass-sm
-  shadow-[var(--shadow-emboss-sunken)]
+  text-fg
+  placeholder:text-fg-muted/70
+
   transition-all
   duration-200
 
@@ -26,5 +26,5 @@ export const labelClass = `
   block
   text-sm
   font-semibold
-  text-text-main
+  text-fg
 `;

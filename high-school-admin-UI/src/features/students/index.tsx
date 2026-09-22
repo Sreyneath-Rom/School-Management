@@ -17,14 +17,8 @@ import { ApiError } from '@/lib/apiClient'
 
 const DEFAULT_GRADES = ['Grade 9', 'Grade 10', 'Grade 11', 'Grade 12']
 const DEFAULT_CLASSES = [
-  'Grade 9 - A',
-  'Grade 9 - B',
-  'Grade 10 - A',
-  'Grade 10 - B',
-  'Grade 11 - A',
-  'Grade 11 - B',
-  'Grade 12 - A',
-  'Grade 12 - B',
+  'Grade 9 - A', 'Grade 9 - B', 'Grade 10 - A', 'Grade 10 - B',
+  'Grade 11 - A', 'Grade 11 - B', 'Grade 12 - A', 'Grade 12 - B',
 ]
 
 export default function StudentsFeature() {
@@ -32,7 +26,6 @@ export default function StudentsFeature() {
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  // Filters State
   const [search, setSearch] = useState('')
   const [selectedGrade, setSelectedGrade] = useState('all')
   const [selectedClass, setSelectedClass] = useState('all')
@@ -41,7 +34,6 @@ export default function StudentsFeature() {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
 
-  // Modal / Drawer States
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [studentToEdit, setStudentToEdit] = useState<StudentUser | null>(null)
@@ -67,28 +59,20 @@ export default function StudentsFeature() {
     }
   }
 
-  useEffect(() => {
-    loadStudents()
-  }, [])
+  useEffect(() => { loadStudents() }, [])
 
-  // Derived available grades and classes from existing student records
   const availableGrades = useMemo(() => {
     const set = new Set<string>(DEFAULT_GRADES)
-    students.forEach((s) => {
-      if (s.grade) set.add(s.grade)
-    })
+    students.forEach((s) => { if (s.grade) set.add(s.grade) })
     return Array.from(set).sort()
   }, [students])
 
   const availableClasses = useMemo(() => {
     const set = new Set<string>(DEFAULT_CLASSES)
-    students.forEach((s) => {
-      if (s.class) set.add(s.class)
-    })
+    students.forEach((s) => { if (s.class) set.add(s.class) })
     return Array.from(set).sort()
   }, [students])
 
-  // Filtered Students List
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
       if (!s) return false
@@ -99,11 +83,8 @@ export default function StudentsFeature() {
       const parentName = `${s.fatherName || ''} ${s.motherName || ''} ${s.guardianName || ''}`.toLowerCase()
 
       const matchesSearch =
-        !q ||
-        fullName.includes(q) ||
-        studentId.includes(q) ||
-        email.includes(q) ||
-        parentName.includes(q)
+        !q || fullName.includes(q) || studentId.includes(q) ||
+        email.includes(q) || parentName.includes(q)
 
       const matchesGrade = selectedGrade === 'all' || s.grade === selectedGrade
       const matchesClass = selectedClass === 'all' || s.class === selectedClass
@@ -129,7 +110,6 @@ export default function StudentsFeature() {
     setSelectedGender('all')
   }
 
-  // Selection Handlers
   const handleToggleSelect = (id: string) => {
     setSelectedStudentIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
@@ -144,11 +124,8 @@ export default function StudentsFeature() {
     }
   }
 
-  const handleClearSelection = () => {
-    setSelectedStudentIds([])
-  }
+  const handleClearSelection = () => setSelectedStudentIds([])
 
-  // CRUD Handlers
   const handleOpenCreateModal = () => {
     setStudentToEdit(null)
     setIsModalOpen(true)
@@ -170,9 +147,7 @@ export default function StudentsFeature() {
       if (studentToEdit) {
         const updated = (await studentService.update(studentToEdit.id, data as any)) as any
         setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
-        if (detailStudent && detailStudent.id === updated.id) {
-          setDetailStudent(updated)
-        }
+        if (detailStudent && detailStudent.id === updated.id) setDetailStudent(updated)
         success(`Successfully updated student record for ${updated.firstName} ${updated.lastName}`)
       } else {
         const created = (await studentService.create(data)) as any
@@ -191,13 +166,13 @@ export default function StudentsFeature() {
   const handleToggleStatus = async (student: StudentUser) => {
     const newStatus = student.status === 'active' ? 'inactive' : 'active'
     try {
-      const updated = await studentService.update(student.id, { status: newStatus })
+      await studentService.update(student.id, { status: newStatus })
       setStudents((prev) => prev.map((s) => (s.id === student.id ? { ...s, status: newStatus } : s)))
       if (detailStudent && detailStudent.id === student.id) {
         setDetailStudent({ ...detailStudent, status: newStatus })
       }
       success(`Updated status of ${student.firstName} to ${newStatus}`)
-    } catch (err) {
+    } catch {
       notifyError('Failed to update student status')
     }
   }
@@ -211,14 +186,12 @@ export default function StudentsFeature() {
       )
       success(`Updated status for ${selectedStudentIds.length} students to ${status}`)
       setSelectedStudentIds([])
-    } catch (err) {
+    } catch {
       notifyError('Failed to apply bulk status changes')
     }
   }
 
-  const handleDeletePrompt = (student: StudentUser) => {
-    setStudentToDelete(student)
-  }
+  const handleDeletePrompt = (student: StudentUser) => setStudentToDelete(student)
 
   const handleConfirmDelete = async () => {
     if (!studentToDelete) return
@@ -233,39 +206,23 @@ export default function StudentsFeature() {
       }
       success(`Removed ${studentToDelete.firstName} ${studentToDelete.lastName} from roster`)
       setStudentToDelete(null)
-    } catch (err) {
+    } catch {
       notifyError('Failed to delete student')
     } finally {
       setIsDeleting(false)
     }
   }
 
-  // Export CSV
   const handleExportCSV = () => {
     const headers = [
-      'Student ID',
-      'First Name',
-      'Last Name',
-      'Email',
-      'Phone',
-      'Grade',
-      'Class',
-      'Gender',
-      'Date of Birth',
-      'Status',
-      'Parent Name',
-      'Parent Phone',
+      'Student ID', 'First Name', 'Last Name', 'Email', 'Phone',
+      'Grade', 'Class', 'Gender', 'Date of Birth', 'Status',
+      'Parent Name', 'Parent Phone',
     ]
     const rows = filteredStudents.map((s) => [
-      `"${s.studentId || s.id}"`,
-      `"${s.firstName || ''}"`,
-      `"${s.lastName || ''}"`,
-      `"${s.email || ''}"`,
-      `"${s.phone || ''}"`,
-      `"${s.grade || ''}"`,
-      `"${s.class || ''}"`,
-      `"${s.gender || ''}"`,
-      `"${s.dateOfBirth || ''}"`,
+      `"${s.studentId || s.id}"`, `"${s.firstName || ''}"`, `"${s.lastName || ''}"`,
+      `"${s.email || ''}"`, `"${s.phone || ''}"`, `"${s.grade || ''}"`,
+      `"${s.class || ''}"`, `"${s.gender || ''}"`, `"${s.dateOfBirth || ''}"`,
       `"${s.status || 'active'}"`,
       `"${s.fatherName || s.motherName || s.guardianName || ''}"`,
       `"${s.parentPhone || ''}"`,
@@ -284,18 +241,22 @@ export default function StudentsFeature() {
 
   return (
     <div className="space-y-6">
-      {/* Top Page Heading & Action */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeading
           title="Students Directory"
           subtitle="View, search, filter and manage high school student enrollments and academic profiles."
         />
         <div className="flex items-center gap-2">
+          {/* Was `border border-border-card bg-surface-card hover:bg-surface-base`
+              — none of those classes exist in this codebase, so the button
+              was rendering with no visual treatment. `.glass-sm
+              .glass-interactive` gives it the correct raised surface + the
+              neumorphic hover-lift / press-in gesture. */}
           <button
             id="refresh-students-btn"
             onClick={loadStudents}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border-card bg-surface-card px-3 py-2 text-xs font-medium text-text-main transition hover:bg-surface-base disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl glass-sm glass-interactive px-3 py-2 text-xs font-medium text-fg disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh list"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -314,26 +275,24 @@ export default function StudentsFeature() {
         </div>
       </div>
 
-      {/* Metric Cards */}
       <StudentStats students={students} isLoading={isLoading} />
 
-      {/* Error Banner */}
+      {/* Error banner — semantic error signal, tinted border/bg kept */}
       {loadError && (
-        <div className="flex items-center justify-between rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-400">
+        <div className="flex items-center justify-between rounded-2xl border border-error/30 bg-error/10 p-4 text-sm text-error">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
             <span>{loadError}</span>
           </div>
           <button
             onClick={loadStudents}
-            className="rounded-lg bg-red-500/20 px-3 py-1 text-xs font-semibold hover:bg-red-500/30"
+            className="rounded-lg bg-error/20 px-3 py-1 text-xs font-semibold hover:bg-error/30 transition cursor-pointer"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* Filter and Search Bar */}
       <StudentFilters
         search={search}
         onSearchChange={setSearch}
@@ -357,7 +316,6 @@ export default function StudentsFeature() {
         classes={availableClasses}
       />
 
-      {/* Display Content: Table or Grid */}
       {viewMode === 'table' ? (
         <StudentTable
           students={filteredStudents}
@@ -382,36 +340,24 @@ export default function StudentsFeature() {
         />
       )}
 
-      {/* Student Create / Edit Modal */}
       <StudentModal
         isOpen={isModalOpen}
         isSubmitting={isSubmitting}
         studentToEdit={studentToEdit}
-        onClose={() => {
-          setIsModalOpen(false)
-          setStudentToEdit(null)
-        }}
+        onClose={() => { setIsModalOpen(false); setStudentToEdit(null) }}
         onSubmit={handleCreateOrUpdateStudent}
         grades={availableGrades}
         classes={availableClasses}
       />
 
-      {/* Student Details Slide-Over Drawer */}
       <StudentDetailDrawer
         student={detailStudent}
         isOpen={isDrawerOpen}
-        onClose={() => {
-          setIsDrawerOpen(false)
-          setDetailStudent(null)
-        }}
-        onEdit={(student) => {
-          setIsDrawerOpen(false)
-          handleOpenEditModal(student)
-        }}
+        onClose={() => { setIsDrawerOpen(false); setDetailStudent(null) }}
+        onEdit={(student) => { setIsDrawerOpen(false); handleOpenEditModal(student) }}
         onToggleStatus={handleToggleStatus}
       />
 
-      {/* Confirm Delete Dialog */}
       <ConfirmDialog
         open={Boolean(studentToDelete)}
         title="Delete Student Record"

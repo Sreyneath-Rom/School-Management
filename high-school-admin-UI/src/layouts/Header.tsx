@@ -42,6 +42,12 @@ function relativeTime(iso: string): string {
   return `${Math.floor(hours / 24)}d ago`
 }
 
+/* Neumorphic hairline seams. Under this theme a 1px border in the page
+   color is invisible; a 1px hard-edged box-shadow using --neu-shadow-dark
+   reads as a proper seam. */
+const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
+const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
+
 export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const navigate = useNavigate()
   const { user, logout, role } = useAuth()
@@ -60,28 +66,31 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
 
   const activeRole = (role ?? 'admin').toLowerCase()
 
+  // Badges sit on a --glass-bg surface, so a `bg-surface` fill + a
+  // sunken shadow reads as a carved-in chip. `border-surface` removed:
+  // same color as the surface behind it → invisible.
   const roleBadgeMap: Record<
     string,
     { label: string; badge: string; dot: string }
   > = {
     admin: {
       label: 'Administrator',
-      badge: 'bg-surface text-brand-600 dark:text-brand-300 border-surface',
+      badge: 'bg-surface text-brand-600 dark:text-brand-300 shadow-[var(--shadow-emboss-sunken)]',
       dot: 'bg-brand-500',
     },
     teacher: {
       label: 'Faculty Member',
-      badge: 'bg-surface text-success border-surface',
+      badge: 'bg-surface text-success shadow-[var(--shadow-emboss-sunken)]',
       dot: 'bg-success',
     },
     student: {
       label: 'Enrolled Scholar',
-      badge: 'bg-surface text-info border-surface',
+      badge: 'bg-surface text-info shadow-[var(--shadow-emboss-sunken)]',
       dot: 'bg-info',
     },
     parent: {
       label: 'Parent / Guardian',
-      badge: 'bg-surface text-warning border-surface',
+      badge: 'bg-surface text-warning shadow-[var(--shadow-emboss-sunken)]',
       dot: 'bg-warning',
     },
   }
@@ -107,7 +116,6 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
     }
   }, [])
 
-  // Coerce in case settings shape is loosely typed on the school model.
   const termName = String(
     (school?.settings as { academicTerm?: unknown } | undefined)?.academicTerm ?? ''
   )
@@ -140,7 +148,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
   }
 
   const menuItemClass =
-    'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-secondary transition-all duration-150 hover:bg-surface hover:text-color cursor-pointer'
+    'group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-secondary transition-all duration-150 hover:text-[color:var(--text-color)] cursor-pointer'
 
   return (
     <header className="app-header sticky top-0 z-30 select-none transition-colors">
@@ -150,13 +158,14 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
             type="button"
             onClick={onOpenSidebar}
             aria-label="Open navigation drawer"
-            className="flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-2xl glass-sm text-color lg:hidden cursor-pointer transition hover:bg-surface active:scale-95"
+            className="flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-2xl glass-sm glass-interactive text-color lg:hidden"
           >
             <Menu size={18} />
           </button>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 ml-auto">
+          {/* Static date / term chip — not interactive, so no glass-interactive */}
           <div className="hidden sm:flex items-center gap-2 rounded-2xl glass-sm h-9.5 px-3 py-1.5 text-xs font-semibold text-color">
             <Calendar size={13} className="text-brand-600 dark:text-brand-400" />
             <span className="text-color">{formattedDate}</span>
@@ -183,14 +192,18 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                 setNotifOpen((o) => !o)
                 setMenuOpen(false)
               }}
-              className={`relative flex h-9.5 w-9.5 items-center justify-center rounded-2xl glass-sm transition cursor-pointer ${
+              className={`relative flex h-9.5 w-9.5 items-center justify-center rounded-2xl glass-sm glass-interactive ${
                 notifOpen
-                  ? 'ring-1 ring-brand-500/30 text-color'
-                  : 'text-secondary hover:text-color hover:bg-surface'
+                  ? 'ring-1 ring-brand-500/40 text-color'
+                  : 'text-secondary'
               }`}
             >
               <Bell size={17} />
               {unreadCount > 0 && (
+                // The ring is the same color as the button surface, so it
+                // reads as a "cut-out" that separates badge from button —
+                // this is intentional. ring-surface-strong = --glass-strong-bg
+                // = --glass-bg, i.e. the button color.
                 <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-black text-white ring-2 ring-surface-strong">
                   {unreadCount}
                 </span>
@@ -199,7 +212,10 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
 
             {notifOpen && (
               <div className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-84 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between border-b border-surface px-3.5 py-2.5 bg-surface-strong">
+                {/* Header row — shadow seam replaces the old invisible
+                    `border-b border-surface`. bg-surface-strong dropped:
+                    it's the same color as the dropdown itself. */}
+                <div className={`flex items-center justify-between px-3.5 py-2.5 ${SEAM_B}`}>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-color">
                       {t('header.notifications')}
@@ -222,14 +238,15 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                   )}
                 </div>
 
-                <div className="flex gap-1 border-b border-surface px-3 py-1.5 bg-surface">
+                {/* Filter row */}
+                <div className={`flex gap-1 px-3 py-1.5 ${SEAM_B}`}>
                   <button
                     type="button"
                     onClick={() => setFilter('all')}
                     className={`rounded-lg px-2.5 py-1 text-[11px] transition cursor-pointer ${
                       filter === 'all'
-                        ? 'bg-surface-strong text-color shadow-xs font-bold'
-                        : 'text-secondary hover:text-color'
+                        ? 'text-color font-bold shadow-sunken'
+                        : 'text-secondary hover:text-fg'
                     }`}
                   >
                     All ({notifications.length})
@@ -239,18 +256,18 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                     onClick={() => setFilter('unread')}
                     className={`rounded-lg px-2.5 py-1 text-[11px] transition cursor-pointer ${
                       filter === 'unread'
-                        ? 'bg-surface-strong text-color shadow-xs font-bold'
-                        : 'text-secondary hover:text-color'
+                        ? 'text-color font-bold shadow-sunken'
+                        : 'text-secondary hover:text-fg'
                     }`}
                   >
                     Unread ({unreadCount})
                   </button>
                 </div>
 
-                <div className="max-h-76 overflow-y-auto divide-y divide-surface">
+                <div className="max-h-76 overflow-y-auto">
                   {filteredNotifications.length === 0 ? (
-                    <div className="p-8 text-center bg-surface/30">
-                      <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface text-secondary">
+                    <div className="p-8 text-center">
+                      <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface text-secondary shadow-sunken">
                         <Bell size={16} />
                       </div>
                       <p className="text-xs font-medium text-secondary">
@@ -262,9 +279,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                       <div
                         key={n.id}
                         onClick={() => handleNotificationClick(n)}
-                        className={`group flex gap-2.5 px-3.5 py-2.5 transition cursor-pointer hover:bg-surface ${
-                          isUnread(n) ? 'bg-surface/50' : ''
-                        }`}
+                        className={`group flex gap-2.5 px-3.5 py-2.5 transition cursor-pointer ${SEAM_B} hover:shadow-sunken`}
                       >
                         <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs bg-surface text-brand-600 dark:text-brand-400">
                           <Bell size={13} />
@@ -319,10 +334,10 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                 setMenuOpen((o) => !o)
                 setNotifOpen(false)
               }}
-              className={`group flex items-center gap-2 rounded-2xl glass-sm h-9.5 p-1 pr-2 sm:pr-2.5 transition cursor-pointer ${
+              className={`group flex items-center gap-2 rounded-2xl glass-sm glass-interactive h-9.5 p-1 pr-2 sm:pr-2.5 ${
                 menuOpen
-                  ? 'ring-1 ring-brand-500/30 text-color'
-                  : 'text-secondary hover:text-color'
+                  ? 'ring-1 ring-brand-500/40 text-color'
+                  : 'text-secondary'
               }`}
             >
               <div className="relative">
@@ -330,10 +345,12 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                   <img
                     src={avatarUrl}
                     alt={user?.name ?? 'User'}
+                    // ring-surface = --glass-bg = the button color → the
+                    // ring is a 1px matte gap, which is the intent.
                     className="h-7.5 w-7.5 rounded-xl object-cover ring-1 ring-surface"
                   />
                 ) : (
-                  <div className="flex h-7.5 w-7.5 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white text-xs font-black shadow-xs">
+                  <div className="flex h-7.5 w-7.5 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white text-xs font-black">
                     {initials}
                   </div>
                 )}
@@ -362,7 +379,8 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                 role="menu"
                 className="dropdown-surface absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl p-2 animate-in fade-in zoom-in-95 duration-150"
               >
-                <div className="mb-1 rounded-xl p-3 bg-surface-strong border border-surface">
+                {/* Profile card — sunken well instead of a bordered box */}
+                <div className="mb-1 rounded-xl p-3 bg-surface shadow-sunken">
                   <div className="flex items-center gap-2.5">
                     {avatarUrl ? (
                       <img
@@ -371,7 +389,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                         className="h-10 w-10 rounded-xl object-cover ring-1 ring-surface"
                       />
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white text-sm font-black shadow-xs">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white text-sm font-black">
                         {initials}
                       </div>
                     )}
@@ -381,7 +399,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                       </p>
                       <div className="mt-0.5 flex items-center gap-1.5">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9.5px] font-bold border ${roleMeta.badge}`}
+                          className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9.5px] font-bold ${roleMeta.badge}`}
                         >
                           <span className={`h-1.5 w-1.5 rounded-full ${roleMeta.dot}`} />
                           {roleMeta.label}
@@ -461,7 +479,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                   </div>
                 </button>
 
-                <div className="my-1.5 border-t border-surface" />
+                <div className={`my-1.5 ${SEAM_T}`} />
 
                 <button
                   type="button"
@@ -470,7 +488,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }
                     setMenuOpen(false)
                     logout()
                   }}
-                  className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-error hover:bg-surface hover:text-error transition cursor-pointer"
+                  className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-error transition cursor-pointer hover:text-error"
                 >
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-error group-hover:bg-error group-hover:text-white transition">
                     <LogOut size={14} />

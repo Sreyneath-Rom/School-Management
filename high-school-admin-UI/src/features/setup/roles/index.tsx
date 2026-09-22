@@ -44,8 +44,7 @@ export default function RolesFeature() {
       setCatalog(safeCatalog)
 
       if (safeRoles.length > 0) {
-        const initialRole =
-          safeRoles.find((r) => r.id === selectedRoleId) || safeRoles[0]
+        const initialRole = safeRoles.find((r) => r.id === selectedRoleId) || safeRoles[0]
         setSelectedRoleId(initialRole.id)
         setDraftPermissionIds(initialRole.permissionIds || [])
         setSavedPermissionIds(initialRole.permissionIds || [])
@@ -57,9 +56,7 @@ export default function RolesFeature() {
     }
   }
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  useEffect(() => { loadData() }, [])
 
   const selectedRole = roles.find((r) => r.id === selectedRoleId) || null
 
@@ -88,7 +85,8 @@ export default function RolesFeature() {
       .map((p) => p.id)
 
     const safeDraft = Array.isArray(draftPermissionIds) ? draftPermissionIds : []
-    const isAllSelected = modulePermIds.length > 0 && modulePermIds.every((id) => safeDraft.includes(id))
+    const isAllSelected =
+      modulePermIds.length > 0 && modulePermIds.every((id) => safeDraft.includes(id))
 
     if (isAllSelected) {
       setDraftPermissionIds((prev: string[]) =>
@@ -101,9 +99,7 @@ export default function RolesFeature() {
     }
   }
 
-  const handleReset = () => {
-    setDraftPermissionIds(savedPermissionIds)
-  }
+  const handleReset = () => setDraftPermissionIds(savedPermissionIds)
 
   const handleSaveMatrix = async () => {
     if (!selectedRole) return
@@ -131,10 +127,7 @@ export default function RolesFeature() {
   }) => {
     setIsCreatingRole(true)
     try {
-      const created = await roleService.createRole({
-        name: data.name,
-        label: data.label,
-      })
+      const created = await roleService.createRole({ name: data.name, label: data.label })
       if (data.permissionIds.length > 0) {
         await roleService.updateRolePermissions(created.id, {
           permissionIds: data.permissionIds,
@@ -192,17 +185,17 @@ export default function RolesFeature() {
 
   return (
     <div className="space-y-8">
-      {/* Page Heading */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeading
           title={t('sidebar.rolesPermissions')}
           subtitle="Configure system user access tiers, role security policies, and granular operational permissions."
         />
         <div className="flex items-center gap-2">
+          {/* Refresh button: hover presses into a sunken well */}
           <button
             type="button"
             onClick={loadData}
-            className="rounded-xl p-2 text-text-main/60 hover:bg-text-main/10 hover:text-text-main transition"
+            className="rounded-xl p-2 text-fg-muted hover:text-fg hover:shadow-sunken transition"
             title="Refresh roles"
           >
             <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
@@ -218,14 +211,12 @@ export default function RolesFeature() {
         </div>
       </div>
 
-      {/* Stats */}
       <RoleStats roles={roles} catalog={catalog} activeRole={selectedRole} />
 
-      {/* Roles Cards */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-text-main">System Roles</h2>
-          <span className="text-xs text-text-main/50">Select a role to inspect its permissions</span>
+          <h2 className="text-sm font-bold text-fg">System Roles</h2>
+          <span className="text-xs text-fg-muted">Select a role to inspect its permissions</span>
         </div>
         <RoleCardList
           roles={roles}
@@ -236,24 +227,25 @@ export default function RolesFeature() {
         />
       </div>
 
-      {/* Permissions Matrix */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-16 space-y-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-3 border-brand-500 border-t-transparent" />
-          <p className="text-sm font-medium text-text-main/60">Loading permission catalog...</p>
+          {/* Fixed `border-3` (not a valid Tailwind width) → border-2 */}
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+          <p className="text-sm font-medium text-fg-muted">Loading permission catalog...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-[24px] bg-error/10 border border-error/20 p-6 text-center text-error">
+        // Semantic error box — tinted bg + border stays (it's a signal)
+        <div className="rounded-3xl bg-error/10 border border-error/25 p-6 text-center text-error">
           <p className="font-bold mb-1">Failed to load permissions</p>
           <p className="text-xs">{loadError}</p>
         </div>
       ) : (
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-text-main">
+            <h2 className="text-sm font-bold text-fg">
               Capability Matrix: {selectedRole?.name || 'Role'}
             </h2>
-            <span className="text-xs text-text-main/50 font-mono">
+            <span className="text-xs text-fg-muted font-mono">
               {draftPermissionIds.length} of {catalog.length} nodes granted
             </span>
           </div>
@@ -272,7 +264,6 @@ export default function RolesFeature() {
         </div>
       )}
 
-      {/* Create Role Modal */}
       <CreateRoleModal
         isOpen={isCreateModalOpen}
         isCreating={isCreatingRole}

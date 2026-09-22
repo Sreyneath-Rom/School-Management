@@ -1,19 +1,12 @@
+// src/features/dashboard/RecentActivities.tsx
 import { Link } from 'react-router-dom'
 import { Activity, ArrowUpRight } from 'lucide-react'
 import EmptyState from '@/components/common/EmptyState'
 
-/**
- * The backend has no activity-feed endpoint. This widget will populate
- * once one exists — the shape would be a list of recent mutations
- * (user created, grade updated, homework submitted, etc.) which the
- * backend would need to project from the AuditLog table.
- *
- * Until then, this renders an honest empty state instead of fake rows.
- */
 export default function RecentActivities() {
   return (
-    <section className="rounded-3xl border border-surface bg-surface-strong p-5 sm:p-6 shadow-xs">
-      <div className="mb-4 flex items-center justify-between pb-3 border-b border-surface">
+    <section className="rounded-3xl glass p-5 sm:p-6">
+      <div className="mb-4 flex items-center justify-between pb-3 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <div>
           <h2 className="text-base font-bold text-fg">System Activities</h2>
           <p className="text-xs text-fg-muted">Real-time administrative feed</p>

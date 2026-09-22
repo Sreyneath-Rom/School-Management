@@ -23,10 +23,7 @@ const COMMON_LOCALES = [
 ]
 
 export const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
-  isOpen,
-  isSubmitting,
-  onClose,
-  onSubmit,
+  isOpen, isSubmitting, onClose, onSubmit,
 }) => {
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
@@ -45,70 +42,90 @@ export const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       setError('Language Code and Name are required')
       return
     }
-
-    onSubmit({
-      code: code.trim().toLowerCase(),
-      name: name.trim(),
-    })
+    onSubmit({ code: code.trim().toLowerCase(), name: name.trim() })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md overflow-hidden rounded-[30px] glass-strong p-6 sm:p-7 shadow-2xl border border-text-main/15">
-        <div className="flex items-center justify-between pb-4 border-b border-text-main/10">
+    <div
+      // Flat scrim, no backdrop-blur (glassmorphism artifact).
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 animate-in fade-in duration-200"
+      role="presentation"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      {/* `.glass-strong` supplies bg + radius + neumorphic shadow. The
+          old `border border-text-main/15 shadow-2xl` was invisible (border)
+          and overriding the neumorphic shadow. */}
+      <div
+        className="relative w-full max-w-md overflow-hidden rounded-[30px] glass-strong p-6 sm:p-7 animate-in zoom-in-95 duration-200"
+        role="dialog"
+        aria-modal="true"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Header — shadow seam replaces the invisible border */}
+        <div className="flex items-center justify-between pb-4 shadow-[0_1px_0_var(--neu-shadow-dark)]">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-md shadow-brand-600/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm shadow-brand-600/20">
               <Languages size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-text-main">Add Language Locale</h2>
-              <p className="text-xs text-text-main/55">Expand system multi-language support</p>
+              <h2 className="text-lg font-bold text-fg">Add Language Locale</h2>
+              <p className="text-xs text-fg-muted">Expand system multi-language support</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-text-main/50 hover:bg-text-main/10 hover:text-text-main transition cursor-pointer"
+            className="rounded-full p-2 text-fg-muted hover:text-fg hover:shadow-sunken transition cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          {/* Semantic error — tinted bg + border is the signal, kept */}
           {error && (
-            <div className="rounded-2xl bg-error/10 border border-error/20 p-3 text-xs text-error">
+            <div className="rounded-2xl bg-error/10 border border-error/25 p-3 text-xs text-error">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-2">
               Popular Presets
             </label>
+            {/* Preset chips: raised by default, press in when selected.
+                The active state is a sunken well with brand text — the
+                correct neumorphic gesture for a chip-grid selection. */}
             <div className="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto pr-1">
-              {COMMON_LOCALES.map((l) => (
-                <button
-                  key={l.code}
-                  type="button"
-                  onClick={() => handleSelectPreset(l)}
-                  className={`rounded-xl p-2 text-[11px] font-bold text-left transition cursor-pointer border ${
-                    code === l.code
-                      ? 'bg-brand-500/20 border-brand-500 text-brand-400'
-                      : 'bg-text-main/5 border-text-main/10 text-text-main/70 hover:border-text-main/20'
-                  }`}
-                >
-                  <span className="uppercase font-mono block text-[10px] text-text-main/40">{l.code}</span>
-                  <span className="truncate block">{l.name.split(' ')[0]}</span>
-                </button>
-              ))}
+              {COMMON_LOCALES.map((l) => {
+                const isSelected = code === l.code
+                return (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => handleSelectPreset(l)}
+                    className={`rounded-xl p-2 text-[11px] font-bold text-left transition cursor-pointer ${
+                      isSelected
+                        ? 'text-brand-700 dark:text-brand-300 shadow-sunken'
+                        : 'text-fg-muted shadow-emboss hover:shadow-sunken'
+                    }`}
+                  >
+                    <span className="uppercase font-mono block text-[10px] text-fg-muted/70">
+                      {l.code}
+                    </span>
+                    <span className="truncate block">{l.name.split(' ')[0]}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
                 ISO Code *
               </label>
+              {/* Inputs inherit the sunken-well look from globals.css */}
               <input
                 type="text"
                 required
@@ -116,11 +133,11 @@ export const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="e.g. es, fr, ja"
-                className="w-full rounded-2xl border border-text-main/15 bg-text-main/5 px-4 py-2.5 font-mono text-sm text-text-main outline-none transition focus:border-brand-500"
+                className="w-full rounded-2xl px-4 py-2.5 font-mono text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-main/60 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-fg-muted mb-1.5">
                 Language Name *
               </label>
               <input
@@ -129,12 +146,12 @@ export const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Spanish"
-                className="w-full rounded-2xl border border-text-main/15 bg-text-main/5 px-4 py-2.5 text-sm text-text-main outline-none transition focus:border-brand-500"
+                className="w-full rounded-2xl px-4 py-2.5 text-sm text-fg outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-text-main/10 flex items-center justify-end gap-3">
+          <div className="pt-4 shadow-[0_-1px_0_var(--neu-shadow-dark)] flex items-center justify-end gap-3">
             <Button variant="glass" type="button" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>

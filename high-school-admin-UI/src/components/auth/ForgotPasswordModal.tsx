@@ -26,7 +26,7 @@ export default function ForgotPasswordModal({
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
-  // Reset state when the modal closes so a fresh open doesn't show stale
+  // Reset transient state on close so a fresh open doesn't show a stale
   // success/error from a previous attempt.
   useEffect(() => {
     if (!isOpen) {
@@ -112,6 +112,9 @@ export default function ForgotPasswordModal({
             initiate the secure password reset flow.
           </p>
 
+          {/* Semantic error alert — kept tinted so it stays legible and
+              signal-clear. The tinted border is intentional here, not a
+              surface border. */}
           {error && (
             <div className="p-3.5 bg-error/15 border border-error/30 rounded-xl flex items-center gap-2.5 text-xs text-error">
               <AlertCircle size={16} className="shrink-0" />
@@ -119,6 +122,8 @@ export default function ForgotPasswordModal({
             </div>
           )}
 
+          {/* FormField's inner <input> picks up the global sunken-well
+              styling from globals.css automatically. */}
           <FormField
             id="forgot-password-identifier-input"
             label="Email or School ID"
@@ -129,7 +134,10 @@ export default function ForgotPasswordModal({
             autoFocus
           />
 
-          <div className="p-3.5 rounded-2xl bg-surface border border-surface text-xs space-y-2">
+          {/* Sunken well — previously `bg-surface border border-surface`,
+              which was invisible because both axes resolved to the page
+              background under this theme. */}
+          <div className="p-3.5 rounded-2xl shadow-sunken text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold text-fg">
               <Building2 size={15} className="text-brand-600 dark:text-brand-400" />
               School Administrator Support Contact
@@ -161,7 +169,8 @@ export default function ForgotPasswordModal({
             {successMessage}
           </p>
 
-          <div className="mt-4 p-3 rounded-xl bg-surface border border-surface text-xs text-fg-muted">
+          {/* Sunken well — same fix as above. */}
+          <div className="mt-4 p-3 rounded-xl shadow-sunken text-xs text-fg-muted">
             Identifier submitted:{' '}
             <strong className="text-fg font-mono">{identifier}</strong>
           </div>

@@ -9,22 +9,16 @@ interface Props {
   children: React.ReactNode;
 }
 
-export default function Field({
-  label,
-  required,
-  error,
-  children,
-}: Props) {
+export default function Field({ label, required, error, children }: Props) {
   return (
     <div className="group">
-      {/* Label */}
       <label
         className="
           mb-2
           block
           text-sm
           font-semibold
-          text-text-main
+          text-fg
           transition-colors
           group-focus-within:text-brand-700
           dark:group-focus-within:text-brand-300
@@ -33,23 +27,14 @@ export default function Field({
         {label}
 
         {required && (
-          <span
-            className="
-              ml-1
-              text-error
-            "
-            aria-hidden="true"
-          >
-            *
-          </span>
+          <span className="ml-1 text-error" aria-hidden="true">*</span>
         )}
       </label>
 
-      {/* Field */}
       <div className="relative">
         {children}
 
-        {/* Error indicator */}
+        {/* Error indicator — semantic alert badge, tinted bg stays */}
         {error && (
           <div
             className="
@@ -63,10 +48,9 @@ export default function Field({
               items-center
               justify-center
               rounded-full
-              bg-error/10
+              bg-error/15
               p-1
               text-error
-              shadow-sm
             "
             aria-hidden="true"
           >
@@ -75,26 +59,12 @@ export default function Field({
         )}
       </div>
 
-      {/* Error message */}
       {error && (
         <div
           role="alert"
-          className="
-            mt-1.5
-            flex
-            items-start
-            gap-1.5
-            text-xs
-            font-medium
-            text-error
-          "
+          className="mt-1.5 flex items-start gap-1.5 text-xs font-medium text-error"
         >
-          <AlertCircle
-            size={13}
-            className="mt-0.5 shrink-0"
-            strokeWidth={2.5}
-          />
-
+          <AlertCircle size={13} className="mt-0.5 shrink-0" strokeWidth={2.5} />
           <span>{error}</span>
         </div>
       )}

@@ -8,7 +8,9 @@ export default function Footer() {
   const schoolName = school?.name || ''
 
   return (
-    <footer className="px-4 py-4 text-xs text-secondary sm:px-6">
+    // A shadow-based seam replaces the old `border-t border-surface`,
+    // which went invisible once --glass-bg = --page-background.
+    <footer className="px-4 py-4 text-xs text-secondary sm:px-6 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
       <div className="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span>
           © {year} {schoolName} {t('footer.rights')}

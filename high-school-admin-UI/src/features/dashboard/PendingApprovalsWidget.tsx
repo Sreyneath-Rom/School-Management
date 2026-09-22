@@ -1,15 +1,7 @@
+// src/features/dashboard/PendingApprovalsWidget.tsx
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  FileText,
-  Clock,
-  UserCheck,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  ChevronRight,
-  ShieldAlert,
-} from 'lucide-react'
+import { Clock, CheckCircle, ChevronRight } from 'lucide-react'
 
 interface UrgentTask {
   id: string
@@ -22,33 +14,9 @@ interface UrgentTask {
 }
 
 const urgentTasks: UrgentTask[] = [
-  {
-    id: 't-1',
-    title: 'Teacher Seng Vanna - 2 Days Medical Leave',
-    subtitle: 'Substitute teacher coverage needed for Physics 11-B',
-    category: 'Leave Approval',
-    dueTime: 'Pending for 2h',
-    severity: 'high',
-    link: '/teachers',
-  },
-  {
-    id: 't-2',
-    title: 'Grade 10 Chemistry Semester Exam Verification',
-    subtitle: '45 Student records waiting for administrative sign-off',
-    category: 'Exam Marks',
-    dueTime: 'Due Today',
-    severity: 'medium',
-    link: '/academic/exams',
-  },
-  {
-    id: 't-3',
-    title: 'New Student Enrollment Documentation',
-    subtitle: 'Chan Sophea (Transfer from Siem Reap Secondary) birth certificate upload',
-    category: 'Student Profile',
-    dueTime: 'Due in 4h',
-    severity: 'low',
-    link: '/students',
-  },
+  { id: 't-1', title: 'Teacher Seng Vanna - 2 Days Medical Leave', subtitle: 'Substitute teacher coverage needed for Physics 11-B', category: 'Leave Approval', dueTime: 'Pending for 2h', severity: 'high', link: '/teachers' },
+  { id: 't-2', title: 'Grade 10 Chemistry Semester Exam Verification', subtitle: '45 Student records waiting for administrative sign-off', category: 'Exam Marks', dueTime: 'Due Today', severity: 'medium', link: '/academic/exams' },
+  { id: 't-3', title: 'New Student Enrollment Documentation', subtitle: 'Chan Sophea (Transfer from Siem Reap Secondary) birth certificate upload', category: 'Student Profile', dueTime: 'Due in 4h', severity: 'low', link: '/students' },
 ]
 
 export default function PendingApprovalsWidget() {
@@ -61,20 +29,20 @@ export default function PendingApprovalsWidget() {
   }
 
   return (
-    <div className="rounded-3xl border border-surface bg-surface-strong p-5 shadow-xs">
-      <div className="flex items-center justify-between pb-4 border-b border-surface">
+    <div className="rounded-3xl glass p-5">
+      <div className="flex items-center justify-between pb-4 shadow-[0_1px_0_var(--neu-shadow-dark)]">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-color">
+            <h2 className="text-base font-bold text-fg">
               Action Required & Approvals
             </h2>
             {tasks.length > 0 && (
-              <span className="rounded-full bg-error/10 px-2 py-0.5 text-[10px] font-bold text-error border border-error/20">
+              <span className="rounded-full bg-error/15 px-2 py-0.5 text-[10px] font-bold text-error border border-error/25">
                 {tasks.length} Pending
               </span>
             )}
           </div>
-          <p className="text-xs text-secondary">
+          <p className="text-xs text-fg-muted">
             Administrative items awaiting institutional clearance
           </p>
         </div>
@@ -89,7 +57,7 @@ export default function PendingApprovalsWidget() {
 
       <div className="mt-4 space-y-3">
         {tasks.length === 0 ? (
-          <div className="py-8 text-center text-xs text-secondary">
+          <div className="py-8 text-center text-xs text-fg-muted">
             <CheckCircle size={24} className="mx-auto mb-2 text-success" />
             All administrative approvals and clearances are up to date!
           </div>
@@ -98,10 +66,12 @@ export default function PendingApprovalsWidget() {
             <Link
               key={task.id}
               to={task.link}
-              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-surface bg-surface p-3.5 transition hover:border-brand-500/30"
+              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl p-3.5 transition-all shadow-sunken hover:shadow-emboss"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
+                  {/* Severity chip: semantic tint carries the meaning,
+                      so its tinted bg + border stay. */}
                   <span
                     className={`rounded-md px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase ${
                       task.severity === 'high'
@@ -113,16 +83,16 @@ export default function PendingApprovalsWidget() {
                   >
                     {task.category}
                   </span>
-                  <span className="flex items-center gap-1 text-[10.5px] text-secondary">
+                  <span className="flex items-center gap-1 text-[10.5px] text-fg-muted">
                     <Clock size={11} />
                     {task.dueTime}
                   </span>
                 </div>
 
-                <p className="text-xs font-bold text-color leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                <p className="text-xs font-bold text-fg leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                   {task.title}
                 </p>
-                <p className="text-[11px] text-secondary leading-normal">
+                <p className="text-[11px] text-fg-muted leading-normal">
                   {task.subtitle}
                 </p>
               </div>
@@ -131,11 +101,11 @@ export default function PendingApprovalsWidget() {
                 <button
                   type="button"
                   onClick={(e) => handleDismiss(task.id, e)}
-                  className="rounded-lg px-2 py-1 text-[11px] font-semibold text-secondary hover:bg-surface-strong hover:text-color cursor-pointer"
+                  className="rounded-lg px-2 py-1 text-[11px] font-semibold text-fg-muted hover:text-fg hover:shadow-sunken cursor-pointer"
                 >
                   Dismiss
                 </button>
-                <span className="flex items-center gap-1 rounded-xl bg-brand-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs group-hover:bg-brand-700 transition">
+                <span className="flex items-center gap-1 rounded-xl bg-brand-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm shadow-brand-600/20 group-hover:bg-brand-700 transition">
                   Review
                   <ChevronRight size={13} />
                 </span>
