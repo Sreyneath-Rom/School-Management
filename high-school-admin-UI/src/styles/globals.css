@@ -6,13 +6,15 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =========================================================
-   2. DESIGN TOKENS (Modern Academic Enterprise Theme)
+   2. DESIGN TOKENS (Neumorphic — Soft Blue)
    ========================================================= */
 @theme {
   --shadow-emboss: var(--shadow-emboss-raised);
   --shadow-sunken: var(--shadow-emboss-sunken);
 
-  /* Prestigious Academic Blue & Indigo Palette */
+  /* Prestigious Academic Blue & Indigo Palette (kept as accent colors —
+     neumorphism is monochrome for surfaces, but buttons, links, focus
+     rings and selected states still read the brand hue on top) */
   --color-brand-50:  #eff6ff;
   --color-brand-100: #dbeafe;
   --color-brand-200: #bfdbfe;
@@ -39,37 +41,51 @@
 }
 
 /* =========================================================
-   3. LIGHT MODE (Clean, High-Contrast Academic Design)
+   3. LIGHT MODE (Neumorphic Soft Blue)
+
+   Neumorphism has no borders and no translucency: a surface is cut from
+   the SAME color as the page behind it, and depth comes only from a pair
+   of offset shadows — one darker ("shadow-dark", light falling away) and
+   one lighter ("shadow-light", light catching the edge). Raised elements
+   use both shadows outward; pressed/inset elements (inputs, active
+   toggles) flip them inward.
    ========================================================= */
 :root {
-  /* Crisp subtle backdrop with gentle warmth */
-  --page-background: #f8fafc;
+  --page-background: #e0e8f5;
 
-  /* High contrast solid / micro-elevated surfaces */
-  --glass-bg:      #ffffff;
-  --glass-outline: #e2e8f0;
-  --header-bg:     rgba(255, 255, 255, 0.92);
-  --sidebar-bg:    #ffffff;
+  /* Neumorphic pair */
+  --neu-shadow-dark:  #c5cee0;
+  --neu-shadow-light: #ffffff;
 
-  --glass-specular-top:    rgba(255, 255, 255, 0.9);
-  --glass-specular-bottom: rgba(0, 0, 0, 0.04);
+  /* Surfaces are flush with the page — same color, no border */
+  --glass-bg:      #e0e8f5;
+  --glass-outline: transparent;
+  --header-bg:     #e0e8f5;
+  --sidebar-bg:    #e0e8f5;
+
+  /* Unused under neumorphism (kept defined so nothing that references
+     them breaks); glass specular/blur has no neumorphic equivalent */
+  --glass-specular-top:    transparent;
+  --glass-specular-bottom: transparent;
   --glass-inner-glow:      none;
 
-  /* Refined, tactile elevation */
+  /* Soft, tactile elevation — the signature neumorphic dual shadow */
   --shadow-emboss-raised:
-    0 1px 3px 0 rgba(15, 23, 42, 0.05),
-    0 1px 2px -1px rgba(15, 23, 42, 0.03);
+    6px 6px 12px var(--neu-shadow-dark),
+    -6px -6px 12px var(--neu-shadow-light);
   --shadow-emboss-sunken:
-    inset 0 1px 2px rgba(15, 23, 42, 0.06);
+    inset 4px 4px 8px var(--neu-shadow-dark),
+    inset -4px -4px 8px var(--neu-shadow-light);
 
   --glass-shadow: var(--shadow-emboss-raised);
 
-  /* Elevated surface (modals, dropdowns, hero cards) */
-  --glass-strong-bg:     #ffffff;
-  --glass-strong-border: #cbd5e1;
+  /* Elevated surface (modals, dropdowns, hero cards) — same base color,
+     a wider/softer shadow throw for a floating-higher feel */
+  --glass-strong-bg:     #e0e8f5;
+  --glass-strong-border: transparent;
   --glass-strong-shadow:
-    0 10px 15px -3px rgba(15, 23, 42, 0.08),
-    0 4px 6px -4px rgba(15, 23, 42, 0.03);
+    10px 10px 20px var(--neu-shadow-dark),
+    -10px -10px 20px var(--neu-shadow-light);
 
   /* Sharp, WCAG AA passing text colors */
   --text-color:           #0f172a; /* Slate 900 */
@@ -81,39 +97,43 @@
   --status-warning: #f59e0b;
   --status-error:   #ef4444;
 
-  /* Dropdown & popover backdrops */
-  --dropdown-bg:     #ffffff;
-  --dropdown-border: #e2e8f0;
+  /* Dropdown & popover backdrops — flush, shadow-only elevation */
+  --dropdown-bg:     #e0e8f5;
+  --dropdown-border: transparent;
 }
 
 /* =========================================================
-   4. DARK MODE (Sophisticated Slate Night Theme)
+   4. DARK MODE (Neumorphic Dark)
    ========================================================= */
 .dark {
-  --page-background: #090d16;
+  --page-background: #1e1f29;
 
-  --glass-bg:      #0f172a;
-  --glass-outline: #1e293b;
-  --header-bg:     rgba(15, 23, 42, 0.88);
-  --sidebar-bg:    #0f172a;
+  --neu-shadow-dark:  #111218;
+  --neu-shadow-light: #2b2c3a;
 
-  --glass-specular-top:    rgba(255, 255, 255, 0.08);
-  --glass-specular-bottom: rgba(0, 0, 0, 0.3);
+  --glass-bg:      #1e1f29;
+  --glass-outline: transparent;
+  --header-bg:     #1e1f29;
+  --sidebar-bg:    #1e1f29;
+
+  --glass-specular-top:    transparent;
+  --glass-specular-bottom: transparent;
   --glass-inner-glow:      none;
 
   --shadow-emboss-raised:
-    0 1px 3px 0 rgba(0, 0, 0, 0.3),
-    0 1px 2px -1px rgba(0, 0, 0, 0.2);
+    6px 6px 12px var(--neu-shadow-dark),
+    -6px -6px 12px var(--neu-shadow-light);
   --shadow-emboss-sunken:
-    inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    inset 4px 4px 8px var(--neu-shadow-dark),
+    inset -4px -4px 8px var(--neu-shadow-light);
 
   --glass-shadow: var(--shadow-emboss-raised);
 
-  --glass-strong-bg:     #1e293b;
-  --glass-strong-border: #334155;
+  --glass-strong-bg:     #1e1f29;
+  --glass-strong-border: transparent;
   --glass-strong-shadow:
-    0 12px 24px -4px rgba(0, 0, 0, 0.5),
-    0 4px 8px -2px rgba(0, 0, 0, 0.3);
+    10px 10px 20px var(--neu-shadow-dark),
+    -10px -10px 20px var(--neu-shadow-light);
 
   --text-color:           #f8fafc; /* Slate 50 */
   --text-color-secondary: #94a3b8; /* Slate 400 */
@@ -123,8 +143,8 @@
   --status-warning: #fbbf24;
   --status-error:   #f87171;
 
-  --dropdown-bg:     #0f172a;
-  --dropdown-border: #1e293b;
+  --dropdown-bg:     #1e1f29;
+  --dropdown-border: transparent;
 }
 
 /* =========================================================
@@ -200,82 +220,75 @@ textarea {
 }
 
 /* =========================================================
-   7. MODERN CARD & COMPONENT SURFACES
+   7. NEUMORPHIC CARD & COMPONENT SURFACES
    ========================================================= */
 @layer components {
+  /* Raised surface: flush with the page, lifted by the dual shadow.
+     No border, no blur — that's the glassmorphism-era leftover. */
   .glass,
   .glass-lite,
-  .glass-sm {
+  .glass-sm,
+  .glass-teal,
+  .glass-org {
     position: relative;
     background-color: var(--glass-bg);
-    border: 1px solid var(--glass-outline);
+    border: none;
     box-shadow: var(--glass-shadow);
-    transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-  }
-
-  .glass-teal {
-    background-color: var(--glass-bg);
-    border: 1px solid var(--glass-outline);
-  }
-
-  .glass-org {
-    background-color: var(--glass-bg);
-    border: 1px solid var(--glass-outline);
+    border-radius: 1rem;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
   }
 
   .glass-strong {
     background-color: var(--glass-strong-bg);
-    border: 1px solid var(--glass-strong-border);
+    border: none;
     box-shadow: var(--glass-strong-shadow);
+    border-radius: 1.25rem;
   }
 
+  /* Interactive raised elements press INWARD on activation — the
+     hallmark neumorphic gesture: it looks physically pushed in. */
   .glass-interactive {
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    transition: box-shadow 0.15s ease, transform 0.1s ease;
   }
   .glass-interactive:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-    border-color: var(--glass-strong-border);
+    box-shadow:
+      8px 8px 16px var(--neu-shadow-dark),
+      -8px -8px 16px var(--neu-shadow-light);
   }
   .glass-interactive:active {
     transform: translateY(0);
+    box-shadow: var(--shadow-emboss-sunken);
   }
 
-  /* Dropdown surface */
+  /* Dropdown surface — same flush background, elevated by shadow only */
   .dropdown-surface {
     position: absolute;
     background-color: var(--dropdown-bg);
-    border: 1px solid var(--dropdown-border);
-    box-shadow:
-      0 12px 28px -4px rgba(15, 23, 42, 0.12),
-      0 4px 8px -2px rgba(15, 23, 42, 0.04);
-  }
-  .dark .dropdown-surface {
-    box-shadow:
-      0 16px 32px -4px rgba(0, 0, 0, 0.6),
-      0 4px 12px -2px rgba(0, 0, 0, 0.4);
+    border: none;
+    border-radius: 1rem;
+    box-shadow: var(--glass-strong-shadow);
   }
 
-  /* Docked App Header */
+  /* Docked App Header — no more frosted blur; a subtle sunken seam
+     replaces the hairline border to separate it from content below */
   .app-header {
     margin: 0;
     border-radius: 0;
-    border-bottom: 1px solid var(--glass-outline);
+    border-bottom: none;
     background-color: var(--header-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+    box-shadow: 0 2px 6px var(--neu-shadow-dark);
   }
 
   .app-header-inner {
     position: relative;
   }
 
-  /* Docked App Sidebar */
+  /* Docked App Sidebar — same treatment: flush color, shadow-defined edge */
   .app-sidebar {
     background-color: var(--sidebar-bg);
-    border-right: 1px solid var(--glass-outline);
+    border-right: none;
     color: var(--text-color);
   }
 
@@ -284,20 +297,43 @@ textarea {
     margin: 0;
     border-radius: 0;
     border: none;
-    border-right: 1px solid var(--glass-outline);
-    box-shadow: 1px 0 3px 0 rgba(15, 23, 42, 0.02);
+    box-shadow: 2px 0 6px var(--neu-shadow-dark);
   }
 
+  /* Active nav item: pressed-in neumorphic well, tinted with the brand
+     color so selection is still unambiguous at a glance */
   aside.app-sidebar a[aria-current="page"] {
-    background-color: var(--color-brand-600);
-    color: #ffffff;
+    background-color: var(--glass-bg);
+    color: var(--color-brand-600);
+    box-shadow: var(--shadow-emboss-sunken);
+    border-radius: 0.75rem;
+  }
+  .dark aside.app-sidebar a[aria-current="page"] {
+    color: var(--color-brand-400);
+  }
+
+  /* Sunken fields: inputs, search boxes, anything meant to look like a
+     carved-in well rather than a raised card */
+  .neu-inset,
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    background-color: var(--glass-bg);
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-emboss-sunken);
   }
 
   /* Skeleton loader */
   .skeleton {
     position: relative;
     overflow: hidden;
-    background-color: rgba(148, 163, 184, 0.15);
+    background-color: var(--glass-bg);
+    box-shadow: var(--shadow-emboss-sunken);
     border-radius: 0.5rem;
   }
   .skeleton::after {
@@ -322,8 +358,8 @@ textarea {
   .text-secondary        { color: var(--text-color-secondary); }
   .bg-surface            { background-color: var(--glass-bg); }
   .bg-surface-strong     { background-color: var(--glass-strong-bg); }
-  .border-surface        { border-color: var(--glass-outline); }
-  .border-surface-strong { border-color: var(--glass-strong-border); }
+  .border-surface        { border-color: transparent; }
+  .border-surface-strong { border-color: transparent; }
   .surface-theme         { background-color: var(--glass-bg); color: var(--text-color); }
   .page-theme            { background-color: var(--page-background); color: var(--text-color); }
   .page-surface          { color: var(--text-color); }
