@@ -86,7 +86,8 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
     setError(null)
     try {
       const data = await userService.list()
-      setUsers(data)
+      const list = Array.isArray(data) ? data : (data as any)?.items || []
+      setUsers(list)
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Failed to load users'
       setError(msg)
@@ -104,7 +105,8 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
       setError(null)
       try {
         const data = await userService.list()
-        if (!cancelled) setUsers(data)
+        const list = Array.isArray(data) ? data : (data as any)?.items || []
+        if (!cancelled) setUsers(list)
       } catch (err) {
         if (cancelled) return
         const msg = err instanceof ApiError ? err.message : 'Failed to load users'
@@ -240,7 +242,7 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
     const label = getFullName(user)
     if (!window.confirm(`Reset password for ${label}?`)) return
     try {
-      await userService.resetPassword(user.id)
+      await userService.resetPassword(user.id, 'ChangeMe123!')
       success(`Password reset for ${label}`)
     } catch (err) {
       notifyError(err instanceof ApiError ? err.message : `Failed to reset password`)
@@ -293,7 +295,7 @@ export default function UserList({ showHeading = true }: { showHeading?: boolean
     if (!ids.length) return
     if (!window.confirm(`Reset password for ${ids.length} user(s)?`)) return
     try {
-      await Promise.all(ids.map((id) => userService.resetPassword(id)))
+      await Promise.all(ids.map((id) => userService.resetPassword(id, 'ChangeMe123!')))
       success(`Password reset for ${ids.length} user(s)`)
       clearSelection()
     } catch (err) {
@@ -564,7 +566,8 @@ interface UserRowProps {
 }
 
 function UserRow({ user, selected, onToggleSelect, onView, onEdit, onResetPassword, onDelete }: UserRowProps) {
-  const roleColor = ROLE_COLORS[user.role]
+  const roleKey = (user.role || 'student') as UserRole
+  const roleColor = ROLE_COLORS[roleKey] || ROLE_COLORS.student
   const fullName = getFullName(user)
 
   return (
@@ -587,7 +590,7 @@ function UserRow({ user, selected, onToggleSelect, onView, onEdit, onResetPasswo
       <td className="px-4 py-3 text-text-main/80">{user.phone}</td>
       <td className="px-4 py-3">
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${roleColor.bg} ${roleColor.text} ${roleColor.ring}`}>
-          {ROLE_LABELS[user.role]}
+          {ROLE_LABELS[roleKey] || 'User'}
         </span>
       </td>
       <td className="px-4 py-3 text-text-main/80">{getDisplayClass(user) ?? '—'}</td>
@@ -646,5 +649,5 @@ function ActionsMenu({ onView, onEdit, onResetPassword, onDelete }: ActionsMenuP
   )
 }
 
-function isString(value: string | null): value is string { return value !== null }
+function isString(value: unknown): value is string { return typeof value === 'string' && value.length > 0 }
 function uniqueSorted(values: string[]): string[] { return Array.from(new Set(values)).sort() }

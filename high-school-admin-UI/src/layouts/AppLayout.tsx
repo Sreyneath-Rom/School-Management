@@ -24,7 +24,7 @@ export default function AppLayout() {
         <Sidebar
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}
-          role={role ?? undefined}
+          role={(role as any) ?? undefined}
         />
 
         {/* ============================================================
@@ -40,31 +40,14 @@ export default function AppLayout() {
               SCROLLABLE CONTENT
           ========================================================== */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
-            <main className="page-surface flex-1 p-2 sm:p-4 lg:p-5">
-              {/* ======================================================
-                  PAGE CONTAINER
-              ====================================================== */}
-              <div
-                className="
-                  min-h-full
-                  rounded-2xl
-                  p-4
-                  shadow-xs
-                  glass-sm
-                  border-surface
-                  sm:rounded-3xl
-                  sm:p-6
-                  lg:p-8
-                "
-              >
-                {/* Breadcrumb */}
+            <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+              {/* Breadcrumb Navigation */}
+              <div className="mb-4">
                 <Breadcrumbs />
-
-                {/* Page Content */}
-                <div className="mt-5">
-                  <Outlet />
-                </div>
               </div>
+
+              {/* Page Content */}
+              <Outlet />
             </main>
 
             {/* ========================================================

@@ -29,6 +29,12 @@ export interface Schedule {
     teacherCode: string
     user: { id: string; firstName: string; lastName: string }
   }
+
+  // Convenience display fields
+  className?: string
+  subjectName?: string
+  teacherName?: string
+  colorTheme?: string
 }
 
 /**
@@ -45,6 +51,10 @@ export interface CreateSchedulePayload {
   startTime: string
   endTime: string
   room?: string
+  className?: string
+  subjectName?: string
+  teacherName?: string
+  colorTheme?: string
 }
 
 export type UpdateSchedulePayload = Partial<CreateSchedulePayload>

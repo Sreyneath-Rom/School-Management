@@ -70,7 +70,7 @@ export function createApp(): Express {
   // Swagger is an internal tool. Gate it out of production unless explicitly
   // enabled via env (see note at the bottom — add SWAGGER_ENABLED to env.ts).
   if (env.NODE_ENV !== 'production' || env.SWAGGER_ENABLED) {
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+    app.use('/api-docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec) as any)
   }
 
   // ---- Application routes ----

@@ -115,6 +115,20 @@ export interface GradeRecord {
   letterGrade: LetterGrade
   gpa: number
   comment: string
+  totalWeightedScore?: number
+}
+
+export interface MyGrade {
+  id: string
+  subjectName: string
+  teacherName?: string
+  score: number
+  maxScore: number
+  percentage: number
+  letterGrade: LetterGrade
+  gpa: number
+  comment?: string
+  period?: GradePeriod
 }
 
 export interface StudentProgress {

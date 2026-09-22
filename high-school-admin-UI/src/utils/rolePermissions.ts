@@ -18,7 +18,10 @@ export const ROLE_PERMISSIONS = {
   teacher: { label: 'Teacher', color: 'green' },
   student: { label: 'Student', color: 'purple' },
   parent: { label: 'Parent', color: 'orange' },
+  mazer: { label: 'Mazer', color: 'amber' },
 } as const
+
+export const ROLE_DISPLAY = ROLE_PERMISSIONS
 
 export type UserRole = keyof typeof ROLE_PERMISSIONS
 

@@ -59,7 +59,7 @@ export default function StudentsFeature() {
     setLoadError(null)
     try {
       const data = await studentService.list()
-      setStudents(Array.isArray(data) ? data : [])
+      setStudents(Array.isArray(data) ? (data as any) : [])
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Failed to load students data')
     } finally {
@@ -168,14 +168,14 @@ export default function StudentsFeature() {
     setIsSubmitting(true)
     try {
       if (studentToEdit) {
-        const updated = await studentService.update(studentToEdit.id, data)
+        const updated = (await studentService.update(studentToEdit.id, data as any)) as any
         setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
         if (detailStudent && detailStudent.id === updated.id) {
           setDetailStudent(updated)
         }
         success(`Successfully updated student record for ${updated.firstName} ${updated.lastName}`)
       } else {
-        const created = await studentService.create(data)
+        const created = (await studentService.create(data)) as any
         setStudents((prev) => [created, ...prev])
         success(`Successfully enrolled student ${created.firstName} ${created.lastName}`)
       }

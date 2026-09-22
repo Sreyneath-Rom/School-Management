@@ -57,6 +57,7 @@ const PORTAL_PATH: Record<UserRole | 'all', string> = {
   teacher: '/login/teacher',
   student: '/login/student',
   parent: '/login/parent',
+  mazer: '/login',
 }
 
 export default function AuthHeader({

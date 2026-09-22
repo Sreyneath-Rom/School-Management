@@ -16,15 +16,32 @@ export interface StudentFilterParams {
 
 export interface CreateStudentPayload {
   email: string
-  password: string
+  password?: string
   firstName: string
   lastName: string
   phone?: string
-  studentCode: string
+  studentCode?: string
+  studentId?: string
   dateOfBirth?: string
   gender?: Gender
   classId?: string
   className?: string
+  address?: string
+  nationality?: string
+  grade?: string
+  class?: string
+  academicYear?: string
+  enrollmentDate?: string
+  status?: string
+  role?: string
+  fatherName?: string
+  motherName?: string
+  guardianName?: string
+  parentPhone?: string
+  parentEmail?: string
+  relationship?: string
+  emergencyContact?: string
+  notes?: string
 }
 
 export interface UpdateStudentPayload {

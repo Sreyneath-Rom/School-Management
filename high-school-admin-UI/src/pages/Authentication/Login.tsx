@@ -44,6 +44,7 @@ const DEMO_ACCOUNTS: Record<UserRole, { email: string; password: string }> = {
   teacher: { email: 'teacher@example.com', password: 'password' },
   student: { email: 'student@example.com', password: 'password' },
   parent: { email: 'parent@example.com', password: 'password' },
+  mazer: { email: 'admin@example.com', password: 'password' },
 }
 
 const DEMO_MODE = !import.meta.env.PROD
@@ -156,6 +157,29 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
       'Attendance and campus arrival notifications',
       'Direct messaging with homeroom teacher',
       'Grade cards, fee receipts, and school calendar',
+    ],
+  },
+  mazer: {
+    id: 'mazer',
+    title: 'Mazer Administrator',
+    roleSubtitle: 'System Administration & Global Management',
+    badge: 'Mazer Portal',
+    description:
+      'Manage high-level administrative tasks, global SIS features, system configuration, and operations.',
+    icon: ShieldCheck,
+    identifierLabel: 'Administrator Email',
+    identifierPlaceholder: 'admin@example.com',
+    accentClass: 'text-amber-600 dark:text-amber-400',
+    badgeClass:
+      'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    bglinear: 'from-amber-600 to-indigo-700',
+    btnlinear:
+      'bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-500/25',
+    ringClass: 'focus:ring-amber-500 focus:border-amber-500',
+    features: [
+      'Institutional administration',
+      'Advanced permissions and configuration',
+      'Unified portal access',
     ],
   },
 }

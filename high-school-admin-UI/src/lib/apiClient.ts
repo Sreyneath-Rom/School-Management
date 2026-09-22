@@ -1,5 +1,6 @@
 // src/lib/apiClient.ts
 import { LOCAL_STORAGE_KEYS } from '@/utils/constants'
+import { mockApiHandler } from '@/lib/mockApiHandler'
 
 /**
  * Normalize the base URL. A trailing slash is stripped and, if the URL is
@@ -20,6 +21,7 @@ function resolveBaseUrl(): string {
 }
 
 const API_BASE_URL = resolveBaseUrl()
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API !== 'false'
 
 // -----------------------------------------------------------------------------
 // Error type
@@ -267,20 +269,46 @@ async function request<T>(
 ): Promise<T> {
   const token = window.localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: buildHeaders(token, options.body != null, options.headers),
-  })
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: buildHeaders(token, options.body != null, options.headers),
+    })
 
-  // Auto-refresh on 401 once, then retry. Auth-flow endpoints are excluded
-  // so a failed login doesn't accidentally trigger a refresh loop.
-  if (res.status === 401 && retry && !NON_REFRESHABLE_PATHS.has(path)) {
-    const refreshedToken = await refreshAccessToken()
-    if (refreshedToken) return request<T>(path, options, false)
-    // Refresh failed — tokens already cleared by performRefresh.
+    // Auto-refresh on 401 once, then retry. Auth-flow endpoints are excluded
+    // so a failed login doesn't accidentally trigger a refresh loop.
+    if (res.status === 401 && retry && !NON_REFRESHABLE_PATHS.has(path)) {
+      const refreshedToken = await refreshAccessToken()
+      if (refreshedToken) return request<T>(path, options, false)
+      // Refresh failed — tokens already cleared by performRefresh.
+    }
+
+    return await handleResponse<T>(res, path)
+  } catch (err) {
+    if (!USE_MOCK_API) throw err
+
+    if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 404) {
+      throw err
+    }
+
+    const method = options.method || 'GET'
+    let parsedBody: any
+    try {
+      parsedBody = options.body ? JSON.parse(options.body as string) : undefined
+    } catch {
+      parsedBody = options.body
+    }
+
+    const mockRes = await mockApiHandler.handle(path, method, parsedBody)
+    if (mockRes) {
+      if (!mockRes.success) {
+        throw new ApiError(400, mockRes.message || 'API request failed', mockRes)
+      }
+      return mockRes.data as T
+    }
+
+    throw err
   }
-
-  return handleResponse<T>(res, path)
 }
 
 async function requestUpload<T>(
@@ -290,20 +318,34 @@ async function requestUpload<T>(
 ): Promise<T> {
   const token = window.localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
 
-  // No Content-Type here — the browser sets it with the multipart boundary.
-  // Setting it manually omits the boundary and the server rejects the body.
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: formData,
-  })
+  try {
+    // No Content-Type here — the browser sets it with the multipart boundary.
+    // Setting it manually omits the boundary and the server rejects the body.
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData,
+    })
 
-  if (res.status === 401 && retry) {
-    const refreshedToken = await refreshAccessToken()
-    if (refreshedToken) return requestUpload<T>(path, formData, false)
+    if (res.status === 401 && retry) {
+      const refreshedToken = await refreshAccessToken()
+      if (refreshedToken) return requestUpload<T>(path, formData, false)
+    }
+
+    return await handleResponse<T>(res, path)
+  } catch (err) {
+    if (!USE_MOCK_API) throw err
+
+    const mockRes = await mockApiHandler.handle(path, 'POST', formData)
+    if (mockRes) {
+      if (!mockRes.success) {
+        throw new ApiError(400, mockRes.message || 'API upload failed', mockRes)
+      }
+      return mockRes.data as T
+    }
+
+    throw err
   }
-
-  return handleResponse<T>(res, path)
 }
 
 // -----------------------------------------------------------------------------

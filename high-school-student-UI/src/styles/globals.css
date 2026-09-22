@@ -1,442 +1,216 @@
 @import "tailwindcss";
 
-/* 1. បង្កើត Variant សម្រាប់ Dark Mode ដើរដោយ .dark class */
+/* =========================================================
+   1. DARK MODE VARIANT
+   ========================================================= */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* 2. កំណត់ប្រព័ន្ធរចនា (Theme Settings) */
+/* =========================================================
+   2. DESIGN TOKENS (Modern Student Academic Portal)
+   ========================================================= */
 @theme {
-  /* ស្រមោលបែបផុស និងផត (Embossed Shadows) */
   --shadow-emboss: var(--shadow-emboss-raised);
   --shadow-sunken: var(--shadow-emboss-sunken);
 
-  /* ពណ៌ម៉ាកសញ្ញា (Brand Colors - Teal) ប្តូរជា RGBA */
-  --color-brand-50: rgba(236, 252, 253, 1);
-  --color-brand-100: rgba(213, 248, 252, 1);
-  --color-brand-200: rgba(170, 240, 248, 1);
-  --color-brand-300: rgba(113, 231, 244, 1);
-  --color-brand-400: rgba(57, 221, 239, 1);
-  --color-brand-500: rgba(18, 197, 217, 1);
-  --color-brand-600: rgba(15, 163, 179, 1);
-  --color-brand-700: rgba(12, 133, 146, 1);
-  --color-brand-800: rgba(9, 103, 113, 1);
-  --color-brand-900: rgba(7, 77, 85, 1);
-  --color-brand-950: rgba(4, 47, 52, 1);
+  /* Academic Blue & Indigo Palette */
+  --color-brand-50:  #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
 
-  /* កំណត់ពណ៌អក្សរទៅក្នុងប្រព័ន្ធ Tailwind */
-  --color-text-main: var(--text-color);
+  /* Semantic color tokens */
+  --color-text-main:      var(--text-color);
   --color-text-secondary: var(--text-color-secondary);
-  --color-color: var(--text-color);
-  --color-secondary: var(--text-color-secondary);
-  --color-surface: var(--glass-bg);
+  --color-color:          var(--text-color);
+  --color-secondary:      var(--text-color-secondary);
+  --color-surface:        var(--glass-bg);
   --color-surface-strong: var(--glass-strong-bg);
 
-  /* ប្រព័ន្ធពណ៌ស្ថានភាព (Status Colors) */
+  /* Status colors */
   --color-success: var(--status-success);
-  --color-info: var(--status-info);
+  --color-info:    var(--status-info);
   --color-warning: var(--status-warning);
-  --color-error: var(--status-error);
+  --color-error:   var(--status-error);
 }
 
 /* =========================================================
-   LIGHT MODE (ផ្ទៃភ្លឺ)
+   3. LIGHT MODE
    ========================================================= */
 :root {
-  /* ពណ៌ផ្ទៃខាងក្រោយរត់កាត់ (Teal ទៅ Orange) */
-  --app-bg: linear-gradient(
-    135deg,
-    rgba(5, 136, 151, 0.45) 0%,
-    rgba(255, 159, 0, 0.4) 100%
-  );
-  --page-background: var(--app-bg);
+  --app-bg: #f8fafc;
+  --page-background: #f8fafc;
 
-  /* ពណ៌កញ្ចក់គ្រឹះ (Liquid Optical Translucency) */
-  --glass-bg: rgba(255, 255, 255, 0.35);
-  --glass-outline: rgba(255, 255, 255, 0.6);
+  --glass-bg:      #ffffff;
+  --glass-outline: #e2e8f0;
+  --header-bg:     rgba(255, 255, 255, 0.92);
+  --sidebar-bg:    #ffffff;
 
-  /* Dynamic Liquid Specular Highlights */
-  --glass-specular-top: rgba(255, 255, 255, 0.75);
-  --glass-specular-bottom: rgba(0, 0, 0, 0.08);
-  --glass-inner-glow: inset 0 1px 1px rgba(255, 255, 255, 0.9);
-
-  /* ស្រមោលផុស & ស្រមោលអណ្តែតចាំង (Liquid Ambient Shadow) */
   --shadow-emboss-raised:
-    0 20px 40px -15px rgba(15, 23, 42, 0.18),
-    -4px -4px 12px rgba(255, 255, 255, 0.7);
-
-  /* ស្រមោលផត (Sunken Effect) */
+    0 1px 3px 0 rgba(15, 23, 42, 0.05),
+    0 1px 2px -1px rgba(15, 23, 42, 0.03);
   --shadow-emboss-sunken:
-    inset -4px -4px 10px rgba(255, 255, 255, 0.7),
-    inset 4px 4px 10px rgba(15, 23, 42, 0.12);
+    inset 0 1px 2px rgba(15, 23, 42, 0.06);
 
   --glass-shadow: var(--shadow-emboss-raised);
 
-  /* កញ្ចក់កម្រិតខ្លាំង */
-  --glass-strong-bg: rgba(255, 255, 255, 0.55);
-  --glass-strong-border: rgba(255, 255, 255, 0.8);
-  --glass-strong-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  --glass-strong-bg:     #ffffff;
+  --glass-strong-border: #cbd5e1;
+  --glass-strong-shadow:
+    0 10px 15px -3px rgba(15, 23, 42, 0.08),
+    0 4px 6px -4px rgba(15, 23, 42, 0.03);
 
-  /* ពណ៌អក្សរពេលភ្លឺ (Slate 800) */
-  --text-color: rgba(30, 41, 59, 1); 
-  --text-color-secondary: rgba(71, 85, 105, 1);
+  --text-color:           #0f172a;
+  --text-color-secondary: #475569;
 
-  /* ពណ៌ស្ថានភាពពេលភ្លឺ (Status Colors) */
-  --status-success: rgba(16, 185, 129, 1);
-  --status-info: rgba(14, 165, 233, 1);
-  --status-warning: rgba(245, 158, 11, 1);
-  --status-error: rgba(239, 68, 68, 1);
+  --status-success: #10b981;
+  --status-info:    #0284c7;
+  --status-warning: #f59e0b;
+  --status-error:   #ef4444;
+
+  --dropdown-bg:     #ffffff;
+  --dropdown-border: #e2e8f0;
 }
 
 /* =========================================================
-   DARK MODE (ផ្ទៃងងឹត)
+   4. DARK MODE
    ========================================================= */
 .dark {
-  /* ពណ៌ផ្ទៃខាងក្រោយងងឹត */
-  --app-bg: linear-gradient(
-    135deg,
-    rgba(10, 37, 42, 1) 0%,
-    rgba(43, 29, 14, 1) 100%
-  );
-  --page-background: var(--app-bg);
+  --app-bg: #090d16;
+  --page-background: #090d16;
 
-  /* ពណ៌កញ្ចក់ងងឹត */
-  --glass-bg: rgba(18, 16, 14, 0.45);
-  --glass-outline: rgba(255, 255, 255, 0.15);
+  --glass-bg:      #0f172a;
+  --glass-outline: #1e293b;
+  --header-bg:     rgba(15, 23, 42, 0.88);
+  --sidebar-bg:    #0f172a;
 
-  /* Dynamic Liquid Specular Highlights (Dark) */
-  --glass-specular-top: rgba(255, 255, 255, 0.35);
-  --glass-specular-bottom: rgba(0, 0, 0, 0.4);
-  --glass-inner-glow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
-
-  /* ស្រមោលផុសងងឹត */
   --shadow-emboss-raised:
-    0 25px 50px -12px rgba(0, 0, 0, 0.6),
-    -4px -4px 14px rgba(255, 255, 255, 0.04);
-
-  /* ស្រមោលផតងងឹត */
+    0 1px 3px 0 rgba(0, 0, 0, 0.3),
+    0 1px 2px -1px rgba(0, 0, 0, 0.2);
   --shadow-emboss-sunken:
-    inset -4px -4px 10px rgba(255, 255, 255, 0.03),
-    inset 4px 4px 10px rgba(0, 0, 0, 0.5);
+    inset 0 1px 2px rgba(0, 0, 0, 0.4);
 
   --glass-shadow: var(--shadow-emboss-raised);
 
-  /* កញ្ចក់កម្រិតខ្លាំងងងឹត */
-  --glass-strong-bg: rgba(23, 23, 23, 0.65);
-  --glass-strong-border: rgba(255, 255, 255, 0.25);
-  --glass-strong-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+  --glass-strong-bg:     #1e293b;
+  --glass-strong-border: #334155;
+  --glass-strong-shadow:
+    0 12px 24px -4px rgba(0, 0, 0, 0.5),
+    0 4px 8px -2px rgba(0, 0, 0, 0.3);
 
-  /* ពណ៌អក្សរពេលងងឹត (Slate 50) */
-  --text-color: rgba(248, 250, 252, 1); 
-  --text-color-secondary: rgba(148, 163, 184, 1);
+  --text-color:           #f8fafc;
+  --text-color-secondary: #94a3b8;
 
-  /* ពណ៌ស្ថានភាពពេលងងឹត */
-  --status-success: rgba(52, 211, 153, 1);
-  --status-info: rgba(56, 189, 248, 1);
-  --status-warning: rgba(251, 191, 36, 1);
-  --status-error: rgba(248, 113, 113, 1);
+  --status-success: #34d399;
+  --status-info:    #38bdf8;
+  --status-warning: #fbbf24;
+  --status-error:   #f87171;
+
+  --dropdown-bg:     #0f172a;
+  --dropdown-border: #1e293b;
 }
 
 /* =========================================================
-   LIQUID GLASS UTILITIES (ស្ទីលកញ្ចក់រាវ)
-   ========================================================= */
-.glass, .glass-teal, .glass-org, .glass-sm, .glass-strong {
-  position: relative;
-  isolation: isolate;
-  backdrop-filter: blur(28px) saturate(210%);
-  -webkit-backdrop-filter: blur(28px) saturate(210%);
-  box-shadow: var(--glass-shadow), var(--glass-inner-glow);
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), 
-              box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-              background 0.3s ease;
-}
-
-/* Ensure absolute or fixed positioned glass elements retain their position */
-.glass.absolute, .glass-teal.absolute, .glass-org.absolute, .glass-sm.absolute, .glass-strong.absolute,
-.glass[class*="absolute"], .glass-sm[class*="absolute"], .glass-strong[class*="absolute"] {
-  position: absolute !important;
-}
-
-.glass.fixed, .glass-sm.fixed, .glass-strong.fixed,
-.glass[class*="fixed"], .glass-sm[class*="fixed"], .glass-strong[class*="fixed"] {
-  position: fixed !important;
-}
-
-/* គែមរាងកោងចាំងពន្លឺ (Refractive Rim Light Layer) */
-.glass::before, .glass-teal::before, .glass-org::before, .glass-sm::before, .glass-strong::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    var(--glass-specular-top) 0%,
-    transparent 50%,
-    var(--glass-specular-bottom) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.glass        { background: var(--glass-bg); }
-.glass-teal   { background: rgba(5, 136, 151, 0.3); }
-.glass-org    { background: rgba(255, 159, 0, 0.25); }
-.glass-sm     { background: var(--glass-bg); }
-
-.glass-strong {
-  background: var(--glass-strong-bg);
-  backdrop-filter: blur(40px) saturate(240%);
-  -webkit-backdrop-filter: blur(40px) saturate(240%);
-  box-shadow: var(--glass-strong-shadow), var(--glass-inner-glow);
-}
-
-/* Glass surfaces own their fill, even when a component adds a fallback
-   background utility for older layouts. */
-.glass:not(.glass-teal):not(.glass-org),
-.glass-sm {
-  background: var(--glass-bg) !important;
-}
-
-.glass-strong {
-  background: var(--glass-strong-bg) !important;
-}
-
-/* Interactive Fluid Response (ចុច ឬ Hover លើ Element) */
-.glass-interactive {
-  cursor: pointer;
-}
-.glass-interactive:hover {
-  transform: translateY(-2px) scale(1.005);
-  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3), var(--glass-inner-glow);
-}
-.glass-interactive:active {
-  transform: translateY(0) scale(0.985);
-  transition-duration: 0.08s;
-}
-
-/* =========================================================
-   GLOBAL BODY & SCROLLBAR
+   5. BASE ELEMENT STYLES
    ========================================================= */
 html, body {
   min-height: 100vh;
 }
 
 html {
-  background: var(--page-background);
+  background-color: var(--page-background);
   color: var(--text-color);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
 
 body {
   margin: 0;
-  background: var(--page-background);
-  background-attachment: fixed;
+  background-color: var(--page-background);
   color: var(--text-color);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  transition: background 0.3s ease, color 0.3s ease;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   min-height: 100vh;
-  background: transparent;
+  background-color: transparent;
   color: inherit;
 }
 
-/* Semantic utilities keep component text and surfaces tied to the theme. */
-.text-color {
-  color: var(--text-color) !important;
-}
-
-.text-secondary {
-  color: var(--text-color-secondary) !important;
-}
-
-.bg-surface {
-  background-color: var(--glass-bg) !important;
-}
-
-.bg-surface-strong {
-  background-color: var(--glass-strong-bg) !important;
-}
-
-.border-surface {
-  border-color: var(--glass-outline) !important;
-}
-
-.border-surface-strong {
-  border-color: var(--glass-strong-border) !important;
-}
-
-.surface-theme {
-  background: var(--glass-bg) !important;
-  color: var(--text-color) !important;
-}
-
-.page-theme {
-  background: transparent;
-  color: var(--text-color);
-}
-
-.page-surface {
-  color: var(--text-color);
-}
-
-/* Dropdown surface styling: clean high-contrast, high-opacity backdrop for floating panels */
-.dropdown-surface {
-  position: absolute !important;
-  background-color: rgba(255, 255, 255, 0.96) !important;
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.2), 0 4px 12px -2px rgba(15, 23, 42, 0.08);
-}
-
-.dark .dropdown-surface {
-  background-color: rgba(15, 23, 42, 0.96) !important;
-  border: 1px solid rgba(51, 65, 85, 0.85);
-  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 4px 14px -2px rgba(0, 0, 0, 0.5);
-}
-
-.app-header {
-  margin: 0.75rem 0.75rem 0;
-  border: 1px solid var(--glass-outline);
-  border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--glass-bg) 82%, transparent);
-  box-shadow: 0 18px 45px -32px rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-}
-
-.app-header-inner {
-  position: relative;
-}
-
-.app-header-inner::after {
-  content: "";
-  position: absolute;
-  left: 1rem;
-  right: 1rem;
-  bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--glass-outline), transparent);
-  pointer-events: none;
-}
-
-.app-sidebar {
-  background: color-mix(in srgb, var(--glass-bg) 94%, transparent);
-  border-color: var(--glass-outline);
-  color: var(--text-color);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-}
-
-aside.app-sidebar {
-  height: calc(100% - 1.5rem);
-  margin: 0.75rem 0 0.75rem 0.75rem;
-  border: 1px solid var(--glass-outline);
-  border-radius: 1.5rem;
-  box-shadow: 0 24px 55px -38px rgba(15, 23, 42, 0.85);
-}
-
-aside.app-sidebar a[aria-current="page"] {
-  box-shadow: inset 3px 0 0 var(--color-brand-500);
-}
-
-/* Keep legacy neutral utility classes on the shared theme across every page. */
-[class~="text-slate-950"],
-[class~="text-slate-900"],
-[class~="text-slate-800"],
-[class~="text-stone-950"],
-[class~="text-stone-900"],
-[class~="text-stone-800"],
-[class~="text-gray-950"],
-[class~="text-gray-900"],
-[class~="text-gray-800"] {
-  color: var(--text-color) !important;
-}
-
-[class~="text-slate-700"],
-[class~="text-slate-600"],
-[class~="text-slate-500"],
-[class~="text-slate-400"],
-[class~="text-stone-700"],
-[class~="text-stone-600"],
-[class~="text-stone-500"],
-[class~="text-stone-400"],
-[class~="text-gray-700"],
-[class~="text-gray-600"],
-[class~="text-gray-500"],
-[class~="text-gray-400"] {
-  color: var(--text-color-secondary) !important;
-}
-
-[class~="bg-white"],
-[class*="bg-white/"],
-[class~="bg-slate-50"],
-[class*="bg-slate-50/"],
-[class~="bg-stone-50"],
-[class*="bg-stone-50/"] {
-  background-color: var(--glass-strong-bg) !important;
-}
-
-[class~="bg-slate-100"],
-[class*="bg-slate-100/"],
-[class~="bg-stone-100"],
-[class*="bg-stone-100/"] {
-  background-color: var(--glass-bg) !important;
-}
-
-[class~="glass"],
-[class~="glass-sm"],
-[class~="glass-strong"] {
-  background: var(--glass-bg) !important;
-}
-
-button,
-input,
-select,
-textarea {
+button, input, select, textarea {
   color: inherit;
   font: inherit;
 }
 
 ::placeholder {
   color: var(--text-color-secondary);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
-/* របារខ្សែកំពស់ (Scrollbar) */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(15, 118, 110, 0.35);
-  backdrop-filter: blur(8px);
-  border-radius: 99px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(15, 118, 110, 0.55);
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
 }
 
-/* (Selection) */
-::selection {
-  background: rgba(18, 197, 217, 0.35);
-  color: var(--text-color);
-}
-
-/* Skeleton shimmer animation */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
+/* =========================================================
+   6. SURFACES & UTILITIES
+   ========================================================= */
+@layer components {
+  .glass,
+  .glass-lite,
+  .glass-sm {
+    position: relative;
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-outline);
+    box-shadow: var(--glass-shadow);
   }
-  100% {
-    transform: translateX(100%);
+
+  .glass-strong {
+    background-color: var(--glass-strong-bg);
+    border: 1px solid var(--glass-strong-border);
+    box-shadow: var(--glass-strong-shadow);
   }
+
+  .glass-interactive {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .glass-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    border-color: var(--glass-strong-border);
+  }
+  .glass-interactive:active {
+    transform: translateY(0);
+  }
+
+  .dropdown-surface {
+    position: absolute;
+    background-color: var(--dropdown-bg);
+    border: 1px solid var(--dropdown-border);
+    box-shadow:
+      0 12px 28px -4px rgba(15, 23, 42, 0.12),
+      0 4px 8px -2px rgba(15, 23, 42, 0.04);
+  }
+}
+
+@layer utilities {
+  .text-color            { color: var(--text-color); }
+  .text-secondary        { color: var(--text-color-secondary); }
+  .bg-surface            { background-color: var(--glass-bg); }
+  .bg-surface-strong     { background-color: var(--glass-strong-bg); }
+  .border-surface        { border-color: var(--glass-outline); }
+  .border-surface-strong { border-color: var(--glass-strong-border); }
+  .surface-theme         { background-color: var(--glass-bg); color: var(--text-color); }
+  .page-theme            { background-color: var(--page-background); color: var(--text-color); }
+  .page-surface          { color: var(--text-color); }
 }

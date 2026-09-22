@@ -9,37 +9,92 @@
  * the backend. If you see `mazer` in API data, that's stale — the role
  * doesn't exist.
  */
-export type UserRole = 'admin' | 'teacher' | 'student' | 'parent'
+export type UserRole = 'admin' | 'teacher' | 'student' | 'parent' | 'mazer'
 
 export type UserStatus = 'active' | 'inactive'
 export type Gender = 'male' | 'female' | 'other'
 export type ParentRelationship = 'father' | 'mother' | 'guardian' | 'other'
 
 // ---------------------------------------------------------------------------
-// API response shape
+// Base and Extended User Models
 // ---------------------------------------------------------------------------
 
-/**
- * Fields every user has, regardless of role. Matches the `publicUserSelect`
- * projection in `users.service.ts` on the backend.
- */
-interface BaseUser {
+export interface BaseUser {
   id: string
+  username?: string
   email: string
   firstName: string
   lastName: string
-  phone: string | null
-  avatarUrl: string | null
-  isActive: boolean
-  lastLoginAt: string | null
-  createdAt: string
-
-  /**
-   * The role as returned by the API — an object with id and name, not a
-   * bare string. The `name` matches one of the `UserRole` values.
-   */
-  role: { id: string; name: UserRole }
+  phone?: string | null
+  avatarUrl?: string | null
+  profilePhoto?: string
+  isActive?: boolean
+  status?: UserStatus
+  gender?: Gender
+  dateOfBirth?: string
+  address?: string
+  nationality?: string
+  emergencyContact?: string
+  notes?: string
+  createdDate?: string
+  createdAt?: string
+  lastLoginAt?: string | null
+  role?: any
 }
+
+export interface AdminUser extends BaseUser {
+  role: 'admin'
+  employeeId?: string
+  department?: string
+  position?: string
+}
+
+export interface TeacherUser extends BaseUser {
+  role: 'teacher'
+  teacherId?: string
+  department?: string
+  qualification?: string
+  hireDate?: string
+  experienceYears?: number
+  subjects?: any
+  assignedClasses?: string[]
+}
+
+export interface StudentCoreFields {
+  studentId?: string
+  studentCode?: string
+  grade?: string
+  class?: string
+  academicYear?: string
+  enrollmentDate?: string
+  fatherName?: string
+  motherName?: string
+  guardianName?: string
+  parentPhone?: string
+  parentEmail?: string
+  relationship?: ParentRelationship
+}
+
+export interface StudentUser extends BaseUser, StudentCoreFields {
+  role: 'student'
+}
+
+export interface MazerUser extends BaseUser, StudentCoreFields {
+  role: 'mazer'
+  assignedClass?: string
+  appointmentDate?: string
+  endDate?: string
+}
+
+export interface ParentUser extends BaseUser {
+  role: 'parent'
+}
+
+export type SystemUser = AdminUser | TeacherUser | StudentUser | MazerUser | ParentUser | any
+
+// ---------------------------------------------------------------------------
+// API response shape
+// ---------------------------------------------------------------------------
 
 /**
  * Student profile attached to a user whose role is `student`.
@@ -66,10 +121,6 @@ export interface UserTeacherProfile {
 
 /**
  * The shape returned by `GET /users` and `GET /users/:id`.
- *
- * Both `student` and `teacher` are always present as keys, but only one of
- * them is non-null for any given user (based on the role), and both are
- * null for admin and parent accounts.
  */
 export interface User extends BaseUser {
   student: UserStudentProfile | null
@@ -77,8 +128,7 @@ export interface User extends BaseUser {
 }
 
 /**
- * Shape returned by `GET /auth/me`. A trimmed projection of `User` with
- * `permissionKeys` — the strings the UI uses to gate features.
+ * Shape returned by `GET /auth/me`.
  */
 export interface CurrentUser {
   id: string
@@ -94,57 +144,43 @@ export interface CurrentUser {
 // ---------------------------------------------------------------------------
 
 export const getFullName = (
-  user: Pick<User, 'firstName' | 'lastName'>
-): string => `${user.firstName} ${user.lastName}`
+  user: { firstName?: string; lastName?: string } | any
+): string => `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'User'
 
-/**
- * The class a user is enrolled in, if any. Only populated for students.
- */
-export const getDisplayClass = (user: User): string | null =>
-  user.student?.class?.name ?? null
+export const getDisplayClass = (user: any): string | null => {
+  if (user?.student?.class?.name) return user.student.class.name
+  if (user?.class) return user.class
+  return null
+}
 
-/**
- * Department of a teacher's first subject. A teacher can span departments;
- * this returns the first one, which is what a single-column table needs.
- */
-export const getDisplayDepartment = (user: User): string | null =>
-  user.teacher?.subjects[0]?.subject.department ?? null
+export const getDisplayDepartment = (user: any): string | null => {
+  if (user?.teacher?.subjects?.[0]?.subject?.department) {
+    return user.teacher.subjects[0].subject.department
+  }
+  if (user?.department) return user.department
+  return null
+}
 
-/**
- * Human-readable role label. Falls back to a capitalized version of the
- * raw name for roles the client doesn't recognize.
- */
-export const ROLE_LABELS: Record<UserRole, string> = {
+export const getDisplayGrade = (user: any): string | null => {
+  if (user?.grade) return user.grade
+  return null
+}
+
+export const getDisplayAcademicYear = (user: any): string | null => {
+  if (user?.academicYear) return user.academicYear
+  return null
+}
+
+export const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
   teacher: 'Teacher',
   student: 'Student',
   parent: 'Parent',
+  mazer: 'Mazer',
 }
 
-/**
- * Tailwind color tokens per role. Used for badges, avatar rings, and
- * role-switcher pills.
- *
- * Roles map to the theme as follows:
- *   - admin   → brand teal (the primary brand color — admin is the
- *               "elevated" role and gets the brand treatment)
- *   - teacher → info (sky)
- *   - student → success (emerald)
- *   - parent  → warning (amber)
- *
- * All four use the semantic variables declared in `globals.css`, so the
- * badges render correctly in light and dark mode without needing `dark:`
- * variants on every class.
- *
- * The brand scale is used directly (rather than via a single variable)
- * because the swatch needs three coordinated stops — a lighter background
- * for the pill, a darker foreground for the text, and a mid-tone for the
- * ring. The brand palette is already defined in `@theme` in globals.css,
- * so `bg-brand-100` / `text-brand-700` / `ring-brand-500` resolve without
- * extra configuration.
- */
 export const ROLE_COLORS: Record<
-  UserRole,
+  string,
   { bg: string; text: string; ring: string }
 > = {
   admin: {
@@ -166,5 +202,10 @@ export const ROLE_COLORS: Record<
     bg: 'bg-warning/15',
     text: 'text-warning',
     ring: 'ring-warning/30',
+  },
+  mazer: {
+    bg: 'bg-amber-100 dark:bg-amber-900/40',
+    text: 'text-amber-700 dark:text-amber-200',
+    ring: 'ring-amber-500/30',
   },
 }

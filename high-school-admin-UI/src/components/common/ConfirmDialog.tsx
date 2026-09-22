@@ -4,15 +4,17 @@ import Modal from './Modal'
 
 export type ConfirmVariant = 'danger' | 'warning' | 'primary'
 
-interface ConfirmDialogProps {
-  isOpen: boolean
+export interface ConfirmDialogProps {
+  isOpen?: boolean
+  open?: boolean
   title: string
   message: string
   confirmLabel?: string
   cancelLabel?: string
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
   onCancel: () => void
   isConfirming?: boolean
+  isDeleting?: boolean
   variant?: ConfirmVariant
 }
 
@@ -36,6 +38,7 @@ const CONFIRM_BTN: Record<ConfirmVariant, string> = {
 
 export default function ConfirmDialog({
   isOpen,
+  open,
   title,
   message,
   confirmLabel = 'Confirm',
@@ -43,23 +46,26 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
   isConfirming = false,
+  isDeleting = false,
   variant = 'danger',
 }: ConfirmDialogProps) {
   const Icon = variant === 'danger' ? Trash2 : AlertTriangle
+  const isDialogOpen = isOpen ?? open ?? false
+  const activeProcessing = isConfirming || isDeleting
 
   return (
     <Modal
-      isOpen={isOpen}
+      isOpen={isDialogOpen}
       onClose={onCancel}
       accent={ACCENT[variant]}
       size="sm"
-      preventBackdropClose={isConfirming}
+      preventBackdropClose={activeProcessing}
       footer={
         <>
           <button
             type="button"
             onClick={onCancel}
-            disabled={isConfirming}
+            disabled={activeProcessing}
             className="rounded-2xl border border-surface bg-surface px-4 py-2 text-xs font-bold text-fg-muted hover:text-fg hover:bg-surface-strong transition cursor-pointer disabled:opacity-50"
           >
             {cancelLabel}
@@ -67,10 +73,10 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={isConfirming}
+            disabled={activeProcessing}
             className={`rounded-2xl px-4 py-2 text-xs font-bold shadow-md transition cursor-pointer disabled:opacity-50 ${CONFIRM_BTN[variant]}`}
           >
-            {isConfirming ? 'Processing…' : confirmLabel}
+            {activeProcessing ? 'Processing…' : confirmLabel}
           </button>
         </>
       }

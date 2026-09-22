@@ -16,7 +16,7 @@ function buildSubjectSummaries(grades: GradeRecord[]): SubjectSummary[] {
 
   for (const g of grades) {
     const entry = bySubject.get(g.subjectId) ?? { name: g.subjectName, total: 0, count: 0 }
-    entry.total += g.totalWeightedScore
+    entry.total += g.totalWeightedScore ?? g.score ?? 0
     entry.count += 1
     bySubject.set(g.subjectId, entry)
   }

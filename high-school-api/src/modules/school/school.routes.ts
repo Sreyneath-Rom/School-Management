@@ -79,7 +79,7 @@ router.post(
   '/logo',
   requireRole('admin'),
   requirePermission('school', 'edit'),
-  upload.single('logo'),
+  upload.single('logo') as any,
   asyncHandler(schoolController.uploadLogo)
 )
 

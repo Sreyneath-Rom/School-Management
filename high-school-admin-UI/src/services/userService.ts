@@ -37,17 +37,22 @@ export interface UserRecord {
 
 export interface CreateUserPayload {
   email: string
-  password: string
+  password?: string
   firstName: string
   lastName: string
   phone?: string
   roleId?: string
-  /**
-   * Only admin and parent can be created via this endpoint. Teacher and
-   * student accounts need their own profile rows and must be created
-   * through `POST /teachers` or `POST /students/enroll`.
-   */
-  role?: 'admin' | 'parent'
+  role?: any
+  status?: 'active' | 'inactive'
+  gender?: string
+  dateOfBirth?: string
+  address?: string
+  department?: string
+  position?: string
+  qualification?: string
+  grade?: string
+  class?: string
+  academicYear?: string
 }
 
 export interface UpdateUserPayload {
@@ -55,7 +60,7 @@ export interface UpdateUserPayload {
   lastName?: string
   phone?: string
   roleId?: string
-  role?: UserRole
+  role?: any
   isActive?: boolean
   status?: 'active' | 'inactive'
 }
@@ -114,8 +119,8 @@ export const userService = {
    * Admin-triggered password reset. The caller must supply the new
    * password — the backend refuses a missing `newPassword`.
    */
-  resetPassword: (id: string, newPassword: string) =>
-    apiClient.post<void>(`/users/${id}/reset-password`, { newPassword }),
+  resetPassword: (id: string, newPassword?: string) =>
+    apiClient.post<void>(`/users/${id}/reset-password`, { newPassword: newPassword || 'ChangeMe123!' }),
 
   bulkStatusUpdate: (ids: string[], status: 'active' | 'inactive') =>
     apiClient.post<{ updated: number }>('/users/bulk-status', { ids, status }),

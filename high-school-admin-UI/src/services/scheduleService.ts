@@ -5,10 +5,11 @@ import type {
   ListSchedulesQuery,
   Schedule,
   UpdateSchedulePayload,
+  DayOfWeek,
 } from '@/types/schedule'
 
 export type ScheduleSlot = Schedule
-export type { CreateSchedulePayload, UpdateSchedulePayload }
+export type { CreateSchedulePayload, UpdateSchedulePayload, DayOfWeek }
 
 export const scheduleService = {
   list: (params?: ListSchedulesQuery) => {

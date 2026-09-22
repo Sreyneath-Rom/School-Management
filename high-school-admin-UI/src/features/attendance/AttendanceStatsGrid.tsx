@@ -16,12 +16,12 @@ export default function AttendanceStatsGrid({ stats, loading }: AttendanceStatsG
       resolveValue={(card) => {
         if (!stats) return card.value
         const values: Record<string, string> = {
-          present: stats.presentToday.toLocaleString(),
-          absent: stats.absentToday.toLocaleString(),
-          late: stats.lateToday.toLocaleString(),
+          present: (stats.presentToday ?? stats.present ?? 0).toLocaleString(),
+          absent: (stats.absentToday ?? stats.absent ?? 0).toLocaleString(),
+          late: (stats.lateToday ?? stats.late ?? 0).toLocaleString(),
           rate: `${stats.attendanceRate}%`,
-          excuses: stats.pendingExcuses.toString(),
-          perfect: stats.perfectAttendanceCount.toLocaleString(),
+          excuses: (stats.pendingExcuses ?? stats.excused ?? 0).toString(),
+          perfect: (stats.perfectAttendanceCount ?? 0).toLocaleString(),
         }
         return values[card.id] ?? card.value
       }}

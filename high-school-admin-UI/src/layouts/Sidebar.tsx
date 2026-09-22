@@ -52,6 +52,7 @@ import {
   LogOut,
   Search,
   School2,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -1017,18 +1018,19 @@ export default function Sidebar({
 
   // --- Render Compact Rail Mode for Desktop ---
   const renderCompactMenu = () => (
-    <div className="app-sidebar flex h-full flex-col justify-between p-2 select-none overflow-hidden">
-      <div className="flex flex-col items-center space-y-2 overflow-y-auto no-scrollbar flex-1 py-1.5">
-        {/* School Crest mini icon */}
+    <div className="app-sidebar flex h-full flex-col justify-between p-2 select-none overflow-hidden bg-surface/90 backdrop-blur-md border-r border-surface">
+      <div className="flex flex-col items-center space-y-2.5 overflow-y-auto no-scrollbar flex-1 py-2">
+        {/* School Crest mini icon with modern gradient ring */}
         <div
           title={schoolName || "School"}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-slate-900 to-teal-900 text-white shadow-md border border-teal-500/30"
+          className="relative group flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-600 via-brand-700 to-indigo-800 text-white shadow-md shadow-brand-600/20 ring-1 ring-white/20 transition-transform duration-200 hover:scale-105"
         >
           {schoolName ? (
-            <span className="text-xs font-black">{schoolInitials}</span>
+            <span className="text-xs font-black tracking-tight">{schoolInitials}</span>
           ) : (
-            <School2 size={18} className="text-teal-300" />
+            <School2 size={18} className="text-white" />
           )}
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-400 ring-2 ring-surface" />
         </div>
 
         {/* Expand sidebar trigger button */}
@@ -1036,13 +1038,10 @@ export default function Sidebar({
           type="button"
           onClick={toggleCollapsed}
           title="Expand sidebar"
-          className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-color cursor-pointer transition-all duration-200 active:scale-95"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface-strong hover:text-color cursor-pointer transition-all duration-200 active:scale-95 border border-transparent hover:border-surface"
           aria-label="Expand sidebar"
         >
-          <PanelLeft
-            size={17}
-            className="group-hover:scale-110 transition-transform duration-200"
-          />
+          <PanelLeft size={16} />
         </button>
 
         {/* Dashboard quick icon */}
@@ -1052,8 +1051,8 @@ export default function Sidebar({
           title={t("sidebar.dashboard")}
           className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 shrink-0 ${
             isDashboardActive
-              ? "bg-brand-600 text-white shadow-md shadow-brand-600/30 font-semibold"
-              : "text-secondary hover:bg-surface hover:text-color"
+              ? "bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-semibold"
+              : "text-secondary hover:bg-surface-strong hover:text-color"
           }`}
         >
           <LayoutDashboard size={18} />
@@ -1066,7 +1065,7 @@ export default function Sidebar({
 
         {/* Section Icons with Hover Popover */}
         <nav
-          className="flex flex-col space-y-1.5"
+          className="flex flex-col space-y-1.5 w-full items-center"
           aria-label="Compact navigation"
         >
           {baseMenu.map((section) => {
@@ -1093,7 +1092,7 @@ export default function Sidebar({
                   className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                     isSectionActive
                       ? "bg-surface-strong text-brand-600 font-semibold ring-1 ring-brand-500/30 dark:text-brand-300"
-                      : "text-secondary hover:bg-surface hover:text-color"
+                      : "text-secondary hover:bg-surface-strong hover:text-color"
                   }`}
                 >
                   <SectionIcon size={18} />
@@ -1101,14 +1100,14 @@ export default function Sidebar({
                     <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface-strong" />
                   )}
                   {!isSectionActive && hasBadges && (
-                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning ring-1 ring-surface-strong" />
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-500 ring-1 ring-surface-strong" />
                   )}
                 </button>
 
                 {/* Popover Flyout for Compact Mode */}
                 {isHovered && (
                   <div
-                    className="dropdown-surface absolute left-full top-0 z-50 ml-3 w-72 rounded-2xl p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+                    className="dropdown-surface absolute left-full top-0 z-50 ml-3 w-72 rounded-2xl p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150 border border-surface bg-surface-strong/95 backdrop-blur-md"
                     onMouseEnter={() => handleMouseEnter(section.key)}
                     onMouseLeave={handleMouseLeave}
                   >
@@ -1120,7 +1119,7 @@ export default function Sidebar({
                         />
                         {t(section.titleKey)}
                       </span>
-                      <span className="text-[10px] text-secondary font-semibold px-2 py-0.5 rounded-full bg-surface">
+                      <span className="text-[10px] text-secondary font-semibold px-2 py-0.5 rounded-full bg-surface border border-surface">
                         {section.items.length} items
                       </span>
                     </div>
@@ -1174,7 +1173,7 @@ export default function Sidebar({
       <div className="flex flex-col items-center space-y-2 pt-2 border-t border-surface shrink-0">
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-surface"
+          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-indigo-600 text-white font-bold text-xs shadow-xs cursor-default select-none ring-1 ring-surface"
         >
           {userAvatarUrl ? (
             <img
@@ -1192,25 +1191,30 @@ export default function Sidebar({
 
   // --- Render Standard Expanded Menu ---
   const renderExpandedMenu = (isMobile = false) => (
-    <div className="app-sidebar flex h-full flex-col justify-between select-none overflow-hidden">
+    <div className="app-sidebar flex h-full flex-col justify-between select-none overflow-hidden bg-surface/90 backdrop-blur-md border-r border-surface">
       {/* Top Header: Institutional Branding & Controls */}
-      <div className="shrink-0 p-3 pb-2 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          {/* School Identity Emblem */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-tr from-slate-900 via-teal-950 to-slate-900 text-white shadow-md border border-teal-500/30">
-              <School2 size={18} className="text-teal-300" />
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-amber-400 ring-1 ring-surface-strong" />
+      <div className="shrink-0 p-3.5 pb-2 space-y-3">
+        {/* School Identity Card */}
+        <div className="flex items-center justify-between gap-2.5 p-2 rounded-2xl bg-surface/50 border border-surface/80 shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-brand-600 via-brand-700 to-indigo-800 text-white shadow-sm shadow-brand-600/20 ring-1 ring-white/10">
+              <School2 size={19} className="text-white" />
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-400 ring-2 ring-surface" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h2 className="truncate text-xs font-black tracking-tight text-color uppercase">
-                  {schoolName || "School"}
-                </h2>
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-xs font-bold tracking-tight text-color">
+                {schoolName || "School Administration"}
+              </h2>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-brand-600 dark:text-brand-400">
+                  <Sparkles size={10} className="shrink-0 opacity-70" />
+                  {academicYear ? `AY ${academicYear}` : "Portal"}
+                </span>
+                <span className="h-1 w-1 rounded-full bg-surface-strong shrink-0" />
+                <span className="text-[10px] text-secondary capitalize truncate">
+                  {roleConfig.label}
+                </span>
               </div>
-              <p className="truncate text-[10.5px] font-semibold text-brand-600 dark:text-brand-400">
-                {academicYear ? `AY ${academicYear}` : "\u00A0"}
-              </p>
             </div>
           </div>
 
@@ -1220,11 +1224,11 @@ export default function Sidebar({
               <button
                 type="button"
                 onClick={toggleCollapsed}
-                className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-color transition cursor-pointer"
+                className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface-strong hover:text-color transition-colors cursor-pointer border border-transparent hover:border-surface"
                 title="Collapse sidebar (rail mode)"
                 aria-label="Collapse sidebar"
               >
-                <PanelLeftClose size={16} />
+                <PanelLeftClose size={15} />
               </button>
             )}
 
@@ -1232,10 +1236,10 @@ export default function Sidebar({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-color lg:hidden transition cursor-pointer"
+                className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface-strong hover:text-color lg:hidden transition-colors cursor-pointer border border-transparent hover:border-surface"
                 aria-label="Close navigation drawer"
               >
-                <X size={18} />
+                <X size={17} />
               </button>
             )}
           </div>
@@ -1243,7 +1247,7 @@ export default function Sidebar({
 
         {/* Quick Menu Search / Filter */}
         <div className="relative">
-          <span className="absolute left-3 top-2.5 text-secondary">
+          <span className="absolute left-3 top-2.5 text-secondary pointer-events-none">
             <Search size={14} />
           </span>
           <input
@@ -1251,13 +1255,14 @@ export default function Sidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Quick search menu..."
-            className="w-full pl-8 pr-7 py-2 rounded-xl text-xs bg-surface border border-surface text-color placeholder-secondary focus:outline-none focus:ring-1 focus:ring-brand-500 transition"
+            className="w-full pl-8.5 pr-8 py-2 rounded-xl text-xs bg-surface/60 border border-surface text-color placeholder-secondary focus:outline-none focus:ring-1.5 focus:ring-brand-500/60 focus:bg-surface transition-all duration-150 shadow-2xs"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-2.5 text-secondary hover:text-color p-0.5 cursor-pointer"
+              className="absolute right-2.5 top-2.5 text-secondary hover:text-color p-0.5 cursor-pointer rounded-md hover:bg-surface"
+              aria-label="Clear search"
             >
               <X size={13} />
             </button>
@@ -1268,10 +1273,10 @@ export default function Sidebar({
         <NavLink
           to={dashboardPath}
           onClick={handleLinkClick}
-          className={`group flex min-h-9.5 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all duration-150 ${
+          className={`group flex min-h-9.5 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
             isDashboardActive
-              ? "bg-brand-600 text-white shadow-md shadow-brand-600/25"
-              : "text-secondary hover:text-color hover:bg-surface"
+              ? "bg-brand-600 text-white shadow-sm shadow-brand-600/30"
+              : "text-secondary hover:text-color hover:bg-surface/80"
           }`}
         >
           <div
@@ -1283,15 +1288,15 @@ export default function Sidebar({
           >
             <LayoutDashboard size={14} />
           </div>
-          <span className="truncate text-xs">{t("sidebar.dashboard")}</span>
+          <span className="truncate text-xs font-medium">{t("sidebar.dashboard")}</span>
           {isDashboardActive && (
-            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            <span className="ml-auto flex h-2 w-2 rounded-full bg-white animate-pulse" />
           )}
         </NavLink>
       </div>
 
       {/* Middle Scrollable Navigation List */}
-      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-3 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-surface-strong hover:[&::-webkit-scrollbar-thumb]:bg-surface">
+      <div className="flex-1 overflow-y-auto px-3.5 py-1.5 space-y-3.5 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-surface-strong hover:[&::-webkit-scrollbar-thumb]:bg-surface">
         <nav aria-label="Sidebar Sections">
           {Object.entries(groupedSections).map(([groupKey, sections]) => {
             const groupTitle = categoryGroupLabels[groupKey] || groupKey;
@@ -1299,8 +1304,9 @@ export default function Sidebar({
             return (
               <div key={groupKey} className="space-y-1">
                 {/* Category Group Header */}
-                <div className="px-2 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-secondary">
-                  {groupTitle}
+                <div className="flex items-center gap-2 px-2.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-secondary">
+                  <span className="truncate">{groupTitle}</span>
+                  <span className="flex-1 h-px bg-surface/80 shrink-0" />
                 </div>
 
                 {sections.map((section, index) => {
@@ -1332,19 +1338,19 @@ export default function Sidebar({
                         onKeyDown={(e) => handleSectionKeyDown(e, index)}
                         aria-expanded={isSectionOpen}
                         aria-controls={panelId}
-                        className={`group flex min-h-9.5 w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
+                        className={`group flex min-h-9 w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                           isSectionOpen
-                            ? "bg-surface text-color shadow-xs"
+                            ? "bg-surface text-color font-semibold shadow-2xs border border-surface"
                             : hasActiveChild
-                              ? "text-brand-600 bg-surface dark:text-brand-300 font-bold"
-                              : "text-secondary hover:text-color hover:bg-surface"
+                              ? "text-brand-600 bg-brand-50/50 dark:bg-brand-950/20 dark:text-brand-300 font-semibold"
+                              : "text-secondary hover:text-color hover:bg-surface/60"
                         }`}
                       >
                         <span className="flex items-center gap-2.5 truncate">
                           <div
-                            className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                            className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-all duration-150 ${
                               isSectionOpen || hasActiveChild
-                                ? "bg-brand-600 text-white shadow-xs"
+                                ? "bg-brand-600 text-white shadow-xs shadow-brand-600/20"
                                 : "bg-surface text-secondary group-hover:text-color"
                             }`}
                           >
@@ -1382,7 +1388,7 @@ export default function Sidebar({
                         role="region"
                         aria-labelledby={triggerId}
                         aria-hidden={!isSectionOpen}
-                        className={`grid transition-[grid-template-rows] duration-250 ease-in-out ${
+                        className={`grid transition-[grid-template-rows] duration-200 ease-out ${
                           isSectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                         }`}
                       >
@@ -1401,14 +1407,14 @@ export default function Sidebar({
                                   to={item.path}
                                   onClick={handleLinkClick}
                                   tabIndex={isSectionOpen ? 0 : -1}
-                                  className={`group relative flex min-h-8.5 items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
+                                  className={`group relative flex min-h-8 items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                                     isItemActive
-                                      ? "font-bold bg-brand-600 text-white shadow-xs"
-                                      : "font-medium text-secondary hover:bg-surface hover:text-color"
+                                      ? "font-semibold bg-brand-600 text-white shadow-xs shadow-brand-600/20"
+                                      : "font-normal text-secondary hover:bg-surface hover:text-color"
                                   }`}
                                 >
                                   {isItemActive && (
-                                    <span className="absolute -left-4.25 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface-strong" />
+                                    <span className="absolute -left-4 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-brand-600 ring-2 ring-surface" />
                                   )}
                                   <span className="flex items-center gap-2 truncate">
                                     <Icon
@@ -1425,9 +1431,9 @@ export default function Sidebar({
                                   </span>
                                   {badge && (
                                     <span
-                                      className={`rounded-full px-1.5 py-0.5 text-[9.5px] font-bold ${
+                                      className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-tight ${
                                         isItemActive
-                                          ? "bg-white/20 text-white"
+                                          ? "bg-white/25 text-white"
                                           : badge.color
                                       } ${badge.pulse ? "animate-pulse" : ""}`}
                                     >
@@ -1450,10 +1456,10 @@ export default function Sidebar({
       </div>
 
       {/* User Profile Bottom Footer */}
-      <div className="shrink-0 p-3 pt-2 border-t border-surface">
-        <div className="flex items-center justify-between gap-2 rounded-2xl bg-surface-strong p-2.5 border border-surface">
+      <div className="shrink-0 p-3.5 pt-2 border-t border-surface">
+        <div className="flex items-center justify-between gap-2 rounded-2xl bg-surface/60 hover:bg-surface/80 p-2.5 border border-surface transition-colors">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none shadow-xs">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-indigo-600 text-white font-bold text-xs select-none shadow-xs ring-1 ring-surface">
               {userAvatarUrl ? (
                 <img
                   src={userAvatarUrl}
@@ -1463,15 +1469,15 @@ export default function Sidebar({
               ) : (
                 userInitials
               )}
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface-strong animate-pulse" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-surface" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xs font-bold text-color leading-tight">
+              <p className="truncate text-xs font-semibold text-color leading-tight">
                 {userDisplayName}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span
-                  className={`text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border ${roleConfig.badgeClass}`}
+                  className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-md border ${roleConfig.badgeClass}`}
                 >
                   {roleConfig.label}
                 </span>
@@ -1484,7 +1490,7 @@ export default function Sidebar({
               type="button"
               onClick={() => logout()}
               title="Sign out"
-              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-surface hover:text-error transition-colors cursor-pointer"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors cursor-pointer"
               aria-label="Sign out"
             >
               <LogOut size={15} />

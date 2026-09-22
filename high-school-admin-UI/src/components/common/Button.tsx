@@ -2,7 +2,7 @@
 import { forwardRef } from 'react'
 import type { ButtonHTMLAttributes } from 'react'
 
-export type ButtonVariant = 'solid' | 'outline' | 'ghost' | 'link' | 'danger'
+export type ButtonVariant = 'solid' | 'outline' | 'ghost' | 'link' | 'danger' | 'glass' | 'solidOutline'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -24,6 +24,10 @@ const VARIANTS: Record<ButtonVariant, string> = {
   link:
     'bg-transparent text-brand-600 dark:text-brand-400 hover:underline px-0 py-0',
   danger: 'bg-error text-white shadow-sm shadow-error/20 hover:bg-error/90 active:bg-error',
+  glass:
+    'bg-surface/60 backdrop-blur-md border border-surface text-fg hover:bg-surface-strong',
+  solidOutline:
+    'bg-surface text-brand-600 border-2 border-brand-500 hover:bg-surface-strong',
 }
 
 const SIZES: Record<ButtonSize, string> = {

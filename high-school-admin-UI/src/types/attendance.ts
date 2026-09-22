@@ -19,6 +19,12 @@ export interface AttendanceRecord {
   note: string | null
   createdAt: string
 
+  // Convenience flat fields used by rosters and drawers
+  studentName?: string
+  studentCode?: string
+  studentAvatar?: string
+  class?: string | null
+
   // Hydrated relations
   student?: {
     id: string
@@ -43,6 +49,10 @@ export interface UnmarkedAttendanceRow {
   checkOut: null
   note: null
   createdAt: string
+  studentName?: string
+  studentCode?: string
+  studentAvatar?: string
+  class?: string | null
   student: NonNullable<AttendanceRecord['student']>
 }
 
@@ -75,6 +85,13 @@ export interface AttendanceStats {
    * multiply by 100 before formatting.
    */
   attendanceRate: number
+
+  // Convenience aliases
+  presentToday?: number
+  absentToday?: number
+  lateToday?: number
+  pendingExcuses?: number
+  perfectAttendanceCount?: number
 }
 
 /**

@@ -294,10 +294,6 @@ export const usersService = {
         where: { userId: id, deletedAt: null },
         data: { deletedAt: now },
       }),
-      prisma.parent.updateMany({
-        where: { userId: id, deletedAt: null },
-        data: { deletedAt: now },
-      }),
     ])
   },
 

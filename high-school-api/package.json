@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json && npm run copy:prisma-assets",
+    "build": "prisma generate && tsc -p tsconfig.json && tsc-alias -p tsconfig.json && npm run copy:prisma-assets",
     "copy:prisma-assets": "node -e \"require('fs').cpSync('src/generated','dist/generated',{recursive:true,filter:(s)=>!s.endsWith('.ts')})\"",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",

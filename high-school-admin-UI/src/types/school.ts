@@ -36,6 +36,9 @@ export interface SchoolFormState {
   phone: string
   email: string
   academicYear: string
+  schoolCode?: string
+  description?: string
+  academicTerm?: string
 
   // Stored inside `settings`:
   website: string

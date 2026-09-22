@@ -23,8 +23,10 @@ export default function TeacherLayout() {
         <div className="flex-1 h-full flex flex-col min-w-0 overflow-y-auto overflow-x-hidden">
           <Header onOpenSidebar={() => setMobileOpen(true)} />
 
-          <main className="flex-1 m-2 sm:m-4 rounded-2xl sm:rounded-3xl glass-sm p-3 sm:p-6 lg:p-8">
-            <Breadcrumbs />
+          <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+            <div className="mb-4">
+              <Breadcrumbs />
+            </div>
             <Outlet />
           </main>
 

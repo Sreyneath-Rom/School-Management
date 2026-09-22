@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { X, Calendar } from 'lucide-react'
 import Button from '@/components/common/Button'
-import type { ScheduleSlot, CreateSchedulePayload } from '@/services/scheduleService'
+import type { ScheduleSlot, CreateSchedulePayload, DayOfWeek } from '@/services/scheduleService'
 import type { SubjectItem } from '@/services/subjectService'
 
 interface ScheduleSlotModalProps {
@@ -65,12 +65,12 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
     if (slotToEdit) {
       setClassId(slotToEdit.classId)
       setSubjectId(slotToEdit.subjectId)
-      setTeacherName(slotToEdit.teacherName)
+      setTeacherName(slotToEdit.teacherName || '')
       setDayOfWeek(slotToEdit.dayOfWeek)
       setStartTime(slotToEdit.startTime)
       setEndTime(slotToEdit.endTime)
-      setRoom(slotToEdit.room)
-      setColorTheme(slotToEdit.colorTheme || 'sky')
+      setRoom(slotToEdit.room || '')
+      setColorTheme((slotToEdit.colorTheme as any) || 'sky')
     } else {
       setClassId(CLASSES[0].id)
       setSubjectId(subjects[0]?.id || '')
@@ -117,7 +117,7 @@ export const ScheduleSlotModal: React.FC<ScheduleSlotModalProps> = ({
       subjectName: selectedSubject?.name || 'Subject',
       teacherId: `t-${Date.now()}`,
       teacherName: teacherName.trim() || 'Instructor',
-      dayOfWeek: Number(dayOfWeek),
+      dayOfWeek: Number(dayOfWeek) as DayOfWeek,
       startTime,
       endTime,
       room: room.trim() || 'Room 101',

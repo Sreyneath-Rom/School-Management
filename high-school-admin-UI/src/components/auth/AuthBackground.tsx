@@ -23,6 +23,7 @@ const BLOB_TINT: Record<
   teacher: { primary: 'bg-success/20 dark:bg-success/20',       secondary: 'bg-brand-400/20 dark:bg-brand-600/20' },
   student: { primary: 'bg-brand-400/20 dark:bg-brand-600/20',   secondary: 'bg-info/20 dark:bg-info/20' },
   parent:  { primary: 'bg-warning/20 dark:bg-warning/20',       secondary: 'bg-brand-400/20 dark:bg-brand-600/20' },
+  mazer:   { primary: 'bg-amber-400/20 dark:bg-amber-600/20',   secondary: 'bg-brand-400/20 dark:bg-brand-600/20' },
 }
 
 export default function AuthBackground({ variant }: Props) {

@@ -67,6 +67,7 @@ export const authService = {
       teacher: 'teacher@example.com',
       student: 'student@example.com',
       parent: 'parent@example.com',
+      mazer: 'admin@example.com',
     }
     return authService.login(emails[role] ?? emails.admin, 'password')
   },
