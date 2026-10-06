@@ -17,9 +17,11 @@ export default function AppLayout() {
 
   return (
     <SchoolProvider>
-      {/* h-dvh (not h-screen) so the shell doesn't jump when the mobile
-          URL bar collapses — matches html/body { min-height: 100dvh }. */}
-      <div className="page-theme flex h-dvh w-full overflow-hidden text-color">
+      {/* 
+        Added `ambient-dashboard` to activate the background light blobs.
+        This provides the colorful backdrop that the glass panels refract.
+      */}
+      <div className="page-theme ambient-dashboard flex h-dvh w-full overflow-hidden text-color">
         <Sidebar
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}

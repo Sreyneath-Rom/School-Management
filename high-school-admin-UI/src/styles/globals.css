@@ -1,4 +1,3 @@
-
 @import "tailwindcss";
 
 /* =========================================================
@@ -14,13 +13,7 @@
    ========================================================= */
 
 @theme static {
-  --shadow-emboss: var(--shadow-emboss-raised);
-  --shadow-sunken: var(--shadow-emboss-sunken);
-
-  /* =========================================================
-     Modern Violet / Indigo Brand Palette
-     ========================================================= */
-
+  /* Modern Violet / Indigo Brand Palette */
   --color-brand-50:  #f5f3ff;
   --color-brand-100: #ede9fe;
   --color-brand-200: #ddd6fe;
@@ -35,359 +28,197 @@
 }
 
 @theme inline {
-  /* Semantic colors */
   --color-fg:             var(--text-color);
   --color-fg-muted:       var(--text-color-secondary);
-
   --color-surface:        var(--glass-bg);
   --color-surface-strong: var(--glass-strong-bg);
-
-  /* Status */
-  --color-success: var(--status-success);
-  --color-info:    var(--status-info);
-  --color-warning: var(--status-warning);
-  --color-error:   var(--status-error);
+  --color-success:        var(--status-success);
+  --color-info:           var(--status-info);
+  --color-warning:        var(--status-warning);
+  --color-error:          var(--status-error);
 }
 
 
 /* =========================================================
    3. LIGHT MODE
-   Liquid Glass + Soft Blue Neumorphism
    ========================================================= */
 
 :root {
   color-scheme: light;
 
-  /* -------------------------------------------------------
-     Page
-     ------------------------------------------------------- */
-
+  /* --- Page & Ambient Lighting --- */
   --page-background: #e8eef8;
 
-  /*
-   * Ambient dashboard background.
-   * Creates the soft blue / lavender atmosphere behind glass.
-   */
+  /* Enhanced ambient gradients to match reference images */
   --page-gradient:
-    radial-gradient(
-      circle at 8% 5%,
-      rgba(147, 197, 253, 0.38),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 92% 10%,
-      rgba(196, 181, 253, 0.34),
-      transparent 28%
-    ),
-    radial-gradient(
-      circle at 80% 85%,
-      rgba(103, 232, 249, 0.22),
-      transparent 30%
-    ),
-    linear-gradient(
-      135deg,
-      #eaf2ff 0%,
-      #e8eef8 45%,
-      #eef1ff 100%
-    );
+    radial-gradient(circle at 10% 0%, rgba(147, 197, 253, 0.45), transparent 35%),
+    radial-gradient(circle at 90% 10%, rgba(196, 181, 253, 0.40), transparent 35%),
+    radial-gradient(circle at 85% 90%, rgba(253, 186, 116, 0.25), transparent 35%),
+    radial-gradient(circle at 10% 90%, rgba(103, 232, 249, 0.30), transparent 35%),
+    linear-gradient(135deg, #eaf2ff 0%, #e8eef8 50%, #f8f4ff 100%);
 
-  /* -------------------------------------------------------
-     Neumorphic shadow system
-     ------------------------------------------------------- */
-
-  --neu-shadow-dark:  rgba(148, 163, 184, 0.38);
-  --neu-shadow-light: rgba(255, 255, 255, 0.90);
+  /* --- Neumorphic Shadow System ---
+     Using tinted shadows instead of pure grey for a softer, premium feel */
+  --neu-shadow-dark:  rgba(148, 163, 184, 0.35);
+  --neu-shadow-light: rgba(255, 255, 255, 0.95);
 
   --neu-raised-small:
-    4px 4px 10px var(--neu-shadow-dark),
-    -4px -4px 10px var(--neu-shadow-light);
+    3px 3px 8px var(--neu-shadow-dark),
+    -3px -3px 8px var(--neu-shadow-light);
 
   --neu-raised:
-    8px 8px 20px var(--neu-shadow-dark),
-    -8px -8px 20px var(--neu-shadow-light);
+    6px 6px 16px var(--neu-shadow-dark),
+    -6px -6px 16px var(--neu-shadow-light);
 
   --neu-raised-large:
-    14px 14px 30px var(--neu-shadow-dark),
-    -14px -14px 30px var(--neu-shadow-light);
+    12px 12px 28px var(--neu-shadow-dark),
+    -10px -10px 24px var(--neu-shadow-light);
 
   --neu-inset:
-    inset 4px 4px 10px rgba(148, 163, 184, 0.30),
-    inset -4px -4px 10px rgba(255, 255, 255, 0.80);
+    inset 3px 3px 8px rgba(148, 163, 184, 0.25),
+    inset -3px -3px 8px rgba(255, 255, 255, 0.90);
 
-  /* -------------------------------------------------------
-     Liquid Glass
-     ------------------------------------------------------- */
+  --neu-inset-soft:
+    inset 2px 2px 4px rgba(148, 163, 184, 0.20),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.85);
 
-  --glass-bg: rgba(255, 255, 255, 0.42);
+  /* --- Liquid Glass Core --- */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-bg-hover: rgba(255, 255, 255, 0.60);
+  --glass-strong-bg: rgba(255, 255, 255, 0.65);
+  --glass-sm-bg: rgba(255, 255, 255, 0.30);
 
-  --glass-bg-hover: rgba(255, 255, 255, 0.55);
-
-  --glass-strong-bg: rgba(255, 255, 255, 0.62);
-
-  --glass-sm-bg: rgba(255, 255, 255, 0.34);
-
-  --glass-outline: rgba(255, 255, 255, 0.68);
-
-  --glass-outline-soft: rgba(255, 255, 255, 0.42);
-
-  --glass-specular-top:
-    rgba(255, 255, 255, 0.78);
-
-  --glass-specular-bottom:
-    rgba(255, 255, 255, 0.08);
-
+  /* Glass Edges & Speculars */
+  --glass-outline: rgba(255, 255, 255, 0.75);
+  --glass-outline-soft: rgba(255, 255, 255, 0.45);
+  --glass-specular-top: rgba(255, 255, 255, 0.85);
+  --glass-specular-bottom: rgba(255, 255, 255, 0.05);
+  
+  /* Inner glow to simulate glass thickness */
   --glass-inner-glow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.85),
-    inset -1px -1px 0 rgba(148, 163, 184, 0.08);
+    inset 1px 1px 1px rgba(255, 255, 255, 0.90),
+    inset -1px -1px 2px rgba(148, 163, 184, 0.05);
 
-  --glass-shadow:
-    var(--neu-raised);
+  /* THE HYBRID SHADOW: Outer lift (Neu) + Inner thickness (Glass) */
+  --shadow-glass:
+    var(--neu-raised),
+    var(--glass-inner-glow);
 
-  --glass-shadow-hover:
-    12px 12px 28px rgba(148, 163, 184, 0.34),
-    -10px -10px 25px rgba(255, 255, 255, 0.90);
+  --shadow-glass-hover:
+    10px 10px 24px rgba(148, 163, 184, 0.30),
+    -8px -8px 20px rgba(255, 255, 255, 0.95),
+    var(--glass-inner-glow);
 
-  --glass-strong-border:
-    rgba(255, 255, 255, 0.72);
+  --glass-blur: 24px;
+  --glass-saturate: 180%; /* High saturation makes the background colors pop through the glass */
 
-  --glass-strong-shadow:
-    var(--neu-raised-large);
+  /* --- Shell --- */
+  --header-bg: rgba(255, 255, 255, 0.35);
+  --sidebar-bg: rgba(255, 255, 255, 0.25);
 
-  --glass-blur: 22px;
-
-  --glass-saturate: 145%;
-
-  /* -------------------------------------------------------
-     Shell
-     ------------------------------------------------------- */
-
-  --header-bg:
-    rgba(255, 255, 255, 0.36);
-
-  --sidebar-bg:
-    rgba(255, 255, 255, 0.30);
-
-  /* -------------------------------------------------------
-     Text
-     ------------------------------------------------------- */
-
+  /* --- Text & Status --- */
   --text-color: #0f172a;
-
   --text-color-secondary: #52627a;
-
-  /* -------------------------------------------------------
-     Status
-     ------------------------------------------------------- */
-
   --status-success: #10b981;
   --status-info:    #0284c7;
   --status-warning: #f59e0b;
   --status-error:   #ef4444;
 
-  /* -------------------------------------------------------
-     Dropdown
-     ------------------------------------------------------- */
-
-  --dropdown-bg:
-    rgba(255, 255, 255, 0.78);
-
-  --dropdown-border:
-    rgba(255, 255, 255, 0.70);
-
-  /* -------------------------------------------------------
-     Chrome
-     ------------------------------------------------------- */
-
-  --scrollbar-thumb:
-    rgba(100, 116, 139, 0.30);
-
-  --scrollbar-thumb-hover:
-    rgba(100, 116, 139, 0.52);
-
-  --shimmer:
-    rgba(255, 255, 255, 0.65);
-
-  /* -------------------------------------------------------
-     Compatibility aliases
-     ------------------------------------------------------- */
-
-  --shadow-emboss-raised:
-    var(--neu-raised);
-
-  --shadow-emboss-sunken:
-    var(--neu-inset);
+  /* --- Dropdown & Chrome --- */
+  --dropdown-bg: rgba(255, 255, 255, 0.85);
+  --dropdown-border: rgba(255, 255, 255, 0.80);
+  --scrollbar-thumb: rgba(100, 116, 139, 0.25);
+  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.45);
+  --shimmer: rgba(255, 255, 255, 0.70);
 }
 
 
 /* =========================================================
    4. DARK MODE
-   Liquid Glass + Dark Neumorphism
    ========================================================= */
 
 .dark {
   color-scheme: dark;
 
-  /* -------------------------------------------------------
-     Page
-     ------------------------------------------------------- */
-
-  --page-background: #111827;
+  /* --- Page & Ambient Lighting --- */
+  --page-background: #0f172a;
 
   --page-gradient:
-    radial-gradient(
-      circle at 10% 5%,
-      rgba(37, 99, 235, 0.20),
-      transparent 28%
-    ),
-    radial-gradient(
-      circle at 90% 10%,
-      rgba(124, 58, 237, 0.18),
-      transparent 28%
-    ),
-    radial-gradient(
-      circle at 80% 90%,
-      rgba(8, 145, 178, 0.12),
-      transparent 28%
-    ),
-    linear-gradient(
-      135deg,
-      #111827 0%,
-      #151a2a 50%,
-      #171b2d 100%
-    );
+    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.25), transparent 35%),
+    radial-gradient(circle at 90% 10%, rgba(124, 58, 237, 0.20), transparent 35%),
+    radial-gradient(circle at 85% 90%, rgba(245, 158, 11, 0.10), transparent 35%),
+    radial-gradient(circle at 10% 90%, rgba(8, 145, 178, 0.15), transparent 35%),
+    linear-gradient(135deg, #0f172a 0%, #111827 50%, #171b2d 100%);
 
-  /* -------------------------------------------------------
-     Dark Neumorphism
-     ------------------------------------------------------- */
-
-  --neu-shadow-dark:
-    rgba(0, 0, 0, 0.55);
-
-  --neu-shadow-light:
-    rgba(255, 255, 255, 0.045);
+  /* --- Dark Neumorphism --- */
+  --neu-shadow-dark: rgba(0, 0, 0, 0.60);
+  --neu-shadow-light: rgba(255, 255, 255, 0.04);
 
   --neu-raised-small:
-    4px 4px 10px var(--neu-shadow-dark),
-    -4px -4px 10px var(--neu-shadow-light);
+    3px 3px 8px var(--neu-shadow-dark),
+    -3px -3px 8px var(--neu-shadow-light);
 
   --neu-raised:
-    8px 8px 20px var(--neu-shadow-dark),
-    -8px -8px 20px var(--neu-shadow-light);
+    6px 6px 16px var(--neu-shadow-dark),
+    -6px -6px 16px var(--neu-shadow-light);
 
   --neu-raised-large:
-    14px 14px 30px var(--neu-shadow-dark),
-    -14px -14px 30px var(--neu-shadow-light);
+    12px 12px 28px var(--neu-shadow-dark),
+    -10px -10px 24px var(--neu-shadow-light);
 
   --neu-inset:
-    inset 4px 4px 10px rgba(0, 0, 0, 0.42),
-    inset -4px -4px 10px rgba(255, 255, 255, 0.035);
+    inset 3px 3px 8px rgba(0, 0, 0, 0.50),
+    inset -3px -3px 8px rgba(255, 255, 255, 0.03);
 
-  /* -------------------------------------------------------
-     Liquid Glass
-     ------------------------------------------------------- */
+  --neu-inset-soft:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.45),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.02);
 
-  --glass-bg:
-    rgba(30, 41, 59, 0.42);
+  /* --- Dark Liquid Glass --- */
+  --glass-bg: rgba(30, 41, 59, 0.40);
+  --glass-bg-hover: rgba(51, 65, 85, 0.55);
+  --glass-strong-bg: rgba(30, 41, 59, 0.70);
+  --glass-sm-bg: rgba(30, 41, 59, 0.30);
 
-  --glass-bg-hover:
-    rgba(51, 65, 85, 0.52);
-
-  --glass-strong-bg:
-    rgba(30, 41, 59, 0.68);
-
-  --glass-sm-bg:
-    rgba(30, 41, 59, 0.34);
-
-  --glass-outline:
-    rgba(255, 255, 255, 0.11);
-
-  --glass-outline-soft:
-    rgba(255, 255, 255, 0.07);
-
-  --glass-specular-top:
-    rgba(255, 255, 255, 0.12);
-
-  --glass-specular-bottom:
-    rgba(255, 255, 255, 0.015);
-
+  --glass-outline: rgba(255, 255, 255, 0.12);
+  --glass-outline-soft: rgba(255, 255, 255, 0.06);
+  --glass-specular-top: rgba(255, 255, 255, 0.15);
+  --glass-specular-bottom: rgba(255, 255, 255, 0.01);
+  
   --glass-inner-glow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.14);
+    inset 1px 1px 1px rgba(255, 255, 255, 0.10),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.20);
 
-  --glass-shadow:
-    var(--neu-raised);
+  --shadow-glass:
+    var(--neu-raised),
+    var(--glass-inner-glow);
 
-  --glass-shadow-hover:
-    12px 12px 28px rgba(0, 0, 0, 0.52),
-    -10px -10px 25px rgba(255, 255, 255, 0.055);
+  --shadow-glass-hover:
+    10px 10px 24px rgba(0, 0, 0, 0.55),
+    -8px -8px 20px rgba(255, 255, 255, 0.05),
+    var(--glass-inner-glow);
 
-  --glass-strong-border:
-    rgba(255, 255, 255, 0.12);
+  --glass-blur: 24px;
+  --glass-saturate: 160%;
 
-  --glass-strong-shadow:
-    var(--neu-raised-large);
+  /* --- Shell --- */
+  --header-bg: rgba(15, 23, 42, 0.40);
+  --sidebar-bg: rgba(15, 23, 42, 0.30);
 
-  --glass-blur: 22px;
-
-  --glass-saturate: 140%;
-
-  /* -------------------------------------------------------
-     Shell
-     ------------------------------------------------------- */
-
-  --header-bg:
-    rgba(15, 23, 42, 0.42);
-
-  --sidebar-bg:
-    rgba(15, 23, 42, 0.34);
-
-  /* -------------------------------------------------------
-     Text
-     ------------------------------------------------------- */
-
+  /* --- Text & Status --- */
   --text-color: #f8fafc;
-
   --text-color-secondary: #94a3b8;
-
-  /* -------------------------------------------------------
-     Status
-     ------------------------------------------------------- */
-
   --status-success: #34d399;
   --status-info:    #38bdf8;
   --status-warning: #fbbf24;
   --status-error:   #f87171;
 
-  /* -------------------------------------------------------
-     Dropdown
-     ------------------------------------------------------- */
-
-  --dropdown-bg:
-    rgba(15, 23, 42, 0.82);
-
-  --dropdown-border:
-    rgba(255, 255, 255, 0.10);
-
-  /* -------------------------------------------------------
-     Chrome
-     ------------------------------------------------------- */
-
-  --scrollbar-thumb:
-    rgba(148, 163, 184, 0.24);
-
-  --scrollbar-thumb-hover:
-    rgba(148, 163, 184, 0.44);
-
-  --shimmer:
-    rgba(255, 255, 255, 0.07);
-
-  /* Compatibility aliases */
-
-  --shadow-emboss-raised:
-    var(--neu-raised);
-
-  --shadow-emboss-sunken:
-    var(--neu-inset);
+  /* --- Dropdown & Chrome --- */
+  --dropdown-bg: rgba(15, 23, 42, 0.90);
+  --dropdown-border: rgba(255, 255, 255, 0.10);
+  --scrollbar-thumb: rgba(148, 163, 184, 0.20);
+  --scrollbar-thumb-hover: rgba(148, 163, 184, 0.40);
+  --shimmer: rgba(255, 255, 255, 0.05);
 }
 
 
@@ -395,8 +226,7 @@
    5. BASE ELEMENTS
    ========================================================= */
 
-html,
-body {
+html, body {
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -404,57 +234,30 @@ body {
 html {
   background-color: var(--page-background);
   color: var(--text-color);
-
   scrollbar-width: thin;
-  scrollbar-color:
-    var(--scrollbar-thumb)
-    transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 body {
   margin: 0;
-
-  /*
-   * The gradient lives on body.
-   * Glass cards reveal this background through transparency.
-   */
-  background:
-    var(--page-gradient);
-
+  padding: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--page-gradient);
   background-attachment: fixed;
-
   color: var(--text-color);
-
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  transition:
-    background-color 0.25s ease,
-    color 0.25s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
   min-height: 100vh;
   min-height: 100dvh;
-
   background: transparent;
-
   color: inherit;
 }
 
-button,
-input,
-select,
-textarea {
+button, input, select, textarea {
   color: inherit;
   font: inherit;
 }
@@ -465,17 +268,12 @@ textarea {
 }
 
 :focus-visible {
-  outline:
-    2px solid
-    var(--color-brand-500);
-
+  outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
 }
 
 ::selection {
-  background:
-    rgba(59, 130, 246, 0.20);
-
+  background: rgba(59, 130, 246, 0.25);
   color: inherit;
 }
 
@@ -485,8 +283,8 @@ textarea {
    ========================================================= */
 
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -494,22 +292,14 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background:
-    var(--scrollbar-thumb);
-
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
-
-  border:
-    1px solid
-    transparent;
-
+  border: 1px solid transparent;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background:
-    var(--scrollbar-thumb-hover);
-
+  background: var(--scrollbar-thumb-hover);
   background-clip: padding-box;
 }
 
@@ -521,486 +311,283 @@ textarea {
 @layer components {
 
   /* -------------------------------------------------------
-     Main Glass Surface
+     Main Glass Surface (The core hybrid component)
      ------------------------------------------------------- */
-
   .glass,
   .glass-lite,
-  .glass-sm,
   .glass-teal,
   .glass-org {
-
     position: relative;
-
-    background:
-      linear-gradient(
-        135deg,
-        var(--glass-specular-top),
-        var(--glass-specular-bottom)
-      ),
-      var(--glass-bg);
-
-    border:
-      1px solid
-      var(--glass-outline);
-
-    /*
-     * The key hybrid effect:
-     * outer neumorphic shadow +
-     * inner glass highlight.
-     */
-    box-shadow:
-      var(--glass-shadow),
-      var(--glass-inner-glow);
-
-    backdrop-filter:
-      blur(var(--glass-blur))
-      saturate(var(--glass-saturate));
-
-    -webkit-backdrop-filter:
-      blur(var(--glass-blur))
-      saturate(var(--glass-saturate));
-
+    background: linear-gradient(135deg, var(--glass-specular-top), var(--glass-specular-bottom)), var(--glass-bg);
+    border: 1px solid var(--glass-outline);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border-radius: 1.5rem;
-
-    transition:
-      transform 0.25s ease,
-      box-shadow 0.25s ease,
-      background-color 0.25s ease,
-      border-color 0.25s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                background-color 0.3s ease, 
+                border-color 0.3s ease;
+    overflow: hidden;
   }
 
+  /* Liquid Glass Specular Highlight (The glossy top edge) */
+  .glass::before,
+  .glass-lite::before,
+  .glass-teal::before,
+  .glass-org::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: 1.5rem 1.5rem 0 0;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+  }
 
-  /* -------------------------------------------------------
-     Main glass hover
-     ------------------------------------------------------- */
+  .dark .glass::before,
+  .dark .glass-lite::before,
+  .dark .glass-teal::before,
+  .dark .glass-org::before {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 100%);
+  }
 
+  /* Glass Hover State */
   .glass:hover {
-    background:
-      linear-gradient(
-        135deg,
-        var(--glass-specular-top),
-        var(--glass-specular-bottom)
-      ),
-      var(--glass-bg-hover);
-
-    box-shadow:
-      var(--glass-shadow-hover),
-      var(--glass-inner-glow);
+    background: linear-gradient(135deg, var(--glass-specular-top), var(--glass-specular-bottom)), var(--glass-bg-hover);
+    box-shadow: var(--shadow-glass-hover);
+    transform: translateY(-2px);
   }
 
+  .glass:hover::before {
+    opacity: 1;
+  }
 
   /* -------------------------------------------------------
-     Strong Glass
+     Strong Glass (Deeper, more opaque)
      ------------------------------------------------------- */
-
   .glass-strong {
-
     position: relative;
-
-    background:
-      linear-gradient(
-        135deg,
-        var(--glass-specular-top),
-        var(--glass-specular-bottom)
-      ),
-      var(--glass-strong-bg);
-
-    border:
-      1px solid
-      var(--glass-strong-border);
-
-    box-shadow:
-      var(--glass-strong-shadow),
-      var(--glass-inner-glow);
-
-    backdrop-filter:
-      blur(28px)
-      saturate(150%);
-
-    -webkit-backdrop-filter:
-      blur(28px)
-      saturate(150%);
-
+    background: linear-gradient(135deg, var(--glass-specular-top), var(--glass-specular-bottom)), var(--glass-strong-bg);
+    border: 1px solid var(--glass-strong-border, var(--glass-outline));
+    box-shadow: var(--neu-raised-large), var(--glass-inner-glow);
+    backdrop-filter: blur(32px) saturate(150%);
+    -webkit-backdrop-filter: blur(32px) saturate(150%);
     border-radius: 1.5rem;
+    overflow: hidden;
   }
 
+  .glass-strong::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 30%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.50) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: 1.5rem 1.5rem 0 0;
+  }
 
   /* -------------------------------------------------------
-     Small Glass
+     Small Glass Elements (Chips, small buttons)
      ------------------------------------------------------- */
-
   .glass-sm {
-
-    background:
-      var(--glass-sm-bg);
-
-    box-shadow:
-      var(--neu-raised-small),
-      var(--glass-inner-glow);
-
-    border-radius: 1rem;
+    background: var(--glass-sm-bg);
+    border: 1px solid var(--glass-outline-soft);
+    box-shadow: var(--neu-raised-small), var(--glass-inner-glow);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    transition: all 0.2s ease;
   }
 
+  /* -------------------------------------------------------
+     Neumorphic Wells / Sunken Chips (Inputs, active states)
+     ------------------------------------------------------- */
+  .glass-well,
+  .glass-chip {
+    background: var(--glass-sm-bg);
+    border: 1px solid var(--glass-outline-soft);
+    box-shadow: var(--neu-inset-soft), inset 0 2px 4px rgba(0,0,0,0.02);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+  }
+
+  .glass-chip { border-radius: 0.75rem; }
+  .glass-well { border-radius: 1rem; }
 
   /* -------------------------------------------------------
-     Interactive Glass
+     Interactive Elements
      ------------------------------------------------------- */
-
   .glass-interactive {
-
     cursor: pointer;
-
-    transition:
-      transform 0.18s ease,
-      box-shadow 0.18s ease;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .glass-interactive:hover {
-
-    transform:
-      translateY(-2px);
-
-    box-shadow:
-      var(--glass-shadow-hover),
-      var(--glass-inner-glow);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glass-hover);
   }
 
   .glass-interactive:active {
-
-    transform:
-      translateY(0);
-
-    box-shadow:
-      var(--shadow-emboss-sunken);
+    transform: translateY(0);
+    box-shadow: var(--neu-inset);
   }
-
 
   /* -------------------------------------------------------
-     Dropdown
+     Dropdown Surface
      ------------------------------------------------------- */
-
   .dropdown-surface {
-
     position: absolute;
-
-    background:
-      var(--dropdown-bg);
-
-    border:
-      1px solid
-      var(--dropdown-border);
-
+    background: var(--dropdown-bg);
+    border: 1px solid var(--dropdown-border);
     border-radius: 1rem;
-
-    box-shadow:
-      var(--glass-strong-shadow),
-      var(--glass-inner-glow);
-
-    backdrop-filter:
-      blur(24px)
-      saturate(150%);
-
-    -webkit-backdrop-filter:
-      blur(24px)
-      saturate(150%);
+    box-shadow: var(--neu-raised-large), var(--glass-inner-glow);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    overflow: hidden;
   }
-
 
   /* -------------------------------------------------------
      App Header
      ------------------------------------------------------- */
-
   .app-header {
-
     margin: 0;
-
-    border:
-      1px solid
-      var(--glass-outline-soft);
-
+    border: 1px solid var(--glass-outline-soft);
     border-top: none;
-
     border-radius: 0;
-
-    background:
-      var(--header-bg);
-
-    box-shadow:
-      0 8px 24px rgba(71, 85, 105, 0.08);
-
-    backdrop-filter:
-      blur(22px)
-      saturate(140%);
-
-    -webkit-backdrop-filter:
-      blur(22px)
-      saturate(140%);
+    background: var(--header-bg);
+    box-shadow: 0 4px 20px rgba(71, 85, 105, 0.05);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
   }
-
-  .app-header-inner {
-    position: relative;
-  }
-
 
   /* -------------------------------------------------------
      Sidebar
      ------------------------------------------------------- */
-
   .app-sidebar {
-
-    background:
-      var(--sidebar-bg);
-
-    border-right:
-      1px solid
-      var(--glass-outline-soft);
-
-    color:
-      var(--text-color);
-
-    backdrop-filter:
-      blur(22px)
-      saturate(140%);
-
-    -webkit-backdrop-filter:
-      blur(22px)
-      saturate(140%);
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--glass-outline-soft);
+    color: var(--text-color);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
   }
 
   aside.app-sidebar {
-
     height: 100%;
-
     margin: 0;
-
     border-radius: 0;
-
-    box-shadow:
-      8px 0 24px
-      rgba(71, 85, 105, 0.08);
+    box-shadow: 6px 0 24px rgba(71, 85, 105, 0.06);
   }
 
-
-  /* -------------------------------------------------------
-     Active navigation item
-     ------------------------------------------------------- */
-
+  /* Active Navigation Item */
   aside.app-sidebar a[aria-current="page"] {
-
-    background:
-      rgba(59, 130, 246, 0.10);
-
-    color:
-      var(--color-brand-700);
-
-    box-shadow:
-      var(--shadow-emboss-sunken);
-
-    border:
-      1px solid
-      rgba(59, 130, 246, 0.10);
-
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--color-brand-700);
+    box-shadow: var(--neu-inset-soft);
+    border: 1px solid rgba(59, 130, 246, 0.15);
     border-radius: 0.85rem;
+    position: relative;
+  }
+
+  /* Active indicator glow */
+  aside.app-sidebar a[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    left: 0; top: 15%; bottom: 15%; width: 3px;
+    background: var(--color-brand-500);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 8px var(--color-brand-500);
   }
 
   .dark aside.app-sidebar a[aria-current="page"] {
-
-    background:
-      rgba(96, 165, 250, 0.10);
-
-    color:
-      var(--color-brand-300);
-
-    border-color:
-      rgba(96, 165, 250, 0.10);
+    background: rgba(96, 165, 250, 0.10);
+    color: var(--color-brand-300);
+    border-color: rgba(96, 165, 250, 0.15);
   }
 
-
   /* -------------------------------------------------------
-     Neumorphic inset fields
+     Neumorphic Inset Fields (Inputs)
      ------------------------------------------------------- */
-
   .neu-inset,
-
   :where(
-    input:not(
-      [type="checkbox"],
-      [type="radio"],
-      [type="range"],
-      [type="color"],
-      [type="file"],
-      [type="submit"],
-      [type="button"],
-      [type="reset"],
-      [type="image"],
-      [type="hidden"]
-    ),
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="submit"], [type="button"], [type="reset"], [type="image"], [type="hidden"]),
     textarea,
     select
   ) {
-
-    background:
-      var(--glass-sm-bg);
-
-    border:
-      1px solid
-      var(--glass-outline-soft);
-
+    background: var(--glass-sm-bg);
+    border: 1px solid var(--glass-outline-soft);
     border-radius: 0.85rem;
-
-    box-shadow:
-      var(--shadow-emboss-sunken);
-
-    backdrop-filter:
-      blur(12px);
-
-    -webkit-backdrop-filter:
-      blur(12px);
-
-    transition:
-      box-shadow 0.2s ease,
-      border-color 0.2s ease,
-      background-color 0.2s ease;
+    box-shadow: var(--neu-inset-soft);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
   }
 
-
-  /* -------------------------------------------------------
-     Input focus
-     ------------------------------------------------------- */
-
   :where(
-    input:not(
-      [type="checkbox"],
-      [type="radio"],
-      [type="range"],
-      [type="color"],
-      [type="file"],
-      [type="submit"],
-      [type="button"],
-      [type="reset"],
-      [type="image"],
-      [type="hidden"]
-    ),
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="submit"], [type="button"], [type="reset"], [type="image"], [type="hidden"]),
     textarea,
     select
   ):focus {
-
-    border-color:
-      rgba(59, 130, 246, 0.30);
-
-    box-shadow:
-      var(--shadow-emboss-sunken),
-      0 0 0 3px
-      rgba(59, 130, 246, 0.08);
-
+    border-color: rgba(59, 130, 246, 0.40);
+    box-shadow: var(--neu-inset), 0 0 0 4px rgba(59, 130, 246, 0.10);
     outline: none;
+    background: var(--glass-bg);
   }
 
-
   /* -------------------------------------------------------
-     Skeleton
+     Skeleton Loader
      ------------------------------------------------------- */
-
   .skeleton {
-
     position: relative;
-
     overflow: hidden;
-
-    background:
-      var(--glass-sm-bg);
-
-    box-shadow:
-      var(--shadow-emboss-sunken);
-
-    border:
-      1px solid
-      var(--glass-outline-soft);
-
+    background: var(--glass-sm-bg);
+    box-shadow: var(--neu-inset-soft);
+    border: 1px solid var(--glass-outline-soft);
     border-radius: 0.75rem;
   }
 
   .skeleton::after {
-
     content: "";
-
     position: absolute;
-
     inset: 0;
-
-    background:
-      linear-gradient(
-        90deg,
-        transparent,
-        var(--shimmer),
-        transparent
-      );
-
-    animation:
-      shimmer 1.5s infinite;
+    background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
+    animation: shimmer 1.8s infinite;
   }
 
-
   /* -------------------------------------------------------
-     KPI Glass helper
+     KPI Glass Card (Specialized Glass Component)
      ------------------------------------------------------- */
-
   .kpi-glass {
-
     position: relative;
-
     overflow: hidden;
-
-    background:
-      linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.55),
-        rgba(255, 255, 255, 0.18)
-      );
-
-    border:
-      1px solid
-      rgba(255, 255, 255, 0.65);
-
-    box-shadow:
-      10px 10px 26px
-        rgba(100, 116, 139, 0.18),
-      -8px -8px 22px
-        rgba(255, 255, 255, 0.80),
-      inset 1px 1px 0
-        rgba(255, 255, 255, 0.85);
-
-    backdrop-filter:
-      blur(24px)
-      saturate(150%);
-
-    -webkit-backdrop-filter:
-      blur(24px)
-      saturate(150%);
-
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.20));
+    border: 1px solid rgba(255, 255, 255, 0.80);
+    box-shadow: 
+      8px 8px 24px rgba(100, 116, 139, 0.15),
+      -6px -6px 20px rgba(255, 255, 255, 0.90),
+      inset 1px 1px 2px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
     border-radius: 1.75rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .kpi-glass:hover {
+    transform: translateY(-3px);
+    box-shadow: 
+      12px 12px 28px rgba(100, 116, 139, 0.20),
+      -8px -8px 24px rgba(255, 255, 255, 1),
+      inset 1px 1px 2px rgba(255, 255, 255, 1);
   }
 
   .dark .kpi-glass {
-
-    background:
-      linear-gradient(
-        135deg,
-        rgba(51, 65, 85, 0.48),
-        rgba(30, 41, 59, 0.28)
-      );
-
-    border-color:
-      rgba(255, 255, 255, 0.10);
-
-    box-shadow:
-      10px 10px 28px
-        rgba(0, 0, 0, 0.45),
-      -8px -8px 24px
-        rgba(255, 255, 255, 0.035),
-      inset 1px 1px 0
-        rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.50), rgba(30, 41, 59, 0.30));
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 
+      8px 8px 24px rgba(0, 0, 0, 0.50),
+      -6px -6px 20px rgba(255, 255, 255, 0.04),
+      inset 1px 1px 2px rgba(255, 255, 255, 0.10);
   }
 }
 
@@ -1010,106 +597,76 @@ textarea {
    ========================================================= */
 
 @layer utilities {
+  .text-color { color: var(--text-color); }
+  .text-secondary { color: var(--text-color-secondary); }
 
-  .text-color {
+  .surface-theme {
+    background: var(--glass-bg);
     color: var(--text-color);
   }
 
-  .text-secondary {
-    color: var(--text-color-secondary);
-  }
-
-  .surface-theme {
-    background:
-      var(--glass-bg);
-
-    color:
-      var(--text-color);
-  }
-
   .page-theme {
-    background:
-      var(--page-gradient);
-
-    color:
-      var(--text-color);
+    background: var(--page-gradient);
+    color: var(--text-color);
   }
 
-  .page-surface {
-    color:
-      var(--text-color);
-  }
-
-  .theme-divider {
-    border-color:
-      var(--glass-outline-soft);
-
-    box-shadow:
-      0 1px 0
-      var(--neu-shadow-dark);
-  }
+  .page-surface { color: var(--text-color); }
 
   .theme-muted {
-    background:
-      color-mix(
-        in srgb,
-        var(--glass-bg) 88%,
-        var(--text-color)
-      );
+    background: color-mix(in srgb, var(--glass-bg) 88%, var(--text-color));
   }
 
   .theme-overlay {
-    background:
-      rgb(15 23 42 / 0.58);
-
-    backdrop-filter:
-      blur(8px);
+    background: rgba(15, 23, 42, 0.60);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
+  .theme-divider {
+    border-color: var(--glass-outline-soft);
+    box-shadow: 0 1px 0 var(--neu-shadow-dark);
+  }
+
+  /* Primary Button (Glowing Neumorphic Glass) */
   .theme-button-primary {
-
-    background:
-      linear-gradient(
-        135deg,
-        var(--color-brand-500),
-        var(--color-brand-700)
-      );
-
-    color:
-      white;
-
-    border:
-      1px solid
-      rgba(255, 255, 255, 0.20);
-
-    box-shadow:
-      6px 6px 14px
-        rgba(37, 99, 235, 0.24),
-      -4px -4px 12px
-        rgba(255, 255, 255, 0.55);
+    background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-700));
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 
+      4px 4px 12px rgba(37, 99, 235, 0.30),
+      -3px -3px 10px rgba(255, 255, 255, 0.60),
+      inset 1px 1px 1px rgba(255, 255, 255, 0.40);
+    transition: all 0.25s ease;
   }
 
   .theme-button-primary:hover {
-
-    background:
-      linear-gradient(
-        135deg,
-        var(--color-brand-600),
-        var(--color-brand-800)
-      );
+    background: linear-gradient(135deg, var(--color-brand-400), var(--color-brand-600));
+    box-shadow: 
+      6px 6px 16px rgba(37, 99, 235, 0.40),
+      -4px -4px 12px rgba(255, 255, 255, 0.70),
+      inset 1px 1px 2px rgba(255, 255, 255, 0.60);
+    transform: translateY(-1px);
   }
 
   .theme-button-primary:active {
+    box-shadow: var(--neu-inset);
+    transform: translateY(1px);
+  }
 
-    box-shadow:
-      var(--shadow-emboss-sunken);
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 }
 
 
 /* =========================================================
-   9. OPTIONAL AMBIENT LIGHTS
-   Useful for Dashboard / KPI pages
+   9. AMBIENT LIGHTS (Background Blobs)
    ========================================================= */
 
 .ambient-dashboard {
@@ -1118,52 +675,30 @@ textarea {
 }
 
 .ambient-dashboard::before {
-
   content: "";
-
   position: fixed;
-
-  width: 320px;
-  height: 320px;
-
-  top: 5%;
-  left: 5%;
-
+  width: 400px;
+  height: 400px;
+  top: -5%;
+  left: -5%;
   border-radius: 9999px;
-
-  background:
-    rgba(96, 165, 250, 0.16);
-
-  filter:
-    blur(90px);
-
+  background: rgba(96, 165, 250, 0.25);
+  filter: blur(100px);
   pointer-events: none;
-
   z-index: -1;
 }
 
 .ambient-dashboard::after {
-
   content: "";
-
   position: fixed;
-
-  width: 360px;
-  height: 360px;
-
-  right: 5%;
-  bottom: 5%;
-
+  width: 450px;
+  height: 450px;
+  right: -5%;
+  bottom: -5%;
   border-radius: 9999px;
-
-  background:
-    rgba(167, 139, 250, 0.15);
-
-  filter:
-    blur(100px);
-
+  background: rgba(167, 139, 250, 0.20);
+  filter: blur(120px);
   pointer-events: none;
-
   z-index: -1;
 }
 
@@ -1173,27 +708,13 @@ textarea {
    ========================================================= */
 
 @keyframes shimmer {
-
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(100%);
-  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-
 @keyframes glass-float {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-2px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
 
@@ -1202,28 +723,17 @@ textarea {
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
-
-  *,
-  *::before,
-  *::after {
-
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
-
     animation-iteration-count: 1 !important;
-
     transition-duration: 0.01ms !important;
-
     scroll-behavior: auto !important;
   }
-
   .glass-interactive:hover,
   .glass-interactive:active {
-
     transform: none;
   }
-
   .skeleton::after {
-
     animation: none;
   }
 }
@@ -1233,23 +743,11 @@ textarea {
    12. BACKDROP FALLBACK
    ========================================================= */
 
-@supports not (
-  backdrop-filter: blur(10px)
-) {
-
-  .glass,
-  .glass-lite,
-  .glass-sm,
-  .glass-teal,
-  .glass-org,
-  .glass-strong,
-  .kpi-glass {
-
-    background:
-      var(--glass-strong-bg);
-
-    box-shadow:
-      var(--glass-shadow);
+@supports not (backdrop-filter: blur(10px)) {
+  .glass, .glass-lite, .glass-teal, .glass-org, 
+  .glass-sm, .glass-well, .glass-chip, 
+  .glass-strong, .kpi-glass {
+    background: var(--glass-strong-bg);
+    box-shadow: var(--neu-raised);
   }
 }
-

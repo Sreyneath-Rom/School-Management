@@ -8,14 +8,14 @@ export default function Footer() {
   const schoolName = school?.name || ''
 
   return (
-    // A shadow-based seam replaces the old `border-t border-surface`,
-    // which went invisible once --glass-bg = --page-background.
-    <footer className="px-4 py-4 text-xs text-secondary sm:px-6 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
+    // The shadow seam creates a physical 1px edge without a border, 
+    // which fits the Neumorphic aesthetic perfectly.
+    <footer className="px-4 py-4 text-[11px] font-medium tracking-wide text-secondary sm:px-6 shadow-[0_-1px_0_var(--neu-shadow-dark)]">
       <div className="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span>
           © {year} {schoolName} {t('footer.rights')}
         </span>
-        <span>{t('footer.systemName')} v1.0</span>
+        <span className="opacity-80">{t('footer.systemName')} v1.0</span>
       </div>
     </footer>
   )

@@ -31,12 +31,9 @@ export default function LanguageSelector() {
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
-        // glass-interactive supplies the hover-lift / press-in gesture;
-        // no `hover:bg-surface` (that would be the same color as the
-        // button itself under neumorphism and read as a no-op).
         className={`flex h-9.5 items-center gap-1.5 rounded-2xl px-2.5 text-xs font-semibold transition glass-sm glass-interactive cursor-pointer ${
           open
-            ? 'ring-1 ring-brand-500/40 text-color'
+            ? 'ring-1 ring-brand-500/40 text-color shadow-sunken'
             : 'text-secondary'
         }`}
       >
@@ -72,8 +69,8 @@ export default function LanguageSelector() {
                 }}
                 className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition cursor-pointer ${
                   lang.code === language
-                    ? 'bg-brand-600 text-white font-semibold'
-                    : 'text-secondary hover:text-color'
+                    ? 'bg-brand-600 text-white font-semibold shadow-inner'
+                    : 'text-secondary hover:text-color hover:shadow-sunken'
                 }`}
               >
                 <span className="flex items-center gap-2">

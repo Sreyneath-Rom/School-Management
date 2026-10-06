@@ -50,7 +50,6 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
-  Search,
   School2,
   Sparkles,
   type LucideIcon,
@@ -89,12 +88,6 @@ interface MenuItem {
   badgePulse?: boolean;
 }
 
-/**
- * Paths we've explicitly decided are visible to anyone who can see the
- * section they're placed in. The role-based menu already scopes which
- * sections a role sees, so no additional permission check is needed for
- * these.
- */
 const DEFAULT_VISIBLE_PATHS = new Set<string>([
   "/academic/class-subjects",
   "/calendar",
@@ -103,16 +96,8 @@ const DEFAULT_VISIBLE_PATHS = new Set<string>([
   "/system/activity",
 ]);
 
-/** Dev-only: dedupe the "no rule" warning so it doesn't spam every render. */
 const warnedPaths = new Set<string>();
 
-/**
- * Returns the permission key required to see a path, or `null` when the
- * path needs no permission check (its section is already role-scoped).
- *
- * Callers must treat `null` as "visible" — do NOT fall back to a sentinel
- * that a user will never match, or the item silently disappears.
- */
 function permissionForPath(path: string): string | null {
   if (path.includes("/setup/roles")) return "roles.view";
   if (path.includes("/setup/users")) return "users.view";
@@ -163,11 +148,8 @@ function permissionForPath(path: string): string | null {
     return "notifications.view";
   if (path.includes("/messages")) return "notifications.view";
 
-  // Explicitly-visible paths — no permission required.
   if (DEFAULT_VISIBLE_PATHS.has(path)) return null;
 
-  // Anything else: default to visible, but warn once in dev so newly-added
-  // menu entries that need a rule are noticed.
   if (import.meta.env.DEV && !warnedPaths.has(path)) {
     warnedPaths.add(path);
     console.warn(
@@ -571,7 +553,6 @@ export default function Sidebar({
         ...section,
         items: section.items.filter((item) => {
           const requiredPermission = permissionForPath(item.path);
-          // null = no rule applies, section is already role-scoped → show.
           if (requiredPermission === null) return true;
           return permissionKeys.includes(requiredPermission);
         }),
@@ -621,12 +602,6 @@ export default function Sidebar({
       })
       .filter(Boolean) as MenuSection[];
   }, [baseMenu, searchQuery, t]);
-
-  useEffect(() => {
-    if (searchQuery.trim() && filteredMenu.length > 0) {
-      setOpenSection(filteredMenu[0].key);
-    }
-  }, [searchQuery, filteredMenu]);
 
   const groupedSections = useMemo(() => {
     const groups: { [key: string]: MenuSection[] } = {};
@@ -737,14 +712,14 @@ export default function Sidebar({
       <div className="flex flex-col items-center space-y-2.5 overflow-y-auto no-scrollbar flex-1 py-2">
         <div
           title={schoolName || "School"}
-          className="relative group flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white ring-1 ring-white/20 transition-transform duration-200 hover:scale-105"
+          className="relative group flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white ring-1 ring-white/20 shadow-neu-raised transition-transform duration-200 hover:scale-105"
         >
           {schoolName ? (
             <span className="text-xs font-black tracking-tight">{schoolInitials}</span>
           ) : (
             <School2 size={18} className="text-white" />
           )}
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success ring-2 ring-surface" />
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success ring-2 ring-surface shadow-[0_0_6px_var(--status-success)]" />
         </div>
 
         <button
@@ -763,13 +738,13 @@ export default function Sidebar({
           title={t("sidebar.dashboard")}
           className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 shrink-0 ${
             isDashboardActive
-              ? "bg-brand-600 text-white font-semibold"
-              : "text-secondary hover:text-fg"
+              ? "bg-linear-to-br from-brand-600 to-brand-500 text-white font-semibold shadow-inner"
+              : "text-secondary hover:text-fg hover:shadow-sunken"
           }`}
         >
           <LayoutDashboard size={18} />
           {isDashboardActive && (
-            <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-brand-600" />
+            <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-brand-600 shadow-[0_0_6px_white]" />
           )}
         </NavLink>
 
@@ -802,16 +777,16 @@ export default function Sidebar({
                   aria-label={t(section.titleKey)}
                   className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                     isSectionActive
-                      ? "bg-surface text-brand-600 font-semibold ring-1 ring-brand-500/30 dark:text-brand-300"
-                      : "text-secondary hover:text-fg"
+                      ? "bg-surface text-brand-600 font-semibold ring-1 ring-brand-500/30 shadow-sunken dark:text-brand-300"
+                      : "text-secondary hover:text-fg hover:shadow-sunken"
                   }`}
                 >
                   <SectionIcon size={18} />
                   {isSectionActive && (
-                    <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface" />
+                    <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface shadow-[0_0_6px_var(--color-brand-600)]" />
                   )}
                   {!isSectionActive && hasBadges && (
-                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning ring-1 ring-surface" />
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning ring-1 ring-surface shadow-[0_0_6px_var(--status-warning)]" />
                   )}
                 </button>
 
@@ -826,7 +801,7 @@ export default function Sidebar({
                         <SectionIcon size={15} className="text-brand-600 dark:text-brand-400" />
                         {t(section.titleKey)}
                       </span>
-                      <span className="text-[10px] text-secondary font-semibold px-2 py-0.5 rounded-full bg-surface">
+                      <span className="text-[10px] text-secondary font-semibold px-2 py-0.5 rounded-full bg-surface shadow-sm">
                         {section.items.length} items
                       </span>
                     </div>
@@ -845,8 +820,8 @@ export default function Sidebar({
                             onClick={handleLinkClick}
                             className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition duration-150 ${
                               isItemActive
-                                ? "bg-brand-600 text-white font-medium"
-                                : "text-secondary hover:text-fg"
+                                ? "bg-linear-to-r from-brand-600 to-brand-500 text-white font-medium shadow-inner"
+                                : "text-secondary hover:text-fg hover:shadow-sunken"
                             }`}
                           >
                             <span className="flex items-center gap-2 truncate">
@@ -857,7 +832,7 @@ export default function Sidebar({
                               <span
                                 className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${badge.color} ${
                                   badge.pulse ? "animate-pulse" : ""
-                                }`}
+                                } shadow-sm`}
                               >
                                 {badge.text}
                               </span>
@@ -877,7 +852,7 @@ export default function Sidebar({
       <div className={`flex flex-col items-center space-y-2 pt-2 shrink-0 ${SEAM_T}`}>
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none ring-1 ring-surface"
+          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none ring-1 ring-surface shadow-inner"
         >
           {userAvatarUrl ? (
             <img src={userAvatarUrl} alt={userDisplayName} className="h-full w-full object-cover" />
@@ -893,14 +868,14 @@ export default function Sidebar({
      Expanded menu (desktop + mobile drawer)
      -------------------------------------------------------------- */
   const renderExpandedMenu = (isMobile = false) => (
-    <div className="app-sidebar flex h-full flex-col justify-between select-none overflow-hidden">
+    <div className="flex h-full flex-col justify-between select-none overflow-hidden">
       {/* Top branding + search + dashboard link */}
       <div className="shrink-0 p-3.5 pb-2 space-y-3">
-        <div className="flex items-center justify-between gap-2.5 p-2 rounded-2xl shadow-sunken">
+        <div className="flex items-center justify-between gap-2.5 p-2 rounded-2xl shadow-sunken bg-surface border border-white/5">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white ring-1 ring-white/10">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white ring-1 ring-white/10 shadow-inner">
               <School2 size={19} className="text-white" />
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success ring-2 ring-surface" />
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success ring-2 ring-surface shadow-[0_0_6px_var(--status-success)]" />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-xs font-bold tracking-tight text-color">
@@ -944,52 +919,27 @@ export default function Sidebar({
             )}
           </div>
         </div>
-
-        {/* Quick search — inherits .neu-inset from globals.css */}
-        <div className="relative">
-          <span className="absolute left-3 top-2.5 text-secondary pointer-events-none z-10">
-            <Search size={14} />
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Quick search menu..."
-            className="w-full pl-8.5 pr-8 py-2 rounded-xl text-xs text-color focus:outline-none focus:ring-2 focus:ring-brand-500/60 transition-all duration-150"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-2.5 text-secondary hover:text-fg p-0.5 cursor-pointer rounded-md"
-              aria-label="Clear search"
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
-
         <NavLink
           to={dashboardPath}
           onClick={handleLinkClick}
           className={`group flex min-h-9.5 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
             isDashboardActive
-              ? "bg-brand-600 text-white"
-              : "text-secondary hover:text-fg"
+              ? "bg-linear-to-r from-brand-600 to-brand-500 text-white shadow-inner"
+              : "text-secondary hover:text-fg hover:shadow-sunken"
           }`}
         >
           <div
             className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
               isDashboardActive
                 ? "bg-white/20 text-white"
-                : "bg-surface text-secondary"
+                : "bg-surface text-secondary shadow-sm group-hover:bg-brand-600 group-hover:text-white"
             }`}
           >
             <LayoutDashboard size={14} />
           </div>
           <span className="truncate text-xs font-medium">{t("sidebar.dashboard")}</span>
           {isDashboardActive && (
-            <span className="ml-auto flex h-2 w-2 rounded-full bg-white animate-pulse" />
+            <span className="ml-auto flex h-2 w-2 rounded-full bg-white animate-pulse shadow-[0_0_6px_white]" />
           )}
         </NavLink>
       </div>
@@ -1038,18 +988,18 @@ export default function Sidebar({
                         aria-controls={panelId}
                         className={`group flex min-h-9 w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                           isSectionOpen
-                            ? "text-color font-semibold shadow-sunken"
+                            ? "text-color font-semibold shadow-sunken bg-surface/50"
                             : hasActiveChild
-                              ? "text-brand-700 dark:text-brand-300 font-semibold shadow-sunken"
-                              : "text-secondary hover:text-fg"
+                              ? "text-brand-700 dark:text-brand-300 font-semibold shadow-sunken bg-surface/30"
+                              : "text-secondary hover:text-fg hover:shadow-sunken"
                         }`}
                       >
                         <span className="flex items-center gap-2.5 truncate">
                           <div
                             className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-all duration-150 ${
                               isSectionOpen || hasActiveChild
-                                ? "bg-brand-600 text-white"
-                                : "bg-surface text-secondary"
+                                ? "bg-linear-to-br from-brand-600 to-brand-500 text-white shadow-inner"
+                                : "bg-surface text-secondary shadow-sm"
                             }`}
                           >
                             <SectionIcon size={14} />
@@ -1060,7 +1010,7 @@ export default function Sidebar({
                         <div className="flex items-center gap-1.5 shrink-0">
                           {!isSectionOpen && hasActiveChild && (
                             <span
-                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600 dark:bg-brand-400"
+                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600 dark:bg-brand-400 shadow-[0_0_6px_var(--color-brand-600)]"
                               aria-hidden="true"
                             />
                           )}
@@ -1088,7 +1038,6 @@ export default function Sidebar({
                         }`}
                       >
                         <div className="overflow-hidden min-h-0">
-                          {/* Left rail — 1px shadow seam */}
                           <div className="relative mt-1 mb-1 ml-4 pl-3 space-y-0.5 shadow-[-1px_0_0_var(--neu-shadow-dark)]">
                             {section.items.map((item) => {
                               const Icon = item.icon;
@@ -1105,12 +1054,12 @@ export default function Sidebar({
                                   tabIndex={isSectionOpen ? 0 : -1}
                                   className={`group relative flex min-h-8 items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
                                     isItemActive
-                                      ? "font-semibold bg-brand-600 text-white"
-                                      : "font-normal text-secondary hover:text-fg"
+                                      ? "font-semibold bg-linear-to-r from-brand-600 to-brand-500 text-white shadow-inner"
+                                      : "font-normal text-secondary hover:text-fg hover:shadow-sunken"
                                   }`}
                                 >
                                   {isItemActive && (
-                                    <span className="absolute -left-4 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-brand-600 ring-2 ring-surface" />
+                                    <span className="absolute -left-4 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-brand-600 ring-2 ring-surface shadow-[0_0_6px_var(--color-brand-600)]" />
                                   )}
                                   <span className="flex items-center gap-2 truncate">
                                     <Icon
@@ -1127,7 +1076,7 @@ export default function Sidebar({
                                     <span
                                       className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-tight ${
                                         isItemActive ? "bg-white/25 text-white" : badge.color
-                                      } ${badge.pulse ? "animate-pulse" : ""}`}
+                                      } ${badge.pulse ? "animate-pulse" : ""} shadow-sm`}
                                     >
                                       {badge.text}
                                     </span>
@@ -1149,15 +1098,15 @@ export default function Sidebar({
 
       {/* User footer */}
       <div className={`shrink-0 p-3.5 pt-2 ${SEAM_T}`}>
-        <div className="flex items-center justify-between gap-2 rounded-2xl p-2.5 shadow-sunken">
+        <div className="flex items-center justify-between gap-2 rounded-2xl p-2.5 shadow-sunken bg-surface border border-white/5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none ring-1 ring-surface">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none ring-1 ring-surface shadow-inner">
               {userAvatarUrl ? (
                 <img src={userAvatarUrl} alt={userDisplayName} className="h-full w-full object-cover" />
               ) : (
                 userInitials
               )}
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface shadow-[0_0_6px_var(--status-success)]" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-color leading-tight">
@@ -1179,7 +1128,7 @@ export default function Sidebar({
               onClick={() => logout()}
               title="Sign out"
               aria-label="Sign out"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:text-error transition-colors cursor-pointer"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:text-error hover:shadow-sunken transition-all cursor-pointer"
             >
               <LogOut size={15} />
             </button>
@@ -1193,16 +1142,16 @@ export default function Sidebar({
     <>
       {/* Mobile backdrop */}
       <div
-        className={`fixed inset-0 z-40 theme-overlay backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-40 theme-overlay transition-opacity duration-300 lg:hidden ${
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => onClose && onClose()}
         aria-hidden={!mobileOpen}
       />
 
-      {/* Mobile drawer — shadow matches `aside.app-sidebar` in globals.css */}
+      {/* Mobile drawer — Added app-sidebar class for the liquid glass backdrop */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-77.5 max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden shadow-[2px_0_6px_var(--neu-shadow-dark)] ${
+        className={`app-sidebar fixed left-0 top-0 z-50 h-full w-77.5 max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden shadow-[2px_0_10px_var(--neu-shadow-dark)] ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
