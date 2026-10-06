@@ -43,11 +43,6 @@ const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
 const SUPPORTED_LANGS = [
   { code: 'en', name: 'English', native: 'English', flag: '🇬🇧' },
   { code: 'km', name: 'Khmer', native: 'ភាសាខ្មែរ', flag: '🇰🇭' },
-  { code: 'fr', name: 'Français', native: 'Français', flag: '🇫🇷' },
-  { code: 'es', name: 'Español', native: 'Español', flag: '🇪🇸' },
-  { code: 'zh', name: 'Chinese', native: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', native: '日本語', flag: '🇯🇵' },
-  { code: 'de', name: 'Deutsch', native: 'Deutsch', flag: '🇩🇪' },
 ]
 
 const HOME_BY_ROLE: Record<string, string> = {
@@ -95,13 +90,7 @@ export default function AuthHeader({
     navigate(PORTAL_PATH[role])
   }
 
-  const navItems = [
-    { id: 'all' as const, label: 'All Portals', icon: LayoutGrid, color: 'text-fg-muted' },
-    { id: 'admin' as const, label: 'Admin', icon: ShieldCheck, color: 'text-info' },
-    { id: 'teacher' as const, label: 'Faculty', icon: GraduationCap, color: 'text-success' },
-    { id: 'student' as const, label: 'Student', icon: BookOpen, color: 'text-brand-600 dark:text-brand-400' },
-    { id: 'parent' as const, label: 'Parent', icon: Users, color: 'text-warning' },
-  ]
+
 
   const currentLang =
     SUPPORTED_LANGS.find((l) => l.code === language) ?? SUPPORTED_LANGS[0]
@@ -186,7 +175,7 @@ export default function AuthHeader({
               type="button"
               onClick={() => setIsLangOpen((v) => !v)}
               aria-expanded={isLangOpen}
-              className="glass-sm glass-interactive inline-flex items-center gap-1.5 px-3 py-1.5 text-fg text-xs font-semibold"
+              className="glass-sm glass-interactive rounded-3xl inline-flex items-center gap-1.5 px-3 py-1.5 text-fg text-xs font-semibold"
             >
               <span className="text-sm">{currentLang.flag}</span>
               <span className="hidden sm:inline font-medium">{currentLang.native}</span>
@@ -237,7 +226,7 @@ export default function AuthHeader({
             type="button"
             onClick={toggleTheme}
             aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-            className="glass-sm glass-interactive w-9 h-9 flex items-center justify-center text-fg-muted hover:text-fg"
+            className="glass-sm glass-interactive rounded-3xl w-9 h-9 flex items-center justify-center text-fg-muted hover:text-fg"
           >
             {isDark ? <Sun size={16} className="text-warning" /> : <Moon size={16} />}
           </button>
@@ -248,7 +237,7 @@ export default function AuthHeader({
             id="auth-support-btn"
             type="button"
             onClick={() => setIsHelpOpen(true)}
-            className="glass-sm glass-interactive inline-flex items-center gap-1.5 px-3 py-1.5 text-brand-700 dark:text-brand-300 text-xs font-semibold"
+            className="glass-sm glass-interactive rounded-3xl inline-flex items-center gap-1.5 px-3 py-1.5 text-brand-700 dark:text-brand-300 text-xs font-semibold"
           >
             <HelpCircle size={14} />
             <span className="hidden sm:inline">IT Helpdesk</span>
