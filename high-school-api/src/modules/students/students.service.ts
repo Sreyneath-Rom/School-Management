@@ -18,14 +18,6 @@ type Tx = Omit<
 const RETRY_LIMIT = 3
 const RETRY_BASE_MS = 25
 
-/**
- * Retries serializable-transaction conflicts (Postgres SQLSTATE 40001,
- * Prisma P2034). Enroll creates a User and a Student — two rows with their
- * own unique constraints (email, studentCode). Two concurrent enrolls for
- * the same email or code must not both succeed. Serializable isolation
- * prevents that; the retry handles the case where Postgres aborts one
- * transaction rather than letting it observe a stale snapshot.
- */
 async function runSerializable<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
   let lastError: unknown
   for (let attempt = 0; attempt < RETRY_LIMIT; attempt++) {
@@ -55,18 +47,6 @@ const studentInclude = {
   class: { select: { id: true, name: true, gradeLevel: true } },
 } as const
 
-/**
- * Resolves a class from either an id or a name. The caller may supply one,
- * the other, or both. Rules:
- *   - `classId` wins if present (it's unambiguous).
- *   - `className` is looked up only if `classId` is absent.
- *   - A caller that supplies a `className` that doesn't resolve gets a 400
- *     (not a silent "class not found" that produces a null classId).
- *
- * Returns `undefined` when neither is provided. Returns `null` when the
- * caller explicitly cleared the class (both absent and caller wants null —
- * not currently expressible; the schema doesn't accept an explicit null).
- */
 async function resolveClassId(input: {
   classId?: string
   className?: string
@@ -112,8 +92,6 @@ export const studentsService = {
         : {}),
     }
 
-    // `firstName`/`lastName` sort on the joined User row; Prisma handles the
-    // nested orderBy transparently. The tiebreaker keeps pagination stable.
     const primarySort = query.sortBy ?? 'createdAt'
     const orderBy: Prisma.StudentOrderByWithRelationInput[] =
       primarySort === 'firstName' || primarySort === 'lastName'
@@ -142,13 +120,6 @@ export const studentsService = {
     return student
   },
 
-  /**
-   * Full profile for the "Student Profile" page: student, class, linked
-   * parents, attendance summary, and recent grades.
-   *
-   * Ownership enforcement happens in the controller for student/parent
-   * callers. The service is deliberately role-agnostic.
-   */
   async getProfile(id: string) {
     const student = await prisma.student.findFirst({
       where: { id, deletedAt: null },
@@ -184,8 +155,6 @@ export const studentsService = {
       }),
     ])
 
-    // Fixed-shape attendance summary — every status key present, even at
-    // zero. Same rule as reports.forStudent.
     const counts: Record<string, number> = {
       PRESENT: 0,
       ABSENT: 0,
@@ -202,7 +171,14 @@ export const studentsService = {
 
     return {
       ...student,
-      attendanceSummary: { total, ...counts, attendanceRate },
+      attendanceSummary: {
+        total,
+        present: counts.PRESENT,
+        absent: counts.ABSENT,
+        late: counts.LATE,
+        excused: counts.EXCUSED,
+        attendanceRate,
+      },
       recentGrades,
     }
   },
@@ -240,19 +216,6 @@ export const studentsService = {
     })
   },
 
-  /**
-   * Creates a User AND a Student in one transaction.
-   *
-   * Runs under serializable isolation because two rows with independent
-   * unique constraints (User.email, Student.studentCode) are being created.
-   * A concurrent enroll with the same email or code must not both succeed;
-   * without serializable isolation the two writes could each pass their
-   * pre-check and then race at insert.
-   *
-   * The service does NOT default the password — a caller that omits it gets
-   * a Zod 400 from the route, not a silently-created account with a
-   * known credential.
-   */
   async enroll(input: EnrollStudentBody) {
     const role = await prisma.role.findUnique({
       where: { name: 'student' },
@@ -267,16 +230,9 @@ export const studentsService = {
       className: input.className,
     })
 
-    // Hash outside the transaction — bcrypt is CPU-heavy and doesn't need a
-    // DB connection. Doing it inside would hold the serializable transaction
-    // open for ~250 ms while blocking the row locks.
     const passwordHash = await hashPassword(input.password)
 
     return runSerializable(async (tx) => {
-      // Pre-checks inside the transaction so they see a snapshot consistent
-      // with the writes that follow. The unique constraints on User.email
-      // and Student.studentCode are the real guard; these checks produce
-      // clearer error messages than the P2002 handler would.
       const [existingUser, existingStudent] = await Promise.all([
         tx.user.findUnique({
           where: { email: input.email },
@@ -324,8 +280,6 @@ export const studentsService = {
   },
 
   async update(id: string, changes: UpdateStudentBody) {
-    // Fetch the current student once, up-front, so both the class resolution
-    // and the user-side update have the data they need.
     const current = await prisma.student.findFirst({
       where: { id, deletedAt: null },
       select: { id: true, userId: true },
@@ -337,7 +291,6 @@ export const studentsService = {
       className: changes.className,
     })
 
-    // Fields that live on the Student row (not on the linked User).
     const studentData: Prisma.StudentUpdateInput = {
       ...(changes.studentCode !== undefined ? { studentCode: changes.studentCode } : {}),
       ...(changes.dateOfBirth !== undefined ? { dateOfBirth: changes.dateOfBirth } : {}),
@@ -345,7 +298,6 @@ export const studentsService = {
       ...(classId !== undefined ? { class: { connect: { id: classId } } } : {}),
     }
 
-    // Fields that live on the linked User row.
     const userData: Prisma.UserUpdateInput = {
       ...(changes.firstName !== undefined ? { firstName: changes.firstName } : {}),
       ...(changes.lastName !== undefined ? { lastName: changes.lastName } : {}),
@@ -357,9 +309,6 @@ export const studentsService = {
     }
 
     return prisma.$transaction(async (tx) => {
-      // Update the student row only if there's something to update. Prisma
-      // accepts an empty `data: {}`, but skipping the query when possible is
-      // cleaner and avoids a no-op write.
       if (Object.keys(studentData).length > 0) {
         await tx.student.update({ where: { id }, data: studentData })
       }
@@ -370,15 +319,6 @@ export const studentsService = {
     })
   },
 
-    /**
-   * Soft delete. Historical records (attendance, grades, homework
-   * submissions, leave requests) reference the student, so a hard delete
-   * would either orphan them or require cascades that erase audit history.
-   *
-   * Both sides of the User ↔ Student pair are soft-deleted in the same
-   * transaction, so the account no longer appears in `/users` lists either.
-   * Mirror of `users.service.softDelete`'s cascade.
-   */
   async remove(id: string) {
     const student = await prisma.student.findFirst({
       where: { id, deletedAt: null },

@@ -1,17 +1,16 @@
 // src/pages/Dashboard/StudentDashboard.tsx
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import PageHeading from '@/components/common/PageHeading'
-import StatsGrid from '@/components/cards/StatsGrid'
-import EmptyState from '@/components/common/EmptyState'
 import {
   Calendar, FileCheck2, HelpCircle, Award, ArrowRight,
-  BookOpen, Upload, Timer,
+  BookOpen, Upload, Timer, CheckCircle2,
 } from 'lucide-react'
+import PageHeading from '@/components/common/PageHeading'
+import StatsGrid, { type StatCard } from '@/components/cards/StatsGrid'
+import EmptyState from '@/components/common/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
 import { academicService } from '@/services/academicService'
 import type { Homework, Quiz, GradeRecord } from '@/types/academic'
-import type { StatCard } from '@/types'
 
 export default function StudentDashboard() {
   const { user } = useAuth()
@@ -27,7 +26,6 @@ export default function StudentDashboard() {
     Promise.all([
       academicService.getHomeworkList(),
       academicService.getQuizzes(),
-      // No argument — the service hits /grades/me, scoped to the token.
       academicService.getMyGrades(),
     ])
       .then(([hw, qz, gr]) => {
@@ -58,10 +56,38 @@ export default function StudentDashboard() {
     : null
 
   const studentStatCards: StatCard[] = [
-    { id: 'grades-recorded',   label: 'Graded Subjects',  value: String(grades.length),        delta: '', deltaDirection: 'neutral', deltaLabel: grades.length === 1 ? '1 record' : `${grades.length} records`, icon: 'BookOpen',     tint: 'blue' },
-    { id: 'gpa',               label: 'Cumulative GPA',   value: gpa ? `${gpa} / 4.0` : '—',   delta: '', deltaDirection: 'neutral', deltaLabel: gpa ? 'Across graded subjects' : 'No grades yet',            icon: 'Award',        tint: 'amber' },
-    { id: 'weighted-average',  label: 'Average Score',    value: avgGrade ? `${avgGrade}%` : '—', delta: '', deltaDirection: 'neutral', deltaLabel: avgGrade ? 'Across graded subjects' : 'No grades yet',       icon: 'CheckCircle2', tint: 'green' },
-    { id: 'open-homework',     label: 'Open Assignments', value: String(homeworkList.length),  delta: '', deltaDirection: 'neutral', deltaLabel: 'Assigned to your class',                                icon: 'FileCheck2',   tint: 'sky' },
+    {
+      id: 'grades-recorded',
+      label: 'Graded Subjects',
+      value: String(grades.length),
+      icon: BookOpen,
+      accent: 'brand',
+      footerLabel: grades.length === 1 ? '1 record' : `${grades.length} records`,
+    },
+    {
+      id: 'gpa',
+      label: 'Cumulative GPA',
+      value: gpa ? `${gpa} / 4.0` : '—',
+      icon: Award,
+      accent: 'warning',
+      footerLabel: gpa ? 'Across graded subjects' : 'No grades yet',
+    },
+    {
+      id: 'weighted-average',
+      label: 'Average Score',
+      value: avgGrade ? `${avgGrade}%` : '—',
+      icon: CheckCircle2,
+      accent: 'success',
+      footerLabel: avgGrade ? 'Across graded subjects' : 'No grades yet',
+    },
+    {
+      id: 'open-homework',
+      label: 'Open Assignments',
+      value: String(homeworkList.length),
+      icon: FileCheck2,
+      accent: 'info',
+      footerLabel: 'Assigned to your class',
+    },
   ]
 
   return (
@@ -80,11 +106,13 @@ export default function StudentDashboard() {
         </Link>
       </div>
 
-      <StatsGrid cards={studentStatCards} loading={loading} showHeader={false} />
+      <StatsGrid
+        cards={studentStatCards}
+        loading={loading}
+        showHeader={false}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Today's schedule — deferred. The backend has no per-day filter
-            yet, and the previous version showed three made-up periods. */}
         <div className="rounded-2xl glass-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
@@ -100,8 +128,7 @@ export default function StudentDashboard() {
             </span>
           </div>
 
-          {/* Deferred-state panel: a sunken well reads as "empty slot" */}
-          <div className="py-6 text-center rounded-xl shadow-[var(--shadow-emboss-sunken)]">
+          <div className="py-6 text-center rounded-xl shadow-sunken">
             <p className="text-xs text-fg-muted">
               Your daily schedule isn't available here yet.
             </p>
@@ -115,7 +142,6 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Quick links */}
         <div className="rounded-2xl glass-sm p-5 space-y-3">
           <h3 className="font-semibold text-sm text-fg">Quick Navigation</h3>
           <div className="space-y-2 text-xs font-medium">
@@ -128,7 +154,6 @@ export default function StudentDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Homework */}
         <div className="rounded-2xl glass-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
@@ -145,9 +170,7 @@ export default function StudentDashboard() {
           ) : (
             <div className="space-y-2.5">
               {homeworkList.slice(0, 4).map((hw) => (
-                // Row: sunken well inside the raised card — the correct
-                // neumorphic pattern for an "itemized list inside a card".
-                <div key={hw.id} className="p-3 rounded-xl shadow-[var(--shadow-emboss-sunken)] flex items-center justify-between text-xs">
+                <div key={hw.id} className="p-3 rounded-xl shadow-sunken flex items-center justify-between text-xs">
                   <div className="min-w-0">
                     <h4 className="font-semibold text-fg truncate">{hw.title}</h4>
                     <p className="text-fg-muted mt-0.5">
@@ -166,7 +189,6 @@ export default function StudentDashboard() {
           )}
         </div>
 
-        {/* Quizzes */}
         <div className="rounded-2xl glass-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
@@ -183,7 +205,7 @@ export default function StudentDashboard() {
           ) : (
             <div className="space-y-2.5">
               {quizzes.slice(0, 4).map((q) => (
-                <div key={q.id} className="p-3 rounded-xl shadow-[var(--shadow-emboss-sunken)] flex items-center justify-between text-xs">
+                <div key={q.id} className="p-3 rounded-xl shadow-sunken flex items-center justify-between text-xs">
                   <div className="min-w-0">
                     <h4 className="font-semibold text-fg truncate">{q.title}</h4>
                     <p className="text-fg-muted mt-0.5">
@@ -217,13 +239,9 @@ function QuickLink({
   label: string
 }) {
   return (
-    // Was `bg-surface border border-surface hover:border-brand-500/50` —
-    // every piece a no-op. Now a sunken well that switches to a brand
-    // tint on hover, which is the correct neumorphic "interactive row
-    // inside a card" treatment.
     <Link
       to={to}
-      className="flex items-center justify-between p-3 rounded-xl shadow-[var(--shadow-emboss-sunken)] hover:bg-brand-500/5 transition group"
+      className="flex items-center justify-between p-3 rounded-xl shadow-sunken hover:bg-brand-500/5 transition group"
     >
       <div className="flex items-center gap-2.5">
         {icon}

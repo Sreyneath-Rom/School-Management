@@ -78,8 +78,6 @@ type Section =
   | "CHILDREN"
   | "SYSTEM";
 
-const UNKNOWN_PATH_PERMISSION = "__unmatched_path__";
-
 type BadgeKey = "leave-requests" | "messages";
 
 interface MenuItem {
@@ -91,7 +89,31 @@ interface MenuItem {
   badgePulse?: boolean;
 }
 
-function permissionForPath(path: string): string {
+/**
+ * Paths we've explicitly decided are visible to anyone who can see the
+ * section they're placed in. The role-based menu already scopes which
+ * sections a role sees, so no additional permission check is needed for
+ * these.
+ */
+const DEFAULT_VISIBLE_PATHS = new Set<string>([
+  "/academic/class-subjects",
+  "/calendar",
+  "/calendar/events",
+  "/calendar/holidays",
+  "/system/activity",
+]);
+
+/** Dev-only: dedupe the "no rule" warning so it doesn't spam every render. */
+const warnedPaths = new Set<string>();
+
+/**
+ * Returns the permission key required to see a path, or `null` when the
+ * path needs no permission check (its section is already role-scoped).
+ *
+ * Callers must treat `null` as "visible" — do NOT fall back to a sentinel
+ * that a user will never match, or the item silently disappears.
+ */
+function permissionForPath(path: string): string | null {
   if (path.includes("/setup/roles")) return "roles.view";
   if (path.includes("/setup/users")) return "users.view";
   if (path.includes("/setup/school")) return "school.view";
@@ -109,6 +131,7 @@ function permissionForPath(path: string): string {
   )
     return "grades.view";
   if (path.includes("/academic/classes")) return "classes.view";
+  if (path.includes("/academic/class-subjects")) return "classes.view";
   if (path.includes("/academic/schedules")) return "schedules.view";
   if (path.includes("/academic/lessons")) return "lessons.view";
   if (path.includes("/academic/homework")) return "homework.view";
@@ -131,7 +154,8 @@ function permissionForPath(path: string): string {
     path.includes("/teacher/students")
   )
     return "students.view";
-  if (path === "/teachers" || path.includes("/teachers/")) return "teachers.view";
+  if (path === "/teachers" || path.includes("/teachers/"))
+    return "teachers.view";
   if (path.includes("/reports/")) return "reports.view";
   if (path.includes("/communication/announcements"))
     return "announcements.view";
@@ -139,10 +163,18 @@ function permissionForPath(path: string): string {
     return "notifications.view";
   if (path.includes("/messages")) return "notifications.view";
 
-  if (import.meta.env.DEV) {
-    console.warn(`[sidebar] no permission rule for path: ${path}`);
+  // Explicitly-visible paths — no permission required.
+  if (DEFAULT_VISIBLE_PATHS.has(path)) return null;
+
+  // Anything else: default to visible, but warn once in dev so newly-added
+  // menu entries that need a rule are noticed.
+  if (import.meta.env.DEV && !warnedPaths.has(path)) {
+    warnedPaths.add(path);
+    console.warn(
+      `[sidebar] no permission rule for path: ${path} — defaulting to visible`
+    );
   }
-  return UNKNOWN_PATH_PERMISSION;
+  return null;
 }
 
 interface MenuSection {
@@ -539,6 +571,8 @@ export default function Sidebar({
         ...section,
         items: section.items.filter((item) => {
           const requiredPermission = permissionForPath(item.path);
+          // null = no rule applies, section is already role-scoped → show.
+          if (requiredPermission === null) return true;
           return permissionKeys.includes(requiredPermission);
         }),
       }))

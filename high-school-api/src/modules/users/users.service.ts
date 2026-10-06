@@ -10,11 +10,6 @@ import type {
   UpdateUserBody,
 } from './users.validation'
 
-/**
- * Fields safe to return from any user endpoint. Deliberately excludes
- * `passwordHash`, `passwordResetTokenHash`, and other credential material.
- * `select` (not `include`) because the defaults would leak the hash.
- */
 const publicUserSelect = {
   id: true,
   email: true,
@@ -47,13 +42,6 @@ const publicUserSelect = {
   },
 } as const
 
-/**
- * Resolves a role by id or name. Returns the id so the caller can write it
- * to `User.roleId` directly.
- *
- * Precedence: `roleId` wins when both are provided. A caller supplying a
- * name that doesn't resolve gets a 400.
- */
 async function resolveRoleId(input: {
   roleId?: string
   role?: string
@@ -147,11 +135,6 @@ export const usersService = {
     return user
   },
 
-  /**
-   * Creates a User. The route-level schema rejects `role: 'teacher'` and
-   * `role: 'student'` because those accounts need a profile row that this
-   * method doesn't create. See users.validation.ts for the reasoning.
-   */
   async create(input: CreateUserBody) {
     const existing = await prisma.user.findUnique({
       where: { email: input.email },
@@ -177,10 +160,6 @@ export const usersService = {
     })
   },
 
-  /**
-   * Partial update. `actorId` is the id of the authenticated caller — used
-   * to prevent self-demotion.
-   */
   async update(id: string, changes: UpdateUserBody, actorId: string) {
     const existing = await prisma.user.findFirst({
       where: { id, deletedAt: null },
@@ -193,7 +172,6 @@ export const usersService = {
         ? await resolveRoleId(changes)
         : undefined
 
-    // Guard: an admin cannot demote themselves.
     if (
       id === actorId &&
       nextRoleId !== undefined &&
@@ -204,8 +182,6 @@ export const usersService = {
       )
     }
 
-    // Normalize status → isActive. When both are provided the schema
-    // already rejected the request, so at most one is set here.
     const isActive =
       changes.isActive !== undefined
         ? changes.isActive
@@ -230,18 +206,6 @@ export const usersService = {
     })
   },
 
-  /**
-   * Soft delete. Cascades to the user's profile row (Teacher, Student, or
-   * Parent) in the same transaction so no orphaned profiles remain.
-   *
-   * Refuses to delete the caller themselves, and refuses if the target is
-   * the last active admin.
-   *
-   * The profile cascades use `updateMany` with `deletedAt: null` in the
-   * where clause — a no-op for the two roles the user doesn't have. No
-   * branching on role is needed; all three updates run unconditionally and
-   * one of them will affect zero rows.
-   */
   async softDelete(id: string, actorId: string) {
     if (id === actorId) {
       throw ApiError.badRequest(
@@ -255,7 +219,6 @@ export const usersService = {
     })
     if (!user) throw ApiError.notFound('User not found')
 
-    // Refuse if this is the last active admin.
     const adminRole = await prisma.role.findUnique({
       where: { name: 'admin' },
       select: { id: true },
@@ -278,9 +241,9 @@ export const usersService = {
 
     const now = new Date()
 
-    // Cascade in one transaction. Aligns both sides: after this, the User
-    // and (if present) the Teacher/Student/Parent profile all carry the
-    // same `deletedAt` timestamp.
+    // Cascade to every profile kind. `updateMany` is a no-op when the
+    // where clause matches nothing, so it's safe to run all of them
+    // unconditionally.
     await prisma.$transaction([
       prisma.user.update({
         where: { id },
@@ -294,13 +257,13 @@ export const usersService = {
         where: { userId: id, deletedAt: null },
         data: { deletedAt: now },
       }),
+      prisma.parent.updateMany({
+        where: { userId: id, deletedAt: null },
+        data: { deletedAt: now },
+      }),
     ])
   },
 
-  /**
-   * Admin-triggered password reset. Two writes, both must succeed together:
-   * the new hash and the revocation of every refresh token.
-   */
   async resetPassword(id: string, newPassword: string) {
     const user = await prisma.user.findFirst({
       where: { id, deletedAt: null },
@@ -319,12 +282,6 @@ export const usersService = {
     ])
   },
 
-  /**
-   * Bulk enable/disable. Two guards:
-   *
-   *   1. The caller cannot include themselves in the batch.
-   *   2. If deactivating, the batch cannot leave zero active admins.
-   */
   async bulkUpdateStatus(input: BulkStatusBody, actorId: string) {
     const { ids, status } = input
 

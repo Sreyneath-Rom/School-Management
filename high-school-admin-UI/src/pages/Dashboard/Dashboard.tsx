@@ -47,16 +47,18 @@ function AdminDashboard() {
       <DashboardQuickActions />
 
       {error && (
-        // Was `bg-surface border border-surface` — both resolved to the
-        // page background, so the banner rendered as plain text with no
-        // visual container. A warning-tinted alert is the correct signal
-        // here: the sync failed but the dashboard still renders stale data.
         <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold text-warning">
           Unable to synchronize real-time dashboard metrics. Displaying last known values.
         </div>
       )}
 
-      <StatsGrid cards={cards} loading={loading} showHeader={true} columns={4} />
+      <StatsGrid
+        cards={cards}
+        loading={loading}
+        columns={4}
+        title="School Overview"
+        subtitle="Live key metrics across all roles and departments"
+      />
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <AcademicPulseWidget />
@@ -80,7 +82,6 @@ export default function Dashboard() {
 
   if (user?.role === 'teacher') return <TeacherDashboard />
   if (user?.role === 'student') return <StudentDashboard />
-  // Parent role is rendered by the parent portal's route set — no branch here.
 
   return <AdminDashboard />
 }

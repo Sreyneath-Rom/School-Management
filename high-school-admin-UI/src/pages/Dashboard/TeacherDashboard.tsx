@@ -1,17 +1,16 @@
 // src/pages/Dashboard/TeacherDashboard.tsx
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import PageHeading from '@/components/common/PageHeading'
-import StatsGrid from '@/components/cards/StatsGrid'
-import EmptyState from '@/components/common/EmptyState'
 import {
   Calendar, FileCheck2, HelpCircle, Award, ArrowRight,
   BookOpen, ClipboardCheck, Plus,
 } from 'lucide-react'
+import PageHeading from '@/components/common/PageHeading'
+import StatsGrid, { type StatCard } from '@/components/cards/StatsGrid'
+import EmptyState from '@/components/common/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
 import { academicService } from '@/services/academicService'
 import type { Homework, Quiz, GradeRecord } from '@/types/academic'
-import type { StatCard } from '@/types'
 
 export default function TeacherDashboard() {
   const { user } = useAuth()
@@ -26,7 +25,6 @@ export default function TeacherDashboard() {
     Promise.all([
       academicService.getHomeworkList(),
       academicService.getQuizzes(),
-      // Staff-only endpoint — the backend enforces grades.view.
       academicService.getAllGrades(),
     ])
       .then(([hw, qz, gr]) => {
@@ -49,10 +47,40 @@ export default function TeacherDashboard() {
   }, [])
 
   const teacherStatCards: StatCard[] = [
-    { id: 'homework-assigned', label: 'Assignments',     value: String(homeworkList.length),                             delta: '', deltaDirection: 'neutral', deltaLabel: 'Open assignments',           icon: 'FileCheck2',     tint: 'amber' },
-    { id: 'active-quizzes',    label: 'Quizzes',         value: String(quizzes.length),                                  delta: '', deltaDirection: 'neutral', deltaLabel: 'Published',                  icon: 'HelpCircle',     tint: 'sky' },
-    { id: 'grade-records',     label: 'Grade Records',   value: String(recentGrades.length),                             delta: '', deltaDirection: 'neutral', deltaLabel: 'Most recent entries',        icon: 'Award',          tint: 'green' },
-    { id: 'submissions',       label: 'Submissions',     value: String(homeworkList.reduce((sum, h) => sum + (h.submissionsCount ?? 0), 0)), delta: '', deltaDirection: 'neutral', deltaLabel: 'Across your assignments', icon: 'ClipboardCheck', tint: 'blue' },
+    {
+      id: 'homework-assigned',
+      label: 'Assignments',
+      value: String(homeworkList.length),
+      icon: FileCheck2,
+      accent: 'warning',
+      footerLabel: 'Open assignments',
+    },
+    {
+      id: 'active-quizzes',
+      label: 'Quizzes',
+      value: String(quizzes.length),
+      icon: HelpCircle,
+      accent: 'info',
+      footerLabel: 'Published',
+    },
+    {
+      id: 'grade-records',
+      label: 'Grade Records',
+      value: String(recentGrades.length),
+      icon: Award,
+      accent: 'success',
+      footerLabel: 'Most recent entries',
+    },
+    {
+      id: 'submissions',
+      label: 'Submissions',
+      value: String(
+        homeworkList.reduce((sum, h) => sum + (h.submissionsCount ?? 0), 0)
+      ),
+      icon: ClipboardCheck,
+      accent: 'brand',
+      footerLabel: 'Across your assignments',
+    },
   ]
 
   return (
@@ -80,10 +108,13 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      <StatsGrid cards={teacherStatCards} loading={loading} showHeader={false} />
+      <StatsGrid
+        cards={teacherStatCards}
+        loading={loading}
+        showHeader={false}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Today's schedule — deferred, same reasoning as student dashboard */}
         <div className="rounded-2xl glass-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
@@ -99,7 +130,7 @@ export default function TeacherDashboard() {
             </span>
           </div>
 
-          <div className="py-6 text-center rounded-xl shadow-[var(--shadow-emboss-sunken)]">
+          <div className="py-6 text-center rounded-xl shadow-sunken">
             <p className="text-xs text-fg-muted">
               Your daily schedule isn't available here yet.
             </p>
@@ -113,7 +144,6 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        {/* Quick links */}
         <div className="rounded-2xl glass-sm p-5 space-y-3">
           <h3 className="font-semibold text-sm text-fg">Quick Actions</h3>
           <div className="space-y-2 text-xs font-medium">
@@ -141,7 +171,7 @@ export default function TeacherDashboard() {
           ) : (
             <div className="space-y-2.5">
               {homeworkList.slice(0, 5).map((hw) => (
-                <div key={hw.id} className="p-3 rounded-xl shadow-[var(--shadow-emboss-sunken)] flex items-center justify-between text-xs">
+                <div key={hw.id} className="p-3 rounded-xl shadow-sunken flex items-center justify-between text-xs">
                   <div className="min-w-0">
                     <h4 className="font-semibold text-fg truncate">{hw.title}</h4>
                     <p className="text-fg-muted mt-0.5">
@@ -149,13 +179,12 @@ export default function TeacherDashboard() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {/* Semantic count badge — warning-tinted, kept */}
                     <span className="px-2 py-0.5 rounded-full bg-warning/15 text-warning font-medium border border-warning/25">
                       {hw.submissionsCount ?? 0} submitted
                     </span>
                     <Link
                       to="/teacher/homework"
-                      className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-[var(--shadow-emboss-raised)] transition"
+                      className="p-1.5 rounded-lg text-fg-muted hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-emboss transition"
                     >
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
@@ -181,7 +210,7 @@ export default function TeacherDashboard() {
           ) : (
             <div className="space-y-2.5">
               {recentGrades.map((g) => (
-                <div key={g.id} className="p-3 rounded-xl shadow-[var(--shadow-emboss-sunken)] flex items-center justify-between text-xs">
+                <div key={g.id} className="p-3 rounded-xl shadow-sunken flex items-center justify-between text-xs">
                   <div className="min-w-0">
                     <h4 className="font-semibold text-fg truncate">
                       {g.studentName || '—'}
@@ -190,8 +219,6 @@ export default function TeacherDashboard() {
                   </div>
                   <div className="flex items-center gap-2 font-bold shrink-0">
                     <span className="text-fg">{g.percentage}%</span>
-                    {/* Grade badge keeps the same semantic tints used
-                        everywhere else in the codebase */}
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs border ${
                         g.letterGrade === 'A'
@@ -228,7 +255,7 @@ function QuickLink({
   return (
     <Link
       to={to}
-      className="flex items-center justify-between p-3 rounded-xl shadow-[var(--shadow-emboss-sunken)] hover:bg-brand-500/5 transition group"
+      className="flex items-center justify-between p-3 rounded-xl shadow-sunken hover:bg-brand-500/5 transition group"
     >
       <div className="flex items-center gap-2.5">
         {icon}

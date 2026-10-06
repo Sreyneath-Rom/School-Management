@@ -11,28 +11,22 @@ export function notFoundHandler(req: Request, res: Response) {
   res.status(404).json({
     success: false,
     message: `Route not found: ${req.method} ${req.originalUrl}`,
-    requestId: req.id,
+    requestId: req.id ?? 'unknown',
   })
 }
 
-/**
- * Express recognizes an error handler by its 4-argument signature. `_next`
- * must stay in the parameter list even though it's unused — removing it turns
- * this function into ordinary middleware and errors fall through to Express's
- * default HTML error page.
- */
 export function errorHandler(
   err: unknown,
   req: Request,
   res: Response,
   _next: NextFunction
 ) {
-  const requestId = req.id
-  // Echo the correlation ID on every error response so a user pasting
-  // "something went wrong" into a ticket gives you a trail to follow.
+  // Defensive: req.id is optional. Passing undefined to res.setHeader
+  // throws ERR_HTTP_INVALID_HEADER_VALUE, which would turn every error
+  // into a generic 500.
+  const requestId = req.id ?? 'unknown'
   res.setHeader('x-request-id', requestId)
 
-  // ---- Zod validation ----
   if (err instanceof ZodError) {
     return res.status(400).json({
       success: false,
@@ -42,10 +36,6 @@ export function errorHandler(
     })
   }
 
-  // ---- Multer file uploads ----
-  // Multer throws its own error class for oversized files, unexpected fields,
-  // and too many files. The ApiError we pass from `fileFilter` is a separate
-  // class and is caught by the ApiError branch below.
   if (err instanceof MulterError) {
     const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400
     const message =
@@ -55,19 +45,21 @@ export function errorHandler(
     return res.status(status).json({ success: false, message, requestId })
   }
 
-  // ---- JWT ----
   if (err instanceof TokenExpiredError) {
-    return res
-      .status(401)
-      .json({ success: false, message: 'Session expired, please log in again', requestId })
+    return res.status(401).json({
+      success: false,
+      message: 'Session expired, please log in again',
+      requestId,
+    })
   }
   if (err instanceof JsonWebTokenError) {
-    return res
-      .status(401)
-      .json({ success: false, message: 'Invalid authentication token', requestId })
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid authentication token',
+      requestId,
+    })
   }
 
-  // ---- Body parser ----
   if (isPayloadTooLargeError(err)) {
     return res.status(413).json({
       success: false,
@@ -77,15 +69,13 @@ export function errorHandler(
     })
   }
   if (isBadJsonError(err)) {
-    return res
-      .status(400)
-      .json({ success: false, message: 'Malformed JSON in request body', requestId })
+    return res.status(400).json({
+      success: false,
+      message: 'Malformed JSON in request body',
+      requestId,
+    })
   }
 
-  // ---- Prisma known request errors ----
-  // Match only on `instanceof`. Do NOT fall back to a string check on
-  // `err.code` — that catches unrelated errors from the pg driver, Node, or
-  // any third-party library whose `code` happens to start with "P".
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
       case 'P2002':
@@ -96,11 +86,12 @@ export function errorHandler(
           requestId,
         })
       case 'P2025':
-        return res
-          .status(404)
-          .json({ success: false, message: 'Record not found', requestId })
+        return res.status(404).json({
+          success: false,
+          message: 'Record not found',
+          requestId,
+        })
       case 'P2003':
-        // Foreign key constraint failed on delete/update.
         return res.status(409).json({
           success: false,
           message:
@@ -108,28 +99,27 @@ export function errorHandler(
           requestId,
         })
       case 'P2014':
-        // Required relation violation.
         return res.status(409).json({
           success: false,
           message: 'The change would violate a required relation.',
           requestId,
         })
-      // No default — unrecognized Prisma codes fall through to the 500 branch
-      // below so they get logged rather than silently swallowed.
     }
   }
 
-  // ---- Prisma validation errors ----
-  // Usually a bug in a service layer passing the wrong shape, not something a
-  // client can trigger. Log it and report 400 so the bug is visible.
   if (err instanceof Prisma.PrismaClientValidationError) {
-    logger.error('Prisma validation error', { err, path: req.originalUrl, requestId })
-    return res
-      .status(400)
-      .json({ success: false, message: 'Invalid data for this operation', requestId })
+    logger.error('Prisma validation error', {
+      err,
+      path: req.originalUrl,
+      requestId,
+    })
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid data for this operation',
+      requestId,
+    })
   }
 
-  // ---- Application errors ----
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -139,7 +129,6 @@ export function errorHandler(
     })
   }
 
-  // ---- Unknown ----
   logger.error('Unhandled error', {
     err,
     path: req.originalUrl,

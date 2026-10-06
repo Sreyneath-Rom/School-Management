@@ -13,15 +13,6 @@ export function toSkipTake({ page, limit }: Pick<PaginationQuery, 'page' | 'limi
   return { skip: (page - 1) * limit, take: limit }
 }
 
-/**
- * Builds the `meta` block attached to every paginated response.
- *
- * The parameter type is narrowed to the two fields this function actually
- * reads. `PaginationQuery` requires `sortOrder` (Zod's `.default()` makes the
- * output type required even though the input is optional), so declaring the
- * parameter as the full `PaginationQuery` would force every caller to supply
- * a value this function ignores.
- */
 export function buildPaginationMeta(
   total: number,
   { page, limit }: Pick<PaginationQuery, 'page' | 'limit'>
@@ -36,11 +27,6 @@ export function buildPaginationMeta(
   }
 }
 
-/**
- * Converts `sortBy` / `sortOrder` into a Prisma `orderBy` object. Returns
- * `undefined` when the field isn't whitelisted, so the caller falls back to
- * a model-specific default.
- */
 export function buildOrderBy(
   query: Pick<PaginationQuery, 'sortBy' | 'sortOrder'>,
   sortableFields: readonly string[]

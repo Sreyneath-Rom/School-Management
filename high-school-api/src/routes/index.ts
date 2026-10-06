@@ -1,10 +1,5 @@
 import { Router } from 'express'
 
-// -----------------------------------------------------------------------------
-// Module imports — every router below is mounted exactly once, at its natural
-// path. Do not create aggregate routers that re-mount these elsewhere; that
-// pattern caused duplicate reachability in an earlier version of this file.
-// -----------------------------------------------------------------------------
 import authRoutes from '@/modules/auth/auth.routes'
 import usersRoutes from '@/modules/users/users.routes'
 import rolesRoutes from '@/modules/roles/roles.routes'
@@ -89,60 +84,3 @@ router.use('/languages', languagesRoutes)
 router.use('/translations', translationsRoutes)
 
 export default router
-
-// -----------------------------------------------------------------------------
-// Module metadata — kept for tooling / docs generation. This mirrors the
-// mount list above; keep them in sync, or delete this if nothing consumes it.
-// -----------------------------------------------------------------------------
-export interface ModuleRouteDefinition {
-  domain: string
-  path: string
-  description: string
-}
-
-export const moduleRoutes: ModuleRouteDefinition[] = [
-  // 1. Auth & RBAC
-  { domain: 'Auth & RBAC', path: '/auth', description: 'Authentication, tokens, sessions' },
-  { domain: 'Auth & RBAC', path: '/users', description: 'User account management' },
-  { domain: 'Auth & RBAC', path: '/roles', description: 'Role-based access control' },
-  { domain: 'Auth & RBAC', path: '/permissions', description: 'Permission registry' },
-
-  // 2. Administration
-  { domain: 'Administration', path: '/dashboard', description: 'Overview metrics & summary data' },
-  { domain: 'Administration', path: '/schools', description: 'School profile & settings' },
-  { domain: 'Administration', path: '/academic-years', description: 'Academic year lifecycle' },
-  { domain: 'Administration', path: '/rooms', description: 'Room and facility management' },
-  { domain: 'Administration', path: '/grade-levels', description: 'Grade level lifecycle' },
-  { domain: 'Administration', path: '/terms', description: 'Academic terms' },
-
-  // 3. People
-  { domain: 'People', path: '/students', description: 'Student directory & records' },
-  { domain: 'People', path: '/teachers', description: 'Faculty roster & assignments' },
-
-  // 4. Academics
-  { domain: 'Academics', path: '/classes', description: 'Class sections & grade levels' },
-  { domain: 'Academics', path: '/subjects', description: 'Curriculum subjects' },
-  { domain: 'Academics', path: '/schedules', description: 'Timetable slots' },
-  { domain: 'Academics', path: '/lessons', description: 'Lesson plans & resources' },
-  { domain: 'Academics', path: '/homeworks', description: 'Homework & submissions' },
-  { domain: 'Academics', path: '/quizzes', description: 'Quizzes & auto-grading' },
-
-  // 5. Examinations & grading
-  { domain: 'Examinations', path: '/exams', description: 'Exams, schedules, mark entry & report cards' },
-  { domain: 'Examinations', path: '/grades', description: 'Gradebook records & transcripts' },
-
-  // 6. Attendance & leaves
-  { domain: 'Attendance', path: '/attendance', description: 'Daily student attendance' },
-  { domain: 'Attendance', path: '/leaves', description: 'Leave request processing & approvals' },
-
-  // 7. Communication
-  { domain: 'Communication', path: '/announcements', description: 'School announcements' },
-  { domain: 'Communication', path: '/notifications', description: 'In-app notifications' },
-
-  // 8. Reports
-  { domain: 'Reports', path: '/reports', description: 'Analytics & reporting' },
-
-  // 9. i18n
-  { domain: 'Localization', path: '/languages', description: 'Supported languages & locale config' },
-  { domain: 'Localization', path: '/translations', description: 'Translation dictionary' },
-]

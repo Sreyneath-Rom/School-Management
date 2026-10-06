@@ -76,14 +76,6 @@ export const homeworkService = {
     return { items, total, page: filters.page, limit: filters.limit }
   },
 
-  /**
-   * Returns the homework with a role-aware `submissions` projection.
-   *
-   * Teachers (and admins) see every submission. Students see only their own —
-   * the previous version returned the full submissions array to any caller
-   * with `homework.view`, letting a student read every classmate's work and
-   * grade.
-   */
   async getById(
     homeworkId: string,
     viewer: { roleName: string; userId: string }
@@ -124,13 +116,8 @@ export const homeworkService = {
     return homework
   },
 
-  /**
-   * `teacherId` is a separate parameter — resolved from the authenticated
-   * user by the controller, never taken from client input.
-   */
   async create(input: CreateHomeworkBody & { teacherId: string }) {
     await assertSubjectExists(input.subjectId)
-
     const { teacherId, ...rest } = input
     return prisma.homework.create({
       data: { ...rest, teacherId },
@@ -149,9 +136,6 @@ export const homeworkService = {
       await assertSubjectExists(changes.subjectId)
     }
 
-    // `teacherId` is not part of `UpdateHomeworkBody` — reassigning authorship
-    // of an existing homework is not a meaningful operation and would only
-    // exist as an audit-trail hazard.
     return prisma.homework.update({
       where: { id: homeworkId },
       data: changes,
@@ -169,15 +153,6 @@ export const homeworkService = {
     await prisma.homework.delete({ where: { id: homeworkId } })
   },
 
-  /**
-   * `studentId` is resolved from the authenticated user by the controller.
-   *
-   * Two authorizations are enforced here that the old version missed:
-   *   1. The student must exist (404 otherwise, via studentIdForUser).
-   *   2. The student must be enrolled in the class the homework targets. A
-   *      homework with no `classId` is treated as school-wide and any student
-   *      may submit.
-   */
   async submit(
     homeworkId: string,
     studentId: string,
@@ -185,7 +160,12 @@ export const homeworkService = {
   ) {
     const homework = await prisma.homework.findUnique({
       where: { id: homeworkId },
-      select: { id: true, dueDate: true, classId: true, allowLateSubmissions: true },
+      select: {
+        id: true,
+        dueDate: true,
+        classId: true,
+        allowLateSubmissions: true,
+      },
     })
     if (!homework) throw ApiError.notFound('Homework not found')
 
@@ -195,7 +175,9 @@ export const homeworkService = {
         select: { id: true },
       })
       if (!enrollment) {
-        throw ApiError.forbidden('You are not enrolled in the class this homework belongs to')
+        throw ApiError.forbidden(
+          'You are not enrolled in the class this homework belongs to'
+        )
       }
     }
 
@@ -218,19 +200,15 @@ export const homeworkService = {
         content: input.content,
         fileUrl: input.fileUrl,
         submittedAt,
+        // Resubmission invalidates any prior grade — the new content wasn't
+        // what the teacher graded.
+        score: null,
+        feedback: null,
+        gradedAt: null,
       },
     })
   },
 
-  /**
-   * `teacherId` is the authenticated teacher's row. Two checks:
-   *   1. The submission exists.
-   *   2. The submission's homework belongs to this teacher (unless the caller
-   *      is an admin — see the `isAdmin` parameter).
-   *
-   * `score <= maxScore` is validated here rather than in the schema because
-   * `maxScore` lives on the homework row, not in the request body.
-   */
   async grade(
     submissionId: string,
     teacherId: string,

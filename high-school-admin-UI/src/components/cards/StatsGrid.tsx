@@ -1,548 +1,768 @@
 // src/components/cards/StatsGrid.tsx
-import { useState } from 'react'
-import {
-  GraduationCap, Users, BookOpen, FileText, Star, FileCheck2,
-  Trophy, CalendarClock, Award, CheckCircle2, Clock, HelpCircle,
-  AlertCircle, UserRound, UserCheck, ClipboardList, Mail, Database,
-  AlertTriangle, ShieldCheck, XCircle, Building2, BookMarked,
-  School, DoorOpen, TrendingUp, Layers, BarChart3, Sparkles, Calendar,
-  ArrowUp, ArrowDown, ChevronDown,
-} from 'lucide-react'
+
+import { useState, type ReactNode } from 'react'
+
 import type { LucideIcon } from 'lucide-react'
-import type { StatCard } from '@/types'
-import type { DashboardStats } from '@/services/dashboardService'
+
+import {
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  Award,
+  BarChart3,
+  BookMarked,
+  BookOpen,
+  Building2,
+  Calendar,
+  CalendarClock,
+  CalendarDays,
+  CalendarRange,
+  CheckCircle2,
+  ChevronDown,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  CreditCard,
+  Database,
+  DoorOpen,
+  FileCheck2,
+  FileClock,
+  FileText,
+  Globe,
+  GraduationCap,
+  HelpCircle,
+  Key,
+  Languages,
+  Layers,
+  Mail,
+  MapPin,
+  Megaphone,
+  Pin,
+  School,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Trophy,
+  UserCheck,
+  UserRound,
+  UserX,
+  Users,
+  XCircle,
+} from 'lucide-react'
+
 import { StatCardSkeleton } from '@/components/common/Skeleton'
+import { AccentWave } from './StatMiniGraphics'
 
-/**
- * Icon name → component lookup. A page passes `icon: 'TrendingUp'` as a
- * string; this map resolves it. New icons must be added here or the card
- * renders a fallback.
- */
-const iconMap: Record<string, LucideIcon> = {
-  GraduationCap, Users, BookOpen, FileText, Star, FileCheck2,
-  Trophy, CalendarClock, Award, CheckCircle2, Clock, HelpCircle,
-  AlertCircle, UserRound, UserCheck, ClipboardList, Mail, Database,
-  AlertTriangle, ShieldCheck, XCircle, Building2, BookMarked,
-  School, DoorOpen, TrendingUp, Layers, BarChart3, Sparkles, Calendar,
-}
+/* ------------------------------------------------------------------ */
+/* Types                                                              */
+/* ------------------------------------------------------------------ */
 
-function resolveIcon(name: string): LucideIcon {
-  const found = iconMap[name]
-  if (!found && import.meta.env.DEV) {
-    console.warn(
-      `StatsGrid: unknown icon "${name}" — falling back to GraduationCap`
-    )
+export type StatAccent =
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'brand'
+
+export interface StatCard {
+  id: string
+
+  label: string
+
+  subtitle?: string
+
+  value: string
+
+  icon: LucideIcon | string
+
+  accent?: StatAccent
+
+  /** @deprecated Use accent */
+  tint?: string
+
+  delta?: string
+
+  deltaDirection?: 'up' | 'down' | 'flat' | 'neutral'
+
+  deltaLabel?: string
+
+  footerLabel?: string
+
+  progress?: {
+    value: number
+    tone?: StatAccent
   }
-  return found ?? GraduationCap
+
+  wave?: ReactNode
+
+  /** @deprecated Use wave */
+  trailing?: ReactNode
+
+  noClick?: boolean
 }
 
-function isDashboardStats(value: unknown): value is DashboardStats {
-  if (!value || typeof value !== 'object') return false
-  const s = value as Record<string, unknown>
-  return (
-    typeof s.studentCount === 'number' &&
-    typeof s.teacherCount === 'number' &&
-    typeof s.classCount === 'number'
-  )
-}
-
-interface StatsGridProps<T = DashboardStats> {
-  stats?: T | null
-  loading?: boolean
-  /** Cards to render. Required — the caller owns the definition. */
+export interface StatsGridProps<T = unknown> {
   cards: StatCard[]
+
+  stats?: T | null
+
+  loading?: boolean
+
+  /**
+   * 3 gives the reference design:
+   * 3 cards per row × 2 rows for 6 KPI cards.
+   */
   columns?: 3 | 4 | 6 | 8
-  resolveValue?: (card: StatCard, stats: T | null | undefined) => string
+
+  resolveValue?: (
+    card: StatCard,
+    stats: T | null | undefined
+  ) => string
+
   showHeader?: boolean
 
-  /**
-   * When provided, each card becomes a click target. The id of the
-   * clicked card is passed back so callers can wire it to a filter,
-   * a selection, or a navigation. Cards that set `noClick: true` are
-   * exempt.
-   */
+  title?: string
+
+  subtitle?: string
+
+  headerIcon?: LucideIcon
+
+  showYearSelector?: boolean
+
+  year?: string
+
+  years?: string[]
+
+  onYearChange?: (year: string) => void
+
   onCardClick?: (cardId: string) => void
-  /**
-   * Highlights the matching card with the app-wide "selected" treatment
-   * (pressed-in sunken well + brand ring). Pass `null` for no selection.
-   */
+
   activeCardId?: string | null
 }
 
-/* Neumorphic hairline seams. Under this theme a 1px border in --glass-bg
-   is invisible; a 1px hard-edged box-shadow using --neu-shadow-dark reads
-   as a proper seam. */
-const SEAM_B = 'shadow-[0_1px_0_var(--neu-shadow-dark)]'
-const SEAM_T = 'shadow-[0_-1px_0_var(--neu-shadow-dark)]'
+/* ------------------------------------------------------------------ */
+/* Icon Registry                                                      */
+/* ------------------------------------------------------------------ */
 
-/**
- * Maps a semantic tone name to the fill color for a card's progress bar.
- * Uses the theme's status tokens so the bar renders correctly in both
- * light and dark mode without a `dark:` variant.
- */
-function progressToneClass(tone?: string): string {
-  switch (tone) {
-    case 'success': return 'bg-success'
-    case 'info':    return 'bg-info'
-    case 'warning': return 'bg-warning'
-    case 'error':   return 'bg-error'
-    case 'brand':
-    default:        return 'bg-brand-500'
+const ICON_REGISTRY: Record<string, LucideIcon> = {
+  AlertCircle,
+  AlertTriangle: XCircle,
+  Award,
+  BookMarked,
+  BookOpen,
+  Building2,
+  Calendar,
+  CalendarClock,
+  CalendarDays,
+  CalendarRange,
+  CheckCircle2,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  CreditCard,
+  Database,
+  DoorOpen,
+  FileCheck2,
+  FileClock,
+  FileText,
+  Globe,
+  GraduationCap,
+  HelpCircle,
+  Key,
+  Languages,
+  Layers,
+  Mail,
+  MapPin,
+  Megaphone,
+  Pin,
+  School,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Trophy,
+  UserCheck,
+  UserRound,
+  UserX,
+  Users,
+  XCircle,
+}
+
+function resolveIcon(input: LucideIcon | string): LucideIcon {
+  if (typeof input === 'function') {
+    return input
   }
-}
 
-// ---------------------------------------------------------------------------
-// Mini graphics
-//
-// These are colored accent marks (sparklines, bar charts, progress rings)
-// layered on top of the neumorphic surface. They intentionally keep their
-// saturated status/brand colors — the surface itself is monochrome, but
-// the DATA on top of it is where color carries meaning.
-// ---------------------------------------------------------------------------
+  const found = ICON_REGISTRY[input]
 
-function MiniSparklineBlue() {
-  return (
-    <svg className="w-24 h-12 overflow-visible" viewBox="0 0 100 44" fill="none">
-      <path
-        d="M2 32 C 16 34, 24 18, 38 22 C 52 26, 60 12, 74 16 C 84 19, 90 8, 96 6"
-        stroke="currentColor"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-info"
-      />
-      <circle cx="96" cy="6" r="4.5" fill="currentColor" className="text-info" />
-    </svg>
-  )
-}
-
-function MiniBarsTeal() {
-  return (
-    <div className="flex items-end gap-1.5 h-10">
-      <span className="w-2 rounded-t-full bg-success/60 h-3" />
-      <span className="w-2 rounded-t-full bg-success/75 h-5" />
-      <span className="w-2 rounded-t-full bg-success/90 h-7" />
-      <span className="w-2 rounded-t-full bg-brand-500 h-9" />
-    </div>
-  )
-}
-
-function MiniSparklinePurple() {
-  return (
-    <svg className="w-24 h-12 overflow-visible" viewBox="0 0 100 44" fill="none">
-      <path
-        d="M2 30 C 18 32, 28 14, 44 24 C 60 34, 72 10, 96 14"
-        stroke="currentColor"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-brand-500"
-      />
-    </svg>
-  )
-}
-
-function MiniRingOrange({ percentage = 96.5 }: { percentage?: number }) {
-  const radius = 24
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference - (circumference * percentage) / 100
-
-  return (
-    <div className="relative flex items-center justify-center w-14 h-14">
-      <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-        <circle
-          cx="28" cy="28" r={radius}
-          stroke="currentColor" strokeWidth="6" fill="none"
-          className="text-warning/30"
-        />
-        <circle
-          cx="28" cy="28" r={radius}
-          stroke="currentColor" strokeWidth="6"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" fill="none" className="text-warning"
-        />
-      </svg>
-      <span className="absolute text-[11px] font-black text-fg">
-        {percentage}%
-      </span>
-    </div>
-  )
-}
-
-function MiniBarsPink() {
-  return (
-    <div className="flex items-end gap-1.5 h-10">
-      <span className="w-2 rounded-t-full bg-brand-400/60 h-2.5" />
-      <span className="w-2 rounded-t-full bg-brand-400/75 h-4" />
-      <span className="w-2 rounded-t-full bg-brand-500/85 h-6" />
-      <span className="w-2 rounded-t-full bg-brand-500 h-8" />
-      <span className="w-2 rounded-t-full bg-brand-600 h-10" />
-    </div>
-  )
-}
-
-function MiniRingBlue({ percentage = 98 }: { percentage?: number }) {
-  const radius = 24
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference - (circumference * percentage) / 100
-
-  return (
-    <div className="relative flex items-center justify-center w-14 h-14">
-      <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-        <circle
-          cx="28" cy="28" r={radius}
-          stroke="currentColor" strokeWidth="6" fill="none"
-          className="text-info/30"
-        />
-        <circle
-          cx="28" cy="28" r={radius}
-          stroke="currentColor" strokeWidth="6"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" fill="none" className="text-info"
-        />
-      </svg>
-      <span className="absolute text-[11px] font-black text-fg">
-        {percentage}%
-      </span>
-    </div>
-  )
-}
-
-function MiniUsersPurple() {
-  return (
-    <div className="flex items-center -space-x-1.5">
-      {/* ring color = --glass-bg = the card's own background, so the
-          ring reads as a 2px matte gap between overlapping avatars. */}
-      <span className="h-7 w-7 rounded-full bg-brand-500 flex items-center justify-center text-white ring-2 ring-surface">
-        <Users size={14} />
-      </span>
-      <span className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center text-white ring-2 ring-surface z-10">
-        <Users size={16} />
-      </span>
-      <span className="h-7 w-7 rounded-full bg-brand-500 flex items-center justify-center text-white ring-2 ring-surface">
-        <Users size={14} />
-      </span>
-    </div>
-  )
-}
-
-function MiniCalendarMint() {
-  return (
-    // Semantic tinted badge — the tinted background + soft ring is the
-    // signal, not a neumorphic surface.
-    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-success/15 text-success ring-1 ring-success/25">
-      <CalendarClock size={24} strokeWidth={2} />
-    </div>
-  )
-}
-
-function renderMiniGraphic(type?: string) {
-  switch (type) {
-    case 'wave-blue':      return <MiniSparklineBlue />
-    case 'bars-teal':      return <MiniBarsTeal />
-    case 'wave-purple':    return <MiniSparklinePurple />
-    case 'ring-orange':    return <MiniRingOrange percentage={96.5} />
-    case 'bars-pink':      return <MiniBarsPink />
-    case 'ring-blue':      return <MiniRingBlue percentage={98} />
-    case 'users-purple':   return <MiniUsersPurple />
-    case 'calendar-mint':  return <MiniCalendarMint />
-    default:               return null
+  if (!found && import.meta.env.DEV) {
+    console.warn(
+      `StatsGrid: unknown icon "${input}". ` +
+        `Pass the icon component directly or add it to ICON_REGISTRY.`
+    )
   }
+
+  return found ?? GraduationCap
 }
 
-// ---------------------------------------------------------------------------
-// Card visuals
-//
-// Only the faint ambient blob is supplied from this map now. The icon
-// badge is a gradient accent that sits ON the neumorphic surface (like a
-// sticker on a wall) — it's allowed to keep its saturated gradient.
-// Blob opacities dropped from /25 → /15 because the underlying surface is
-// flat and colored blooms read as damage rather than decoration.
-// ---------------------------------------------------------------------------
+/* ------------------------------------------------------------------ */
+/* Accent                                                             */
+/* ------------------------------------------------------------------ */
 
-interface CardVisualConfig {
-  blob: string
+const TINT_TO_ACCENT: Record<string, StatAccent> = {
+  blue: 'info',
+  sky: 'info',
+  cyan: 'info',
+  teal: 'info',
+
+  green: 'success',
+  emerald: 'success',
+  mint: 'success',
+
+  amber: 'warning',
+  yellow: 'warning',
+  orange: 'warning',
+
+  red: 'error',
+  rose: 'error',
+  pink: 'error',
+
+  violet: 'brand',
+  purple: 'brand',
+  indigo: 'brand',
+  brand: 'brand',
+
+  info: 'info',
+  success: 'success',
+  warning: 'warning',
+  error: 'error',
+}
+
+function resolveAccent(card: StatCard): StatAccent {
+  if (card.accent) {
+    return card.accent
+  }
+
+  if (card.tint) {
+    return (
+      TINT_TO_ACCENT[card.tint.toLowerCase()] ?? 'brand'
+    )
+  }
+
+  return 'brand'
+}
+
+/* ------------------------------------------------------------------ */
+/* Visual styles                                                      */
+/* ------------------------------------------------------------------ */
+
+interface AccentStyle {
   iconBg: string
-  iconShadow: string
+  blob: string
+  glow: string
+  deltaUp: string
 }
 
-const CARD_STYLES: Record<string, CardVisualConfig> = {
-  students:         { blob: 'bg-info/15',      iconBg: 'bg-linear-to-br from-info to-brand-500',      iconShadow: 'shadow-md shadow-info/25' },
-  teachers:         { blob: 'bg-success/15',   iconBg: 'bg-linear-to-br from-success to-brand-500',   iconShadow: 'shadow-md shadow-success/25' },
-  classes:          { blob: 'bg-brand-500/15', iconBg: 'bg-linear-to-br from-brand-500 to-info',     iconShadow: 'shadow-md shadow-brand-500/25' },
-  attendance:       { blob: 'bg-warning/15',   iconBg: 'bg-linear-to-br from-warning to-error',       iconShadow: 'shadow-md shadow-warning/25' },
-  'pending-leaves': { blob: 'bg-brand-500/15', iconBg: 'bg-linear-to-br from-brand-500 to-brand-700', iconShadow: 'shadow-md shadow-brand-500/25' },
-  gpa:              { blob: 'bg-brand-400/15', iconBg: 'bg-linear-to-br from-brand-400 to-brand-600', iconShadow: 'shadow-md shadow-brand-400/25' },
-  assignments:      { blob: 'bg-info/15',      iconBg: 'bg-linear-to-br from-info to-brand-600',      iconShadow: 'shadow-md shadow-info/25' },
-  'top-students':   { blob: 'bg-brand-500/15', iconBg: 'bg-linear-to-br from-brand-500 to-brand-700', iconShadow: 'shadow-md shadow-brand-500/25' },
-  events:           { blob: 'bg-success/15',   iconBg: 'bg-linear-to-br from-success to-brand-600',   iconShadow: 'shadow-md shadow-success/25' },
+const ACCENTS: Record<StatAccent, AccentStyle> = {
+  info: {
+    iconBg:
+      'bg-gradient-to-br from-sky-300 via-blue-500 to-indigo-600',
+    blob: 'bg-blue-400/30',
+    glow: 'shadow-blue-500/30',
+    deltaUp: 'text-emerald-600 dark:text-emerald-400',
+  },
+
+  success: {
+    iconBg:
+      'bg-gradient-to-br from-emerald-300 via-teal-500 to-cyan-600',
+    blob: 'bg-emerald-400/30',
+    glow: 'shadow-emerald-500/30',
+    deltaUp: 'text-emerald-600 dark:text-emerald-400',
+  },
+
+  warning: {
+    iconBg:
+      'bg-gradient-to-br from-amber-300 via-orange-500 to-rose-500',
+    blob: 'bg-orange-400/30',
+    glow: 'shadow-orange-500/30',
+    deltaUp: 'text-emerald-600 dark:text-emerald-400',
+  },
+
+  error: {
+    iconBg:
+      'bg-gradient-to-br from-pink-300 via-pink-500 to-fuchsia-600',
+    blob: 'bg-pink-400/30',
+    glow: 'shadow-pink-500/30',
+    deltaUp: 'text-rose-600 dark:text-rose-400',
+  },
+
+  brand: {
+    iconBg:
+      'bg-gradient-to-br from-violet-300 via-purple-500 to-indigo-600',
+    blob: 'bg-violet-400/30',
+    glow: 'shadow-violet-500/30',
+    deltaUp: 'text-emerald-600 dark:text-emerald-400',
+  },
 }
 
-const FALLBACK_STYLE = CARD_STYLES.students
+function progressTone(tone?: StatAccent): string {
+  switch (tone) {
+    case 'success':
+      return 'bg-emerald-500'
 
-// ---------------------------------------------------------------------------
-// Single card
-// ---------------------------------------------------------------------------
+    case 'info':
+      return 'bg-blue-500'
 
-function KPICardView({
+    case 'warning':
+      return 'bg-orange-500'
+
+    case 'error':
+      return 'bg-pink-500'
+
+    default:
+      return 'bg-violet-500'
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* KPI Card                                                           */
+/* ------------------------------------------------------------------ */
+
+function KPICard({
   card,
   onClick,
   isActive,
 }: {
   card: StatCard
   onClick?: () => void
-  isActive?: boolean
+  isActive: boolean
 }) {
   const Icon = resolveIcon(card.icon)
-  const style = CARD_STYLES[card.id] ?? FALLBACK_STYLE
 
-  const isPositive = card.deltaDirection === 'up'
-  const isNegative = card.deltaDirection === 'down'
+  const accentKey = resolveAccent(card)
+
+  const style = ACCENTS[accentKey]
+
+  const up = card.deltaDirection === 'up'
+
+  const down = card.deltaDirection === 'down'
+
   const interactive = Boolean(onClick)
 
-  // Active state = pressed-in sunken well + brand ring, matching the
-  // selected treatment used on student cards and table rows. Otherwise
-  // the card is a raised surface that floats higher on hover.
-  //
-  // `.glass` supplies the neumorphic raised surface (flush background +
-  // dual-shadow elevation). Glassmorphism artifacts
-  // (`border border-surface`, `bg-surface-strong`, `backdrop-blur-xl`,
-  // `shadow-xs`) are all gone — none of them had a visible effect under
-  // this theme.
-  const surfaceClass = isActive
-    ? 'shadow-sunken ring-1 ring-brand-500/30'
-    : 'glass hover:shadow-(--glass-strong-shadow)'
+  const wave =
+    card.wave ??
+    card.trailing ??
+    <AccentWave accent={accentKey} />
+
+  const surface = isActive
+    ? [
+        'bg-white/55',
+        'dark:bg-white/[0.08]',
+        'shadow-[inset_6px_6px_14px_rgba(148,163,184,0.18),inset_-6px_-6px_14px_rgba(255,255,255,0.85)]',
+        'ring-2 ring-violet-500/30',
+      ].join(' ')
+    : [
+        'bg-white/45',
+        'dark:bg-slate-900/35',
+        'backdrop-blur-2xl',
+        'border border-white/65',
+        'dark:border-white/10',
+        'shadow-[0_18px_45px_rgba(71,85,105,0.12),inset_1px_1px_0_rgba(255,255,255,0.85),inset_-1px_-1px_0_rgba(148,163,184,0.10)]',
+        'hover:-translate-y-1',
+        'hover:shadow-[0_25px_55px_rgba(71,85,105,0.18),inset_1px_1px_0_rgba(255,255,255,0.9)]',
+      ].join(' ')
 
   const inner = (
     <>
-      {/* A single faint ambient blob replaces the two glassmorphism-era
-          blooms. Under neumorphism the surface is a flat plane and depth
-          comes from the dual shadow — heavy color bleed fights that. */}
+      {/* Liquid glass glow */}
       <div
-        aria-hidden="true"
-        className={`pointer-events-none absolute -right-6 -top-6 h-36 w-36 rounded-full blur-2xl opacity-30 transition-transform duration-500 group-hover:scale-110 ${style.blob}`}
+        aria-hidden
+        className={`pointer-events-none absolute -bottom-24 -right-20 h-64 w-64 rounded-full blur-3xl opacity-70 ${style.blob}`}
       />
 
-      <div className="relative flex flex-col justify-between h-full min-h-44.5">
-        <div className="flex items-start justify-between">
+      {/* Secondary glass glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-16 -top-20 h-40 w-40 rounded-full bg-white/30 blur-3xl"
+      />
+
+      {/* Top glass reflection */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-white/80"
+      />
+
+      <div className="relative flex h-full flex-col">
+        {/* ---------------------------------------------------------- */}
+        {/* Header                                                     */}
+        {/* ---------------------------------------------------------- */}
+
+        <div className="flex items-start gap-4">
+          {/* Neumorphic icon */}
           <div
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white ${style.iconBg} ${style.iconShadow} transition-transform duration-300 group-hover:scale-105`}
+            className={[
+              'relative flex h-16 w-16 shrink-0 items-center justify-center',
+              'rounded-full text-white',
+              'shadow-[7px_7px_16px_rgba(71,85,105,0.20),-5px_-5px_14px_rgba(255,255,255,0.90)]',
+              'transition-all duration-300',
+              'group-hover:scale-105',
+              style.iconBg,
+              style.glow,
+            ].join(' ')}
           >
-            <Icon size={22} strokeWidth={2.2} />
+            {/* glossy layer */}
+            <div
+              aria-hidden
+              className="absolute inset-0.5 rounded-full bg-linear-to-b from-white/45 via-white/10 to-transparent"
+            />
+
+            {/* inner neumorphic ring */}
+            <div
+              aria-hidden
+              className="absolute inset-1 rounded-full ring-1 ring-white/30"
+            />
+
+            <Icon
+              size={27}
+              strokeWidth={2.1}
+              className="relative z-10 drop-shadow-sm"
+            />
+          </div>
+
+          <div className="min-w-0 flex-1 pt-1">
+            <h3 className="truncate text-[16px] font-bold tracking-tight text-slate-900 dark:text-white">
+              {card.label}
+            </h3>
+
+            {(card.subtitle || card.footerLabel) && (
+              <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-slate-500 dark:text-slate-400">
+                {card.subtitle ?? card.footerLabel}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="mt-4">
-          <p className="text-xs sm:text-[13px] font-bold text-fg tracking-tight">
-            {card.label}
-          </p>
-          <p className="mt-1 text-3xl sm:text-[34px] font-black tracking-tight text-fg leading-none">
+        {/* ---------------------------------------------------------- */}
+        {/* KPI Value                                                   */}
+        {/* ---------------------------------------------------------- */}
+
+        <div className="mt-7">
+          <p className="text-[52px] font-black leading-none tracking-[-0.045em] text-slate-900 dark:text-white">
             {card.value}
           </p>
         </div>
 
-        {/* Optional progress bar. Only rendered when the caller sets
-            `card.progress`. Track is a sunken well; fill uses a semantic
-            tone (defaults to brand). Values outside 0–100 are clamped. */}
-        {card.progress && (
-          <div className="mt-3">
-            <div className="h-1.5 w-full overflow-hidden rounded-full shadow-sunken">
-              <div
-                className={`h-full rounded-full transition-all ${progressToneClass(card.progress.tone)}`}
-                style={{
-                  width: `${Math.min(100, Math.max(0, card.progress.value))}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
+        {/* ---------------------------------------------------------- */}
+        {/* Delta                                                       */}
+        {/* ---------------------------------------------------------- */}
 
-        <div className="mt-3 flex items-end justify-between gap-2">
-          <div>
+        {(card.delta || card.progress) && (
+          <div className="mt-5 flex items-center gap-3">
             {card.delta && (
               <div className="flex items-center gap-1.5">
                 <span
-                  className={`flex items-center text-xs font-black ${
-                    isPositive
-                      ? 'text-success'
-                      : isNegative
-                        ? 'text-error'
-                        : 'text-fg-muted'
-                  }`}
+                  className={[
+                    'flex items-center gap-1 text-sm font-bold',
+                    up
+                      ? style.deltaUp
+                      : down
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-slate-500',
+                  ].join(' ')}
                 >
-                  {isPositive && <ArrowUp size={13} strokeWidth={3} className="mr-0.5" />}
-                  {isNegative && <ArrowDown size={13} strokeWidth={3} className="mr-0.5" />}
+                  {up && (
+                    <ArrowUp
+                      size={14}
+                      strokeWidth={3}
+                    />
+                  )}
+
+                  {down && (
+                    <ArrowDown
+                      size={14}
+                      strokeWidth={3}
+                    />
+                  )}
+
                   {card.delta}
                 </span>
-                <span className="text-[11px] font-medium text-fg-muted">
-                  {card.deltaLabel}
-                </span>
+
+                {card.deltaLabel && (
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {card.deltaLabel}
+                  </span>
+                )}
               </div>
             )}
 
-            {card.footerLabel && (
-              <p className="mt-1 text-[11px] font-normal text-fg-muted">
-                {card.footerLabel}
-              </p>
+            {card.progress && (
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-900/5 dark:bg-white/10">
+                <div
+                  className={`h-full rounded-full transition-all ${progressTone(
+                    card.progress.tone ?? accentKey
+                  )}`}
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.max(0, card.progress.value)
+                    )}%`,
+                  }}
+                />
+              </div>
             )}
           </div>
+        )}
 
-          <div className="shrink-0 flex items-center justify-end">
-            {renderMiniGraphic(card.miniGraphicType)}
+        {/* ---------------------------------------------------------- */}
+        {/* Wave                                                        */}
+        {/* ---------------------------------------------------------- */}
+
+        <div className="mt-auto -mb-1 pt-4">
+          <div className="h-10 w-full opacity-95">
+            {wave}
           </div>
         </div>
       </div>
     </>
   )
 
-  const baseClass = `group relative isolate overflow-hidden rounded-[26px] p-5 text-left transition-shadow duration-300 ${surfaceClass}`
+  const base = [
+    'group relative isolate flex min-h-[250px] flex-col',
+    'overflow-hidden rounded-[28px] p-6 text-left',
+    'transition-all duration-300 ease-out',
+    surface,
+  ].join(' ')
 
-  // Interactive cards render as a <button>. Non-interactive ones stay a
-  // <div> — this avoids attaching focus/cursor affordances that would
-  // suggest a click target when there isn't one.
   if (interactive) {
     return (
       <button
         type="button"
         onClick={onClick}
         aria-pressed={isActive}
-        className={`w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${baseClass}`}
+        className={[
+          'w-full cursor-pointer',
+          'focus:outline-none',
+          'focus-visible:ring-2',
+          'focus-visible:ring-violet-500',
+          'focus-visible:ring-offset-2',
+          'rounded-[28px]',
+          base,
+        ].join(' ')}
       >
         {inner}
       </button>
     )
   }
 
-  return <div className={baseClass}>{inner}</div>
+  return <div className={base}>{inner}</div>
 }
 
-// ---------------------------------------------------------------------------
-// Grid
-// ---------------------------------------------------------------------------
+/* ------------------------------------------------------------------ */
+/* Grid                                                               */
+/* ------------------------------------------------------------------ */
 
-const COLUMNS_CLASS: Record<NonNullable<StatsGridProps['columns']>, string> = {
+const COLUMNS: Record<
+  NonNullable<StatsGridProps['columns']>,
+  string
+> = {
   3: 'lg:grid-cols-3',
   4: 'lg:grid-cols-4',
   6: 'lg:grid-cols-6',
   8: 'lg:grid-cols-8',
 }
 
-export default function StatsGrid<T = DashboardStats>({
-  stats,
-  loading,
+/* ------------------------------------------------------------------ */
+/* Stats Grid                                                         */
+/* ------------------------------------------------------------------ */
+
+export default function StatsGrid<T = unknown>({
   cards,
-  columns = 4,
+  stats,
+  loading = false,
+  columns = 3,
   resolveValue,
   showHeader = true,
+  title = 'Key Performance Indicators',
+  subtitle = 'Overall performance at a glance',
+  headerIcon: HeaderIcon = BarChart3,
+  showYearSelector = false,
+  year,
+  years = [],
+  onYearChange,
   onCardClick,
   activeCardId = null,
 }: StatsGridProps<T>) {
-  const [selectedYear, setSelectedYear] = useState('2025 – 2026')
-  const [showYearDropdown, setShowYearDropdown] = useState(false)
+  const [open, setOpen] = useState(false)
 
   if (loading) {
     return (
-      <div className={`grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 ${COLUMNS_CLASS[columns]}`}>
+      <div
+        className={[
+          'grid grid-cols-1 gap-5',
+          'sm:grid-cols-2',
+          COLUMNS[columns],
+        ].join(' ')}
+      >
         {cards.map((card) => (
-          <StatCardSkeleton key={`skeleton-${card.id}`} />
+          <StatCardSkeleton key={card.id} />
         ))}
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* ------------------------------------------------------------ */}
+      {/* Header                                                       */}
+      {/* ------------------------------------------------------------ */}
+
       {showHeader && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
+        <div className="flex flex-col gap-3 px-1 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            {/* Brand-tinted badge. Uses a sunken well so it reads as
-                "carved into" the header row rather than sitting on top
-                with a hairline border. The tinted background carries
-                the brand identity; the shadow carries the depth. */}
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sunken">
-              <BarChart3 size={22} strokeWidth={2.2} />
+            <div
+              className={[
+                'flex h-11 w-11 items-center justify-center',
+                'rounded-2xl',
+                'bg-white/50 dark:bg-white/10',
+                'text-violet-600 dark:text-violet-400',
+                'border border-white/60 dark:border-white/10',
+                'shadow-[5px_5px_12px_rgba(71,85,105,0.12),-4px_-4px_10px_rgba(255,255,255,0.75)]',
+              ].join(' ')}
+            >
+              <HeaderIcon
+                size={21}
+                strokeWidth={2.2}
+              />
             </div>
+
             <div>
-              <h2 className="text-lg sm:text-xl font-black tracking-tight text-fg">
-                Key Performance Indicators
+              <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl">
+                {title}
               </h2>
-              <p className="text-xs sm:text-sm text-fg-muted">
-                Overall school performance at a glance
+
+              <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+                {subtitle}
               </p>
             </div>
           </div>
 
-          <div className="relative self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setShowYearDropdown((v) => !v)}
-              // glass-interactive gives the neumorphic hover-lift and
-              // press-in gesture, which is appropriate here because the
-              // button IS interactive.
-              className="glass-sm glass-interactive flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-fg"
-            >
-              <Calendar size={14} className="text-fg-muted" />
-              <span>{selectedYear}</span>
-              <ChevronDown size={14} className="text-fg-muted" />
-            </button>
+          {/* Year selector */}
+          {showYearSelector && (
+            <div className="relative self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() =>
+                  setOpen((value) => !value)
+                }
+                className={[
+                  'flex items-center gap-2',
+                  'rounded-2xl px-3.5 py-2',
+                  'border border-white/60 dark:border-white/10',
+                  'bg-white/45 dark:bg-white/8',
+                  'backdrop-blur-xl',
+                  'shadow-[4px_4px_12px_rgba(71,85,105,0.10)]',
+                  'text-xs font-bold text-slate-700 dark:text-slate-200',
+                ].join(' ')}
+              >
+                <Calendar
+                  size={14}
+                  className="text-slate-500"
+                />
 
-            {showYearDropdown && (
-              // dropdown-surface already carries the wide elevated shadow
-              // and the flush background. The old `shadow-lg` was
-              // overriding it, so it's removed.
-              <div className="dropdown-surface right-0 top-full mt-1.5 z-30 w-36 rounded-2xl p-1">
-                {['2025 – 2026', '2024 – 2025', '2023 – 2024'].map((year) => (
-                  <button
-                    key={year}
-                    type="button"
-                    onClick={() => {
-                      setSelectedYear(year)
-                      setShowYearDropdown(false)
-                    }}
-                    className={`w-full text-left rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      selectedYear === year
-                        ? 'bg-brand-500/15 text-brand-700 dark:text-brand-300 font-bold'
-                        : 'text-fg-muted hover:text-fg'
-                    }`}
-                  >
-                    {year}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                <span>
+                  {year ?? years[0] ?? ''}
+                </span>
+
+                <ChevronDown
+                  size={14}
+                  className="text-slate-500"
+                />
+              </button>
+
+              {open && (
+                <div className="absolute right-0 top-full z-30 mt-2 w-36 rounded-2xl border border-white/60 bg-white/80 p-1.5 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/90">
+                  {years.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => {
+                        onYearChange?.(item)
+                        setOpen(false)
+                      }}
+                      className={[
+                        'w-full rounded-xl px-3 py-2',
+                        'text-left text-xs font-semibold',
+                        'transition-colors',
+                        item === year
+                          ? 'bg-violet-500/15 text-violet-700 dark:text-violet-300'
+                          : 'text-slate-500 hover:bg-slate-500/5 hover:text-slate-900 dark:hover:text-white',
+                      ].join(' ')}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      <div className={`grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 ${COLUMNS_CLASS[columns]}`}>
+      {/* ------------------------------------------------------------ */}
+      {/* Cards                                                         */}
+      {/* ------------------------------------------------------------ */}
+
+      <div
+        className={[
+          'grid grid-cols-1 gap-5',
+          'sm:grid-cols-2',
+          COLUMNS[columns],
+        ].join(' ')}
+      >
         {cards.map((card) => {
           const value = resolveValue
             ? resolveValue(card, stats)
-            : isDashboardStats(stats)
-              ? card.value
-              : card.value
+            : card.value
 
-          // Clickable only when the caller supplied a handler AND the
-          // card hasn't opted out. This lets the same grid mix
-          // interactive filter tiles with informational ones.
-          const clickable = onCardClick && !card.noClick
+          const clickable =
+            Boolean(onCardClick) && !card.noClick
 
           return (
-            <KPICardView
+            <KPICard
               key={card.id}
-              card={{ ...card, value }}
-              onClick={clickable ? () => onCardClick(card.id) : undefined}
+              card={{
+                ...card,
+                value,
+              }}
+              onClick={
+                clickable
+                  ? () => onCardClick?.(card.id)
+                  : undefined
+              }
               isActive={activeCardId === card.id}
             />
           )
         })}
       </div>
 
+      {/* ------------------------------------------------------------ */}
+      {/* Footer                                                        */}
+      {/* ------------------------------------------------------------ */}
+
       {showHeader && (
-        <div className="flex items-center gap-2 pt-1 px-1 text-xs font-medium text-fg-muted">
-          <Sparkles size={13} className="text-brand-500" />
+        <div className="flex items-center gap-2 px-1 pt-1 text-xs font-medium text-slate-400 dark:text-slate-500">
+          <Sparkles
+            size={13}
+            className="text-violet-500"
+          />
+
           <span>Better Learning</span>
+
           <span>•</span>
+
           <span>Brighter Future</span>
         </div>
       )}

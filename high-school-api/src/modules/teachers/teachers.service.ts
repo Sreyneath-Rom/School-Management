@@ -16,12 +16,6 @@ type Tx = Omit<
 const RETRY_LIMIT = 3
 const RETRY_BASE_MS = 25
 
-/**
- * Retries serializable-transaction conflicts (Postgres 40001 → Prisma P2034).
- * Same helper as students/schedules/school. The create path is where this
- * matters most: concurrent teacher creations with the same email or teacher
- * code must not both succeed.
- */
 async function runSerializable<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
   let lastError: unknown
   for (let attempt = 0; attempt < RETRY_LIMIT; attempt++) {
@@ -36,12 +30,6 @@ async function runSerializable<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
   throw lastError
 }
 
-/**
- * Two projections: `teacherListInclude` for the collection view (cheap),
- * `teacherDetailInclude` for the detail view (adds subjects and classes).
- * Previously a single `teacherInclude` was used for both — the list pulled
- * every teacher's subjects and classes, a wasted JOIN on every request.
- */
 const teacherListInclude = {
   user: {
     select: {
@@ -86,14 +74,6 @@ const teacherDetailInclude = {
   },
 } as const
 
-/**
- * Confirms every id in `subjectIds` refers to a live (non-deleted) subject.
- *
- * The previous version's check ran `prisma.subject.count({ where: { id: { in: subjectIds } } })`
- * with no `deletedAt: null` filter — a soft-deleted subject id passed the
- * check, then Prisma's FK accepted the create, producing a TeacherSubject
- * link to a subject the API never returns.
- */
 async function assertSubjectsExist(subjectIds: string[]): Promise<void> {
   if (subjectIds.length === 0) return
   const validCount = await prisma.subject.count({
@@ -106,21 +86,6 @@ async function assertSubjectsExist(subjectIds: string[]): Promise<void> {
   }
 }
 
-/**
- * Resolves an array of subject NAMES to ids. Case-insensitive exact match.
- *
- * Two important differences from the previous version:
- *
- *   1. Rejects unknown names instead of silently dropping them. Old code
- *      returned whatever matched, and the caller's length check
- *      (`subjectIds.length !== input.subjectsTaught.length`) only ran in the
- *      UPDATE path — a create with `subjectsTaught: ["Math", "Nonexistent"]`
- *      silently produced a teacher with just Math.
- *
- *   2. Case-insensitive matching. `subjectsTaught: ["math"]` previously
- *      missed a subject named "Mathematics" — leaving a silently empty
- *      teacher.
- */
 async function resolveSubjectIds(subjectNames: string[]): Promise<string[]> {
   if (subjectNames.length === 0) return []
 
@@ -140,22 +105,10 @@ async function resolveSubjectIds(subjectNames: string[]): Promise<string[]> {
     throw ApiError.badRequest('Some subject names do not exist', { missing })
   }
 
-  // Preserve the caller's order — the mapping is by name, so re-sort to
-  // match input.
   const byName = new Map(subjects.map((s) => [s.name.toLowerCase(), s.id]))
   return subjectNames.map((n) => byName.get(n.toLowerCase())!)
 }
 
-/**
- * Resolves the caller's final set of subject ids from the two accepted
- * inputs, applying the same precedence rule everywhere:
- *   - `subjectIds` wins if present.
- *   - Otherwise `subjectsTaught` (names) is resolved and validated.
- *   - Neither → `undefined` (meaning "no change").
- *
- * Extracted because create and update had this logic inline, slightly
- * differently in each place.
- */
 async function resolveSubjectIdsFromInput(input: {
   subjectIds?: string[]
   subjectsTaught?: string[]
@@ -167,16 +120,6 @@ async function resolveSubjectIdsFromInput(input: {
   return undefined
 }
 
-/**
- * Generates a teacher code that's unlikely to collide with existing rows.
- *
- * The old fallback `TCH-${Date.now()}` was a real collision risk — two
- * teachers created in the same millisecond got the same code, then one
- * failed with a P2002 that the caller couldn't diagnose. This uses a
- * random suffix. Still not guaranteed unique (there's no atomic counter),
- * but the failure mode is a 1-in-a-million collision instead of a
- * 1-in-a-burst collision.
- */
 function generateTeacherCode(): string {
   const suffix = Math.floor(Math.random() * 1_000_000)
     .toString()
@@ -246,26 +189,28 @@ export const teachersService = {
     return teacher
   },
 
+  async getByUserId(userId: string) {
+    const teacher = await prisma.teacher.findFirst({
+      where: { userId, deletedAt: null },
+      include: teacherDetailInclude,
+    })
+    if (!teacher) throw ApiError.notFound('Teacher profile not found')
+    return teacher
+  },
+
   async create(input: CreateTeacherBody) {
     const subjectIds = await resolveSubjectIdsFromInput(input)
     const finalSubjectIds = subjectIds ?? []
     await assertSubjectsExist(finalSubjectIds)
 
-    // `teacherCode` is canonical; `employeeId` is the deprecated alias the
-    // current UI still sends. Prefer `teacherCode`, fall back to
-    // `employeeId`, fall back to a generated code.
     const teacherCode =
       input.teacherCode ?? input.employeeId ?? generateTeacherCode()
 
-    // Hash outside the transaction — bcrypt is ~250ms of CPU and would hold
-    // serializable row locks for that whole window.
     const passwordHash = input.password
       ? await hashPassword(input.password)
       : null
 
     return runSerializable(async (tx) => {
-      // Reference checks inside the transaction so we see a snapshot
-      // consistent with the writes that follow.
       const codeCollision = await tx.teacher.findUnique({
         where: { teacherCode },
         select: { id: true },
@@ -288,9 +233,6 @@ export const teachersService = {
         }
         userId = user.id
       } else {
-        // Create-branch requires email/firstName/lastName/password — the
-        // schema's superRefine already guaranteed they're present together
-        // when userId is absent, so these non-null assertions are safe.
         const existing = await tx.user.findUnique({
           where: { email: input.email! },
           select: { id: true },
@@ -320,9 +262,6 @@ export const teachersService = {
         userId = user.id
       }
 
-      // Guard against a linked user that already has a Teacher row. This
-      // check runs inside the transaction so two concurrent POSTs for the
-      // same userId can't both pass.
       const existingTeacher = await tx.teacher.findUnique({
         where: { userId },
         select: { id: true, deletedAt: true },
@@ -335,9 +274,6 @@ export const teachersService = {
           : ApiError.conflict('This user is already linked to a teacher record')
       }
 
-      // If we just created the user and the teacher insert fails, the
-      // transaction rolls back and the user is not orphaned. Same guarantee
-      // in the other direction.
       return tx.teacher.create({
         data: {
           userId,
@@ -363,13 +299,8 @@ export const teachersService = {
       await assertSubjectsExist(subjectIds)
     }
 
-    // `teacherCode` is canonical; `employeeId` is the deprecated alias.
-    // When both are present, `teacherCode` wins. When neither is present,
-    // `nextTeacherCode` is `undefined` and the field is left unchanged.
     const nextTeacherCode = changes.teacherCode ?? changes.employeeId
 
-    // Uniqueness re-check for teacherCode, only when actually changing.
-    // The `id: { not: id }` clause lets the check ignore the current row.
     if (
       nextTeacherCode !== undefined &&
       nextTeacherCode !== teacher.teacherCode
@@ -386,8 +317,6 @@ export const teachersService = {
     }
 
     const {
-      // Destructured out so they don't leak into `teacherChanges` — these
-      // are handled through `nextTeacherCode` and `subjectIds` above.
       teacherCode: _canonicalTeacherCode,
       employeeId: _deprecatedEmployeeId,
       subjectsTaught: _deprecatedSubjectsTaught,
@@ -399,9 +328,6 @@ export const teachersService = {
       status,
     } = changes
 
-    // Status → isActive mapping. Only "inactive" (any casing) maps to
-    // false. "On Leave" and "Active" both map to true — an on-leave
-    // teacher still has a working account.
     const isInactive =
       status !== undefined && status.toLowerCase().trim() === 'inactive'
 
@@ -430,9 +356,6 @@ export const teachersService = {
         })
       }
       if (subjectIds) {
-        // Full replace: delete all existing links, then create the new set.
-        // Running in the same transaction as the teacher/user update means
-        // a mid-way failure rolls back cleanly.
         await tx.teacherSubject.deleteMany({ where: { teacherId: id } })
         if (subjectIds.length > 0) {
           await tx.teacherSubject.createMany({
@@ -447,16 +370,6 @@ export const teachersService = {
     })
   },
 
-    /**
-   * Soft delete. Preserves the teacher's history (classes led, lessons
-   * taught, grades entered) — those rows reference the teacher by id and
-   * would be orphaned by a hard delete.
-   *
-   * Both sides of the User ↔ Teacher pair are soft-deleted in the same
-   * transaction, so the account no longer appears in `/users` lists either.
-   * This is the mirror of `users.service.softDelete`'s cascade; whichever
-   * endpoint the caller uses, the state after is identical.
-   */
   async remove(id: string) {
     const teacher = await prisma.teacher.findFirst({
       where: { id, deletedAt: null },

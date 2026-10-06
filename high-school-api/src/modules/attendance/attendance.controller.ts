@@ -2,6 +2,7 @@ import type { Request, Response } from 'express'
 import { attendanceService } from './attendance.service'
 import { sendSuccess } from '@/utils/apiResponse'
 import { ApiError } from '@/utils/ApiError'
+import { toUtcMidnight } from '@/utils/date'
 import type {
   BulkMarkBody,
   CheckInBody,
@@ -11,11 +12,6 @@ import type {
   UpdateAttendanceBody,
 } from './attendance.validation'
 
-/**
- * `authenticate` runs on every route in attendance.routes.ts, so `req.user`
- * is set by the time any handler here runs. Guard exists so TypeScript can
- * narrow without a non-null assertion at every call.
- */
 function requireUser(req: Request) {
   if (!req.user) throw ApiError.unauthorized('Authentication required')
   return req.user
@@ -26,9 +22,6 @@ export const attendanceController = {
     const user = requireUser(req)
     const query = (req.validated?.query ?? {}) as ListAttendanceQuery
 
-    // Students can only ever see their own attendance. Overriding the query
-    // param here (rather than trusting the client) is the same pattern used
-    // by the notifications module: every read is scoped by identity.
     const studentId =
       user.roleName === 'student'
         ? await attendanceService.studentIdForUser(user.sub)
@@ -47,10 +40,11 @@ export const attendanceController = {
   async getStats(req: Request, res: Response) {
     const user = requireUser(req)
     const query = (req.validated?.query ?? {}) as StatsQuery
-    const targetDate = query.date ?? new Date()
 
-    // Same scoping: a student asking for stats gets their own, not the
-    // whole-school aggregate.
+    // Fallback must be UTC midnight — `new Date()` has a time component
+    // and would never match a stored attendance.date.
+    const targetDate = query.date ?? toUtcMidnight(new Date())
+
     const studentId =
       user.roleName === 'student'
         ? await attendanceService.studentIdForUser(user.sub)
@@ -69,10 +63,6 @@ export const attendanceController = {
     const user = requireUser(req)
     const record = await attendanceService.getById(req.params.id)
 
-    // Ownership check for students — otherwise any student with
-    // `attendance.view` could enumerate IDs and read classmates' records.
-    // Fixes a hole in the previous version, which returned the record to
-    // any caller regardless of role.
     if (
       user.roleName === 'student' &&
       (record as { student: { userId: string } }).student.userId !== user.sub
@@ -87,7 +77,6 @@ export const attendanceController = {
     requireUser(req)
     const body = req.validated?.body as CheckInBody | undefined
     if (!body) throw ApiError.badRequest('Request body is required')
-
     sendSuccess(res, await attendanceService.checkIn(body))
   },
 
@@ -95,7 +84,6 @@ export const attendanceController = {
     requireUser(req)
     const body = req.validated?.body as BulkMarkBody | undefined
     if (!body) throw ApiError.badRequest('Request body is required')
-
     sendSuccess(res, await attendanceService.bulkMark(body))
   },
 
@@ -103,7 +91,6 @@ export const attendanceController = {
     requireUser(req)
     const body = req.validated?.body as CheckOutBody | undefined
     if (!body) throw ApiError.badRequest('Request body is required')
-
     sendSuccess(
       res,
       await attendanceService.checkOut(body.studentId, body.date, body.checkOut)
@@ -114,7 +101,6 @@ export const attendanceController = {
     requireUser(req)
     const body = req.validated?.body as UpdateAttendanceBody | undefined
     if (!body) throw ApiError.badRequest('Request body is required')
-
     sendSuccess(res, await attendanceService.update(req.params.id, body))
   },
 

@@ -8,13 +8,6 @@ import type {
   UpdateLeaveRequestBody,
 } from './leaveRequests.validation'
 
-/**
- * `reviewedBy` is a plain `String?` column on LeaveRequest — a bare user id,
- * not a relation. That means the `include` block can't resolve the reviewer's
- * name. Instead of an N+1 lookup (one query per row), `attachReviewers`
- * collects every reviewer id from a batch of rows and fetches them in a
- * single `findMany`.
- */
 const leaveRequestInclude = {
   student: {
     select: {
@@ -30,13 +23,6 @@ interface WithReviewerId {
   reviewedBy: string | null
 }
 
-/**
- * Enriches a batch of leave-request rows with a `reviewer` field: the User
- * record whose id matches `row.reviewedBy`, or `null` when unset.
- *
- * One query for all distinct reviewer ids in the batch, one map lookup per
- * row. Avoids the N+1 that a per-row `user.findUnique` would produce.
- */
 async function attachReviewers<T extends WithReviewerId>(rows: T[]) {
   const reviewerIds = [
     ...new Set(
@@ -74,6 +60,13 @@ export async function studentIdForUser(userId: string): Promise<string> {
 }
 
 export const leaveRequestsService = {
+  async pendingCount() {
+    const count = await prisma.leaveRequest.count({
+      where: { status: 'PENDING' },
+    })
+    return { count }
+  },
+
   async list(filters: ListLeaveRequestsQuery) {
     const where = {
       ...(filters.studentId ? { studentId: filters.studentId } : {}),
@@ -132,7 +125,7 @@ export const leaveRequestsService = {
       select: { id: true },
     })
     if (!student) {
-      throw ApiError.unauthorized('Your student profile is no longer active')
+      throw ApiError.forbidden('Your student profile is no longer active')
     }
 
     const row = await prisma.leaveRequest.create({
@@ -222,17 +215,6 @@ export const leaveRequestsService = {
       )
     }
 
-    /**
-     * `reviewedBy` is a scalar string column, so it takes the reviewer's user
-     * id directly — no `connect`. If a `reviewer` relation is added later,
-     * change this to `reviewedBy: { connect: { id: reviewerId } }` and restore
-     * the include.
-     *
-     * `reviewNote` is written only when the caller supplied one. The
-     * conditional spread avoids clobbering an existing note with `undefined`
-     * on an update path — though `review` is PENDING-only, so this is
-     * defensive.
-     */
     const row = await prisma.leaveRequest.update({
       where: { id: leaveRequestId },
       data: {

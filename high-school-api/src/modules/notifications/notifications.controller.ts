@@ -32,6 +32,11 @@ export const notificationsController = {
     )
   },
 
+  async unreadCount(req: Request, res: Response) {
+    const userId = requireUserId(req)
+    sendSuccess(res, await notificationsService.unreadCount(userId))
+  },
+
   async getById(req: Request, res: Response) {
     const userId = requireUserId(req)
     sendSuccess(res, await notificationsService.getById(req.params.id, userId))
@@ -40,10 +45,6 @@ export const notificationsController = {
   async create(req: Request, res: Response) {
     const body = req.validated?.body as CreateNotificationBody | undefined
     if (!body) throw ApiError.badRequest('Request body is required')
-
-    // Note the asymmetry: this is the one operation where `userId` in the
-    // body IS the recipient, not the caller. Access control is enforced by
-    // the route (admin-only). See notifications.routes.ts.
     sendCreated(res, await notificationsService.create(body))
   },
 

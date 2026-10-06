@@ -13,17 +13,17 @@ import {
 const router = Router()
 router.use(authenticate)
 
-/**
- * ROUTE ORDER — literal paths before `/:id`, per method. Currently no
- * single-segment literals besides `/`, so the ordering below is safe. Add
- * new literals (e.g. `GET /me`) ABOVE `/:id` when they appear.
- */
-
 router.get(
   '/',
   requirePermission('teachers', 'view'),
   validateQuery(listTeachersQuerySchema),
   asyncHandler(teachersController.list)
+)
+
+// Must be ABOVE `/:id` — otherwise `/me` is routed to getById with id="me".
+router.get(
+  '/me',
+  asyncHandler(teachersController.me)
 )
 
 router.get(

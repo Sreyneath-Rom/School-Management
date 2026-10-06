@@ -15,16 +15,6 @@ import {
 const router = Router()
 router.use(authenticate)
 
-/**
- * The create endpoint takes a different body shape depending on role:
- *   - student: { startDate, endDate, reason }
- *   - everyone else: { studentId, startDate, endDate, reason }
- *
- * A small middleware applies the correct schema. This is cleaner than two
- * routes with the same path, and clearer than a single permissive schema
- * that lets a student smuggle in a `studentId` (Zod would strip it, but the
- * intent wouldn't be obvious from the schema alone).
- */
 function validateCreateBody(req: Request, res: Response, next: NextFunction) {
   const schema =
     req.user?.roleName === 'student'
@@ -33,11 +23,12 @@ function validateCreateBody(req: Request, res: Response, next: NextFunction) {
   return validateBody(schema)(req, res, next)
 }
 
-// -----------------------------------------------------------------------------
-// ROUTE ORDER: literal paths before `/:id`, per method. Currently no literal
-// single-segment GETs exist besides `/`, so the ordering below is safe. Add
-// new literals ABOVE `/:id` when they appear.
-// -----------------------------------------------------------------------------
+// `/pending/count` must come BEFORE `/:id` so the literal isn't shadowed.
+router.get(
+  '/pending/count',
+  requirePermission('leaveRequests', 'view'),
+  asyncHandler(leaveRequestsController.pendingCount)
+)
 
 router.get(
   '/',

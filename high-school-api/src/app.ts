@@ -4,7 +4,8 @@ import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import swaggerUi from 'swagger-ui-express'
 import morgan from 'morgan'
-import { env } from '@/config/env'
+import path from 'node:path'
+import { env, swaggerEnabled } from '@/config/env'
 import { swaggerSpec } from '@/config/swagger'
 import { httpLogStream } from '@/config/logger'
 import { errorHandler, notFoundHandler } from '@/middleware/error.middleware'
@@ -14,28 +15,22 @@ import apiRoutes from '@/routes'
 export function createApp(): Express {
   const app = express()
 
-  // Trust exactly one hop (nginx / managed LB). Without this, express-rate-limit
-  // keys every request on the proxy's IP and throttles the entire internet as
-  // if it were a single client. Must match the real deployment topology — bump
-  // this number only if you add another proxy in front.
   app.set('trust proxy', 1)
 
   // ---- Request identity ----
-  // Must come first so every downstream log line and error response can be
-  // correlated. See middleware/requestId.middleware.ts.
+  // MUST be first. Every downstream consumer of req.id (morgan, error
+  // handler, logger bindings) depends on this having run.
   app.use(requestId)
 
   // ---- Security headers ----
-  // The API serves JSON, not HTML, so most helmet defaults are moot. CSP is
-  // explicitly disabled because Swagger UI at /api-docs relies on inline
-  // scripts and renders blank under helmet's default policy.
+  // CSP disabled so Swagger UI's inline scripts render. CORP stays at
+  // Helmet's default (`same-origin`), which is correct for JSON responses;
+  // the /uploads/logos mount below overrides it per-route where needed.
   app.use(helmet({ contentSecurityPolicy: false }))
 
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }))
 
   // ---- Body parsers ----
-  // Keep JSON deliberately small. File uploads go through multer on their own
-  // routes; nothing on the JSON API should need more than ~1 MB.
   app.use(express.json({ limit: '1mb' }))
   app.use(express.urlencoded({ extended: true, limit: '1mb' }))
 
@@ -49,11 +44,26 @@ export function createApp(): Express {
   )
 
   // ---- Liveness / readiness ----
-  // Mounted BEFORE the rate limiter on purpose: orchestrator probes must never
-  // be the reason a healthy pod looks unhealthy, and probes must not consume
-  // the shared request budget.
   app.get('/health', (_req, res) =>
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() })
+  )
+
+  // ---- Public static: school logos only ----
+  // Logos are intentionally public (login page, invoices, report card
+  // headers). They must be cross-origin accessible because the SPA runs on
+  // a different origin than the API in dev (Vite on :5173 vs API on :5000)
+  // and often in production (separate host / CDN). Helmet's default
+  // Cross-Origin-Resource-Policy is `same-origin`, which blocks <img src>
+  // loads with ERR_BLOCKED_BY_RESPONSE.NotSameOrigin. Override it here for
+  // this route only — JSON API responses keep the stricter default.
+  app.use(
+    '/uploads/logos',
+    express.static(path.resolve(env.UPLOAD_PATH, 'logos'), {
+      setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'public, max-age=86400')
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+      },
+    })
   )
 
   // ---- Global rate limit ----
@@ -67,21 +77,18 @@ export function createApp(): Express {
   )
 
   // ---- API documentation ----
-  // Swagger is an internal tool. Gate it out of production unless explicitly
-  // enabled via env (see note at the bottom — add SWAGGER_ENABLED to env.ts).
-  if (env.NODE_ENV !== 'production' || env.SWAGGER_ENABLED) {
-    app.use('/api-docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec) as any)
+  if (swaggerEnabled && swaggerSpec) {
+    app.use(
+      '/api-docs',
+      swaggerUi.serve as never,
+      swaggerUi.setup(swaggerSpec) as never
+    )
   }
 
   // ---- Application routes ----
-  // NOTE: the previous `express.static(env.UPLOAD_PATH)` mount has been removed.
-  // Serving lesson materials and homework submissions as unauthenticated static
-  // files is a data leak. Uploads should be served through an authenticated
-  // route (e.g. `GET /api/v1/uploads/:id` with a permission check), or via
-  // short-lived signed URLs. See the notes below.
   app.use('/api/v1', apiRoutes)
 
-  // ---- Fallthrough handlers (must be last) ----
+  // ---- Fallthrough handlers ----
   app.use(notFoundHandler)
   app.use(errorHandler)
 
