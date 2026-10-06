@@ -1,16 +1,10 @@
 // src/layouts/Sidebar.tsx
-import {
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  useCallback,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   GraduationCap,
+  ChevronDown,
   ChevronRight,
   Settings,
   Languages,
@@ -36,11 +30,17 @@ import {
   Megaphone,
   BarChart3,
   LineChart,
+  DollarSign,
+  Library,
   Calendar as CalendarIcon,
   MessageSquare,
   FileText,
   CalendarClock,
   CheckSquare,
+  Tags,
+  BookmarkPlus,
+  Undo2,
+  AlertCircle,
   PartyPopper,
   SunMedium,
   Bell,
@@ -50,19 +50,20 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
-  School2,
   Sparkles,
+  Layers,
+  Check,
+  ChevronsDown,
+  ChevronsUp,
+  Heart,
   type LucideIcon,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { useSchool } from "@/hooks/useSchool";
-import { useBadgeCounts } from "@/hooks/useBadgeCounts";
+import { useAuth } from "@/hooks/useAuth";
 import { resolveAssetUrl } from "@/utils/resolveAssetUrl";
 import { useTranslations, type TranslationKey } from "@/i18n";
-
-/* Neumorphic hairline seams. */
-const SEAM_B = "shadow-[0_1px_0_var(--neu-shadow-dark)]";
-const SEAM_T = "shadow-[0_-1px_0_var(--neu-shadow-dark)]";
+import PncBrandLogo from "@/components/common/PncBrandLogo";
+import type { UserRole } from "@/utils/rolePermissions";
 
 type Section =
   | "DASHBOARD"
@@ -71,92 +72,21 @@ type Section =
   | "EXAMS"
   | "STUDENTS"
   | "TEACHERS"
+  | "FEES"
+  | "LIBRARY"
   | "CALENDAR"
   | "COMMUNICATION"
   | "REPORTS"
   | "CHILDREN"
   | "SYSTEM";
 
-type BadgeKey = "leave-requests" | "messages";
-
 interface MenuItem {
   translationKey: TranslationKey;
   icon: LucideIcon;
   path: string;
-  badgeKey?: BadgeKey;
+  badge?: string | number;
   badgeColor?: string;
   badgePulse?: boolean;
-}
-
-const DEFAULT_VISIBLE_PATHS = new Set<string>([
-  "/academic/class-subjects",
-  "/calendar",
-  "/calendar/events",
-  "/calendar/holidays",
-  "/system/activity",
-]);
-
-const warnedPaths = new Set<string>();
-
-function permissionForPath(path: string): string | null {
-  if (path.includes("/setup/roles")) return "roles.view";
-  if (path.includes("/setup/users")) return "users.view";
-  if (path.includes("/setup/school")) return "school.view";
-  if (path.includes("/setup/academic-years")) return "academicYears.view";
-  if (path.includes("/setup/rooms")) return "rooms.view";
-  if (path.includes("/setup/grade-levels")) return "gradeLevels.view";
-  if (path.includes("/setup/terms")) return "terms.view";
-  if (path.includes("/setup/translations")) return "translations.view";
-  if (path.includes("/setup/subjects")) return "subjects.view";
-  if (
-    path.includes("/academic/exams") ||
-    path.includes("/academic/exam-") ||
-    path.includes("/academic/mark-") ||
-    path.includes("/academic/report-cards")
-  )
-    return "grades.view";
-  if (path.includes("/academic/classes")) return "classes.view";
-  if (path.includes("/academic/class-subjects")) return "classes.view";
-  if (path.includes("/academic/schedules")) return "schedules.view";
-  if (path.includes("/academic/lessons")) return "lessons.view";
-  if (path.includes("/academic/homework")) return "homework.view";
-  if (path.includes("/academic/quizzes")) return "quizzes.view";
-  if (path.includes("/academic/grades")) return "grades.view";
-  if (
-    path.includes("/students/attendance") ||
-    path.includes("/teacher/attendance") ||
-    path.includes("/student/attendance")
-  )
-    return "attendance.view";
-  if (
-    path.includes("/students/leave-requests") ||
-    path.includes("/student/leave-requests")
-  )
-    return "leaveRequests.view";
-  if (
-    path === "/students" ||
-    path.includes("/students/profiles") ||
-    path.includes("/teacher/students")
-  )
-    return "students.view";
-  if (path === "/teachers" || path.includes("/teachers/"))
-    return "teachers.view";
-  if (path.includes("/reports/")) return "reports.view";
-  if (path.includes("/communication/announcements"))
-    return "announcements.view";
-  if (path.includes("/communication/notifications"))
-    return "notifications.view";
-  if (path.includes("/messages")) return "notifications.view";
-
-  if (DEFAULT_VISIBLE_PATHS.has(path)) return null;
-
-  if (import.meta.env.DEV && !warnedPaths.has(path)) {
-    warnedPaths.add(path);
-    console.warn(
-      `[sidebar] no permission rule for path: ${path} — defaulting to visible`
-    );
-  }
-  return null;
 }
 
 interface MenuSection {
@@ -167,13 +97,7 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-const categoryGroupLabels: Record<string, string> = {
-  core: "Core Administration",
-  academic: "Curriculum & Academic",
-  management: "Faculty & Students",
-  system: "Communication & Reports",
-};
-
+// Complete role-tailored menu configuration
 const roleMenus: Record<string, MenuSection[]> = {
   admin: [
     {
@@ -233,8 +157,8 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.leaveRequests",
           icon: FileClock,
           path: "/students/leave-requests",
-          badgeKey: "leave-requests",
-          badgeColor: "bg-warning text-white",
+          badge: "2",
+          badgeColor: "bg-amber-500/90 text-white shadow-xs",
           badgePulse: true,
         },
       ],
@@ -249,6 +173,25 @@ const roleMenus: Record<string, MenuSection[]> = {
         { translationKey: "sidebar.teacherProfiles", icon: UserCheck, path: "/teachers/profiles" },
         { translationKey: "sidebar.teacherAssignments", icon: UserSquare2, path: "/teachers/assignments" },
         { translationKey: "sidebar.teacherAttendance", icon: ClipboardCheck, path: "/teachers/attendance" },
+      ],
+    },
+    {
+      key: "LIBRARY",
+      titleKey: "sidebar.library",
+      icon: Library,
+      categoryGroup: "academic",
+      items: [
+        { translationKey: "sidebar.books", icon: Library, path: "/library/books" },
+        { translationKey: "sidebar.libraryCategories", icon: Tags, path: "/library/categories" },
+        { translationKey: "sidebar.borrow", icon: BookmarkPlus, path: "/library/borrow" },
+        { translationKey: "sidebar.returns", icon: Undo2, path: "/library/returns" },
+        {
+          translationKey: "sidebar.overdueBooks",
+          icon: AlertCircle,
+          path: "/library/overdue",
+          badge: "4",
+          badgeColor: "bg-rose-500/90 text-white shadow-xs",
+        },
       ],
     },
     {
@@ -274,8 +217,8 @@ const roleMenus: Record<string, MenuSection[]> = {
           translationKey: "sidebar.messages",
           icon: MessageSquare,
           path: "/messages",
-          badgeKey: "messages",
-          badgeColor: "bg-info text-white",
+          badge: "3",
+          badgeColor: "bg-cyan-500/90 text-white shadow-xs",
           badgePulse: true,
         },
       ],
@@ -290,6 +233,7 @@ const roleMenus: Record<string, MenuSection[]> = {
         { translationKey: "sidebar.academicPerformanceReport", icon: LineChart, path: "/reports/academic" },
         { translationKey: "sidebar.studentReport", icon: Users2, path: "/reports/students" },
         { translationKey: "sidebar.teacherReport", icon: UserSquare2, path: "/reports/teachers" },
+        { translationKey: "sidebar.libraryReport", icon: Library, path: "/reports/library" },
       ],
     },
     {
@@ -298,7 +242,16 @@ const roleMenus: Record<string, MenuSection[]> = {
       icon: Sliders,
       categoryGroup: "system",
       items: [
+        { translationKey: "sidebar.auditLogs", icon: FileText, path: "/system/logs" },
         { translationKey: "sidebar.activityLogs", icon: Activity, path: "/system/activity" },
+        { translationKey: "sidebar.systemSettings", icon: Sliders, path: "/system/settings" },
+        {
+          translationKey: "sidebar.responsiveStudio",
+          icon: Layers,
+          path: "/system/responsive-studio",
+          badge: "Live",
+          badgeColor: "bg-blue-600 text-white shadow-xs",
+        },
       ],
     },
   ],
@@ -321,7 +274,9 @@ const roleMenus: Record<string, MenuSection[]> = {
       titleKey: "sidebar.exams",
       icon: FileText,
       categoryGroup: "academic",
-      items: [{ translationKey: "sidebar.examList", icon: FileText, path: "/teacher/exams" }],
+      items: [
+        { translationKey: "sidebar.examList", icon: FileText, path: "/teacher/exams" },
+      ],
     },
     {
       key: "STUDENTS",
@@ -340,13 +295,13 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "management",
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/teacher/announcements" },
-        { translationKey: "sidebar.notifications", icon: Bell, path: "/teacher/notifications" },
+        { translationKey: "sidebar.notifications", icon: Megaphone, path: "/teacher/notifications" },
         {
           translationKey: "sidebar.inbox",
           icon: MessageSquare,
           path: "/teacher/messages",
-          badgeKey: "messages",
-          badgeColor: "bg-info text-white",
+          badge: "3",
+          badgeColor: "bg-cyan-500/90 text-white",
         },
       ],
     },
@@ -355,14 +310,27 @@ const roleMenus: Record<string, MenuSection[]> = {
       titleKey: "sidebar.calendar",
       icon: CalendarIcon,
       categoryGroup: "core",
-      items: [{ translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/teacher/calendar" }],
+      items: [
+        { translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/teacher/calendar" },
+      ],
+    },
+    {
+      key: "LIBRARY",
+      titleKey: "sidebar.library",
+      icon: Library,
+      categoryGroup: "academic",
+      items: [
+        { translationKey: "sidebar.books", icon: Library, path: "/teacher/library" },
+      ],
     },
     {
       key: "REPORTS",
       titleKey: "sidebar.reports",
       icon: BarChart3,
       categoryGroup: "system",
-      items: [{ translationKey: "sidebar.attendanceReport", icon: ClipboardCheck, path: "/teacher/reports/attendance" }],
+      items: [
+        { translationKey: "sidebar.attendanceReport", icon: ClipboardCheck, path: "/teacher/reports/attendance" },
+      ],
     },
   ],
   student: [
@@ -400,11 +368,31 @@ const roleMenus: Record<string, MenuSection[]> = {
       ],
     },
     {
+      key: "FEES",
+      titleKey: "sidebar.fees",
+      icon: DollarSign,
+      categoryGroup: "management",
+      items: [
+        { translationKey: "sidebar.invoices", icon: FileText, path: "/student/fees" },
+      ],
+    },
+    {
+      key: "LIBRARY",
+      titleKey: "sidebar.library",
+      icon: Library,
+      categoryGroup: "academic",
+      items: [
+        { translationKey: "sidebar.books", icon: Library, path: "/student/library" },
+      ],
+    },
+    {
       key: "CALENDAR",
       titleKey: "sidebar.calendar",
       icon: CalendarIcon,
       categoryGroup: "core",
-      items: [{ translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/student/calendar" }],
+      items: [
+        { translationKey: "sidebar.calendarView", icon: CalendarIcon, path: "/student/calendar" },
+      ],
     },
     {
       key: "COMMUNICATION",
@@ -413,13 +401,13 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "management",
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/student/announcements" },
-        { translationKey: "sidebar.notifications", icon: Bell, path: "/student/notifications" },
+        { translationKey: "sidebar.notifications", icon: Megaphone, path: "/student/notifications" },
         {
           translationKey: "sidebar.inbox",
           icon: MessageSquare,
           path: "/student/messages",
-          badgeKey: "messages",
-          badgeColor: "bg-info text-white",
+          badge: "3",
+          badgeColor: "bg-cyan-500/90 text-white",
         },
       ],
     },
@@ -430,7 +418,9 @@ const roleMenus: Record<string, MenuSection[]> = {
       titleKey: "sidebar.children",
       icon: Users2,
       categoryGroup: "core",
-      items: [{ translationKey: "sidebar.myChildren", icon: Users2, path: "/parent/children" }],
+      items: [
+        { translationKey: "sidebar.myChildren", icon: Users2, path: "/parent/children" },
+      ],
     },
     {
       key: "COMMUNICATION",
@@ -439,27 +429,47 @@ const roleMenus: Record<string, MenuSection[]> = {
       categoryGroup: "management",
       items: [
         { translationKey: "sidebar.announcements", icon: Megaphone, path: "/parent/announcements" },
-        { translationKey: "sidebar.notifications", icon: Bell, path: "/parent/notifications" },
+        { translationKey: "sidebar.notifications", icon: Megaphone, path: "/parent/notifications" },
         {
           translationKey: "sidebar.inbox",
           icon: MessageSquare,
           path: "/parent/messages",
-          badgeKey: "messages",
-          badgeColor: "bg-info text-white",
+          badge: "3",
+          badgeColor: "bg-cyan-500/90 text-white",
         },
       ],
     },
   ],
 };
 
-const roleBadgeColorMap: Record<string, { label: string; badgeClass: string }> = {
+const roleBadgeColorMap: Record<
+  string,
+  { label: string; bg: string; text: string; ring: string }
+> = {
   admin: {
     label: "Administrator",
-    badgeClass: "bg-surface text-brand-600 dark:text-brand-300 shadow-sunken",
+    bg: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    text: "text-blue-700 dark:text-blue-300",
+    ring: "border-blue-500/30 dark:border-blue-400/30",
   },
-  teacher: { label: "Faculty", badgeClass: "bg-surface text-success shadow-sunken" },
-  student: { label: "Scholar", badgeClass: "bg-surface text-info shadow-sunken" },
-  parent: { label: "Guardian", badgeClass: "bg-surface text-warning shadow-sunken" },
+  teacher: {
+    label: "Teacher / Faculty",
+    bg: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    text: "text-emerald-700 dark:text-emerald-300",
+    ring: "border-emerald-500/30 dark:border-emerald-400/30",
+  },
+  student: {
+    label: "Student",
+    bg: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    text: "text-sky-700 dark:text-sky-300",
+    ring: "border-sky-500/30 dark:border-sky-400/30",
+  },
+  parent: {
+    label: "Parent / Guardian",
+    bg: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    text: "text-amber-700 dark:text-amber-300",
+    ring: "border-amber-500/30 dark:border-amber-400/30",
+  },
 };
 
 function sectionForPath(pathname: string, menu: MenuSection[]): Section | null {
@@ -471,53 +481,31 @@ function sectionForPath(pathname: string, menu: MenuSection[]): Section | null {
   return match?.key ?? null;
 }
 
-export default function Sidebar({
-  mobileOpen,
-  onClose,
-  role: propRole,
-}: {
+interface SidebarProps {
   mobileOpen?: boolean;
   onClose?: () => void;
-  role?: "admin" | "teacher" | "student" | "parent";
-}) {
+  role?: UserRole | "admin" | "teacher" | "student" | "parent";
+}
+
+export default function Sidebar({
+  mobileOpen = false,
+  onClose,
+  role: propRole,
+}: SidebarProps) {
   const location = useLocation();
-  const { role: authRole, user, logout } = useAuth();
   const { school } = useSchool();
-  const badgeCounts = useBadgeCounts();
+  const { role: authRole, user, logout } = useAuth();
   const { t } = useTranslations();
 
   const activeRole = (propRole || authRole || "admin").toLowerCase();
+  const schoolName = school?.name || "High School Academic OS";
+  const schoolMotto =
+    (typeof school?.settings?.motto === "string"
+      ? school.settings.motto
+      : null) || "Better Skills, Brighter Future";
+  const logoUrl = resolveAssetUrl(school?.logoUrl);
 
-  const dashboardPath =
-    activeRole === "admin" ? "/dashboard" : `/${activeRole}/dashboard`;
-  const isDashboardActive =
-    location.pathname === dashboardPath ||
-    (activeRole === "admin" && location.pathname === "/");
-
-  const schoolName = school?.name ?? "";
-  const academicYear = school?.academicYear ?? "";
-  const schoolInitials =
-    schoolName
-      .split(/\s+/)
-      .map((w) => w[0])
-      .filter(Boolean)
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "HS";
-
-  const resolveBadge = (
-    item: MenuItem
-  ): { text: string; color: string; pulse: boolean } | null => {
-    if (!item.badgeKey) return null;
-    const count = badgeCounts[item.badgeKey];
-    if (!count || count <= 0) return null;
-    return {
-      text: String(count),
-      color: item.badgeColor ?? "bg-brand-600 text-white",
-      pulse: item.badgePulse ?? false,
-    };
-  };
-
+  // --- Collapsed Rail Mode State with LocalStorage Persistence ---
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem("sidebar_collapsed") === "true";
@@ -532,120 +520,45 @@ export default function Sidebar({
       try {
         localStorage.setItem("sidebar_collapsed", String(next));
       } catch {
-        /* ignore */
+        // ignore
       }
       return next;
     });
   };
 
+  // Hover Popover in Compact Rail Mode
   const [hoveredSection, setHoveredSection] = useState<Section | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [searchQuery, setSearchQuery] = useState("");
-
+  // Active role's menu sections
   const baseMenu = useMemo(() => {
-    const menu = roleMenus[activeRole] || roleMenus.admin;
-    const permissionKeys = user?.permissionKeys ?? [];
-    if (permissionKeys.length === 0) return menu;
+    return roleMenus[activeRole] || roleMenus.admin;
+  }, [activeRole]);
 
-    return menu
-      .map((section) => ({
-        ...section,
-        items: section.items.filter((item) => {
-          const requiredPermission = permissionForPath(item.path);
-          if (requiredPermission === null) return true;
-          return permissionKeys.includes(requiredPermission);
-        }),
-      }))
-      .filter((section) => section.items.length > 0);
-  }, [activeRole, user?.permissionKeys]);
-
-  const [openSection, setOpenSection] = useState<Section | null>(() => {
-    if (isDashboardActive) return null;
-    return (
-      sectionForPath(location.pathname, baseMenu) ||
-      (baseMenu.length > 0 ? baseMenu[0].key : null)
-    );
-  });
-
-  useEffect(() => {
-    if (isDashboardActive) {
-      setOpenSection(null);
-      return;
-    }
+  // Section expansion state
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
     const active = sectionForPath(location.pathname, baseMenu);
     if (active) {
-      setOpenSection(active);
+      initial[active] = true;
+    } else if (baseMenu.length > 0) {
+      initial[baseMenu[0].key] = true;
     }
-  }, [location.pathname, baseMenu, isDashboardActive]);
+    return initial;
+  });
 
-  const toggleSection = (sectionKey: Section) => {
-    setOpenSection((current) => (current === sectionKey ? null : sectionKey));
-  };
-
-  const filteredMenu = useMemo(() => {
-    if (!searchQuery.trim()) return baseMenu;
-    const q = searchQuery.toLowerCase();
-    return baseMenu
-      .map((section) => {
-        const titleMatch = t(section.titleKey).toLowerCase().includes(q);
-        const matchedItems = section.items.filter((item) =>
-          t(item.translationKey).toLowerCase().includes(q)
-        );
-        if (titleMatch || matchedItems.length > 0) {
-          return {
-            ...section,
-            items: titleMatch ? section.items : matchedItems,
-          };
-        }
-        return null;
-      })
-      .filter(Boolean) as MenuSection[];
-  }, [baseMenu, searchQuery, t]);
-
-  const groupedSections = useMemo(() => {
-    const groups: { [key: string]: MenuSection[] } = {};
-    filteredMenu.forEach((sec) => {
-      const g = sec.categoryGroup || "academic";
-      if (!groups[g]) groups[g] = [];
-      groups[g].push(sec);
-    });
-    return groups;
-  }, [filteredMenu]);
-
-  const sectionPanelRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const sectionTriggerRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
+  // Automatically expand section when current route changes
   useEffect(() => {
-    if (openSection) {
-      sectionPanelRefs.current[openSection]?.scrollIntoView({
-        block: "nearest",
-        behavior: "smooth",
-      });
+    const active = sectionForPath(location.pathname, baseMenu);
+    if (active) {
+      setOpenSections((prev) => ({
+        ...prev,
+        [active]: true,
+      }));
     }
-  }, [openSection]);
+  }, [location.pathname, baseMenu]);
 
-  const handleSectionKeyDown = (
-    e: ReactKeyboardEvent<HTMLButtonElement>,
-    index: number
-  ) => {
-    const triggers = sectionTriggerRefs.current;
-    if (!triggers.length) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      triggers[(index + 1) % triggers.length]?.focus();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      triggers[(index - 1 + triggers.length) % triggers.length]?.focus();
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      triggers[0]?.focus();
-    } else if (e.key === "End") {
-      e.preventDefault();
-      triggers[triggers.length - 1]?.focus();
-    }
-  };
-
+  // Body scroll lock on mobile when drawer is active
   useEffect(() => {
     if (mobileOpen) {
       const originalOverflow = document.body.style.overflow;
@@ -656,28 +569,44 @@ export default function Sidebar({
     }
   }, [mobileOpen]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (searchQuery) {
-          setSearchQuery("");
-        } else if (mobileOpen && onClose) {
-          onClose();
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileOpen, onClose, searchQuery]);
+  const toggleSection = (sectionKey: Section) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
+  };
+
+  const allSectionsOpen = useMemo(() => {
+    return (
+      baseMenu.length > 0 &&
+      baseMenu.every((s) => !!openSections[s.key])
+    );
+  }, [baseMenu, openSections]);
+
+  const toggleAllSections = () => {
+    const nextState = !allSectionsOpen;
+    const updated: Record<string, boolean> = {};
+    baseMenu.forEach((s) => {
+      updated[s.key] = nextState;
+    });
+    setOpenSections((prev) => ({
+      ...prev,
+      ...updated,
+    }));
+  };
 
   const handleLinkClick = useCallback(() => {
-    if (onClose) onClose();
+    if (onClose) {
+      onClose();
+    }
     setHoveredSection(null);
   }, [onClose]);
 
   const handleMouseEnter = (sectionKey: Section) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    if (isCollapsed) setHoveredSection(sectionKey);
+    if (isCollapsed) {
+      setHoveredSection(sectionKey);
+    }
   };
 
   const handleMouseLeave = () => {
@@ -687,6 +616,12 @@ export default function Sidebar({
       }, 200);
     }
   };
+
+  const dashboardPath =
+    activeRole === "admin" ? "/dashboard" : `/${activeRole}/dashboard`;
+  const isDashboardActive =
+    location.pathname === dashboardPath ||
+    (activeRole === "admin" && location.pathname === "/");
 
   const userDisplayName =
     user?.name ||
@@ -702,56 +637,54 @@ export default function Sidebar({
       .slice(0, 2)
       .toUpperCase() || "AD";
   const roleConfig = roleBadgeColorMap[activeRole] || roleBadgeColorMap.admin;
-  const userAvatarUrl = user?.avatarUrl ? resolveAssetUrl(user.avatarUrl) : null;
 
-  /* --------------------------------------------------------------
-     Compact rail mode (desktop only)
-     -------------------------------------------------------------- */
+  // --------------------------------------------------------------------------
+  // 1. RENDER COMPACT RAIL MODE (Desktop when collapsed)
+  // --------------------------------------------------------------------------
   const renderCompactMenu = () => (
-    <div className="app-sidebar flex h-full flex-col justify-between p-2 select-none overflow-hidden">
-      <div className="flex flex-col items-center space-y-2.5 overflow-y-auto no-scrollbar flex-1 py-2">
-        <div
-          title={schoolName || "School"}
-          className="relative group flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white ring-1 ring-white/20 shadow-neu-raised transition-transform duration-200 hover:scale-105"
-        >
-          {schoolName ? (
-            <span className="text-xs font-black tracking-tight">{schoolInitials}</span>
-          ) : (
-            <School2 size={18} className="text-white" />
-          )}
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success ring-2 ring-surface shadow-[0_0_6px_var(--status-success)]" />
-        </div>
-
+    <div className="flex h-full flex-col justify-between p-2.5 select-none overflow-hidden">
+      <div className="flex flex-col items-center space-y-2.5 overflow-y-auto no-scrollbar flex-1 py-1">
+        {/* Brand Logo - Raised Neumorphic Disc */}
         <button
           type="button"
           onClick={toggleCollapsed}
-          title="Expand sidebar"
-          aria-label="Expand sidebar"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-secondary glass-interactive"
+          title={`${schoolName} (Click to expand sidebar)`}
+          className="group relative my-1 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden neu-circle-disc text-slate-700 dark:text-slate-200 cursor-pointer hover:scale-105 transition-all duration-200"
         >
-          <PanelLeft size={16} />
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={schoolName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <PncBrandLogo collapsed className="scale-85" />
+          )}
+          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
         </button>
 
+        {/* Dashboard Quick Icon */}
         <NavLink
           to={dashboardPath}
           onClick={handleLinkClick}
           title={t("sidebar.dashboard")}
-          className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 shrink-0 ${
+          className={`relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-200 shrink-0 ${
             isDashboardActive
-              ? "bg-linear-to-br from-brand-600 to-brand-500 text-white font-semibold shadow-inner"
-              : "text-secondary hover:text-fg hover:shadow-sunken"
+              ? "active-blue-capsule shadow-[0_6px_18px_rgba(37,99,235,0.4)] text-white"
+              : "neu-circle-disc text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400"
           }`}
         >
           <LayoutDashboard size={18} />
           {isDashboardActive && (
-            <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-brand-600 shadow-[0_0_6px_white]" />
+            <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-blue-600" />
           )}
         </NavLink>
 
-        <div className="my-1 h-px w-6 bg-(--neu-shadow-dark) shrink-0" />
+        <div className="h-px w-8 bg-slate-300/60 dark:bg-white/10 my-1 shrink-0" />
 
+        {/* Section Icons with Hover Popover */}
         <nav
-          className="flex flex-col space-y-1.5 w-full items-center"
+          className="flex flex-col space-y-2"
           aria-label="Compact navigation"
         >
           {baseMenu.map((section) => {
@@ -762,7 +695,7 @@ export default function Sidebar({
                 location.pathname.startsWith(item.path + "/")
             );
             const isHovered = hoveredSection === section.key;
-            const hasBadges = section.items.some((item) => resolveBadge(item));
+            const hasBadges = section.items.some((item) => !!item.badge);
 
             return (
               <div
@@ -775,66 +708,71 @@ export default function Sidebar({
                   type="button"
                   onClick={() => toggleSection(section.key)}
                   aria-label={t(section.titleKey)}
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-200 ${
                     isSectionActive
-                      ? "bg-surface text-brand-600 font-semibold ring-1 ring-brand-500/30 shadow-sunken dark:text-brand-300"
-                      : "text-secondary hover:text-fg hover:shadow-sunken"
+                      ? "active-blue-capsule text-white shadow-[0_6px_16px_rgba(37,99,235,0.35)]"
+                      : "neu-circle-disc text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 hover:scale-105"
                   }`}
                 >
-                  <SectionIcon size={18} />
+                  <SectionIcon size={17} />
                   {isSectionActive && (
-                    <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-surface shadow-[0_0_6px_var(--color-brand-600)]" />
+                    <span className="absolute -right-0.5 top-1.5 h-2 w-2 rounded-full bg-white ring-2 ring-blue-600" />
                   )}
                   {!isSectionActive && hasBadges && (
-                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning ring-1 ring-surface shadow-[0_0_6px_var(--status-warning)]" />
+                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-500 ring-1 ring-white dark:ring-slate-900" />
                   )}
                 </button>
 
+                {/* Popover Flyout for Compact Mode with Liquid Glass Surface */}
                 {isHovered && (
                   <div
-                    className="dropdown-surface absolute left-full top-0 z-50 ml-3 w-72 rounded-2xl p-3 animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute left-full top-0 z-50 ml-3 w-64 neu-glass-card p-3 shadow-2xl backdrop-blur-2xl border border-white/70 dark:border-white/15 animate-in fade-in zoom-in-95 duration-150"
                     onMouseEnter={() => handleMouseEnter(section.key)}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div className={`mb-2 flex items-center justify-between pb-2 px-1 ${SEAM_B}`}>
-                      <span className="text-xs font-bold text-color flex items-center gap-1.5">
-                        <SectionIcon size={15} className="text-brand-600 dark:text-brand-400" />
+                    <div className="mb-2 flex items-center justify-between border-b border-white/40 pb-2 px-1 dark:border-white/10">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <SectionIcon
+                          size={15}
+                          className="text-blue-600 dark:text-blue-400"
+                        />
                         {t(section.titleKey)}
                       </span>
-                      <span className="text-[10px] text-secondary font-semibold px-2 py-0.5 rounded-full bg-surface shadow-sm">
+                      <span className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold px-2 py-0.5 rounded-full neu-raised-pill">
                         {section.items.length} items
                       </span>
                     </div>
-                    <div className="space-y-0.5 max-h-72 overflow-y-auto pr-1">
+                    <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
                       {section.items.map((item) => {
                         const Icon = item.icon;
                         const isItemActive =
                           location.pathname === item.path ||
                           location.pathname.startsWith(item.path + "/");
-                        const badge = resolveBadge(item);
 
                         return (
                           <NavLink
                             key={item.path}
                             to={item.path}
                             onClick={handleLinkClick}
-                            className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition duration-150 ${
+                            className={`flex items-center justify-between rounded-full px-3 py-2 text-xs font-medium transition duration-150 ${
                               isItemActive
-                                ? "bg-linear-to-r from-brand-600 to-brand-500 text-white font-medium shadow-inner"
-                                : "text-secondary hover:text-fg hover:shadow-sunken"
+                                ? "active-blue-capsule text-white shadow-xs font-semibold"
+                                : "text-slate-700 hover:text-blue-600 hover:bg-white/40 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
                             }`}
                           >
                             <span className="flex items-center gap-2 truncate">
                               <Icon size={14} className="shrink-0" />
-                              <span className="truncate">{t(item.translationKey)}</span>
+                              <span className="truncate">
+                                {t(item.translationKey)}
+                              </span>
                             </span>
-                            {badge && (
+                            {item.badge && (
                               <span
-                                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${badge.color} ${
-                                  badge.pulse ? "animate-pulse" : ""
-                                } shadow-sm`}
+                                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                                  item.badgeColor || "bg-blue-600 text-white"
+                                } ${item.badgePulse ? "animate-pulse" : ""}`}
                               >
-                                {badge.text}
+                                {item.badge}
                               </span>
                             )}
                           </NavLink>
@@ -849,276 +787,331 @@ export default function Sidebar({
         </nav>
       </div>
 
-      <div className={`flex flex-col items-center space-y-2 pt-2 shrink-0 ${SEAM_T}`}>
+      {/* Compact Mode Footer: Expand Button & User Avatar */}
+      <div className="flex flex-col items-center space-y-2 pt-3 border-t border-white/40 dark:border-white/10 shrink-0">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          title="Expand sidebar"
+          className="flex h-9 w-9 items-center justify-center neu-circle-disc text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition"
+          aria-label="Expand sidebar"
+        >
+          <PanelLeft size={16} />
+        </button>
+
         <div
           title={`${userDisplayName} (${roleConfig.label})`}
-          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none ring-1 ring-surface shadow-inner"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-md cursor-default select-none ring-2 ring-white/60 dark:ring-slate-800"
         >
-          {userAvatarUrl ? (
-            <img src={userAvatarUrl} alt={userDisplayName} className="h-full w-full object-cover" />
-          ) : (
-            userInitials
-          )}
+          {userInitials}
         </div>
       </div>
     </div>
   );
 
-  /* --------------------------------------------------------------
-     Expanded menu (desktop + mobile drawer)
-     -------------------------------------------------------------- */
+  // --------------------------------------------------------------------------
+  // 2. RENDER FULL EXPANDED MENU (Neumorphic + Liquid Glass Hybrid, Clean & Direct)
+  // --------------------------------------------------------------------------
   const renderExpandedMenu = (isMobile = false) => (
     <div className="flex h-full flex-col justify-between select-none overflow-hidden">
-      {/* Top branding + search + dashboard link */}
-      <div className="shrink-0 p-3.5 pb-2 space-y-3">
-        <div className="flex items-center justify-between gap-2.5 p-2 rounded-2xl shadow-sunken bg-surface border border-white/5">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-brand-600 via-brand-700 to-brand-900 text-white ring-1 ring-white/10 shadow-inner">
-              <School2 size={19} className="text-white" />
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-success ring-2 ring-surface shadow-[0_0_6px_var(--status-success)]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="truncate text-xs font-bold tracking-tight text-color">
-                {schoolName || "School Administration"}
-              </h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-brand-600 dark:text-brand-400">
-                  <Sparkles size={10} className="shrink-0 opacity-70" />
-                  {academicYear ? `AY ${academicYear}` : "Portal"}
-                </span>
-                <span className="h-1 w-1 rounded-full bg-(--neu-shadow-dark) shrink-0" />
-                <span className="text-[10px] text-secondary capitalize truncate">
-                  {roleConfig.label}
-                </span>
+      {/* ---------------- Top Area: Brand, Header & Controls ---------------- */}
+      <div className="shrink-0 p-3.5 pb-2 space-y-2.5">
+        {/* School Crest / PNC Brand Identity Card */}
+        <div className="p-3 rounded-2xl neu-raised-pill border border-white/80 dark:border-white/10 relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-2.5 relative z-10">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full neu-circle-disc text-slate-700 dark:text-slate-200">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={schoolName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <PncBrandLogo collapsed className="scale-80" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <h2 className="truncate text-xs font-bold tracking-tight text-slate-800 dark:text-slate-100">
+                  {schoolName}
+                </h2>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="truncate text-[9.5px] font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
+                    {schoolMotto}
+                  </p>
+                </div>
               </div>
             </div>
+
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Desktop Collapse Button */}
+              {!isMobile && (
+                <button
+                  type="button"
+                  onClick={toggleCollapsed}
+                  className="hidden lg:flex h-8 w-8 items-center justify-center neu-circle-disc text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition"
+                  title="Collapse sidebar to rail mode"
+                  aria-label="Collapse sidebar"
+                >
+                  <PanelLeftClose size={15} />
+                </button>
+              )}
+
+              {/* Mobile Close Button */}
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center neu-circle-disc text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition lg:hidden"
+                  aria-label="Close navigation drawer"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            {!isMobile && (
-              <button
-                type="button"
-                onClick={toggleCollapsed}
-                className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary glass-interactive"
-                title="Collapse sidebar (rail mode)"
-                aria-label="Collapse sidebar"
-              >
-                <PanelLeftClose size={15} />
-              </button>
-            )}
-
-            {isMobile && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-xl text-secondary glass-interactive lg:hidden"
-                aria-label="Close navigation drawer"
-              >
-                <X size={17} />
-              </button>
-            )}
+          {/* Academic Context Bar */}
+          <div className="mt-2 pt-1.5 border-t border-white/50 dark:border-white/5 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-1 font-medium">
+              <Clock size={10} className="text-blue-600 dark:text-blue-400" />
+              Semester 2 • 2025–2026
+            </span>
+            <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Active
+            </span>
           </div>
         </div>
-        <NavLink
-          to={dashboardPath}
-          onClick={handleLinkClick}
-          className={`group flex min-h-9.5 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
-            isDashboardActive
-              ? "bg-linear-to-r from-brand-600 to-brand-500 text-white shadow-inner"
-              : "text-secondary hover:text-fg hover:shadow-sunken"
-          }`}
-        >
-          <div
-            className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-colors ${
+
+        {/* Dashboard Link - Distinct Active Capsule */}
+        <div>
+          <NavLink
+            to={dashboardPath}
+            onClick={handleLinkClick}
+            className={`group relative flex h-11 items-center justify-between gap-3 rounded-full px-3.5 text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
               isDashboardActive
-                ? "bg-white/20 text-white"
-                : "bg-surface text-secondary shadow-sm group-hover:bg-brand-600 group-hover:text-white"
+                ? "active-blue-capsule shadow-[0_8px_20px_rgba(37,99,235,0.35)] text-white"
+                : "text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
-            <LayoutDashboard size={14} />
-          </div>
-          <span className="truncate text-xs font-medium">{t("sidebar.dashboard")}</span>
-          {isDashboardActive && (
-            <span className="ml-auto flex h-2 w-2 rounded-full bg-white animate-pulse shadow-[0_0_6px_white]" />
-          )}
-        </NavLink>
+            <div className="flex items-center gap-3">
+              {isDashboardActive ? (
+                <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-white/25 backdrop-blur-md border border-white/50 text-white shadow-inner">
+                  <LayoutDashboard size={15} className="stroke-[2.2]" />
+                </div>
+              ) : (
+                <div className="neu-circle-disc flex h-7.5 w-7.5 items-center justify-center text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:scale-105 transition-all">
+                  <LayoutDashboard size={15} className="stroke-[2]" />
+                </div>
+              )}
+              <span className="font-bold">{t("sidebar.dashboard")}</span>
+            </div>
+            {isDashboardActive ? (
+              <span className="flex h-2 w-2 rounded-full bg-white shadow-xs ring-2 ring-white/40" />
+            ) : (
+              <span className="text-[10px] text-slate-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                ↵
+              </span>
+            )}
+          </NavLink>
+        </div>
       </div>
 
-      {/* Scrollable navigation */}
-      <div className="flex-1 overflow-y-auto px-3.5 py-1.5 space-y-3.5 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-(--scrollbar-thumb) hover:[&::-webkit-scrollbar-thumb]:bg-(--scrollbar-thumb-hover)">
+      {/* ---------------- Middle Scrollable Navigation List (No search, No categories) ---------------- */}
+      <div className="flex-1 overflow-y-auto px-3.5 py-1 space-y-1.5 no-scrollbar scroll-smooth">
+        {/* Navigation Sections Header with Micro Collapse All Toggle */}
+        <div className="flex items-center justify-between px-2 pt-1 pb-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Menu
+          </span>
+          <button
+            type="button"
+            onClick={toggleAllSections}
+            title={allSectionsOpen ? "Collapse all sections" : "Expand all sections"}
+            className="flex h-6 w-6 items-center justify-center neu-circle-disc text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition"
+            aria-label={allSectionsOpen ? "Collapse all" : "Expand all"}
+          >
+            {allSectionsOpen ? (
+              <ChevronsUp size={12} />
+            ) : (
+              <ChevronsDown size={12} />
+            )}
+          </button>
+        </div>
+
         <nav aria-label="Sidebar Sections">
-          {Object.entries(groupedSections).map(([groupKey, sections]) => {
-            const groupTitle = categoryGroupLabels[groupKey] || groupKey;
+          {baseMenu.map((section) => {
+            const SectionIcon = section.icon;
+            const isSectionOpen = !!openSections[section.key];
+            const hasActiveChild = section.items.some(
+              (item) =>
+                location.pathname === item.path ||
+                location.pathname.startsWith(item.path + "/")
+            );
 
             return (
-              <div key={groupKey} className="space-y-1">
-                <div className="flex items-center gap-2 px-2.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-secondary">
-                  <span className="truncate">{groupTitle}</span>
-                  <span className="flex-1 h-px bg-(--neu-shadow-dark) shrink-0" />
-                </div>
-
-                {sections.map((section, index) => {
-                  const SectionIcon = section.icon;
-                  const isSectionOpen = openSection === section.key;
-                  const hasActiveChild = section.items.some(
-                    (item) =>
-                      location.pathname === item.path ||
-                      location.pathname.startsWith(item.path + "/")
-                  );
-                  const triggerId = `sidebar-trigger-${section.key}`;
-                  const panelId = `sidebar-panel-${section.key}`;
-
-                  return (
+              <div key={section.key} className="pt-0.5">
+                {/* Section Accordion Header */}
+                <button
+                  type="button"
+                  onClick={() => toggleSection(section.key)}
+                  className={`group flex min-h-[38px] w-full items-center justify-between rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] transition-all duration-200 cursor-pointer ${
+                    hasActiveChild
+                      ? "text-blue-700 dark:text-blue-300 neu-raised-pill border border-blue-500/25"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-white/30 dark:hover:bg-white/5"
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 truncate">
                     <div
-                      key={section.key}
-                      ref={(el) => {
-                        sectionPanelRefs.current[section.key] = el;
-                      }}
-                      className="scroll-mt-2"
+                      className={`flex h-6 w-6 items-center justify-center rounded-full transition-all ${
+                        hasActiveChild
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "neu-circle-disc text-slate-500 group-hover:text-blue-600"
+                      }`}
                     >
-                      <button
-                        type="button"
-                        id={triggerId}
-                        ref={(el) => {
-                          sectionTriggerRefs.current[index] = el;
-                        }}
-                        onClick={() => toggleSection(section.key)}
-                        onKeyDown={(e) => handleSectionKeyDown(e, index)}
-                        aria-expanded={isSectionOpen}
-                        aria-controls={panelId}
-                        className={`group flex min-h-9 w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
-                          isSectionOpen
-                            ? "text-color font-semibold shadow-sunken bg-surface/50"
-                            : hasActiveChild
-                              ? "text-brand-700 dark:text-brand-300 font-semibold shadow-sunken bg-surface/30"
-                              : "text-secondary hover:text-fg hover:shadow-sunken"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2.5 truncate">
-                          <div
-                            className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-lg transition-all duration-150 ${
-                              isSectionOpen || hasActiveChild
-                                ? "bg-linear-to-br from-brand-600 to-brand-500 text-white shadow-inner"
-                                : "bg-surface text-secondary shadow-sm"
-                            }`}
-                          >
-                            <SectionIcon size={14} />
-                          </div>
-                          <span className="truncate text-xs">{t(section.titleKey)}</span>
-                        </span>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {!isSectionOpen && hasActiveChild && (
-                            <span
-                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600 dark:bg-brand-400 shadow-[0_0_6px_var(--color-brand-600)]"
-                              aria-hidden="true"
-                            />
-                          )}
-                          <span className="text-[10px] text-secondary font-medium px-1">
-                            {section.items.length}
-                          </span>
-                          <ChevronRight
-                            size={14}
-                            className={`transition-transform duration-200 text-secondary ${
-                              isSectionOpen
-                                ? "rotate-90 text-brand-600 dark:text-brand-400"
-                                : "rotate-0"
-                            }`}
-                          />
-                        </div>
-                      </button>
-
-                      <div
-                        id={panelId}
-                        role="region"
-                        aria-labelledby={triggerId}
-                        aria-hidden={!isSectionOpen}
-                        className={`grid transition-[grid-template-rows] duration-200 ease-out ${
-                          isSectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                        }`}
-                      >
-                        <div className="overflow-hidden min-h-0">
-                          <div className="relative mt-1 mb-1 ml-4 pl-3 space-y-0.5 shadow-[-1px_0_0_var(--neu-shadow-dark)]">
-                            {section.items.map((item) => {
-                              const Icon = item.icon;
-                              const isItemActive =
-                                location.pathname === item.path ||
-                                location.pathname.startsWith(item.path + "/");
-                              const badge = resolveBadge(item);
-
-                              return (
-                                <NavLink
-                                  key={item.path}
-                                  to={item.path}
-                                  onClick={handleLinkClick}
-                                  tabIndex={isSectionOpen ? 0 : -1}
-                                  className={`group relative flex min-h-8 items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
-                                    isItemActive
-                                      ? "font-semibold bg-linear-to-r from-brand-600 to-brand-500 text-white shadow-inner"
-                                      : "font-normal text-secondary hover:text-fg hover:shadow-sunken"
-                                  }`}
-                                >
-                                  {isItemActive && (
-                                    <span className="absolute -left-4 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-brand-600 ring-2 ring-surface shadow-[0_0_6px_var(--color-brand-600)]" />
-                                  )}
-                                  <span className="flex items-center gap-2 truncate">
-                                    <Icon
-                                      size={14}
-                                      className={`shrink-0 ${
-                                        isItemActive ? "text-white" : "text-secondary"
-                                      }`}
-                                    />
-                                    <span className="truncate text-xs">
-                                      {t(item.translationKey)}
-                                    </span>
-                                  </span>
-                                  {badge && (
-                                    <span
-                                      className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-tight ${
-                                        isItemActive ? "bg-white/25 text-white" : badge.color
-                                      } ${badge.pulse ? "animate-pulse" : ""} shadow-sm`}
-                                    >
-                                      {badge.text}
-                                    </span>
-                                  )}
-                                </NavLink>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
+                      <SectionIcon size={13} />
                     </div>
-                  );
-                })}
+                    <span className="truncate">{t(section.titleKey)}</span>
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9.5px] font-semibold text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full neu-raised-pill">
+                      {section.items.length}
+                    </span>
+                    {hasActiveChild && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 ring-2 ring-blue-500/30" />
+                    )}
+                    {isSectionOpen ? (
+                      <ChevronDown
+                        size={13}
+                        className="transition-transform duration-200 text-slate-400"
+                      />
+                    ) : (
+                      <ChevronRight
+                        size={13}
+                        className="transition-transform duration-200 text-slate-400"
+                      />
+                    )}
+                  </div>
+                </button>
+
+                {/* Nested Section Items */}
+                {isSectionOpen && (
+                  <div className="mt-1 space-y-1 pl-3 border-l-2 border-white/60 dark:border-white/10 ml-4 my-1">
+                    {section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isItemActive =
+                        location.pathname === item.path ||
+                        location.pathname.startsWith(item.path + "/");
+
+                      return (
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          onClick={handleLinkClick}
+                          className={`group relative flex h-9.5 items-center justify-between gap-2.5 rounded-full px-3 text-xs font-medium transition-all duration-200 cursor-pointer ${
+                            isItemActive
+                              ? "active-blue-capsule shadow-[0_6px_16px_rgba(37,99,235,0.32)] text-white font-semibold"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-white/40 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2.5 truncate">
+                            {isItemActive ? (
+                              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-white shadow-inner">
+                                <Icon size={13} className="stroke-[2.2]" />
+                              </div>
+                            ) : (
+                              <div className="neu-circle-disc flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 group-hover:text-blue-600 group-hover:scale-105 transition-all">
+                                <Icon size={12} className="stroke-[1.8]" />
+                              </div>
+                            )}
+                            <span className="truncate">
+                              {t(item.translationKey)}
+                            </span>
+                          </span>
+
+                          {item.badge ? (
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[9.5px] font-bold ${
+                                item.badgeColor || "bg-blue-600 text-white"
+                              } ${item.badgePulse ? "animate-pulse" : ""}`}
+                            >
+                              {item.badge}
+                            </span>
+                          ) : isItemActive ? (
+                            <Check size={13} className="text-white shrink-0 mr-1" />
+                          ) : null}
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
         </nav>
       </div>
 
-      {/* User footer */}
-      <div className={`shrink-0 p-3.5 pt-2 ${SEAM_T}`}>
-        <div className="flex items-center justify-between gap-2 rounded-2xl p-2.5 shadow-sunken bg-surface border border-white/5">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white font-bold text-xs select-none ring-1 ring-surface shadow-inner">
-              {userAvatarUrl ? (
-                <img src={userAvatarUrl} alt={userDisplayName} className="h-full w-full object-cover" />
-              ) : (
-                userInitials
-              )}
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface shadow-[0_0_6px_var(--status-success)]" />
+      {/* ---------------- Bottom Area: Liquid Glass Accent & User Profile ---------------- */}
+      <div className="shrink-0 p-3 pt-1 space-y-2 select-none">
+        {/* Floating Mini Droplet & Quote Accent */}
+        <div className="p-2.5 rounded-2xl neu-raised-pill border border-white/80 dark:border-white/10 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="relative w-8 h-8 shrink-0 overflow-visible pointer-events-none">
+              <img
+                src="/assets/images/liquid_glass_droplet.jpg"
+                alt="Liquid Glass"
+                className="w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(59,130,246,0.3)]"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    parent.innerHTML = `
+                      <svg viewBox="0 0 100 80" class="w-full h-full drop-shadow-[0_4px_8px_rgba(59,130,246,0.3)]" fill="none">
+                        <defs>
+                          <linearGradient id="dropGradSm" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8" />
+                            <stop offset="100%" stop-color="#2563eb" />
+                          </linearGradient>
+                        </defs>
+                        <path d="M 15 50 C 10 30, 30 15, 60 20 C 85 25, 95 45, 80 60 C 65 75, 25 70, 15 50 Z" fill="url(#dropGradSm)" />
+                      </svg>
+                    `;
+                  }
+                }}
+              />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xs font-semibold text-color leading-tight">
+              <p className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight truncate">
+                Small steps every day
+              </p>
+              <p className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate">
+                lead to big results.
+              </p>
+            </div>
+          </div>
+          <Heart size={13} className="text-rose-500 fill-none shrink-0" />
+        </div>
+
+        {/* User Profile Card with Neumorphic Disc Avatar & Logout */}
+        <div className="p-2.5 rounded-2xl neu-raised-pill border border-white/80 dark:border-white/10 flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-md select-none ring-2 ring-white/70 dark:ring-slate-800">
+              {userInitials}
+              <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold text-slate-900 dark:text-white leading-tight">
                 {userDisplayName}
               </p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span
-                  className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-md ${roleConfig.badgeClass}`}
-                >
-                  {roleConfig.label}
-                </span>
-              </div>
+              <span
+                className={`inline-flex items-center gap-1 text-[8.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full mt-0.5 border ${roleConfig.bg} ${roleConfig.ring}`}
+              >
+                <Sparkles size={8} />
+                {roleConfig.label}
+              </span>
             </div>
           </div>
 
@@ -1127,10 +1120,10 @@ export default function Sidebar({
               type="button"
               onClick={() => logout()}
               title="Sign out"
+              className="flex h-8 w-8 shrink-0 items-center justify-center neu-circle-disc text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition"
               aria-label="Sign out"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-secondary hover:text-error hover:shadow-sunken transition-all cursor-pointer"
             >
-              <LogOut size={15} />
+              <LogOut size={14} />
             </button>
           )}
         </div>
@@ -1140,32 +1133,35 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* Mobile Backdrop Overlay with Blur */}
       <div
-        className={`fixed inset-0 z-40 theme-overlay transition-opacity duration-300 lg:hidden ${
-          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        className={`fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          mobileOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
-        onClick={() => onClose && onClose()}
+        onClick={onClose}
         aria-hidden={!mobileOpen}
       />
 
-      {/* Mobile drawer — Added app-sidebar class for the liquid glass backdrop */}
-      <div
-        className={`app-sidebar fixed left-0 top-0 z-50 h-full w-77.5 max-w-[85vw] transform transition-transform duration-300 ease-out lg:hidden shadow-[2px_0_10px_var(--neu-shadow-dark)] ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
+      {/* Mobile Drawer (Touch-Optimized Liquid Glass Card) */}
+      <aside
+        className={`fixed left-3 top-3 bottom-3 z-50 w-76 max-w-[calc(100vw-1.5rem)] neu-glass-card transform transition-transform duration-300 ease-out lg:hidden rounded-3xl ${
+          mobileOpen ? "translate-x-0" : "-translate-x-[110%]"
         }`}
         role="dialog"
         aria-modal="true"
-        aria-label="Mobile Navigation"
+        aria-label="Navigation Drawer"
       >
-        <div className="h-full overflow-hidden">{renderExpandedMenu(true)}</div>
-      </div>
+        {renderExpandedMenu(true)}
+      </aside>
 
-      {/* Desktop sidebar */}
+      {/* Desktop / Laptop Floating Sidebar (Neumorphic + Liquid Glass) */}
       <aside
-        className={`app-sidebar hidden h-full shrink-0 flex-col lg:flex overflow-hidden transition-all duration-300 ease-in-out ${
-          isCollapsed ? "w-17" : "w-72 xl:w-74"
+        className={`hidden lg:flex shrink-0 my-4 ml-4 h-[calc(100dvh-2rem)] neu-glass-card z-20 overflow-hidden rounded-3xl transition-all duration-300 ease-in-out ${
+          isCollapsed ? "w-20" : "w-72 xl:w-76"
         }`}
+        aria-label="Sidebar"
       >
         {isCollapsed ? renderCompactMenu() : renderExpandedMenu(false)}
       </aside>

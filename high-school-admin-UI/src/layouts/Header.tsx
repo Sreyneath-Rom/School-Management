@@ -11,6 +11,7 @@ import {
   Settings,
   CircleHelp,
   CheckCheck,
+  Search,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -59,6 +60,7 @@ export default function Header({
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -157,7 +159,7 @@ export default function Header({
   return (
     <header className="sticky top-0 z-30 select-none app-header">
       <div className="flex h-14 sm:h-16 items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
             onClick={onOpenSidebar}
@@ -166,17 +168,32 @@ export default function Header({
           >
             <Menu size={18} />
           </button>
+
+          {/* Neumorphic Sunken Search Bar from reference UI */}
+          <div className="relative hidden sm:flex items-center w-64 md:w-84 lg:w-96">
+            <Search
+              size={15}
+              className="absolute left-3.5 text-slate-400 dark:text-slate-500 pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Search anything..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="neu-sunken-search w-full pl-9.5 pr-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+            />
+          </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 ml-auto">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-2.5 ml-auto">
           {/* Static date / term chip */}
-          <div className="hidden sm:flex items-center gap-2 rounded-2xl glass-sm h-9.5 px-3 py-1.5 text-xs font-semibold text-color">
+          <div className="hidden md:flex items-center gap-2 rounded-full neu-raised-pill h-9 px-3.5 text-xs font-semibold text-color">
             <Calendar
               size={13}
-              className="text-brand-600 dark:text-brand-400"
+              className="text-blue-600 dark:text-blue-400"
             />
             <span className="text-color">{formattedDate}</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-success shadow-[0_0_4px_var(--status-success)]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.8)]" />
             {termName && (
               <span
                 className="max-w-32 truncate text-[10.5px] font-bold text-secondary"
@@ -189,6 +206,7 @@ export default function Header({
 
           <LanguageSelector />
 
+          {/* Neumorphic Notification Disc from reference UI */}
           <div className="relative" ref={notifRef}>
             <button
               type="button"
@@ -199,17 +217,15 @@ export default function Header({
                 setNotifOpen((o) => !o);
                 setMenuOpen(false);
               }}
-              className={`relative flex h-9.5 w-9.5 items-center justify-center rounded-2xl glass-sm glass-interactive ${
+              className={`relative flex h-9.5 w-9.5 items-center justify-center rounded-full neu-circle-disc cursor-pointer transition ${
                 notifOpen
-                  ? "ring-1 ring-brand-500/40 text-color shadow-sunken"
-                  : "text-secondary"
+                  ? "ring-2 ring-blue-500/50 text-blue-600 shadow-inner"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
               }`}
             >
               <Bell size={17} />
               {unreadCount > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-black text-white ring-2 ring-surface-strong shadow-md">
-                  {unreadCount}
-                </span>
+                <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
               )}
             </button>
 
@@ -335,33 +351,33 @@ export default function Header({
                 setMenuOpen((o) => !o);
                 setNotifOpen(false);
               }}
-              className={`group flex items-center gap-2 rounded-2xl glass-sm glass-interactive h-9.5 p-1 pr-2 sm:pr-2.5 ${
+              className={`group flex items-center gap-2 rounded-full neu-raised-pill h-9.5 p-1 pr-3 cursor-pointer transition ${
                 menuOpen
-                  ? "ring-1 ring-brand-500/40 text-color shadow-sunken"
-                  : "text-secondary"
+                  ? "ring-2 ring-blue-500/50 text-color shadow-inner"
+                  : "text-secondary hover:text-color"
               }`}
             >
               <div className="relative">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
-                    alt={user?.name ?? "User"}
-                    className="h-7.5 w-7.5 rounded-xl object-cover ring-1 ring-white/30"
+                    alt={user?.name ?? "Sreyneath Rom"}
+                    className="h-7.5 w-7.5 rounded-full object-cover ring-2 ring-white/70 shadow-sm"
                   />
                 ) : (
-                  <div className="flex h-7.5 w-7.5 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-brand-400 text-white text-xs font-black shadow-inner">
-                    {initials}
+                  <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-linear-to-tr from-blue-600 via-indigo-600 to-violet-500 text-white text-[11px] font-black shadow-inner ring-2 ring-white/70">
+                    {user?.name ? initials : "SR"}
                   </div>
                 )}
-                <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-surface-strong shadow-[0_0_6px_var(--status-success)]" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
               </div>
 
               <div className="hidden text-left md:block min-w-0">
-                <p className="max-w-28 truncate text-xs font-bold text-color leading-tight">
-                  {user?.name ?? "User"}
+                <p className="max-w-32 truncate text-xs font-bold text-slate-800 dark:text-white leading-tight">
+                  {user?.name ?? "Sreyneath Rom"}
                 </p>
-                <p className="text-[10px] font-semibold text-secondary leading-tight">
-                  {roleMeta.label}
+                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
+                  {user?.role === 'admin' ? 'Student' : roleMeta.label}
                 </p>
               </div>
 

@@ -337,6 +337,10 @@ export default function Breadcrumbs({
   const lastItem = items[items.length - 1];
   const middleItems = shouldCollapse ? items.slice(1, -1) : [];
 
+  if (isSingleHome || location.pathname === '/dashboard' || location.pathname.endsWith('/dashboard')) {
+    return null;
+  }
+
   return (
     <nav
       id="app-breadcrumb-navigation"

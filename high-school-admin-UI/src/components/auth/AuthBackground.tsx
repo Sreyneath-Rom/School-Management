@@ -44,6 +44,16 @@ export default function AuthBackground({ variant }: Props) {
       />
       <div className="absolute -bottom-32 left-1/3 w-lg h-128 rounded-full blur-3xl bg-info/8 transition-colors duration-700" />
 
+      {/* Modern minimalist fluid glass ribbons texture */}
+      <div className="absolute inset-0 opacity-20 dark:opacity-10 mix-blend-overlay">
+        <img
+          src="/assets/images/fluid_glass_ribbons.jpg"
+          alt="Fluid glass ribbons"
+          referrerPolicy="no-referrer"
+          className="h-full w-full object-cover filter blur-[1px]"
+        />
+      </div>
+
       {/* Dot-grid overlay — inherits the theme's text color. */}
       <div
         className="absolute inset-0 text-fg opacity-[0.035] dark:opacity-[0.05]"

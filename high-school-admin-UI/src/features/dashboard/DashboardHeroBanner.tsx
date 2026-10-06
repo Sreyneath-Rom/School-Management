@@ -57,6 +57,17 @@ export default function DashboardHeroBanner({
     <div className="relative overflow-hidden rounded-3xl glass p-5 sm:p-7">
       {/* Ambient tint blobs: kept, but lighter, because the flat
           neumorphic surface is easily muddied by strong color bleed. */}
+      {/* 3D Fluid Glass Ribbon Artwork Backdrop */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-35 dark:opacity-25 select-none">
+        <img
+          src="/assets/images/fluid_glass_ribbons.jpg"
+          alt="Translucent fluid glass ribbons"
+          referrerPolicy="no-referrer"
+          className="h-full w-full object-cover object-center filter saturate-125"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent dark:from-slate-900/95 dark:via-slate-900/80 dark:to-transparent" />
+      </div>
+
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl"

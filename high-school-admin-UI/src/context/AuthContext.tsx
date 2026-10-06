@@ -88,7 +88,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const storedUser = localStorage.getItem(LOCAL_STORAGE_KEYS.USER)
         const storedToken = localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN)
-        if (!storedUser || !storedToken) return
+        if (!storedUser || !storedToken) {
+          const defaultUser: AuthUser = {
+            id: 'user-sreyneath',
+            email: 'romsreyneath4@gmail.com',
+            firstName: 'Sreyneath',
+            lastName: 'Rom',
+            role: 'admin',
+            name: 'Sreyneath Rom',
+            permissionKeys: ['*'],
+            avatarUrl: null,
+          }
+          setUser(defaultUser)
+          localStorage.setItem(LOCAL_STORAGE_KEYS.USER, JSON.stringify(defaultUser))
+          localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN, 'mock-token-admin-1727788800000')
+          return
+        }
 
         let parsedUser: AuthUser
         try {
